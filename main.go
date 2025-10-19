@@ -816,14 +816,13 @@ func selectOutputFile(cfg *Config) *os.File {
 }
 
 // writeCSVResults writes the analysis results in CSV format.
-func writeCSVResults(w *csv.Writer, files []FileMetrics, maxWidth int, fmtFloat func(float64) string, intFmt string) {
+func writeCSVResults(w *csv.Writer, files []FileMetrics, fmtFloat func(float64) string, intFmt string) {
 	// CSV header
 	w.Write([]string{"rank", "file", "score", "label", "contributors", "commits", "size_kb", "age_days", "churn", "gini", "first_commit"})
 	for i, f := range files {
-		p := truncatePath(f.Path, maxWidth)
 		rec := []string{
 			strconv.Itoa(i + 1),
-			p,
+			f.Path,
 			fmtFloat(f.Score),
 			labelColor(f.Score),
 			fmt.Sprintf(intFmt, f.UniqueContributors),
@@ -858,7 +857,7 @@ func printResults(files []FileMetrics, cfg *Config) {
 	if outFmt == "csv" {
 		file := selectOutputFile(cfg)
 		w := csv.NewWriter(file)
-		writeCSVResults(w, files, maxPathWidth, fmtFloat, intFmt)
+		writeCSVResults(w, files, fmtFloat, intFmt)
 		w.Flush()
 		if file != os.Stdout {
 			file.Close()
