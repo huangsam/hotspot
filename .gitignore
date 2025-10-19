@@ -30,3 +30,4 @@ dist/
 # Local developer assets
 .idea/
 *.cast
+/hotspot

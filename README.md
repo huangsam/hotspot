@@ -1,4 +1,4 @@
-# critical-files
+# hotspot
 
 A powerful Git repository analyzer that identifies critical files based on multiple scoring modes. Uses commit history, file metrics, and contributor patterns to surface files that need attention.
 
@@ -16,8 +16,8 @@ A powerful Git repository analyzer that identifies critical files based on multi
 ## Installation
 
 ```bash
-go build -o critical-files main.go
-go install github.com/huangsam/critical-files@latest
+go build -o hotspot main.go
+go install github.com/huangsam/hotspot@latest
 ```
 
 ## Usage
@@ -25,16 +25,16 @@ go install github.com/huangsam/critical-files@latest
 ### Basic usage
 ```bash
 # Analyze current directory with default settings
-critical-files .
+hotspot .
 
 # Analyze specific repository
-critical-files /path/to/repo
+hotspot /path/to/repo
 
 # Show top 20 files
-critical-files -limit 20 .
+hotspot -limit 20 .
 
 # Use a specific scoring mode
-critical-files -mode risk .
+hotspot -mode risk .
 ```
 
 ### Scoring Modes
@@ -56,10 +56,10 @@ The `-mode` flag controls how files are scored and ranked:
 
 ```bash
 # Filter by path prefix
-critical-files -filter src/api .
+hotspot -filter src/api .
 
 # Exclude patterns (comma-separated)
-critical-files -exclude "vendor/,node_modules/,*.min.js" .
+hotspot -exclude "vendor/,node_modules/,*.min.js" .
 
 # Default exclusions: vendor/, node_modules/, third_party/, .min.js, .min.css
 ```
@@ -100,36 +100,36 @@ With `-explain`, see how each metric contributes to the score:
 
 ```bash
 # Morning standup - what's hot this sprint?
-critical-files -mode hot -start 2024-10-01T00:00:00Z -limit 15 .
+hotspot -mode hot -start 2024-10-01T00:00:00Z -limit 15 .
 
 # Code review focus - what's fragile?
-critical-files -mode fragile -filter src/ -limit 10 .
+hotspot -mode fragile -filter src/ -limit 10 .
 
 # Find refactoring targets
-critical-files -mode complexity -limit 20 .
+hotspot -mode complexity -limit 20 .
 ```
 
 ### Team Management
 
 ```bash
 # Identify bus factor risks
-critical-files -mode risk -output csv -csv-file bus-factor.csv .
+hotspot -mode risk -output csv -csv-file bus-factor.csv .
 
 # Onboarding checklist for new hires
-critical-files -mode onboarding -limit 25 .
+hotspot -mode onboarding -limit 25 .
 
 # Security audit focus areas
-critical-files -mode security -output csv .
+hotspot -mode security -output csv .
 ```
 
 ### Technical Debt
 
 ```bash
 # Stale important files needing attention
-critical-files -mode stale -exclude "test/,vendor/" .
+hotspot -mode stale -exclude "test/,vendor/" .
 
 # Complex files with follow tracking
-critical-files -mode complexity -limit 10 -follow .
+hotspot -mode complexity -limit 10 -follow .
 ```
 
 ## Performance
@@ -143,7 +143,7 @@ Adjust `-workers` based on your CPU cores for optimal performance.
 
 ## Tips
 
-1. **Start with defaults**: Run `critical-files .` first to get a baseline
+1. **Start with defaults**: Run `hotspot .` first to get a baseline
 2. **Try different modes**: Each reveals different insights about your codebase
 3. **Use time ranges**: `-start` is great for sprint or release analysis
 4. **Combine filters**: Use `-filter` and `-exclude` to focus on specific areas
