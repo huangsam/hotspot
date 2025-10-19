@@ -70,7 +70,7 @@ const (
 	defaultPrecision = 1
 )
 
-// main is the entry point for the critical-files analyzer.
+// main is the entry point for the hotspot analyzer.
 // It parses command line flags, analyzes the repository, and outputs ranked results.
 func main() {
 	cfg, err := parseFlags()
@@ -126,7 +126,7 @@ func main() {
 		}
 	}
 
-	fmt.Printf("🧠 critical-files: Analyzing %s\n", cfg.RepoPath)
+	fmt.Printf("🧠 hotspot: Analyzing %s\n", cfg.RepoPath)
 	fmt.Printf("📅 Range: %s → %s\n\n", cfg.StartTime.Format(time.RFC3339), cfg.EndTime.Format(time.RFC3339))
 
 	results := analyzeRepo(cfg, files)
