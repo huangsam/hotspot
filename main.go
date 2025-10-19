@@ -16,13 +16,24 @@ import (
 	"time"
 )
 
+// cached recent maps populated when a repo-wide recent aggregation is run
+var recentCommitsMapGlobal map[string]int
+var recentChurnMapGlobal map[string]int
+
+// map[file] -> map[author]commitCount
+var recentContribMapGlobal map[string]map[string]int
+
 // FileMetrics represents the Git and file system metrics for a single file.
 // It includes contribution statistics, commit history, size, age, and derived metrics
 // used to determine the file's overall importance score.
 type FileMetrics struct {
-	Path               string    // Relative path to the file in the repository
-	UniqueContributors int       // Number of different authors who modified the file
-	Commits            int       // Total number of commits affecting this file
+	Path               string // Relative path to the file in the repository
+	UniqueContributors int    // Number of different authors who modified the file
+	Commits            int    // Total number of commits affecting this file
+	// Recent* fields measure activity within a recent window when requested
+	RecentContributors int
+	RecentCommits      int
+	RecentChurn        int
 	SizeBytes          int64     // Current size of the file in bytes
 	AgeDays            int       // Age of the file in days since first commit
 	Churn              int       // Total number of lines added/deleted plus number of commits
@@ -48,7 +59,17 @@ type Config struct {
 	Precision   int       // Decimal precision for numeric columns (1 or 2)
 	Output      string    // Output format: "text" (default) or "csv"
 	CSVFile     string    // Optional path to write CSV output directly
+	Follow      bool      // If true, re-run per-file analysis with `--follow` for the top -limit files
 }
+
+const (
+	maxPathWidth     = 40
+	columnSpacing    = 2
+	maxLimitDefault  = 200
+	defaultWorkers   = 8
+	defaultLimit     = 10
+	defaultPrecision = 1
+)
 
 // main is the entry point for the critical-files analyzer.
 // It parses command line flags, analyzes the repository, and outputs ranked results.
@@ -59,15 +80,51 @@ func main() {
 		os.Exit(1)
 	}
 
-	files, err := listRepoFiles(cfg.RepoPath, cfg.PathFilter)
-	if err != nil {
-		fmt.Println("❌ Error listing files:", err)
-		os.Exit(1)
-	}
+	var files []string
 
-	if len(files) == 0 {
-		fmt.Println("⚠️  No files found in repository.")
-		return
+	if !cfg.StartTime.IsZero() {
+		// Run repo-wide aggregation first and use the files seen in that pass.
+		fmt.Printf("🔎 Aggregating recent activity since %s (single repo-wide pass)...\n", cfg.StartTime.Format(time.RFC3339))
+		if err := aggregateRecent(cfg); err != nil {
+			fmt.Println("⚠️  Warning: could not aggregate recent activity:", err)
+		}
+
+		// Build file list from union of recent maps so we only analyze files touched since StartTime
+		seen := make(map[string]bool)
+		for k := range recentCommitsMapGlobal {
+			seen[k] = true
+		}
+		for k := range recentChurnMapGlobal {
+			seen[k] = true
+		}
+		for k := range recentContribMapGlobal {
+			seen[k] = true
+		}
+		for f := range seen {
+			// apply path filter and excludes
+			if cfg.PathFilter != "" && !strings.HasPrefix(f, cfg.PathFilter) {
+				continue
+			}
+			if shouldIgnore(f, cfg.Excludes) {
+				continue
+			}
+			files = append(files, f)
+		}
+
+		if len(files) == 0 {
+			fmt.Println("⚠️  No files with activity found in the requested window.")
+			return
+		}
+	} else {
+		files, err = listRepoFiles(cfg.RepoPath, cfg.PathFilter)
+		if err != nil {
+			fmt.Println("❌ Error listing files:", err)
+			os.Exit(1)
+		}
+		if len(files) == 0 {
+			fmt.Println("⚠️  No files found in repository.")
+			return
+		}
 	}
 
 	fmt.Printf("🧠 critical-files: Analyzing %s\n", cfg.RepoPath)
@@ -75,6 +132,26 @@ func main() {
 
 	results := analyzeRepo(cfg, files)
 	ranked := rankFiles(results, cfg.ResultLimit)
+
+	// If the user requested a follow-pass, re-analyze the top N files using
+	// git --follow to account for renames/history and then re-rank.
+	if cfg.Follow && len(ranked) > 0 {
+		n := cfg.ResultLimit
+		if n > len(ranked) {
+			n = len(ranked)
+		}
+		fmt.Printf("🔁 Running --follow re-analysis for top %d files...\n", n)
+		for i := 0; i < n; i++ {
+			f := ranked[i]
+			// re-analyze with follow enabled
+			rean := analyzeFileCommon(cfg, f.Path, true)
+			// preserve path but update metrics and score
+			rean.Path = f.Path
+			ranked[i] = rean
+		}
+		// re-rank after follow pass
+		ranked = rankFiles(ranked, cfg.ResultLimit)
+	}
 	printResults(ranked, cfg)
 }
 
@@ -82,22 +159,22 @@ func main() {
 // It uses the standard flag package to handle options for controlling the analysis.
 // Returns an error if required arguments are missing or invalid.
 func parseFlags() (*Config, error) {
-	cfg := &Config{Workers: 8, EndTime: time.Now()}
-
-	const maxLimit = 200 // Maximum number of files that can be analyzed
+	cfg := &Config{Workers: defaultWorkers, EndTime: time.Now()}
 
 	// Define flags
-	limit := flag.Int("limit", 10, fmt.Sprintf("Number of files to display (default: 10, max: %d)", maxLimit))
+	limit := flag.Int("limit", defaultLimit, fmt.Sprintf("Number of files to display (default: %d, max: %d)", defaultLimit, maxLimitDefault))
 	filter := flag.String("filter", "", "Filter files by path prefix")
 	startDate := flag.String("start", "", "Start date in ISO8601 format (e.g., 2023-01-01T00:00:00Z)")
 	endDate := flag.String("end", "", "End date in ISO8601 format (defaults to current time)")
-	workers := flag.Int("workers", 8, "Number of concurrent workers (default: 8)")
+	workers := flag.Int("workers", defaultWorkers, fmt.Sprintf("Number of concurrent workers (default: %d)", defaultWorkers))
 	mode := flag.String("mode", "hot", "Scoring mode: \"hot\" (hotspots) or \"risk\" (knowledge risk)")
 	exclude := flag.String("exclude", "", "Comma-separated list of path prefixes or patterns to ignore (e.g. vendor,node_modules,*.min.js)")
 	explain := flag.Bool("explain", false, "Print per-file component score breakdown (for debugging/tuning)")
-	precision := flag.Int("precision", 1, "Decimal precision for numeric columns (1 or 2)")
+	precision := flag.Int("precision", defaultPrecision, "Decimal precision for numeric columns (1 or 2)")
 	output := flag.String("output", "text", "Output format: text (default) or csv")
 	csvFile := flag.String("csv-file", "", "Optional path to write CSV output directly (overrides stdout)")
+	follow := flag.Bool("follow", false, "Re-run per-file analysis with --follow for the top -limit files (slower but handles renames)")
+
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options] <repo-path>\n\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "Options:\n")
@@ -112,18 +189,15 @@ func parseFlags() (*Config, error) {
 	}
 
 	cfg.RepoPath = flag.Arg(0)
-	if *limit > maxLimit {
-		return nil, fmt.Errorf("limit cannot exceed %d files", maxLimit)
+	if *limit > maxLimitDefault {
+		return nil, fmt.Errorf("limit cannot exceed %d files", maxLimitDefault)
 	}
 	cfg.ResultLimit = *limit
 	cfg.PathFilter = *filter
 	cfg.Workers = *workers
 	cfg.Mode = *mode
 	cfg.Explain = *explain
-	// Explain flag
-	if *explain {
-		// store it in the Excludes slice as a sentinel? Better to add a field; we will add it below.
-	}
+
 	// default excludes
 	defaults := []string{"vendor/", "node_modules/", "third_party/", ".min.js", ".min.css"}
 	cfg.Excludes = defaults
@@ -137,7 +211,6 @@ func parseFlags() (*Config, error) {
 		}
 	}
 
-	// Apply remaining flags (always, not only when excludes are present)
 	if *precision < 1 {
 		*precision = 1
 	}
@@ -147,6 +220,7 @@ func parseFlags() (*Config, error) {
 	cfg.Precision = *precision
 	cfg.Output = strings.ToLower(*output)
 	cfg.CSVFile = *csvFile
+	cfg.Follow = *follow
 
 	// Parse start date if provided
 	if *startDate != "" {
@@ -163,9 +237,6 @@ func parseFlags() (*Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid end date: %v", err)
 		}
-
-		// store explain in config by using a hidden field: append to Excludes as sentinel is hacky;
-		// instead, add an Explain bool to Config (we'll add the field now)
 		cfg.EndTime = t
 	}
 
@@ -217,7 +288,7 @@ func analyzeRepo(cfg *Config, files []string) []FileMetrics {
 		go func() {
 			defer wg.Done()
 			for f := range fileCh {
-				metrics := analyzeFile(cfg, f)
+				metrics := analyzeFileCommon(cfg, f, false)
 				resultCh <- metrics
 			}
 		}()
@@ -238,21 +309,32 @@ func analyzeRepo(cfg *Config, files []string) []FileMetrics {
 	return results
 }
 
-// analyzeFile computes all metrics for a single file in the repository.
+// analyzeFileCommon computes all metrics for a single file in the repository.
 // It gathers Git history data (commits, authors, dates), file size, and calculates
 // derived metrics like churn and the Gini coefficient of author contributions.
 // The analysis is constrained by the time range in cfg if specified.
-func analyzeFile(cfg *Config, path string) FileMetrics {
+// If useFollow is true, git --follow is used to track file renames.
+func analyzeFileCommon(cfg *Config, path string, useFollow bool) FileMetrics {
 	repo := cfg.RepoPath
 	var metrics FileMetrics
 	metrics.Path = path
 
-	// Unique contributors + commits within range
-	cmd := exec.Command("git", "-C", repo, "log", "--follow", "--pretty=format:%an,%ad", "--date=iso", "--", path)
+	// Build git log command with optional --follow
+	args := []string{"-C", repo, "log"}
+	if useFollow {
+		args = append(args, "--follow")
+	}
+	if !cfg.StartTime.IsZero() {
+		args = append(args, "--since="+cfg.StartTime.Format(time.RFC3339))
+	}
+	args = append(args, "--pretty=format:%an,%ad", "--date=iso", "--", path)
+
+	cmd := exec.Command("git", args...)
 	out, err := cmd.Output()
 	if err != nil {
 		return metrics
 	}
+
 	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
 	contribCount := map[string]int{}
 	totalCommits := 0
@@ -300,7 +382,16 @@ func analyzeFile(cfg *Config, path string) FileMetrics {
 	}
 
 	// Churn
-	cmd = exec.Command("git", "-C", repo, "log", "--follow", "--numstat", "--", path)
+	churnArgs := []string{"-C", repo, "log"}
+	if useFollow {
+		churnArgs = append(churnArgs, "--follow")
+	}
+	if !cfg.StartTime.IsZero() {
+		churnArgs = append(churnArgs, "--since="+cfg.StartTime.Format(time.RFC3339))
+	}
+	churnArgs = append(churnArgs, "--numstat", "--", path)
+
+	cmd = exec.Command("git", churnArgs...)
 	out, _ = cmd.Output()
 	reader := csv.NewReader(bytes.NewReader(out))
 	reader.Comma = '\t'
@@ -318,7 +409,24 @@ func analyzeFile(cfg *Config, path string) FileMetrics {
 	}
 	metrics.Churn = totalChanges + totalCommits
 
-	// (recent-window metrics removed)
+	// If we have global recent maps (populated by a single repo-wide pass),
+	// use them to populate recent metrics for this file without doing per-file
+	// git --follow invocations.
+	if recentCommitsMapGlobal != nil {
+		if v, ok := recentCommitsMapGlobal[path]; ok {
+			metrics.RecentCommits = v
+		}
+	}
+	if recentChurnMapGlobal != nil {
+		if v, ok := recentChurnMapGlobal[path]; ok {
+			metrics.RecentChurn = v
+		}
+	}
+	if recentContribMapGlobal != nil {
+		if m, ok := recentContribMapGlobal[path]; ok {
+			metrics.RecentContributors = len(m)
+		}
+	}
 
 	// Gini coefficient for author diversity
 	values := make([]float64, 0, len(contribCount))
@@ -332,7 +440,6 @@ func analyzeFile(cfg *Config, path string) FileMetrics {
 	return metrics
 }
 
-// shouldIgnore returns true if the given path matches any of the exclude patterns/prefixes.
 // shouldIgnore returns true if the given path matches any of the exclude patterns.
 // It supports simple glob patterns (using filepath.Match) when the pattern
 // contains wildcard characters (*, ?, [ ]). Patterns ending with '/' are treated
@@ -347,12 +454,7 @@ func shouldIgnore(path string, excludes []string) bool {
 
 		// If the pattern contains glob characters, try filepath.Match.
 		if strings.ContainsAny(ex, "*?[") || strings.Contains(ex, "**") {
-			pat := ex
-			// filepath.Match doesn't support ** the same way shells do; as a
-			// practical approximation, convert double-star to single-star.
-			if strings.Contains(pat, "**") {
-				pat = strings.ReplaceAll(pat, "**", "*")
-			}
+			pat := strings.ReplaceAll(ex, "**", "*")
 			if ok, err := filepath.Match(pat, path); err == nil && ok {
 				return true
 			}
@@ -363,28 +465,82 @@ func shouldIgnore(path string, excludes []string) bool {
 			continue
 		}
 
-		// Trailing slash: prefix match
+		// Handle prefix, suffix, or substring matches
 		if strings.HasSuffix(ex, "/") {
 			if strings.HasPrefix(path, ex) {
 				return true
 			}
-			continue
-		}
-
-		// Leading dot: extension/suffix match
-		if strings.HasPrefix(ex, ".") {
+		} else if strings.HasPrefix(ex, ".") {
 			if strings.HasSuffix(path, ex) {
 				return true
 			}
-			continue
-		}
-
-		// Fallback: substring match
-		if strings.Contains(path, ex) {
+		} else if strings.Contains(path, ex) {
 			return true
 		}
 	}
 	return false
+}
+
+// aggregateRecent performs a single repository-wide git log since cfg.StartTime
+// and aggregates per-file recent commits, churn and contributors. It avoids
+// expensive per-file --follow calls and is fast even on large repositories.
+func aggregateRecent(cfg *Config) error {
+	if cfg.StartTime.IsZero() {
+		return nil
+	}
+
+	since := cfg.StartTime.Format(time.RFC3339)
+	cmd := exec.Command("git", "-C", cfg.RepoPath, "log", "--since="+since, "--numstat", "--pretty=format:--%H|%an")
+	out, err := cmd.Output()
+	if err != nil {
+		return err
+	}
+
+	recentCommitsMapGlobal = make(map[string]int)
+	recentChurnMapGlobal = make(map[string]int)
+	recentContribMapGlobal = make(map[string]map[string]int)
+
+	lines := strings.Split(string(out), "\n")
+	var currentAuthor string
+	for _, l := range lines {
+		if strings.HasPrefix(l, "--") {
+			// commit header
+			parts := strings.SplitN(l[2:], "|", 2)
+			if len(parts) == 2 {
+				currentAuthor = parts[1]
+			} else {
+				currentAuthor = ""
+			}
+			continue
+		}
+		if strings.TrimSpace(l) == "" {
+			continue
+		}
+		parts := strings.SplitN(l, "\t", 3)
+		if len(parts) < 3 {
+			continue
+		}
+		addStr := parts[0]
+		delStr := parts[1]
+		path := parts[2]
+		add := 0
+		del := 0
+		if addStr != "-" {
+			add, _ = strconv.Atoi(addStr)
+		}
+		if delStr != "-" {
+			del, _ = strconv.Atoi(delStr)
+		}
+		recentChurnMapGlobal[path] += add + del
+		recentCommitsMapGlobal[path] += 1
+		if currentAuthor != "" {
+			if recentContribMapGlobal[path] == nil {
+				recentContribMapGlobal[path] = make(map[string]int)
+			}
+			recentContribMapGlobal[path][currentAuthor]++
+		}
+	}
+	return nil
 }
 
 // gini calculates the Gini coefficient for a set of values.
@@ -506,46 +662,6 @@ func computeScore(m *FileMetrics, mode string) float64 {
 		raw = breakdown["contrib"] + breakdown["commits"] + breakdown["size"] + breakdown["age"] + breakdown["churn"] + breakdown["gini"]
 	}
 
-	// Additional modes
-	switch strings.ToLower(mode) {
-	case "bus-factor":
-		// Emphasize single-ownership and inequality
-		const (
-			wInvContrib = 0.50
-			wGini       = 0.35
-			wCommits    = 0.08
-			wAge        = 0.07
-		)
-		invContrib := clamp01(1.0 - (float64(m.UniqueContributors) / maxContrib))
-		breakdown = map[string]float64{
-			"inv_contrib": wInvContrib * invContrib,
-			"gini":        wGini * m.Gini,
-			"commits":     wCommits * nCommits,
-			"age":         wAge * nAge,
-		}
-		raw = breakdown["inv_contrib"] + breakdown["gini"] + breakdown["commits"] + breakdown["age"]
-
-	case "maintainability":
-		// Surface large, frequently-changing files as refactor candidates
-		const (
-			wSize  = 0.30
-			wChurn = 0.28
-			wComm  = 0.18
-			wGini  = 0.12
-			wAgeM  = 0.12
-		)
-		breakdown = map[string]float64{
-			"size":    wSize * nSize,
-			"churn":   wChurn * nChurn,
-			"commits": wComm * nCommits,
-			"gini":    wGini * nGini,
-			"age":     wAgeM * nAge,
-		}
-		raw = breakdown["size"] + breakdown["churn"] + breakdown["commits"] + breakdown["gini"] + breakdown["age"]
-
-		// recent-activity mode removed
-	}
-
 	score := raw * 100.0
 	// If risk mode and this looks like a test file, slightly reduce score since
 	// tests often have narrow contributors and shouldn't be first-class risks.
@@ -561,14 +677,7 @@ func computeScore(m *FileMetrics, mode string) float64 {
 	for k, v := range breakdown {
 		m.Breakdown[k] = v * 100.0
 	}
-	// Store the adjusted score back to the metric (note: caller still assigns the return value)
-	// Final clamp to [0,100]
-	if score < 0 {
-		return 0
-	}
-	if score > 100 {
-		return 100
-	}
+
 	return score
 }
 
@@ -585,6 +694,49 @@ func rankFiles(files []FileMetrics, limit int) []FileMetrics {
 	return files
 }
 
+// truncatePath truncates a file path to a maximum width with ellipsis prefix.
+func truncatePath(path string, maxWidth int) string {
+	runes := []rune(path)
+	if len(runes) > maxWidth {
+		return "..." + string(runes[len(runes)-maxWidth+3:])
+	}
+	return path
+}
+
+// selectOutputFile returns the appropriate file handle for CSV output.
+func selectOutputFile(cfg *Config) *os.File {
+	if cfg.CSVFile != "" {
+		if file, err := os.Create(cfg.CSVFile); err == nil {
+			return file
+		}
+		fmt.Fprintf(os.Stderr, "warning: cannot open csv file %s: falling back to stdout\n", cfg.CSVFile)
+	}
+	return os.Stdout
+}
+
+// writeCSVResults writes the analysis results in CSV format.
+func writeCSVResults(w *csv.Writer, files []FileMetrics, maxWidth int, fmtFloat func(float64) string, intFmt string) {
+	// CSV header
+	w.Write([]string{"rank", "file", "score", "label", "contributors", "commits", "size_kb", "age_days", "churn", "gini", "first_commit"})
+	for i, f := range files {
+		p := truncatePath(f.Path, maxWidth)
+		rec := []string{
+			strconv.Itoa(i + 1),
+			p,
+			fmtFloat(f.Score),
+			labelColor(f.Score),
+			fmt.Sprintf(intFmt, f.UniqueContributors),
+			fmt.Sprintf(intFmt, f.Commits),
+			fmtFloat(float64(f.SizeBytes) / 1024.0),
+			fmt.Sprintf(intFmt, f.AgeDays),
+			fmt.Sprintf(intFmt, f.Churn),
+			fmtFloat(f.Gini),
+			f.FirstCommit.Format("2006-01-02"),
+		}
+		w.Write(rec)
+	}
+}
+
 // printResults outputs the analysis results in a formatted table.
 // For each file it shows rank, path (truncated if needed), importance score,
 // criticality label, and all individual metrics that contribute to the score.
@@ -592,6 +744,7 @@ func printResults(files []FileMetrics, cfg *Config) {
 	explain := cfg.Explain
 	precision := cfg.Precision
 	outFmt := cfg.Output
+
 	// helper format strings for numbers
 	numFmt := "%.*f"
 	intFmt := "%d"
@@ -599,6 +752,20 @@ func printResults(files []FileMetrics, cfg *Config) {
 	fmtFloat := func(v float64) string {
 		return fmt.Sprintf(numFmt, precision, v)
 	}
+
+	// If CSV output requested, skip printing the human-readable table
+	if outFmt == "csv" {
+		file := selectOutputFile(cfg)
+		w := csv.NewWriter(file)
+		writeCSVResults(w, files, maxPathWidth, fmtFloat, intFmt)
+		w.Flush()
+		if file != os.Stdout {
+			file.Close()
+			fmt.Fprintf(os.Stderr, "wrote CSV to %s\n", cfg.CSVFile)
+		}
+		return
+	}
+
 	// Define columns and initial header names
 	headers := []string{"Rank", "File", "Score", "Label", "Contrib", "Commits", "Size(KB)", "Age(d)", "Churn", "Gini", "First Commit"}
 
@@ -608,20 +775,14 @@ func printResults(files []FileMetrics, cfg *Config) {
 		widths[i] = len(h)
 	}
 
-	// Helper to consider a printable width for file path (truncate long paths)
-	const maxPathWidth = 40
-
 	for idx, f := range files {
 		// Rank width
-		rankStr := getRank(idx + 1)
+		rankStr := strconv.Itoa(idx + 1)
 		if len(rankStr) > widths[0] {
 			widths[0] = len(rankStr)
 		}
 		// File path width
-		p := f.Path
-		if len([]rune(p)) > maxPathWidth {
-			p = "..." + string([]rune(p)[len([]rune(p))-maxPathWidth+3:])
-		}
+		p := truncatePath(f.Path, maxPathWidth)
 		if len(p) > widths[1] {
 			widths[1] = len(p)
 		}
@@ -651,16 +812,10 @@ func printResults(files []FileMetrics, cfg *Config) {
 				widths[col] = len(n)
 			}
 		}
-		// Also check First Commit column width (last header)
-		if len(nums[len(nums)-1]) > widths[len(widths)-1] {
-			widths[len(widths)-1] = len(nums[len(nums)-1])
-		}
 	}
 
 	// Build format string dynamically
-	// Example: %-4s  %-40s  %6s  %-10s  %8s %8s %9s %7s %7s %6s  %s
 	fmts := []string{
-		// Right-align the Rank column for prettier numeric alignment in the table
 		fmt.Sprintf("%%%ds", widths[0]),
 		fmt.Sprintf("%%-%ds", widths[1]),
 		fmt.Sprintf("%%%ds", widths[2]),
@@ -685,64 +840,15 @@ func printResults(files []FileMetrics, cfg *Config) {
 		sepParts[i] = strings.Repeat("-", widths[i])
 	}
 
-	// If CSV output requested, skip printing the human-readable table header
-	// and separator; write CSV and return.
-	if outFmt == "csv" {
-		var file *os.File
-		var err error
-		if cfg.CSVFile != "" {
-			file, err = os.Create(cfg.CSVFile)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "warning: cannot open csv file %s for writing: %v; falling back to stdout\n", cfg.CSVFile, err)
-				file = os.Stdout
-			}
-		} else {
-			file = os.Stdout
-		}
-
-		w := csv.NewWriter(file)
-		// CSV header
-		w.Write([]string{"rank", "file", "score", "label", "contributors", "commits", "size_kb", "age_days", "churn", "gini", "first_commit"})
-		for i, f := range files {
-			p := f.Path
-			if len([]rune(p)) > maxPathWidth {
-				p = "..." + string([]rune(p)[len([]rune(p))-maxPathWidth+3:])
-			}
-			rec := []string{
-				strconv.Itoa(i + 1),
-				p,
-				fmtFloat(f.Score),
-				labelColor(f.Score),
-				fmt.Sprintf(intFmt, f.UniqueContributors),
-				fmt.Sprintf(intFmt, f.Commits),
-				fmtFloat(float64(f.SizeBytes) / 1024.0),
-				fmt.Sprintf(intFmt, f.AgeDays),
-				fmt.Sprintf(intFmt, f.Churn),
-				fmtFloat(f.Gini),
-				f.FirstCommit.Format("2006-01-02"),
-			}
-			w.Write(rec)
-		}
-		w.Flush()
-		if file != os.Stdout {
-			file.Close()
-			fmt.Fprintf(os.Stderr, "wrote CSV to %s\n", cfg.CSVFile)
-		}
-		return
-	}
-
 	// Print human-readable header and separator
 	fmt.Println(strings.Join(headerParts, "  "))
 	fmt.Println(strings.Join(sepParts, "  "))
 
 	// Print rows
 	for i, f := range files {
-		p := f.Path
-		if len([]rune(p)) > maxPathWidth {
-			p = "..." + string([]rune(p)[len([]rune(p))-maxPathWidth+3:])
-		}
+		p := truncatePath(f.Path, maxPathWidth)
 		rowVals := []interface{}{
-			getRank(i + 1),
+			strconv.Itoa(i + 1),
 			p,
 			fmtFloat(f.Score),
 			labelColor(f.Score),
@@ -758,7 +864,6 @@ func printResults(files []FileMetrics, cfg *Config) {
 		// Build formatted row using fmts
 		var parts []string
 		for j, rv := range rowVals {
-			// Ensure we always pass a string to the string-based format specifiers
 			parts = append(parts, fmt.Sprintf(fmts[j], fmt.Sprint(rv)))
 		}
 		fmt.Println(strings.Join(parts, "  "))
@@ -778,14 +883,6 @@ func printResults(files []FileMetrics, cfg *Config) {
 			fmt.Println()
 		}
 	}
-}
-
-// getRank returns a formatted rank indicator for a given position.
-// getRank returns a simple integer string for the rank (e.g., "1", "2").
-// This is used in both human-readable and CSV outputs to keep the rank
-// column compact and machine-friendly.
-func getRank(rank int) string {
-	return strconv.Itoa(rank)
 }
 
 // labelColor returns a text label indicating the criticality level
