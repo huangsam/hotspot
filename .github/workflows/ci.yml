@@ -38,9 +38,6 @@ jobs:
     - name: Download dependencies
       run: go mod download
 
-    - name: Run go vet
-      run: go vet ./...
-
     - name: Run golangci-lint
       uses: golangci/golangci-lint-action@v4
       with:
@@ -48,7 +45,7 @@ jobs:
         args: --timeout=5m
 
     - name: Run tests
-      run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+      run: make test
 
     - name: Build
       run: make build
