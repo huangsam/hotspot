@@ -50,3 +50,9 @@ help:
 	@echo "  make install  - Install to \$$GOPATH/bin"
 	@echo "  make test     - Run tests"
 	@echo "  make fmt      - Format code"
+	@echo "  make vet      - Run go vet"
+	@echo "  make check    - Run fmt, vet, and test"
+	@echo "  make help     - Show this help message"
+
+# Default target
+.DEFAULT_GOAL := build
