@@ -1,3 +1,4 @@
+// main holds all of the core and entry logic for hotspot CLI.
 package main
 
 import (
@@ -17,8 +18,10 @@ import (
 )
 
 // cached recent maps populated when a repo-wide recent aggregation is run
-var recentCommitsMapGlobal map[string]int
-var recentChurnMapGlobal map[string]int
+var (
+	recentCommitsMapGlobal map[string]int
+	recentChurnMapGlobal   map[string]int
+)
 
 // map[file] -> map[author]commitCount
 var recentContribMapGlobal map[string]map[string]int
@@ -465,15 +468,16 @@ func shouldIgnore(path string, excludes []string) bool {
 		}
 
 		// Handle prefix, suffix, or substring matches
-		if strings.HasSuffix(ex, "/") {
+		switch {
+		case strings.HasSuffix(ex, "/"):
 			if strings.HasPrefix(path, ex) {
 				return true
 			}
-		} else if strings.HasPrefix(ex, ".") {
+		case strings.HasPrefix(ex, "."):
 			if strings.HasSuffix(path, ex) {
 				return true
 			}
-		} else if strings.Contains(path, ex) {
+		case strings.Contains(path, ex):
 			return true
 		}
 	}
@@ -531,7 +535,7 @@ func aggregateRecent(cfg *Config) error {
 			del, _ = strconv.Atoi(delStr)
 		}
 		recentChurnMapGlobal[path] += add + del
-		recentCommitsMapGlobal[path] += 1
+		recentCommitsMapGlobal[path]++
 		if currentAuthor != "" {
 			if recentContribMapGlobal[path] == nil {
 				recentContribMapGlobal[path] = make(map[string]int)
@@ -768,7 +772,7 @@ func computeScore(m *FileMetrics, mode string) float64 {
 	// tests often have narrow contributors and shouldn't be first-class risks.
 	if strings.ToLower(mode) == "risk" {
 		if strings.Contains(m.Path, "_test") || strings.HasSuffix(m.Path, "_test.go") {
-			score = score * 0.75
+			score *= 0.75
 		}
 	}
 	// Save breakdown (scaled to percent contributions) in the metrics for explain mode.
@@ -818,7 +822,7 @@ func selectOutputFile(cfg *Config) *os.File {
 // writeCSVResults writes the analysis results in CSV format.
 func writeCSVResults(w *csv.Writer, files []FileMetrics, fmtFloat func(float64) string, intFmt string) {
 	// CSV header
-	w.Write([]string{"rank", "file", "score", "label", "contributors", "commits", "size_kb", "age_days", "churn", "gini", "first_commit"})
+	_ = w.Write([]string{"rank", "file", "score", "label", "contributors", "commits", "size_kb", "age_days", "churn", "gini", "first_commit"})
 	for i, f := range files {
 		rec := []string{
 			strconv.Itoa(i + 1),
@@ -833,7 +837,7 @@ func writeCSVResults(w *csv.Writer, files []FileMetrics, fmtFloat func(float64) 
 			fmtFloat(f.Gini),
 			f.FirstCommit.Format("2006-01-02"),
 		}
-		w.Write(rec)
+		_ = w.Write(rec)
 	}
 }
 
@@ -860,7 +864,7 @@ func printResults(files []FileMetrics, cfg *Config) {
 		writeCSVResults(w, files, fmtFloat, intFmt)
 		w.Flush()
 		if file != os.Stdout {
-			file.Close()
+			_ = file.Close()
 			fmt.Fprintf(os.Stderr, "wrote CSV to %s\n", cfg.CSVFile)
 		}
 		return
