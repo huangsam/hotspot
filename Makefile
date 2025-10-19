@@ -50,4 +50,3 @@ help:
 	@echo "  make install  - Install to \$$GOPATH/bin"
 	@echo "  make test     - Run tests"
 	@echo "  make fmt      - Format code"
-	@echo "  make
