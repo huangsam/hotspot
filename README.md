@@ -97,6 +97,7 @@ With `-explain`, see how each metric contributes to the score:
 ## Use Cases
 
 ### Daily Workflows
+
 ```bash
 # Morning standup - what's hot this sprint?
 critical-files -mode hot -start 2024-10-01T00:00:00Z -limit 15 .
@@ -109,6 +110,7 @@ critical-files -mode complexity -limit 20 .
 ```
 
 ### Team Management
+
 ```bash
 # Identify bus factor risks
 critical-files -mode risk -output csv -csv-file bus-factor.csv .
@@ -121,6 +123,7 @@ critical-files -mode security -output csv .
 ```
 
 ### Technical Debt
+
 ```bash
 # Stale important files needing attention
 critical-files -mode stale -exclude "test/,vendor/" .
