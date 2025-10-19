@@ -31,3 +31,4 @@ dist/
 .idea/
 *.cast
 /hotspot
+/coverage.txt
