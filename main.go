@@ -166,7 +166,7 @@ func parseFlags() (*Config, error) {
 	startDate := flag.String("start", "", "Start date in ISO8601 format (e.g., 2023-01-01T00:00:00Z)")
 	endDate := flag.String("end", "", "End date in ISO8601 format (defaults to current time)")
 	workers := flag.Int("workers", defaultWorkers, fmt.Sprintf("Number of concurrent workers (default: %d)", defaultWorkers))
-	mode := flag.String("mode", "hot", "Scoring mode: \"hot\" (hotspots) or \"risk\" (knowledge risk)")
+	mode := flag.String("mode", "hot", "Scoring mode: hot, risk, complexity, stale, onboarding, ownership, security")
 	exclude := flag.String("exclude", "", "Comma-separated list of path prefixes or patterns to ignore (e.g. vendor,node_modules,*.min.js)")
 	explain := flag.Bool("explain", false, "Print per-file component score breakdown (for debugging/tuning)")
 	precision := flag.Int("precision", defaultPrecision, "Decimal precision for numeric columns (1 or 2)")
@@ -573,13 +573,14 @@ func gini(values []float64) float64 {
 }
 
 // computeScore calculates a file's importance score (0-100) based on its metrics.
-// The score is a weighted sum of normalized metrics:
-// - Number of contributors (15%)
-// - Number of commits (25%)
-// - File size (15%)
-// - File age (15%)
-// - Code churn (25%)
-// - Author distribution evenness (5%)
+// Supports multiple scoring modes:
+// - hot: Activity hotspots (high commits, churn, contributors)
+// - risk: Knowledge risk/bus factor (few contributors, high inequality)
+// - complexity: Technical debt candidates (large, old, high churn)
+// - stale: Maintenance debt (important but untouched)
+// - onboarding: Files new developers should learn
+// - ownership: Healthy ownership patterns
+// - security: Security-critical file detection
 func computeScore(m *FileMetrics, mode string) float64 {
 	// Tunable maxima to normalize metrics. These are conservative defaults
 	// chosen to avoid a few outliers dominating the score. Consider making
@@ -613,18 +614,17 @@ func computeScore(m *FileMetrics, mode string) float64 {
 	// Gini: lower is healthier; invert and clamp
 	nGini := clamp01(1.0 - m.Gini)
 
+	// For stale mode, we need inverse of recent activity
+	nRecentCommits := clamp01(float64(m.RecentCommits) / 50.0) // assume 50 recent commits is high activity
+
 	// Prepare breakdown map to return component contributions
 	breakdown := make(map[string]float64)
 	var raw float64
+
 	switch strings.ToLower(mode) {
 	case "risk":
 		// Knowledge-risk focused scoring: prioritize concentration and bus-factor
-		// For risk mode we treat contributor concentration (low number of distinct
-		// contributors and high Gini) as higher risk.
-		// We'll invert some signals: fewer contributors => higher risk, higher
-		// Gini => higher risk.
 		invContrib := clamp01(1.0 - (float64(m.UniqueContributors) / maxContrib))
-		// Use Gini directly as inequality metric (higher => worse)
 		giniRaw := clamp01(m.Gini)
 
 		const (
@@ -642,14 +642,116 @@ func computeScore(m *FileMetrics, mode string) float64 {
 		breakdown["churn"] = wChurnRisk * nChurn
 		breakdown["commits"] = wCommRisk * nCommits
 		raw = breakdown["inv_contrib"] + breakdown["gini"] + breakdown["age"] + breakdown["size"] + breakdown["churn"] + breakdown["commits"]
+
+	case "complexity":
+		// Technical debt focus: large, old files with high total churn
+		const (
+			wSizeComplex  = 0.35
+			wAgeComplex   = 0.25
+			wChurnComplex = 0.25
+			wCommComplex  = 0.10
+			wContribLow   = 0.05 // prefer fewer contributors (concentrated complexity)
+		)
+		// Invert recent activity - we want files that aren't being actively worked on
+		invRecentCommits := clamp01(1.0 - nRecentCommits)
+		breakdown["size"] = wSizeComplex * nSize
+		breakdown["age"] = wAgeComplex * nAge
+		breakdown["churn"] = wChurnComplex * nChurn
+		breakdown["commits"] = wCommComplex * nCommits
+		breakdown["low_recent"] = wContribLow * invRecentCommits
+		raw = breakdown["size"] + breakdown["age"] + breakdown["churn"] + breakdown["commits"] + breakdown["low_recent"]
+
+	case "stale":
+		// Maintenance debt: important but haven't been touched recently
+		invRecentCommits := clamp01(1.0 - nRecentCommits)
+		const (
+			wAgeStale       = 0.30
+			wSizeStale      = 0.25
+			wInvRecentStale = 0.25 // penalize recent activity
+			wCommitsStale   = 0.15 // historically important
+			wContribStale   = 0.05
+		)
+		breakdown["age"] = wAgeStale * nAge
+		breakdown["size"] = wSizeStale * nSize
+		breakdown["inv_recent"] = wInvRecentStale * invRecentCommits
+		breakdown["commits"] = wCommitsStale * nCommits
+		breakdown["contrib"] = wContribStale * nContrib
+		raw = breakdown["age"] + breakdown["size"] + breakdown["inv_recent"] + breakdown["commits"] + breakdown["contrib"]
+
+	case "onboarding":
+		// Files new developers should learn: active, well-maintained, moderate complexity
+		const (
+			wContribOnboard = 0.30
+			wCommitsOnboard = 0.25
+			wSizeOnboard    = 0.20 // prefer moderate size (not too large)
+			wAgeOnboard     = 0.15 // some maturity is good
+			wGiniOnboard    = 0.10 // even distribution is healthy
+		)
+		// For size, prefer moderate - penalize both very small and very large
+		moderateSize := 1.0 - math.Abs(nSize-0.4) // peak at 40% of max
+		breakdown["contrib"] = wContribOnboard * nContrib
+		breakdown["commits"] = wCommitsOnboard * nCommits
+		breakdown["size"] = wSizeOnboard * clamp01(moderateSize)
+		breakdown["age"] = wAgeOnboard * nAge
+		breakdown["gini"] = wGiniOnboard * nGini
+		raw = breakdown["contrib"] + breakdown["commits"] + breakdown["size"] + breakdown["age"] + breakdown["gini"]
+
+	case "ownership":
+		// Healthy ownership patterns: even distribution, steady activity
+		const (
+			wGiniOwnership    = 0.35 // reward even distribution
+			wContribOwnership = 0.25 // moderate number of contributors
+			wCommitsOwnership = 0.20
+			wChurnOwnership   = 0.10 // steady but not chaotic
+			wAgeOwnership     = 0.10
+		)
+		// Prefer moderate contributors (not too few, not too many)
+		moderateContrib := 1.0 - math.Abs(nContrib-0.5)
+		breakdown["gini"] = wGiniOwnership * nGini
+		breakdown["contrib"] = wContribOwnership * clamp01(moderateContrib)
+		breakdown["commits"] = wCommitsOwnership * nCommits
+		breakdown["churn"] = wChurnOwnership * nChurn
+		breakdown["age"] = wAgeOwnership * nAge
+		raw = breakdown["gini"] + breakdown["contrib"] + breakdown["commits"] + breakdown["churn"] + breakdown["age"]
+
+	case "security":
+		// Security-critical file detection
+		invContrib := clamp01(1.0 - (float64(m.UniqueContributors) / maxContrib))
+		giniRaw := clamp01(m.Gini)
+
+		// Detect security-related keywords in path
+		securityBoost := 0.0
+		lowerPath := strings.ToLower(m.Path)
+		securityKeywords := []string{"auth", "password", "token", "secret", "crypto", "security", "login", "session", "oauth", "jwt", "credential", "permission", "acl", "rbac"}
+		for _, keyword := range securityKeywords {
+			if strings.Contains(lowerPath, keyword) {
+				securityBoost = 1.0
+				break
+			}
+		}
+
+		const (
+			wSecurityBoost = 0.30 // path-based detection
+			wAgeSecurity   = 0.25 // old security code = more exposure
+			wInvContribSec = 0.20 // fewer eyes = risk
+			wGiniSecurity  = 0.15 // concentration risk
+			wSizeSecurity  = 0.10
+		)
+		breakdown["sec_boost"] = wSecurityBoost * securityBoost
+		breakdown["age"] = wAgeSecurity * nAge
+		breakdown["inv_contrib"] = wInvContribSec * invContrib
+		breakdown["gini"] = wGiniSecurity * giniRaw
+		breakdown["size"] = wSizeSecurity * nSize
+		raw = breakdown["sec_boost"] + breakdown["age"] + breakdown["inv_contrib"] + breakdown["gini"] + breakdown["size"]
+
 	default:
 		// Hotspot scoring (default): where activity and volatility are concentrated
 		const (
 			wContrib = 0.18
-			wCommits = 0.28
+			wCommits = 0.28 // many code changes
 			wSize    = 0.16
 			wAge     = 0.08
-			wChurn   = 0.26
+			wChurn   = 0.26 // plenty of churn in the code
 			wGini    = 0.04
 		)
 		breakdown["contrib"] = wContrib * nContrib
