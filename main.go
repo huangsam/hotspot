@@ -64,7 +64,6 @@ type Config struct {
 
 const (
 	maxPathWidth     = 40
-	columnSpacing    = 2
 	maxLimitDefault  = 200
 	defaultWorkers   = 8
 	defaultLimit     = 10
