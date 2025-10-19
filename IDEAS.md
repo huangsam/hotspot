@@ -10,6 +10,12 @@ Code Quality & Testing
     - Empty files?
     - Binary files?
 
+Distribution
+
+- GitHub Actions / CI - Automate builds and tests:
+- Release automation - Use GoReleaser for multi-platform binaries
+- Installation script - Make it easier for users without Go installed
+
 Performance & Robustness
 
 - Progress indicators - For large repos, show progress (currently just emojis at start)
