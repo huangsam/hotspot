@@ -46,7 +46,6 @@ The `-mode` flag controls how files are scored and ranked:
 | **hot** (default) | Activity hotspots | Finding where most work happens |
 | **risk** | Knowledge/bus factor risk | Identifying single points of failure |
 | **complexity** | Technical debt | Finding refactoring candidates |
-| **fragile** | Bug risk | Spotting unstable, frequently-changed code |
 | **stale** | Maintenance debt | Important but neglected files |
 | **onboarding** | Learning priority | Files new developers should know |
 | **ownership** | Healthy patterns | Well-maintained collaborative files |
@@ -101,9 +100,6 @@ With `-explain`, see how each metric contributes to the score:
 ```bash
 # Morning standup - what's hot this sprint?
 hotspot -mode hot -start 2024-10-01T00:00:00Z -limit 15 .
-
-# Code review focus - what's fragile?
-hotspot -mode fragile -filter src/ -limit 10 .
 
 # Find refactoring targets
 hotspot -mode complexity -limit 20 .
