@@ -8,11 +8,8 @@ on:
 
 jobs:
   go-build:
-    name: CI
+    name: Go
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: ['1.24', '1.25']
 
     steps:
     - name: Checkout code
@@ -23,7 +20,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v6
       with:
-        go-version: ${{ matrix.go-version }}
+        go-version: '1.25'
 
     - name: Run lint
       uses: golangci/golangci-lint-action@v8
