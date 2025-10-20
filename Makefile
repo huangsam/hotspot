@@ -1,4 +1,4 @@
-.PHONY: build clean install test fmt lint help
+.PHONY: build clean install test format lint help
 
 # Binary name
 BINARY_NAME=hotspot
@@ -7,19 +7,19 @@ BINARY_NAME=hotspot
 build:
 	@echo "Building $(BINARY_NAME)..."
 	go build -o $(BINARY_NAME) main.go
-	@echo "✓ Build complete: ./$(BINARY_NAME)"
+	@echo "✅ Build complete: ./$(BINARY_NAME)"
 
 # Clean build artifacts
 clean:
 	@echo "Cleaning..."
 	@rm -f $(BINARY_NAME)
-	@echo "✓ Clean complete"
+	@echo "✅ Clean complete"
 
 # Install to $GOPATH/bin
 install: build
 	@echo "Installing $(BINARY_NAME) to $(GOPATH)/bin..."
 	@cp $(BINARY_NAME) $(GOPATH)/bin/
-	@echo "✓ Installed: $(GOPATH)/bin/$(BINARY_NAME)"
+	@echo "✅ Installed: $(GOPATH)/bin/$(BINARY_NAME)"
 
 # Run tests
 test:
@@ -27,20 +27,20 @@ test:
 	go test -v ./...
 
 # Format code
-fmt:
+format:
 	@echo "Formatting code..."
 	golangci-lint fmt
-	@echo "✓ Format complete"
+	@echo "✅ Format complete"
 
 # Lint code
 lint:
 	@echo "Linting code..."
 	golangci-lint run
-	@echo "✓ Lint complete"
+	@echo "✅ Lint complete"
 
 # Run all checks
-check: fmt lint test
-	@echo "✓ All checks passed"
+check: format lint test
+	@echo "✅ All checks passed"
 
 # Show help
 help:
@@ -49,9 +49,9 @@ help:
 	@echo "  make clean    - Remove build artifacts"
 	@echo "  make install  - Install to \$$GOPATH/bin"
 	@echo "  make test     - Run tests"
-	@echo "  make fmt      - Format code"
+	@echo "  make format   - Format code"
 	@echo "  make lint     - Lint code"
-	@echo "  make check    - Run fmt, lint, and test"
+	@echo "  make check    - Run format, lint, and test"
 	@echo "  make help     - Show this help message"
 
 # Default target
