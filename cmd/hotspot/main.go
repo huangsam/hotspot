@@ -32,13 +32,13 @@ func main() {
 
 		// Build file list from union of recent maps so we only analyze files touched since StartTime
 		seen := make(map[string]bool)
-		for k := range core.RecentCommitsMapGlobal {
+		for k := range core.GetRecentCommitsMapGlobal() {
 			seen[k] = true
 		}
-		for k := range core.RecentChurnMapGlobal {
+		for k := range core.GetRecentChurnMapGlobal() {
 			seen[k] = true
 		}
-		for k := range core.RecentContribMapGlobal {
+		for k := range core.GetRecentContribMapGlobal() {
 			seen[k] = true
 		}
 		for f := range seen {
