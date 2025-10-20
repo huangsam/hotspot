@@ -138,12 +138,9 @@ func main() {
 	// If the user requested a follow-pass, re-analyze the top N files using
 	// git --follow to account for renames/history and then re-rank.
 	if cfg.Follow && len(ranked) > 0 {
-		n := cfg.ResultLimit
-		if n > len(ranked) {
-			n = len(ranked)
-		}
+		n := min(cfg.ResultLimit, len(ranked))
 		fmt.Printf("🔁 Running --follow re-analysis for top %d files...\n", n)
-		for i := 0; i < n; i++ {
+		for i := range n {
 			f := ranked[i]
 			// re-analyze with follow enabled
 			rean := analyzeFileCommon(cfg, f.Path, true)
@@ -285,15 +282,13 @@ func analyzeRepo(cfg *Config, files []string) []FileMetrics {
 	resultCh := make(chan FileMetrics, len(files))
 	var wg sync.WaitGroup
 
-	for i := 0; i < cfg.Workers; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range cfg.Workers {
+		wg.Go(func() {
 			for f := range fileCh {
 				metrics := analyzeFileCommon(cfg, f, false)
 				resultCh <- metrics
 			}
-		}()
+		})
 	}
 
 	for _, f := range filtered {
@@ -566,8 +561,8 @@ func gini(values []float64) float64 {
 	}
 
 	var diffSum float64
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
+	for i := range n {
+		for j := range n {
 			diffSum += math.Abs(values[i] - values[j])
 		}
 	}
@@ -951,7 +946,7 @@ func printResults(files []FileMetrics, cfg *Config) {
 	// Print rows
 	for i, f := range files {
 		p := truncatePath(f.Path, maxPathWidth)
-		rowVals := []interface{}{
+		rowVals := []any{
 			strconv.Itoa(i + 1),
 			p,
 			fmtFloat(f.Score),
