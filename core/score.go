@@ -14,6 +14,11 @@ import (
 // - complexity: Technical debt candidates (large, old, high total churn)
 // - stale: Maintenance debt (important but untouched)
 func computeScore(m *schema.FileMetrics, mode string) float64 {
+	// DEFENSIVE CHECK: If the file has no content, its score should be 0.
+	if m.SizeBytes == 0 {
+		return 0.0
+	}
+
 	// Tunable maxima to normalize metrics.
 	const (
 		maxContrib = 20.0   // contributors beyond this saturate

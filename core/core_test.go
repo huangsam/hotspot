@@ -78,7 +78,7 @@ func TestComputeScoreHotMode(t *testing.T) {
 				Path:               "test.go",
 				UniqueContributors: 0,
 				Commits:            0,
-				SizeBytes:          0,
+				SizeBytes:          1,
 				AgeDays:            0,
 				Churn:              0,
 				Gini:               0,
@@ -131,6 +131,20 @@ func TestComputeScoreHotMode(t *testing.T) {
 				t.Error("computeScore() did not populate breakdown map")
 			}
 		})
+	}
+}
+
+func TestComputeScoreHotMode_EmptyFile(t *testing.T) {
+	metrics := schema.FileMetrics{
+		Path:      "active.go",
+		SizeBytes: 0,
+	}
+	score := computeScore(&metrics, "hot")
+	if score != 0.00 {
+		t.Error("computeScore() should not generate valid score for an empty file")
+	}
+	if len(metrics.Breakdown) > 0 {
+		t.Error("computeScore() should not generate breakdown for an empty file")
 	}
 }
 
@@ -231,10 +245,10 @@ func TestComputeScoreAllModes(t *testing.T) {
 // TestRankFiles tests file ranking logic
 func TestRankFiles(t *testing.T) {
 	files := []schema.FileMetrics{
-		{Path: "low.go", Score: 10},
-		{Path: "high.go", Score: 90},
-		{Path: "medium.go", Score: 50},
-		{Path: "critical.go", Score: 95},
+		{Path: "low.go", SizeBytes: 1, Score: 10},
+		{Path: "high.go", SizeBytes: 1, Score: 90},
+		{Path: "medium.go", SizeBytes: 1, Score: 50},
+		{Path: "critical.go", SizeBytes: 1, Score: 95},
 	}
 
 	t.Run("rank and limit", func(t *testing.T) {
