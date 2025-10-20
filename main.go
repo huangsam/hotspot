@@ -201,8 +201,8 @@ func parseFlags() (*Config, error) {
 	defaults := []string{"vendor/", "node_modules/", "third_party/", ".min.js", ".min.css"}
 	cfg.Excludes = defaults
 	if *exclude != "" {
-		parts := strings.Split(*exclude, ",")
-		for _, p := range parts {
+		parts := strings.SplitSeq(*exclude, ",")
+		for p := range parts {
 			p = strings.TrimSpace(p)
 			if p != "" {
 				cfg.Excludes = append(cfg.Excludes, p)
