@@ -6,7 +6,7 @@ BINARY_NAME=hotspot
 # Build the binary
 build:
 	@echo "Building $(BINARY_NAME)..."
-	go build -o $(BINARY_NAME) main.go
+	go build -o $(BINARY_NAME) cmd/hotspot/main.go
 	@echo "✅ Build complete: ./$(BINARY_NAME)"
 
 # Clean build artifacts
