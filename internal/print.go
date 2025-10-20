@@ -159,3 +159,12 @@ func PrintResults(files []schema.FileMetrics, cfg *schema.Config) {
 		}
 	}
 }
+
+// truncatePath truncates a file path to a maximum width with ellipsis prefix.
+func truncatePath(path string, maxWidth int) string {
+	runes := []rune(path)
+	if len(runes) > maxWidth {
+		return "..." + string(runes[len(runes)-maxWidth+3:])
+	}
+	return path
+}
