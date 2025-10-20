@@ -64,8 +64,8 @@ hotspot -mode complexity -limit 10 -follow .
 
 |Size|Duration|
 |---|---|
-|Typical repo (1k files)|2-5 seconds|
-|Large repo (10k+ files)|15-30 seconds|
+|**Typical repo (1k files)**|2-5 seconds|
+|**Large repo (10k+ files)**|15-30 seconds|
 
 ## Tips
 
