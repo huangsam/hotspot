@@ -1,6 +1,8 @@
-# hotspot
+# Hotspot
 
-A powerful Git repository analyzer that identifies critical files based on multiple scoring modes. Uses commit history, file metrics, and contributor patterns to surface files that need attention.
+Instantly find which code requires refactoring and resources.
+
+Hotspot is a powerful Git repository analyzer that identifies critical files based on multiple scoring modes. It uses commit history, file metrics, and contributor patterns to surface files that need attention.
 
 ## Features
 
