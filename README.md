@@ -47,9 +47,6 @@ The `-mode` flag controls how files are scored and ranked:
 | **risk** | Knowledge/bus factor risk | Identifying single points of failure |
 | **complexity** | Technical debt | Finding refactoring candidates |
 | **stale** | Maintenance debt | Important but neglected files |
-| **onboarding** | Learning priority | Files new developers should know |
-| **ownership** | Healthy patterns | Well-maintained collaborative files |
-| **security** | Security-critical | Auth, crypto, and sensitive code paths |
 
 ### Filtering & Exclusions
 
@@ -95,36 +92,26 @@ With `-explain`, see how each metric contributes to the score:
 
 ## Use Cases
 
-### Daily Workflows
+### Daily & Sprint Workflows
 
 ```bash
-# Morning standup - what's hot this sprint?
+# Current Activity Hotspots
 hotspot -mode hot -start 2024-10-01T00:00:00Z -limit 15 .
 
-# Find refactoring targets
+# Immediate Refactoring Targets
 hotspot -mode complexity -limit 20 .
 ```
 
-### Team Management
+### Strategic Risk & Debt Management
 
 ```bash
-# Identify bus factor risks
+# Bus Factor/Knowledge Risk
 hotspot -mode risk -output csv -csv-file bus-factor.csv .
 
-# Onboarding checklist for new hires
-hotspot -mode onboarding -limit 25 .
-
-# Security audit focus areas
-hotspot -mode security -output csv .
-```
-
-### Technical Debt
-
-```bash
-# Stale important files needing attention
+# Maintenance Debt Audit
 hotspot -mode stale -exclude "test/,vendor/" .
 
-# Complex files with follow tracking
+# Complex Files with History
 hotspot -mode complexity -limit 10 -follow .
 ```
 

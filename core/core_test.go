@@ -199,54 +199,9 @@ func TestComputeScoreRiskMode(t *testing.T) {
 	}
 }
 
-// TestComputeScoreSecurityMode tests security mode scoring
-func TestComputeScoreSecurityMode(t *testing.T) {
-	tests := []struct {
-		name        string
-		path        string
-		expectBoost bool
-	}{
-		{"auth file", "src/auth/login.go", true},
-		{"password file", "utils/password_hash.go", true},
-		{"token handler", "api/token.go", true},
-		{"crypto module", "pkg/crypto/aes.go", true},
-		{"oauth controller", "oauth2_provider.go", true},
-		{"jwt library", "lib/jwt.go", true},
-		{"regular file", "main.go", false},
-		{"util file", "utils/helpers.go", false},
-		{"test file", "auth_test.go", true}, // still has 'auth' keyword
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			metrics := schema.FileMetrics{
-				Path:               tt.path,
-				UniqueContributors: 3,
-				Commits:            20,
-				SizeBytes:          30 * 1024,
-				AgeDays:            500,
-				Churn:              100,
-				Gini:               0.4,
-			}
-			score := computeScore(&metrics, "security")
-
-			// Files with security keywords should score higher
-			if tt.expectBoost {
-				if score < 20 {
-					t.Errorf("security mode for %s = %f, expected boost from keywords", tt.path, score)
-				}
-			}
-
-			if score < 0 || score > 100 {
-				t.Errorf("computeScore(security) = %f, must be in range [0, 100]", score)
-			}
-		})
-	}
-}
-
 // TestComputeScoreAllModes ensures all modes produce valid scores
 func TestComputeScoreAllModes(t *testing.T) {
-	modes := []string{"hot", "risk", "complexity", "fragile", "stale", "onboarding", "ownership", "security"}
+	modes := []string{"hot", "risk", "complexity", "stale"}
 
 	metrics := schema.FileMetrics{
 		Path:               "test.go",
