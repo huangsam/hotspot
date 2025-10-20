@@ -46,9 +46,9 @@ func AggregateRecent(cfg *schema.Config) error {
 		return err
 	}
 
-	RecentCommitsMapGlobal = make(map[string]int)
-	RecentChurnMapGlobal = make(map[string]int)
-	RecentContribMapGlobal = make(map[string]map[string]int)
+	recentCommitsMapGlobal = make(map[string]int)
+	recentChurnMapGlobal = make(map[string]int)
+	recentContribMapGlobal = make(map[string]map[string]int)
 
 	lines := strings.Split(string(out), "\n")
 	var currentAuthor string
@@ -81,13 +81,13 @@ func AggregateRecent(cfg *schema.Config) error {
 		if delStr != "-" {
 			del, _ = strconv.Atoi(delStr)
 		}
-		RecentChurnMapGlobal[path] += add + del
-		RecentCommitsMapGlobal[path]++
+		recentChurnMapGlobal[path] += add + del
+		recentCommitsMapGlobal[path]++
 		if currentAuthor != "" {
-			if RecentContribMapGlobal[path] == nil {
-				RecentContribMapGlobal[path] = make(map[string]int)
+			if recentContribMapGlobal[path] == nil {
+				recentContribMapGlobal[path] = make(map[string]int)
 			}
-			RecentContribMapGlobal[path][currentAuthor]++
+			recentContribMapGlobal[path][currentAuthor]++
 		}
 	}
 	return nil
