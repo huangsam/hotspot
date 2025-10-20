@@ -24,7 +24,7 @@ install: build
 # Run tests
 test:
 	@echo "Running tests..."
-	go test -v ./...
+	go test ./...
 
 # Format code
 format:
