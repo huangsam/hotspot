@@ -16,7 +16,6 @@ Hotspot is the Git analyzer that cuts through history to instantly show you whic
 ## Installation
 
 ```bash
-go build -o hotspot main.go
 go install github.com/huangsam/hotspot@latest
 ```
 
