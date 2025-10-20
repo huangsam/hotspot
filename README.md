@@ -17,14 +17,14 @@ Perfect for:
 - 🧹 **Tech leads** prioritizing refactors and risk
 - 🧾 **Managers** monitoring bus factor and maintenance debt
 
-## Quick Start
+## Quick start
 
 ```bash
 go install github.com/huangsam/hotspot@latest
 hotspot .
 ```
 
-## Scoring Modes
+## Scoring modes
 
 The core power of Hotspot is the `-mode` flag, which defines the ranking algorithm:
 
@@ -35,7 +35,7 @@ The core power of Hotspot is the `-mode` flag, which defines the ranking algorit
 | **complexity** | Technical debt candidates |
 | **stale** | Maintenance debt |
 
-## Common Use Cases
+## Common use cases
 
 ### Daily & Sprint Workflows
 
@@ -62,8 +62,10 @@ hotspot -mode complexity -limit 10 -follow .
 
 ## Performance
 
-- **Typical repo (1k files)**: 2-5 seconds
-- **Large repo (10k+ files)**: 15-30 seconds
+|Size|Duration|
+|---|---|
+|Typical repo (1k files)|2-5 seconds|
+|Large repo (10k+ files)|15-30 seconds|
 
 ## Tips
 
