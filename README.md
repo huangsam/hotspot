@@ -50,11 +50,10 @@ hotspot -mode complexity -limit 10 -follow .
 - **Typical repo (1k files)**: 2-5 seconds
 - **Large repo (10k+ files)**: 15-30 seconds
 
-Adjust `-workers` based on your CPU cores for optimal performance.
-
 ## Tips
 
 - Start with `hotspot .` for a quick snapshot
 - Combine filters and excludes for focus
 - Use CSV export for tracking trends
 - Try `-explain` to see how each metric affects ranking
+- Adjust `-workers` based on your CPU cores for optimal performance
