@@ -20,25 +20,12 @@ jobs:
       with:
         fetch-depth: 0  # Full history for git log commands
 
-    - name: Set up Go
+    - name: Setup Go
       uses: actions/setup-go@v5
       with:
         go-version: ${{ matrix.go-version }}
 
-    - name: Cache Go modules
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-${{ matrix.go-version }}-
-
-    - name: Download dependencies
-      run: go mod download
-
-    - name: Run golangci-lint
+    - name: Run lint
       uses: golangci/golangci-lint-action@v4
       with:
         version: latest
@@ -47,7 +34,7 @@ jobs:
     - name: Run tests
       run: make test
 
-    - name: Build
+    - name: Run build
       run: make build
 
     - name: Upload artifact
