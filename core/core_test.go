@@ -1,10 +1,11 @@
-package main
+package core
 
 import (
 	"math"
-	"strings"
 	"testing"
 	"time"
+
+	"github.com/huangsam/hotspot/schema"
 )
 
 // TestGini tests the Gini coefficient calculation
@@ -67,13 +68,13 @@ func TestGini(t *testing.T) {
 func TestComputeScoreHotMode(t *testing.T) {
 	tests := []struct {
 		name     string
-		metrics  FileMetrics
+		metrics  schema.FileMetrics
 		minScore float64
 		maxScore float64
 	}{
 		{
 			name: "zero metrics",
-			metrics: FileMetrics{
+			metrics: schema.FileMetrics{
 				Path:               "test.go",
 				UniqueContributors: 0,
 				Commits:            0,
@@ -87,7 +88,7 @@ func TestComputeScoreHotMode(t *testing.T) {
 		},
 		{
 			name: "high activity file",
-			metrics: FileMetrics{
+			metrics: schema.FileMetrics{
 				Path:               "active.go",
 				UniqueContributors: 10,
 				Commits:            100,
@@ -101,7 +102,7 @@ func TestComputeScoreHotMode(t *testing.T) {
 		},
 		{
 			name: "saturated metrics",
-			metrics: FileMetrics{
+			metrics: schema.FileMetrics{
 				Path:               "huge.go",
 				UniqueContributors: 30,   // beyond maxContrib
 				Commits:            1000, // beyond maxCommits
@@ -137,13 +138,13 @@ func TestComputeScoreHotMode(t *testing.T) {
 func TestComputeScoreRiskMode(t *testing.T) {
 	tests := []struct {
 		name     string
-		metrics  FileMetrics
+		metrics  schema.FileMetrics
 		minScore float64
 		maxScore float64
 	}{
 		{
 			name: "low risk - many contributors, low gini",
-			metrics: FileMetrics{
+			metrics: schema.FileMetrics{
 				Path:               "safe.go",
 				UniqueContributors: 15,
 				Commits:            50,
@@ -157,7 +158,7 @@ func TestComputeScoreRiskMode(t *testing.T) {
 		},
 		{
 			name: "high risk - few contributors, high gini",
-			metrics: FileMetrics{
+			metrics: schema.FileMetrics{
 				Path:               "risky.go",
 				UniqueContributors: 2,
 				Commits:            100,
@@ -171,7 +172,7 @@ func TestComputeScoreRiskMode(t *testing.T) {
 		},
 		{
 			name: "test file should get reduced score",
-			metrics: FileMetrics{
+			metrics: schema.FileMetrics{
 				Path:               "controller_test.go",
 				UniqueContributors: 1,
 				Commits:            50,
@@ -218,7 +219,7 @@ func TestComputeScoreSecurityMode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			metrics := FileMetrics{
+			metrics := schema.FileMetrics{
 				Path:               tt.path,
 				UniqueContributors: 3,
 				Commits:            20,
@@ -247,7 +248,7 @@ func TestComputeScoreSecurityMode(t *testing.T) {
 func TestComputeScoreAllModes(t *testing.T) {
 	modes := []string{"hot", "risk", "complexity", "fragile", "stale", "onboarding", "ownership", "security"}
 
-	metrics := FileMetrics{
+	metrics := schema.FileMetrics{
 		Path:               "test.go",
 		UniqueContributors: 5,
 		Commits:            50,
@@ -272,165 +273,9 @@ func TestComputeScoreAllModes(t *testing.T) {
 	}
 }
 
-// TestShouldIgnore tests path exclusion logic
-func TestShouldIgnore(t *testing.T) {
-	tests := []struct {
-		name       string
-		path       string
-		excludes   []string
-		wantIgnore bool
-	}{
-		{
-			name:       "empty excludes",
-			path:       "src/main.go",
-			excludes:   []string{},
-			wantIgnore: false,
-		},
-		{
-			name:       "prefix match",
-			path:       "vendor/github.com/lib/file.go",
-			excludes:   []string{"vendor/"},
-			wantIgnore: true,
-		},
-		{
-			name:       "suffix match",
-			path:       "dist/bundle.min.js",
-			excludes:   []string{".min.js"},
-			wantIgnore: true,
-		},
-		{
-			name:       "glob match basename",
-			path:       "src/file.min.js",
-			excludes:   []string{"*.min.js"},
-			wantIgnore: true,
-		},
-		{
-			name:       "glob match with test suffix",
-			path:       "test/unit_test.go",
-			excludes:   []string{"*_test.go"},
-			wantIgnore: true,
-		},
-		{
-			name:       "substring match",
-			path:       "src/generated/code.go",
-			excludes:   []string{"generated"},
-			wantIgnore: true,
-		},
-		{
-			name:       "no match",
-			path:       "src/core/engine.go",
-			excludes:   []string{"vendor/", "node_modules/", ".min.js"},
-			wantIgnore: false,
-		},
-		{
-			name:       "multiple excludes with match",
-			path:       "node_modules/react/index.js",
-			excludes:   []string{"vendor/", "node_modules/", "third_party/"},
-			wantIgnore: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := shouldIgnore(tt.path, tt.excludes)
-			if got != tt.wantIgnore {
-				t.Errorf("shouldIgnore(%q, %v) = %v, want %v", tt.path, tt.excludes, got, tt.wantIgnore)
-			}
-		})
-	}
-}
-
-// TestTruncatePath tests path truncation logic
-func TestTruncatePath(t *testing.T) {
-	tests := []struct {
-		name     string
-		path     string
-		maxWidth int
-		wantLen  int
-	}{
-		{
-			name:     "short path no truncation",
-			path:     "main.go",
-			maxWidth: 20,
-			wantLen:  7,
-		},
-		{
-			name:     "exact length no truncation",
-			path:     "src/main.go",
-			maxWidth: 11,
-			wantLen:  11,
-		},
-		{
-			name:     "long path truncated",
-			path:     "very/long/path/to/some/deeply/nested/file.go",
-			maxWidth: 20,
-			wantLen:  20,
-		},
-		{
-			name:     "unicode characters",
-			path:     "src/文件/test.go",
-			maxWidth: 10,
-			wantLen:  10,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := truncatePath(tt.path, tt.maxWidth)
-			gotLen := len([]rune(got))
-
-			// Verify result length is within bounds
-			if gotLen > tt.maxWidth {
-				t.Errorf("truncatePath(%q, %d) produced %q with length %d, exceeds maxWidth",
-					tt.path, tt.maxWidth, got, gotLen)
-			}
-
-			// For paths that should be truncated, verify they start with "..."
-			if len([]rune(tt.path)) > tt.maxWidth {
-				if !strings.HasPrefix(got, "...") {
-					t.Errorf("truncatePath(%q, %d) = %q, expected to start with '...'",
-						tt.path, tt.maxWidth, got)
-				}
-			}
-
-			// Verify expected length
-			if gotLen != tt.wantLen {
-				t.Errorf("truncatePath(%q, %d) length = %d, want %d (result: %q)",
-					tt.path, tt.maxWidth, gotLen, tt.wantLen, got)
-			}
-		})
-	}
-}
-
-// TestLabelColor tests criticality label assignment
-func TestLabelColor(t *testing.T) {
-	tests := []struct {
-		score float64
-		want  string
-	}{
-		{0, "Low"},
-		{39.9, "Low"},
-		{40, "Moderate"},
-		{59.9, "Moderate"},
-		{60, "High"},
-		{79.9, "High"},
-		{80, "Critical"},
-		{100, "Critical"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.want, func(t *testing.T) {
-			got := labelColor(tt.score)
-			if got != tt.want {
-				t.Errorf("labelColor(%f) = %q, want %q", tt.score, got, tt.want)
-			}
-		})
-	}
-}
-
 // TestRankFiles tests file ranking logic
 func TestRankFiles(t *testing.T) {
-	files := []FileMetrics{
+	files := []schema.FileMetrics{
 		{Path: "low.go", Score: 10},
 		{Path: "high.go", Score: 90},
 		{Path: "medium.go", Score: 50},
@@ -438,30 +283,30 @@ func TestRankFiles(t *testing.T) {
 	}
 
 	t.Run("rank and limit", func(t *testing.T) {
-		ranked := rankFiles(files, 2)
+		ranked := RankFiles(files, 2)
 		if len(ranked) != 2 {
-			t.Errorf("rankFiles() returned %d files, want 2", len(ranked))
+			t.Errorf("RankFiles() returned %d files, want 2", len(ranked))
 		}
 		if ranked[0].Path != "critical.go" {
-			t.Errorf("rankFiles()[0] = %q, want critical.go", ranked[0].Path)
+			t.Errorf("RankFiles()[0] = %q, want critical.go", ranked[0].Path)
 		}
 		if ranked[1].Path != "high.go" {
-			t.Errorf("rankFiles()[1] = %q, want high.go", ranked[1].Path)
+			t.Errorf("RankFiles()[1] = %q, want high.go", ranked[1].Path)
 		}
 	})
 
 	t.Run("limit exceeds length", func(t *testing.T) {
-		ranked := rankFiles(files, 10)
+		ranked := RankFiles(files, 10)
 		if len(ranked) != 4 {
-			t.Errorf("rankFiles() returned %d files, want 4", len(ranked))
+			t.Errorf("RankFiles() returned %d files, want 4", len(ranked))
 		}
 	})
 
 	t.Run("scores in descending order", func(t *testing.T) {
-		ranked := rankFiles(files, 10)
+		ranked := RankFiles(files, 10)
 		for i := 1; i < len(ranked); i++ {
 			if ranked[i].Score > ranked[i-1].Score {
-				t.Errorf("rankFiles() not sorted: ranked[%d].Score=%f > ranked[%d].Score=%f",
+				t.Errorf("RankFiles() not sorted: ranked[%d].Score=%f > ranked[%d].Score=%f",
 					i, ranked[i].Score, i-1, ranked[i-1].Score)
 			}
 		}
@@ -479,7 +324,7 @@ func BenchmarkGini(b *testing.B) {
 
 // BenchmarkComputeScore benchmarks score calculation
 func BenchmarkComputeScore(b *testing.B) {
-	metrics := FileMetrics{
+	metrics := schema.FileMetrics{
 		Path:               "test.go",
 		UniqueContributors: 5,
 		Commits:            50,
