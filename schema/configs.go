@@ -9,7 +9,6 @@ import (
 )
 
 const (
-	maxPathWidth     = 40
 	maxLimitDefault  = 200
 	defaultWorkers   = 8
 	defaultLimit     = 10
