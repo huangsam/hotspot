@@ -1,4 +1,4 @@
-.PHONY: build clean install test fmt vet help
+.PHONY: build clean install test fmt lint help
 
 # Binary name
 BINARY_NAME=hotspot
@@ -29,17 +29,17 @@ test:
 # Format code
 fmt:
 	@echo "Formatting code..."
-	go fmt ./...
+	golangci-lint fmt
 	@echo "✓ Format complete"
 
-# Run go vet
-vet:
-	@echo "Running go vet..."
-	go vet ./...
-	@echo "✓ Vet complete"
+# Lint code
+lint:
+	@echo "Linting code..."
+	golangci-lint run
+	@echo "✓ Lint complete"
 
 # Run all checks
-check: fmt vet test
+check: fmt lint test
 	@echo "✓ All checks passed"
 
 # Show help
@@ -50,8 +50,8 @@ help:
 	@echo "  make install  - Install to \$$GOPATH/bin"
 	@echo "  make test     - Run tests"
 	@echo "  make fmt      - Format code"
-	@echo "  make vet      - Run go vet"
-	@echo "  make check    - Run fmt, vet, and test"
+	@echo "  make lint     - Lint code"
+	@echo "  make check    - Run fmt, lint, and test"
 	@echo "  make help     - Show this help message"
 
 # Default target
