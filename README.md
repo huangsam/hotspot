@@ -17,12 +17,23 @@ Perfect for:
 - 🧹 **Tech leads** prioritizing refactors and risk
 - 🧾 **Managers** monitoring bus factor and maintenance debt
 
-## Quick start
+## Quick Start
 
 ```bash
 go install github.com/huangsam/hotspot@latest
 hotspot .
 ```
+
+## Scoring Modes
+
+The core power of Hotspot is the `-mode` flag, which defines the ranking algorithm:
+
+| Mode | Focus |
+|------|---------|
+| **hot** (default) | Activity hotspots |
+| **risk** | Knowledge/Bus factor risk |
+| **complexity** | Technical debt candidates |
+| **stale** | Maintenance debt |
 
 ## Common Use Cases
 
