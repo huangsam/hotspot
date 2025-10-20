@@ -1,5 +1,9 @@
 # Hotspot
 
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/huangsam/hotspot/ci.yml)](https://github.com/huangsam/hotspot/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/huangsam/hotspot)](https://goreportcard.com/report/github.com/huangsam/hotspot)
+[![License](https://img.shields.io/github/license/huangsam/hotspot)](https://github.com/huangsam/hotspot/blob/main/LICENSE)
+
 Hotspot is the Git analyzer that cuts through history to instantly show you which files are your greatest risk.
 
 - 🔍 **See what matters** — rank files by activity, ownership, or complexity
