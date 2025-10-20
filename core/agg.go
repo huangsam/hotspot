@@ -46,9 +46,9 @@ func AggregateRecent(cfg *schema.Config) error {
 		return err
 	}
 
-	recentCommitsMapGlobal = make(map[string]int)
-	recentChurnMapGlobal = make(map[string]int)
-	recentContribMapGlobal = make(map[string]map[string]int)
+	recentCommitsMapGlobal := schema.GetRecentCommitsMapGlobal()
+	recentChurnMapGlobal := schema.GetRecentChurnMapGlobal()
+	recentContribMapGlobal := schema.GetRecentContribMapGlobal()
 
 	lines := strings.Split(string(out), "\n")
 	var currentAuthor string

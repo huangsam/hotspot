@@ -161,17 +161,17 @@ func AnalyzeFileCommon(cfg *schema.Config, path string, useFollow bool) schema.F
 	// If we have global recent maps (populated by a single repo-wide pass),
 	// use them to populate recent metrics for this file without doing per-file
 	// git --follow invocations.
-	if recentCommitsMapGlobal != nil {
+	if recentCommitsMapGlobal := schema.GetRecentCommitsMapGlobal(); recentCommitsMapGlobal != nil {
 		if v, ok := recentCommitsMapGlobal[path]; ok {
 			metrics.RecentCommits = v
 		}
 	}
-	if recentChurnMapGlobal != nil {
+	if recentChurnMapGlobal := schema.GetRecentChurnMapGlobal(); recentChurnMapGlobal != nil {
 		if v, ok := recentChurnMapGlobal[path]; ok {
 			metrics.RecentChurn = v
 		}
 	}
-	if recentContribMapGlobal != nil {
+	if recentContribMapGlobal := schema.GetRecentContribMapGlobal(); recentContribMapGlobal != nil {
 		if m, ok := recentContribMapGlobal[path]; ok {
 			metrics.RecentContributors = len(m)
 		}

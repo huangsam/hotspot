@@ -1,4 +1,4 @@
-package core
+package schema
 
 var (
 	// recentCommitsMapGlobal is used when running CLI with start param.
@@ -13,15 +13,24 @@ var (
 
 // GetRecentCommitsMapGlobal returns the recent commits map.
 func GetRecentCommitsMapGlobal() map[string]int {
+	if recentCommitsMapGlobal == nil {
+		recentCommitsMapGlobal = make(map[string]int)
+	}
 	return recentCommitsMapGlobal
 }
 
 // GetRecentChurnMapGlobal returns the recent churn map.
 func GetRecentChurnMapGlobal() map[string]int {
+	if recentChurnMapGlobal == nil {
+		recentChurnMapGlobal = make(map[string]int)
+	}
 	return recentChurnMapGlobal
 }
 
 // GetRecentContribMapGlobal returns the recent contrib map.
 func GetRecentContribMapGlobal() map[string]map[string]int {
+	if recentContribMapGlobal == nil {
+		recentContribMapGlobal = make(map[string]map[string]int)
+	}
 	return recentContribMapGlobal
 }
