@@ -6,10 +6,10 @@
 
 Hotspot is the Git analyzer that cuts through history to instantly show you which files are your greatest risk.
 
-- 🔍 **See what matters** — rank files by activity, ownership, or complexity
-- ⚡ **Fast results** — analyze thousands of files in seconds
-- 🧮 **Rich insights** — contributors, churn, size, age, and risk metrics
-- 🎯 **Actionable filters** — narrow down by folder, exclude noise, or track trends over time
+- 🔍 **See what matters** - rank files by activity, ownership, or complexity
+- ⚡ **Fast results** - analyze thousands of files in seconds
+- 🧮 **Rich insights** - contributors, churn, size, age, and risk metrics
+- 🎯 **Actionable filters** - narrow down by folder, exclude noise, or track trends over time
 
 Perfect for:
 
