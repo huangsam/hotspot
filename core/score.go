@@ -96,9 +96,9 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 	case "stale":
 		// Maintenance debt: important but haven't been touched recently
 		const (
-			wAgeStale       = 0.30
+			wAgeStale       = 0.20
 			wSizeStale      = 0.25
-			wInvRecentStale = 0.25 // primary driver: lack of recent activity
+			wInvRecentStale = 0.35 // primary driver: lack of recent activity
 			wCommitsStale   = 0.15 // historically important
 			wContribStale   = 0.05
 		)
