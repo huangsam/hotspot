@@ -133,12 +133,8 @@ func TestComputeScoreHotMode_EmptyFile(t *testing.T) {
 		SizeBytes: 0,
 	}
 	score := computeScore(&metrics, "hot")
-	if score != 0.00 {
-		t.Error("computeScore() should not generate valid score for an empty file")
-	}
-	if len(metrics.Breakdown) > 0 {
-		t.Error("computeScore() should not generate breakdown for an empty file")
-	}
+	assert.Empty(t, score, "Should not create score for empty file")
+	assert.Empty(t, metrics.Breakdown, "Should not create breakdown for empty file")
 }
 
 // TestComputeScoreRiskMode tests risk mode scoring
