@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/schema"
+	"github.com/stretchr/testify/assert"
 )
 
 // TestGini tests the Gini coefficient calculation
@@ -57,9 +58,7 @@ func TestGini(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := gini(tt.values)
-			if math.Abs(result-tt.expected) > tt.delta {
-				t.Errorf("gini(%v) = %f, want %f (±%f)", tt.values, result, tt.expected, tt.delta)
-			}
+			assert.LessOrEqual(t, math.Abs(result-tt.expected), tt.delta)
 		})
 	}
 }
@@ -119,17 +118,11 @@ func TestComputeScoreHotMode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			score := computeScore(&tt.metrics, "hot")
-			if score < tt.minScore || score > tt.maxScore {
-				t.Errorf("computeScore() = %f, want between %f and %f", score, tt.minScore, tt.maxScore)
-			}
+			assert.True(t, score >= tt.minScore && score <= tt.maxScore)
 			// Verify score is in valid range
-			if score < 0 || score > 100 {
-				t.Errorf("computeScore() = %f, must be in range [0, 100]", score)
-			}
+			assert.True(t, score >= 0 && score <= 100)
 			// Verify breakdown was populated
-			if len(tt.metrics.Breakdown) == 0 {
-				t.Error("computeScore() did not populate breakdown map")
-			}
+			assert.NotEmpty(t, tt.metrics.Breakdown)
 		})
 	}
 }
