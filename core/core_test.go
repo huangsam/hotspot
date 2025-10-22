@@ -192,12 +192,8 @@ func TestComputeScoreRiskMode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			score := computeScore(&tt.metrics, "risk")
-			if score < tt.minScore || score > tt.maxScore {
-				t.Errorf("computeScore(risk) = %f, want between %f and %f", score, tt.minScore, tt.maxScore)
-			}
-			if score < 0 || score > 100 {
-				t.Errorf("computeScore(risk) = %f, must be in range [0, 100]", score)
-			}
+			assert.True(t, score >= tt.minScore && score <= tt.maxScore)
+			assert.True(t, score >= 0 && score <= 100)
 		})
 	}
 }
