@@ -217,12 +217,8 @@ func TestComputeScoreAllModes(t *testing.T) {
 	for _, mode := range modes {
 		t.Run(mode, func(t *testing.T) {
 			score := computeScore(&metrics, mode)
-			if score < 0 || score > 100 {
-				t.Errorf("mode %s produced score %f, must be in range [0, 100]", mode, score)
-			}
-			if len(metrics.Breakdown) == 0 {
-				t.Errorf("mode %s did not populate breakdown map", mode)
-			}
+			assert.True(t, score >= 0 && score <= 100)
+			assert.NotEmpty(t, metrics.Breakdown)
 		})
 	}
 }
@@ -238,15 +234,9 @@ func TestRankFiles(t *testing.T) {
 
 	t.Run("rank and limit", func(t *testing.T) {
 		ranked := RankFiles(files, 2)
-		if len(ranked) != 2 {
-			t.Errorf("RankFiles() returned %d files, want 2", len(ranked))
-		}
-		if ranked[0].Path != "critical.go" {
-			t.Errorf("RankFiles()[0] = %q, want critical.go", ranked[0].Path)
-		}
-		if ranked[1].Path != "high.go" {
-			t.Errorf("RankFiles()[1] = %q, want high.go", ranked[1].Path)
-		}
+		assert.Equal(t, 2, len(ranked))
+		assert.Equal(t, "critical.go", ranked[0].Path)
+		assert.Equal(t, "high.go", ranked[1].Path)
 	})
 
 	t.Run("limit exceeds length", func(t *testing.T) {
