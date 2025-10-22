@@ -241,18 +241,13 @@ func TestRankFiles(t *testing.T) {
 
 	t.Run("limit exceeds length", func(t *testing.T) {
 		ranked := RankFiles(files, 10)
-		if len(ranked) != 4 {
-			t.Errorf("RankFiles() returned %d files, want 4", len(ranked))
-		}
+		assert.Equal(t, 4, len(ranked))
 	})
 
 	t.Run("scores in descending order", func(t *testing.T) {
 		ranked := RankFiles(files, 10)
 		for i := 1; i < len(ranked); i++ {
-			if ranked[i].Score > ranked[i-1].Score {
-				t.Errorf("RankFiles() not sorted: ranked[%d].Score=%f > ranked[%d].Score=%f",
-					i, ranked[i].Score, i-1, ranked[i-1].Score)
-			}
+			assert.LessOrEqual(t, ranked[i].Score, ranked[i-1].Score)
 		}
 	})
 }
