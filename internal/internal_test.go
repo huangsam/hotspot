@@ -3,6 +3,8 @@ package internal
 import (
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // TestShouldIgnore tests path exclusion logic
@@ -66,9 +68,7 @@ func TestShouldIgnore(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := ShouldIgnore(tt.path, tt.excludes)
-			if got != tt.wantIgnore {
-				t.Errorf("ShouldIgnore(%q, %v) = %v, want %v", tt.path, tt.excludes, got, tt.wantIgnore)
-			}
+			assert.Equal(t, tt.wantIgnore, got)
 		})
 	}
 }
@@ -113,24 +113,15 @@ func TestTruncatePath(t *testing.T) {
 			gotLen := len([]rune(got))
 
 			// Verify result length is within bounds
-			if gotLen > tt.maxWidth {
-				t.Errorf("truncatePath(%q, %d) produced %q with length %d, exceeds maxWidth",
-					tt.path, tt.maxWidth, got, gotLen)
-			}
+			assert.LessOrEqual(t, gotLen, tt.maxWidth, "truncate with %q exceeds max width", tt.path)
 
 			// For paths that should be truncated, verify they start with "..."
 			if len([]rune(tt.path)) > tt.maxWidth {
-				if !strings.HasPrefix(got, "...") {
-					t.Errorf("truncatePath(%q, %d) = %q, expected to start with '...'",
-						tt.path, tt.maxWidth, got)
-				}
+				assert.True(t, strings.HasPrefix(got, "..."), "expected %q to start with '...'", got)
 			}
 
 			// Verify expected length
-			if gotLen != tt.wantLen {
-				t.Errorf("truncatePath(%q, %d) length = %d, want %d (result: %q)",
-					tt.path, tt.maxWidth, gotLen, tt.wantLen, got)
-			}
+			assert.Equal(t, tt.wantLen, gotLen)
 		})
 	}
 }
@@ -154,9 +145,7 @@ func TestGetTextLabel(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.want, func(t *testing.T) {
 			got := getTextLabel(tt.score)
-			if got != tt.want {
-				t.Errorf("getTextLabel(%f) = %q, want %q", tt.score, got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
