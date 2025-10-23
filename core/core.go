@@ -29,7 +29,7 @@ func AnalyzeRepo(cfg *schema.Config, files []string) []schema.FileMetrics {
 		filtered = append(filtered, f)
 	}
 
-	results := make([]schema.FileMetrics, 0, len(filtered))
+	results := []schema.FileMetrics{}
 	fileCh := make(chan string, len(filtered))
 	resultCh := make(chan schema.FileMetrics, len(files))
 	var wg sync.WaitGroup
@@ -51,7 +51,12 @@ func AnalyzeRepo(cfg *schema.Config, files []string) []schema.FileMetrics {
 	wg.Wait()
 	close(resultCh)
 
+	resultMap := make(map[string]schema.FileMetrics)
 	for r := range resultCh {
+		resultMap[r.Path] = r
+	}
+
+	for _, r := range resultMap {
 		results = append(results, r)
 	}
 

@@ -80,7 +80,14 @@ func ParseFlags() (*Config, error) {
 	cfg.Explain = *explain
 
 	// default excludes
-	defaults := []string{"vendor/", "node_modules/", "third_party/", ".min.js", ".min.css"}
+	defaults := []string{
+		"vendor/", "node_modules/", "third_party/", ".min.js", ".min.css", // JS
+		"Cargo.lock",                              // Rust
+		".pyc",                                    // Python
+		"uv.lock",                                 // Python
+		"go.sum",                                  // Go
+		".gitignore", ".dockerignore", ".vscode/", // General
+	}
 	cfg.Excludes = defaults
 	if *exclude != "" {
 		parts := strings.SplitSeq(*exclude, ",")
