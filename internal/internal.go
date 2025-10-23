@@ -2,7 +2,7 @@
 package internal
 
 import (
-	"fmt"
+	"math"
 	"sort"
 	"strings"
 
@@ -42,6 +42,11 @@ type metricBreakdown struct {
 	Value float64 // The percentage contribution to the score
 }
 
+const (
+	topNMetrics          = 3
+	metricContribMinimum = 0.5
+)
+
 // formatTopMetricContributors computes the top 3 metric components that contribute to the final score.
 func formatTopMetricContributors(f *schema.FileMetrics) string {
 	var metrics []metricBreakdown
@@ -61,7 +66,7 @@ func formatTopMetricContributors(f *schema.FileMetrics) string {
 	// 1. Filter and Convert Map to Slice
 	for k, v := range f.Breakdown {
 		// Only include known metrics, and skip those with zero contribution
-		if metricKeys[k] && v != 0.0 {
+		if metricKeys[k] && v >= metricContribMinimum {
 			metrics = append(metrics, metricBreakdown{
 				Name:  k,
 				Value: v, // This is the percentage contribution
@@ -70,7 +75,7 @@ func formatTopMetricContributors(f *schema.FileMetrics) string {
 	}
 
 	if len(metrics) == 0 {
-		return "No significant metric contributors"
+		return "Not applicable"
 	}
 
 	// 2. Sort the Slice by Value (Contribution %) in Descending Order
@@ -78,29 +83,20 @@ func formatTopMetricContributors(f *schema.FileMetrics) string {
 	sort.Slice(metrics, func(i, j int) bool {
 		// We compare the absolute value since some contributions might be negative
 		// if the model is set up to penalize certain metrics.
-		return abs(metrics[i].Value) > abs(metrics[j].Value)
+		return math.Abs(metrics[i].Value) > math.Abs(metrics[j].Value)
 	})
 
 	// 3. Limit to Top 3 and Format the Output
 	var parts []string
-	limit := 3
-	if len(metrics) < limit {
-		limit = len(metrics)
-	}
+	limit := min(len(metrics), topNMetrics)
 
-	for i := 0; i < limit; i++ {
+	for i := range limit {
 		m := metrics[i]
-		// Format as "metric (Percentage%)"
-		parts = append(parts, fmt.Sprintf("%s (%.0f%%)", m.Name, m.Value))
+		parts = append(parts, m.Name)
 	}
 
-	return strings.Join(parts, ", ")
-}
-
-// abs helper function for absolute value comparison
-func abs(f float64) float64 {
-	if f < 0 {
-		return -f
+	if len(parts) == 0 {
+		return "No meaningful contributors"
 	}
-	return f
+	return strings.Join(parts, " > ")
 }
