@@ -26,6 +26,7 @@ type Config struct {
 	Workers     int       // Number of concurrent workers for analysis
 	Mode        string    // Scoring mode: "hot" or "risk"
 	Excludes    []string  // Path prefixes/suffixes to ignore
+	Detail      bool      // If true, print per-file metadata
 	Explain     bool      // If true, print per-file breakdown
 	Precision   int       // Decimal precision for numeric columns (1 or 2)
 	Output      string    // Output format: "text" (default) or "csv"
@@ -47,6 +48,7 @@ func ParseFlags() (*Config, error) {
 	workers := flag.Int("workers", defaultWorkers, fmt.Sprintf("Number of concurrent workers (default: %d)", defaultWorkers))
 	mode := flag.String("mode", "hot", "Scoring mode: hot, risk, complexity, stale")
 	exclude := flag.String("exclude", "", "Comma-separated list of path prefixes or patterns to ignore (e.g. vendor,node_modules,*.min.js)")
+	detail := flag.Bool("detail", false, "Print per-file metadata such as commit activity, contributor count, etc.")
 	explain := flag.Bool("explain", false, "Print per-file component score breakdown (for debugging/tuning)")
 	precision := flag.Int("precision", defaultPrecision, "Decimal precision for numeric columns (1 or 2)")
 	output := flag.String("output", "text", "Output format: text (default) or csv")
@@ -74,6 +76,7 @@ func ParseFlags() (*Config, error) {
 	cfg.PathFilter = *filter
 	cfg.Workers = *workers
 	cfg.Mode = *mode
+	cfg.Detail = *detail
 	cfg.Explain = *explain
 
 	// default excludes
