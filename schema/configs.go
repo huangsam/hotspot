@@ -81,12 +81,20 @@ func ParseFlags() (*Config, error) {
 
 	// default excludes
 	defaults := []string{
-		"vendor/", "node_modules/", "third_party/", ".min.js", ".min.css", // JS
-		"Cargo.lock",                              // Rust
-		".pyc",                                    // Python
-		"uv.lock",                                 // Python
-		"go.sum",                                  // Go
-		".gitignore", ".dockerignore", ".vscode/", // General
+		// Dependency Lock File
+		"Cargo.lock",        // Rust
+		"go.sum",            // Go
+		"package-lock.json", // JS/NPM
+		"yarn.lock",         // JS/Yarn
+		"pnpm-lock.yaml",    // JS/PNPM
+		"composer.lock",     // PHP
+		"uv.lock",           // Python
+
+		// Generated Assets
+		".min.js", ".min.css", // Minified JavaScript and CSS
+
+		// Build Output Directories
+		"dist/", "build/", "out/", "target/", "bin/",
 	}
 	cfg.Excludes = defaults
 	if *exclude != "" {
