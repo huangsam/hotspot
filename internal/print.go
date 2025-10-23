@@ -18,7 +18,9 @@ const maxPathWidth = 40
 // For each file it shows rank, path (truncated if needed), importance score,
 // criticality label, and all individual metrics that contribute to the score.
 func PrintResults(files []schema.FileMetrics, cfg *schema.Config) {
+	detail := cfg.Detail
 	explain := cfg.Explain
+
 	precision := cfg.Precision
 	outFmt := cfg.Output
 
@@ -49,7 +51,13 @@ func PrintResults(files []schema.FileMetrics, cfg *schema.Config) {
 	table := tablewriter.NewWriter(os.Stdout)
 
 	// 1. Define Headers
-	headers := []string{"Rank", "File", "Score", "Label", "Contrib", "Commits", "Size(kb)", "Age(d)", "Churn", "Gini", "First Commit"}
+	headers := []string{"Rank", "File", "Score", "Label"}
+	if detail {
+		headers = append(headers, "Contrib", "Commits", "Size(kb)", "Age(d)", "Churn", "Gini", "First Commit")
+	}
+	if explain {
+		headers = append(headers, "Explain")
+	}
 	table.Header(headers)
 
 	// 2. Configure Separators/Borders to match a minimal look
@@ -62,41 +70,33 @@ func PrintResults(files []schema.FileMetrics, cfg *schema.Config) {
 	for i, f := range files {
 		// Prepare the row data as a slice of strings
 		row := []string{
-			strconv.Itoa(i + 1),                       // Rank
-			truncatePath(f.Path, maxPathWidth),        // File (Path truncation still needed)
-			fmtFloat(f.Score),                         // Score
-			getTextLabel(f.Score),                     // Label
-			fmt.Sprintf(intFmt, f.UniqueContributors), // Contrib
-			fmt.Sprintf(intFmt, f.Commits),            // Commits
-			fmtFloat(float64(f.SizeBytes) / 1024.0),   // Size(KB)
-			fmt.Sprintf(intFmt, f.AgeDays),            // Age(d)
-			fmt.Sprintf(intFmt, f.Churn),              // Churn
-			fmtFloat(f.Gini),                          // Gini
-			f.FirstCommit.Format("2006-01-02"),        // First Commit
+			strconv.Itoa(i + 1),                // Rank
+			truncatePath(f.Path, maxPathWidth), // File (Path truncation still needed)
+			fmtFloat(f.Score),                  // Score
+			getTextLabel(f.Score),              // Label
+		}
+		if detail {
+			row = append(
+				row,
+				fmt.Sprintf(intFmt, f.UniqueContributors), // Contrib
+				fmt.Sprintf(intFmt, f.Commits),            // Commits
+				fmtFloat(float64(f.SizeBytes)/1024.0),     // Size(KB)
+				fmt.Sprintf(intFmt, f.AgeDays),            // Age(d)
+				fmt.Sprintf(intFmt, f.Churn),              // Churn
+				fmtFloat(f.Gini),                          // Gini
+				f.FirstCommit.Format("2006-01-02"),        // First Commit
+			)
+		}
+		if explain {
+			topOnes := formatTopMetricContributors(&f)
+			row = append(row, topOnes)
 		}
 		data = append(data, row)
 	}
 
 	// 4. Render the table
-	table.Bulk(data)
-	table.Render() // This is where the magic happens: widths are calculated and output is printed.
-
-	// 5. Print explanations (remains largely the same)
-	for _, f := range files {
-		if explain && len(f.Breakdown) > 0 {
-			fmt.Println()
-			fmt.Print("      Breakdown:")
-			// print key/value pairs sorted by keys for deterministic output
-			keys := []string{"contrib", "commits", "size", "age", "churn", "gini", "inv_contrib"}
-			for _, k := range keys {
-				if v, ok := f.Breakdown[k]; ok {
-					fmt.Printf(" %s=%.1f%%", k, v)
-				}
-			}
-			fmt.Println()
-			fmt.Println()
-		}
-	}
+	_ = table.Bulk(data)
+	_ = table.Render() // This is where the magic happens: widths are calculated and output is printed.
 }
 
 // truncatePath truncates a file path to a maximum width with ellipsis prefix.
