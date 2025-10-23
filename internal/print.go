@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/huangsam/hotspot/schema"
+
+	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/tw"
 )
 
 const maxPathWidth = 40
@@ -41,109 +43,46 @@ func PrintResults(files []schema.FileMetrics, cfg *schema.Config) {
 		return
 	}
 
-	// Define columns and initial header names
-	headers := []string{"Rank", "File", "Score", "Label", "Contrib", "Commits", "Size(KB)", "Age(d)", "Churn", "Gini", "First Commit"}
+	// --- Tablewriter Implementation Starts Here ---
 
-	// Compute column widths from headers and data
-	widths := make([]int, len(headers))
-	for i, h := range headers {
-		widths[i] = len(h)
-	}
+	// Initialize tablewriter and set output to os.Stdout
+	table := tablewriter.NewWriter(os.Stdout)
 
-	for idx, f := range files {
-		// Rank width
-		rankStr := strconv.Itoa(idx + 1)
-		if len(rankStr) > widths[0] {
-			widths[0] = len(rankStr)
-		}
-		// File path width
-		p := truncatePath(f.Path, maxPathWidth)
-		if len(p) > widths[1] {
-			widths[1] = len(p)
-		}
-		// Score
-		s := fmt.Sprintf("%.1f", f.Score)
-		if len(s) > widths[2] {
-			widths[2] = len(s)
-		}
-		// Label
-		lbl := getTextLabel(f.Score)
-		if len(lbl) > widths[3] {
-			widths[3] = len(lbl)
-		}
-		// Other numeric columns
-		nums := []string{
-			fmt.Sprintf("%d", f.UniqueContributors),
-			fmt.Sprintf("%d", f.Commits),
-			fmt.Sprintf("%.1f", float64(f.SizeBytes)/1024.0),
-			fmt.Sprintf("%d", f.AgeDays),
-			fmt.Sprintf("%d", f.Churn),
-			fmt.Sprintf("%.2f", f.Gini),
-			f.FirstCommit.Format("2006-01-02"),
-		}
-		for i, n := range nums {
-			col := i + 4 // starts at Contrib column
-			if len(n) > widths[col] {
-				widths[col] = len(n)
-			}
-		}
-	}
+	// 1. Define Headers
+	headers := []string{"Rank", "File", "Score", "Label", "Contrib", "Commits", "Size(kb)", "Age(d)", "Churn", "Gini", "First Commit"}
+	table.Header(headers)
 
-	// Build format string dynamically
-	fmts := []string{
-		fmt.Sprintf("%%%ds", widths[0]),
-		fmt.Sprintf("%%-%ds", widths[1]),
-		fmt.Sprintf("%%%ds", widths[2]),
-		fmt.Sprintf("%%-%ds", widths[3]),
-	}
-	// Numeric right-aligned columns
-	for i := 4; i < len(headers)-1; i++ {
-		fmts = append(fmts, fmt.Sprintf("%%%ds", widths[i]))
-	}
-	// Last column (date) left-aligned
-	fmts = append(fmts, fmt.Sprintf("%%-%ds", widths[len(headers)-1]))
+	// 2. Configure Separators/Borders to match a minimal look
+	table.Configure(func(cfg *tablewriter.Config) {
+		cfg.Row.Alignment.Global = tw.AlignRight
+	})
 
-	// Compose header line
-	var headerParts []string
-	for i, h := range headers {
-		headerParts = append(headerParts, fmt.Sprintf(fmts[i], h))
-	}
-
-	// Compose separator line
-	sepParts := make([]string, len(headers))
-	for i := range headers {
-		sepParts[i] = strings.Repeat("-", widths[i])
-	}
-
-	// Print human-readable header and separator
-	fmt.Println(strings.Join(headerParts, "  "))
-	fmt.Println(strings.Join(sepParts, "  "))
-
-	// Print rows
+	// 3. Populate Rows
+	var data [][]string
 	for i, f := range files {
-		p := truncatePath(f.Path, maxPathWidth)
-		rowVals := []any{
-			strconv.Itoa(i + 1),
-			p,
-			fmtFloat(f.Score),
-			getTextLabel(f.Score),
-			fmt.Sprintf(intFmt, f.UniqueContributors),
-			fmt.Sprintf(intFmt, f.Commits),
-			fmtFloat(float64(f.SizeBytes) / 1024.0),
-			fmt.Sprintf(intFmt, f.AgeDays),
-			fmt.Sprintf(intFmt, f.Churn),
-			fmtFloat(f.Gini),
-			f.FirstCommit.Format("2006-01-02"),
+		// Prepare the row data as a slice of strings
+		row := []string{
+			strconv.Itoa(i + 1),                       // Rank
+			truncatePath(f.Path, maxPathWidth),        // File (Path truncation still needed)
+			fmtFloat(f.Score),                         // Score
+			getTextLabel(f.Score),                     // Label
+			fmt.Sprintf(intFmt, f.UniqueContributors), // Contrib
+			fmt.Sprintf(intFmt, f.Commits),            // Commits
+			fmtFloat(float64(f.SizeBytes) / 1024.0),   // Size(KB)
+			fmt.Sprintf(intFmt, f.AgeDays),            // Age(d)
+			fmt.Sprintf(intFmt, f.Churn),              // Churn
+			fmtFloat(f.Gini),                          // Gini
+			f.FirstCommit.Format("2006-01-02"),        // First Commit
 		}
+		data = append(data, row)
+	}
 
-		// Build formatted row using fmts
-		var parts []string
-		for j, rv := range rowVals {
-			parts = append(parts, fmt.Sprintf(fmts[j], fmt.Sprint(rv)))
-		}
-		fmt.Println(strings.Join(parts, "  "))
+	// 4. Render the table
+	table.Bulk(data)
+	table.Render() // This is where the magic happens: widths are calculated and output is printed.
 
-		// Explain breakdown if requested
+	// 5. Print explanations (remains largely the same)
+	for _, f := range files {
 		if explain && len(f.Breakdown) > 0 {
 			fmt.Println()
 			fmt.Print("      Breakdown:")
