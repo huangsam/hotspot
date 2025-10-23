@@ -47,7 +47,7 @@ func ParseFlags() (*Config, error) {
 	endDate := flag.String("end", "", "End date in ISO8601 format (defaults to current time)")
 	workers := flag.Int("workers", defaultWorkers, fmt.Sprintf("Number of concurrent workers (default: %d)", defaultWorkers))
 	mode := flag.String("mode", "hot", "Scoring mode: hot, risk, complexity, stale")
-	exclude := flag.String("exclude", "", "Comma-separated list of path prefixes or patterns to ignore (e.g. vendor,node_modules,*.min.js)")
+	exclude := flag.String("exclude", "", "Comma-separated list of path prefixes or patterns to ignore (e.g. go.sum)")
 	detail := flag.Bool("detail", false, "Print per-file metadata such as commit activity, contributor count, etc.")
 	explain := flag.Bool("explain", false, "Print per-file component score breakdown (for debugging/tuning)")
 	precision := flag.Int("precision", defaultPrecision, "Decimal precision for numeric columns (1 or 2)")
