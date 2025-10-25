@@ -35,4 +35,5 @@ dist/
 /coverage.txt
 
 # Output assets
-*.csv
+/*.csv
+/*.json
