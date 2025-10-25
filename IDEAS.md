@@ -2,15 +2,6 @@
 
 ## Short-term tasks
 
-Code Quality & Testing
-
-- Error handling - Your current code has some silent errors
-- Input validation for
-    - Non-existent repo paths?
-    - Repos with no commits?
-    - Empty files?
-    - Binary files?
-
 Distribution
 
 - Release automation - Use GoReleaser for multi-platform binaries
@@ -26,7 +17,6 @@ Performance & Robustness
 User Experience
 
 - Config file support - .hotspot.yml for default settings per repo
-- Better error messages - More helpful feedback when things go wrong
 - Validation - Check mode names, date formats earlier with clear errors
 - Shell completion - Bash/Zsh completion scripts for flags
 
