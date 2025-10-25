@@ -23,9 +23,15 @@ func selectCSVOutputFile(cfg *schema.Config) *os.File {
 }
 
 // writeCSVResults writes the analysis results in CSV format.
-func writeCSVResults(w *csv.Writer, files []schema.FileMetrics, fmtFloat func(float64) string, intFmt string) {
+func writeCSVResults(w *csv.Writer, files []schema.FileMetrics, fmtFloat func(float64) string, intFmt string) error {
 	// CSV header
-	_ = w.Write([]string{"rank", "file", "score", "label", "contributors", "commits", "size_kb", "age_days", "churn", "gini", "first_commit"})
+	header := []string{
+		"rank", "file", "score", "label", "contributors", "commits",
+		"size_kb", "age_days", "churn", "gini", "first_commit",
+	}
+	if err := w.Write(header); err != nil {
+		return err
+	}
 	for i, f := range files {
 		rec := []string{
 			strconv.Itoa(i + 1),
@@ -40,8 +46,11 @@ func writeCSVResults(w *csv.Writer, files []schema.FileMetrics, fmtFloat func(fl
 			fmtFloat(f.Gini),
 			f.FirstCommit.Format("2006-01-02"),
 		}
-		_ = w.Write(rec)
+		if err := w.Write(rec); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // JSONOutput represents the structure of the JSON data to be printed.
