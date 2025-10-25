@@ -37,7 +37,7 @@ func writeCSVResults(w *csv.Writer, files []schema.FileMetrics, fmtFloat func(fl
 			strconv.Itoa(i + 1),
 			f.Path,
 			fmtFloat(f.Score),
-			getPlainTextLabel(f.Score),
+			getPlainLabel(f.Score),
 			fmt.Sprintf(intFmt, f.UniqueContributors),
 			fmt.Sprintf(intFmt, f.Commits),
 			fmtFloat(float64(f.SizeBytes) / 1024.0),
@@ -67,7 +67,7 @@ func writeJSONResults(w io.Writer, files []schema.FileMetrics) error {
 	for i, f := range files {
 		output[i] = JSONOutput{
 			Rank:        i + 1,
-			Label:       getPlainTextLabel(f.Score),
+			Label:       getPlainLabel(f.Score),
 			FileMetrics: f,
 		}
 	}

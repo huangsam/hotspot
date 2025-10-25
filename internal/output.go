@@ -109,7 +109,7 @@ func printTableResults(files []schema.FileMetrics, cfg *schema.Config, fmtFloat 
 			strconv.Itoa(i + 1),                // Rank
 			truncatePath(f.Path, maxPathWidth), // File
 			fmtFloat(f.Score),                  // Score
-			getTextLabel(f.Score),              // Label
+			getColorLabel(f.Score),             // Label
 		}
 		if detail {
 			row = append(
