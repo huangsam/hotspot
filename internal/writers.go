@@ -3,6 +3,7 @@ package internal
 import (
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -11,15 +12,14 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// selectCSVOutputFile returns the appropriate file handle for CSV output.
-func selectCSVOutputFile(cfg *schema.Config) *os.File {
-	if cfg.CSVFile != "" {
-		if file, err := os.Create(cfg.CSVFile); err == nil {
-			return file
-		}
-		fmt.Fprintf(os.Stderr, "warning: cannot open csv file %s: default to stdout\n", cfg.CSVFile)
+// selectOutputFile returns the appropriate file handle for output, based on the provided
+// file path and format type. It falls back to os.Stdout on error.
+// This function replaces both selectCSVOutputFile and selectJSONOutputFile.
+func selectOutputFile(filePath string) (*os.File, error) {
+	if filePath == "" {
+		return nil, errors.New("no file specified")
 	}
-	return os.Stdout
+	return os.Create(filePath)
 }
 
 // writeCSVResults writes the analysis results in CSV format.
@@ -55,20 +55,9 @@ func writeCSVResults(w *csv.Writer, files []schema.FileMetrics, fmtFloat func(fl
 
 // JSONOutput represents the structure of the JSON data to be printed.
 type JSONOutput struct {
-	Rank  int    `json:"rank"`
-	Label string `json:"label"`
-	schema.FileMetrics
-}
-
-// selectJSONOutputFile returns the appropriate file handle for JSON output.
-func selectJSONOutputFile(cfg *schema.Config) *os.File {
-	if cfg.JSONFile != "" {
-		if file, err := os.Create(cfg.JSONFile); err == nil {
-			return file
-		}
-		fmt.Fprintf(os.Stderr, "warning: cannot open json file %s: default to stdout\n", cfg.JSONFile)
-	}
-	return os.Stdout
+	Rank               int    `json:"rank"`
+	Label              string `json:"label"`
+	schema.FileMetrics        // Embeds Path, Score, etc.
 }
 
 // writeJSONResults writes the analysis results in JSON format.
@@ -85,8 +74,7 @@ func writeJSONResults(w io.Writer, files []schema.FileMetrics) error {
 
 	// 2. Create a JSON encoder
 	encoder := json.NewEncoder(w)
-	// Optional: Use Indent for pretty-printing if writing to a file,
-	// otherwise omit for smaller output.
+	// Use indenting for cleaner output, especially when writing to a file
 	encoder.SetIndent("", "  ")
 
 	// 3. Encode and write the data
