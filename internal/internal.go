@@ -4,10 +4,10 @@ package internal
 import "github.com/fatih/color"
 
 const (
-	criticalValue = "Critical"
-	highValue     = "High"
-	moderateValue = "Moderate"
-	lowValue      = "Low"
+	criticalValue = "Critical" // Critical value
+	highValue     = "High"     // High value
+	moderateValue = "Moderate" // Moderate value
+	lowValue      = "Low"      // Low value
 )
 
 var (
