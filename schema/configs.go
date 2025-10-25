@@ -9,10 +9,11 @@ import (
 )
 
 const (
-	defaultLimit     = 10
-	maxLimitDefault  = 1000
-	defaultWorkers   = 4
-	defaultPrecision = 1
+	defaultLookbackDays = 90
+	defaultResultLimit  = 10
+	maxResultLimit      = 1000
+	defaultWorkers      = 4
+	defaultPrecision    = 1
 )
 
 // Config holds the runtime configuration for the analysis.
@@ -41,11 +42,11 @@ type Config struct {
 func ParseFlags() (*Config, error) {
 	// Initialize with defaults.
 	endTime := time.Now()
-	startTime := endTime.Add(-90 * 24 * time.Hour)
+	startTime := endTime.Add(-defaultLookbackDays * 24 * time.Hour)
 	cfg := &Config{Workers: defaultWorkers, StartTime: startTime, EndTime: endTime}
 
 	// Define flags
-	limit := flag.Int("limit", defaultLimit, fmt.Sprintf("Number of files to display (default: %d, max: %d)", defaultLimit, maxLimitDefault))
+	limit := flag.Int("limit", defaultResultLimit, fmt.Sprintf("Number of files to display (default: %d, max: %d)", defaultResultLimit, maxResultLimit))
 	filter := flag.String("filter", "", "Filter files by path prefix")
 	startDate := flag.String("start", "", "Start date in ISO8601 format (e.g., 2023-01-01T00:00:00Z)")
 	endDate := flag.String("end", "", "End date in ISO8601 format (defaults to current time)")
@@ -79,8 +80,8 @@ func ParseFlags() (*Config, error) {
 	if *limit <= 0 {
 		return nil, fmt.Errorf("limit must be greater than 0 (received %d)", *limit)
 	}
-	if *limit > maxLimitDefault {
-		return nil, fmt.Errorf("limit cannot exceed %d files (received %d)", maxLimitDefault, *limit)
+	if *limit > maxResultLimit {
+		return nil, fmt.Errorf("limit cannot exceed %d files (received %d)", maxResultLimit, *limit)
 	}
 	cfg.ResultLimit = *limit
 
