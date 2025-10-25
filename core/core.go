@@ -20,43 +20,48 @@ import (
 // It spawns cfg.Workers number of goroutines to analyze files concurrently
 // and aggregates their results into a single slice of schema.FileMetrics.
 func AnalyzeRepo(cfg *schema.Config, files []string) []schema.FileMetrics {
-	// Filter files according to excludes and path filter before analysis
+	// Filter files according to excludes. This is required for consistency
+	// since ListRepoFiles only applies the path filter, not excludes.
 	filtered := make([]string, 0, len(files))
 	for _, f := range files {
 		if internal.ShouldIgnore(f, cfg.Excludes) {
 			continue
 		}
+		// NOTE: Path filtering is mostly redundant here, as it's done in main/ListRepoFiles,
+		// but excluding files is necessary.
 		filtered = append(filtered, f)
 	}
 
-	results := []schema.FileMetrics{}
+	// Initialize channels based on the final number of files to be processed.
 	fileCh := make(chan string, len(filtered))
-	resultCh := make(chan schema.FileMetrics, len(files))
+	resultCh := make(chan schema.FileMetrics, len(filtered)) // Use len(filtered) instead of len(files)
 	var wg sync.WaitGroup
 
+	// Start worker pool
 	for range cfg.Workers {
+		// Add one to wait group for each worker
 		wg.Go(func() {
 			for f := range fileCh {
+				// Analysis with useFollow=false for initial run
 				metrics := AnalyzeFileCommon(cfg, f, false)
 				resultCh <- metrics
 			}
 		})
 	}
 
+	// Send files to worker channel
 	for _, f := range filtered {
 		fileCh <- f
 	}
 	close(fileCh)
 
+	// Wait for all workers to finish processing
 	wg.Wait()
 	close(resultCh)
 
-	resultMap := make(map[string]schema.FileMetrics)
+	// Aggregate results directly into the slice (removing the intermediate map)
+	results := make([]schema.FileMetrics, 0, len(filtered))
 	for r := range resultCh {
-		resultMap[r.Path] = r
-	}
-
-	for _, r := range resultMap {
 		results = append(results, r)
 	}
 
