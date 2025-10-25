@@ -39,8 +39,10 @@ type Config struct {
 // It uses the standard flag package to handle options for controlling the analysis.
 // Returns an error if required arguments are missing or invalid.
 func ParseFlags() (*Config, error) {
-	// Initialize with defaults. EndTime defaults to current time for analysis range.
-	cfg := &Config{Workers: defaultWorkers, EndTime: time.Now()}
+	// Initialize with defaults.
+	endTime := time.Now()
+	startTime := endTime.Add(-90 * 24 * time.Hour)
+	cfg := &Config{Workers: defaultWorkers, StartTime: startTime, EndTime: endTime}
 
 	// Define flags
 	limit := flag.Int("limit", defaultLimit, fmt.Sprintf("Number of files to display (default: %d, max: %d)", defaultLimit, maxLimitDefault))
