@@ -21,48 +21,37 @@ func main() {
 
 	var files []string
 
-	if !cfg.StartTime.IsZero() {
-		// Run repo-wide aggregation first and use the files seen in that pass.
-		fmt.Printf("🔎 Aggregating recent activity since %s (single repo-wide pass)...\n", cfg.StartTime.Format(time.RFC3339))
-		if err := core.AggregateRecent(cfg); err != nil {
-			internal.Warning("Cannot aggregate recent activity")
-		}
+	// Run repo-wide aggregation first and use the files seen in that pass.
+	fmt.Printf("🔎 Aggregating recent activity since %s...\n", cfg.StartTime.Format(time.RFC3339))
+	if err := core.AggregateRecent(cfg); err != nil {
+		internal.Warning("Cannot aggregate recent activity")
+	}
 
-		// Build file list from union of recent maps so we only analyze files touched since StartTime
-		seen := make(map[string]bool)
-		for k := range schema.GetRecentCommitsMapGlobal() {
-			seen[k] = true
+	// Build file list from union of recent maps so we only analyze files touched since StartTime
+	seen := make(map[string]bool)
+	for k := range schema.GetRecentCommitsMapGlobal() {
+		seen[k] = true
+	}
+	for k := range schema.GetRecentChurnMapGlobal() {
+		seen[k] = true
+	}
+	for k := range schema.GetRecentContribMapGlobal() {
+		seen[k] = true
+	}
+	for f := range seen {
+		// apply path filter and excludes
+		if cfg.PathFilter != "" && !strings.HasPrefix(f, cfg.PathFilter) {
+			continue
 		}
-		for k := range schema.GetRecentChurnMapGlobal() {
-			seen[k] = true
+		if internal.ShouldIgnore(f, cfg.Excludes) {
+			continue
 		}
-		for k := range schema.GetRecentContribMapGlobal() {
-			seen[k] = true
-		}
-		for f := range seen {
-			// apply path filter and excludes
-			if cfg.PathFilter != "" && !strings.HasPrefix(f, cfg.PathFilter) {
-				continue
-			}
-			if internal.ShouldIgnore(f, cfg.Excludes) {
-				continue
-			}
-			files = append(files, f)
-		}
+		files = append(files, f)
+	}
 
-		if len(files) == 0 {
-			internal.Warning("No files with activity found in the requested window")
-			return
-		}
-	} else {
-		files, err = core.ListRepoFiles(cfg.RepoPath, cfg.PathFilter)
-		if err != nil {
-			internal.FatalError("Error listing files", err)
-		}
-		if len(files) == 0 {
-			internal.Warning("No files found in repository")
-			return
-		}
+	if len(files) == 0 {
+		internal.Warning("No files with activity found in the requested window")
+		return
 	}
 
 	fmt.Printf("🧠 hotspot: Analyzing %s\n", cfg.RepoPath)

@@ -9,33 +9,6 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// ListRepoFiles returns a list of all tracked files in the Git repository.
-// If pathFilter is non-empty, only files whose paths start with the filter are included.
-// Returns an error if the git command fails or the repository is invalid.
-func ListRepoFiles(repoPath, pathFilter string) ([]string, error) {
-	out, err := internal.RunGitCommand(repoPath, "ls-files")
-	if err != nil {
-		return nil, err
-	}
-	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
-
-	// Explicitly handle case where output is empty (e.g., no tracked files)
-	if len(lines) == 0 || (len(lines) == 1 && lines[0] == "") {
-		return nil, nil
-	}
-
-	if pathFilter != "" {
-		filtered := make([]string, 0, len(lines))
-		for _, f := range lines {
-			if strings.HasPrefix(f, pathFilter) {
-				filtered = append(filtered, f)
-			}
-		}
-		return filtered, nil
-	}
-	return lines, nil
-}
-
 // AggregateRecent performs a single repository-wide git log since cfg.StartTime
 // and aggregates per-file recent commits, churn and contributors. It avoids
 // expensive per-file --follow calls and is fast even on large repositories.
