@@ -22,7 +22,7 @@ func main() {
 	var files []string
 
 	// Run repo-wide aggregation first and use the files seen in that pass.
-	fmt.Printf("🔎 Aggregating recent activity since %s...\n", cfg.StartTime.Format(time.RFC3339))
+	fmt.Printf("🔎 Aggregating recent activity since %s\n", cfg.StartTime.Format(time.RFC3339))
 	if err := core.AggregateRecent(cfg); err != nil {
 		internal.Warning("Cannot aggregate recent activity")
 	}
