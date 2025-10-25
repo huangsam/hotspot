@@ -82,7 +82,8 @@ func ProcessAndValidate(cfg *Config, input *ConfigRawInput) error {
 	cfg.Precision = input.Precision
 
 	cfg.Output = strings.ToLower(input.Output)
-	if cfg.Output != "text" && cfg.Output != "csv" && cfg.Output != "json" {
+	validOutputs := map[string]bool{"text": true, "csv": true, "json": true}
+	if _, ok := validOutputs[cfg.Output]; !ok {
 		return fmt.Errorf("invalid output format '%s'. Must be 'text' or 'csv' or 'json'", cfg.Output)
 	}
 
