@@ -156,7 +156,6 @@ func (b *FileMetricsBuilder) calculateDerivedMetrics() *FileMetricsBuilder {
 
 // applyGlobalMaps populates recent metrics from global maps if available.
 func (b *FileMetricsBuilder) applyGlobalMaps() *FileMetricsBuilder {
-	// (Original logic for checking and applying global maps)
 	if recentCommitsMapGlobal := schema.GetRecentCommitsMapGlobal(); recentCommitsMapGlobal != nil {
 		if v, ok := recentCommitsMapGlobal[b.path]; ok {
 			b.metrics.RecentCommits = v
