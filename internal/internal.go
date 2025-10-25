@@ -10,6 +10,13 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
+const (
+	criticalValue = "Critical"
+	highValue     = "High"
+	moderateValue = "Moderate"
+	lowValue      = "Low"
+)
+
 var (
 	criticalColor = color.New(color.FgRed, color.Bold)    // Critical: Red and Bold
 	highColor     = color.New(color.FgYellow, color.Bold) // High: Yellow and Bold
@@ -17,36 +24,40 @@ var (
 	lowColor      = color.New(color.FgHiBlack)            // Low: Dark Grey/HiBlack
 )
 
-// getTextLabel returns a text label indicating the criticality level
-// based on the file's importance score, colored using fatih/color:
+// getPlainLabel returns a plain text label indicating the criticality level
+// based on the file's importance score. This is the core logic used for
+// CSV, JSON, and table printing.
 // - Critical (>=80)
 // - High (>=60)
 // - Moderate (>=40)
 // - Low (<40)
-func getTextLabel(score float64) string {
+func getPlainLabel(score float64) string {
 	switch {
 	case score >= 80:
-		return criticalColor.Sprint("Critical")
+		return criticalValue
 	case score >= 60:
-		return highColor.Sprint("High")
+		return highValue
 	case score >= 40:
-		return moderateColor.Sprint("Moderate")
+		return moderateValue
 	default:
-		return lowColor.Sprint("Low")
+		return lowValue
 	}
 }
 
-// getPlainTextLabel gets the previous one but without color.
-func getPlainTextLabel(score float64) string {
-	switch {
-	case score >= 80:
-		return "Critical"
-	case score >= 60:
-		return "High"
-	case score >= 40:
-		return "Moderate"
-	default:
-		return "Low"
+// getColorLabel returns a colored text label for console output (table).
+// It uses getLabelText to determine the string, and then applies the appropriate color.
+func getColorLabel(score float64) string {
+	text := getPlainLabel(score)
+
+	switch text {
+	case criticalValue:
+		return criticalColor.Sprint(text)
+	case highValue:
+		return highColor.Sprint(text)
+	case moderateValue:
+		return moderateColor.Sprint(text)
+	default: // "Low"
+		return lowColor.Sprint(text)
 	}
 }
 

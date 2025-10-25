@@ -127,7 +127,7 @@ func TestTruncatePath(t *testing.T) {
 }
 
 // TestGetTextLabel tests criticality label assignment
-func TestGetTextLabel(t *testing.T) {
+func TestGePlainTextLabel(t *testing.T) {
 	tests := []struct {
 		score float64
 		want  string
@@ -144,7 +144,7 @@ func TestGetTextLabel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.want, func(t *testing.T) {
-			got := getTextLabel(tt.score)
+			got := getPlainLabel(tt.score)
 			assert.Equal(t, tt.want, got)
 		})
 	}
