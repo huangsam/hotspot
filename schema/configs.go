@@ -9,11 +9,11 @@ import (
 )
 
 const (
-	defaultLookbackDays = 90
-	defaultResultLimit  = 10
-	maxResultLimit      = 1000
-	defaultWorkers      = 4
-	defaultPrecision    = 1
+	defaultLookbackDays = 90   // Default lookback window
+	defaultResultLimit  = 10   // Default number of results
+	maxResultLimit      = 1000 // Maximum number of results
+	defaultWorkers      = 4    // Default number of workers
+	defaultPrecision    = 1    // Default precision for floating number display
 )
 
 // Config holds the runtime configuration for the analysis.
