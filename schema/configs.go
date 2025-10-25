@@ -157,8 +157,8 @@ func ParseFlags() (*Config, error) {
 	}
 	cfg.Excludes = defaults
 	if *exclude != "" {
-		parts := strings.Split(*exclude, ",") // Using standard Split
-		for _, p := range parts {
+		parts := strings.SplitSeq(*exclude, ",") // Using standard Split
+		for p := range parts {
 			trimmedP := strings.TrimSpace(p)
 			if trimmedP != "" {
 				cfg.Excludes = append(cfg.Excludes, trimmedP)
