@@ -3,7 +3,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -17,8 +16,7 @@ import (
 func main() {
 	cfg, err := schema.ParseFlags()
 	if err != nil {
-		fmt.Println("❌", err)
-		os.Exit(1)
+		internal.FatalError("Cannot parse flags", err)
 	}
 
 	var files []string
@@ -27,7 +25,7 @@ func main() {
 		// Run repo-wide aggregation first and use the files seen in that pass.
 		fmt.Printf("🔎 Aggregating recent activity since %s (single repo-wide pass)...\n", cfg.StartTime.Format(time.RFC3339))
 		if err := core.AggregateRecent(cfg); err != nil {
-			fmt.Println("⚠️  Warning: could not aggregate recent activity:", err)
+			internal.Warning("Cannot aggregate recent activity")
 		}
 
 		// Build file list from union of recent maps so we only analyze files touched since StartTime
@@ -53,23 +51,22 @@ func main() {
 		}
 
 		if len(files) == 0 {
-			fmt.Println("⚠️  No files with activity found in the requested window.")
+			internal.Warning("No files with activity found in the requested window")
 			return
 		}
 	} else {
 		files, err = core.ListRepoFiles(cfg.RepoPath, cfg.PathFilter)
 		if err != nil {
-			fmt.Println("❌ Error listing files:", err)
-			os.Exit(1)
+			internal.FatalError("Error listing files", err)
 		}
 		if len(files) == 0 {
-			fmt.Println("⚠️  No files found in repository.")
+			internal.Warning("No files found in repository")
 			return
 		}
 	}
 
 	fmt.Printf("🧠 hotspot: Analyzing %s\n", cfg.RepoPath)
-	fmt.Printf("📅 Range: %s → %s\n\n", cfg.StartTime.Format(time.RFC3339), cfg.EndTime.Format(time.RFC3339))
+	fmt.Printf("📅 Range: %s → %s\n", cfg.StartTime.Format(time.RFC3339), cfg.EndTime.Format(time.RFC3339))
 
 	results := core.AnalyzeRepo(cfg, files)
 	ranked := core.RankFiles(results, cfg.ResultLimit)
