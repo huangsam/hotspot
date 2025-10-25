@@ -2,15 +2,7 @@
 package core
 
 import (
-	"bytes"
-	"encoding/csv"
-	"fmt"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 	"sync"
-	"time"
 
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/schema"
@@ -74,133 +66,18 @@ func AnalyzeRepo(cfg *schema.Config, files []string) []schema.FileMetrics {
 // The analysis is constrained by the time range in cfg if specified.
 // If useFollow is true, git --follow is used to track file renames.
 func AnalyzeFileCommon(cfg *schema.Config, path string, useFollow bool) schema.FileMetrics {
-	repo := cfg.RepoPath
-	var metrics schema.FileMetrics
-	metrics.Path = path
+	// 1. Initialize the builder
+	builder := NewFileMetricsBuilder(cfg, path, useFollow)
 
-	// --- 1. COMMIT HISTORY ANALYSIS ---
-	args := []string{"log"}
-	if useFollow {
-		args = append(args, "--follow")
-	}
-	if !cfg.StartTime.IsZero() {
-		args = append(args, "--since="+cfg.StartTime.Format(time.RFC3339))
-	}
-	args = append(args, "--pretty=format:%an,%ad", "--date=iso", "--", path)
+	// 2. Execute the required steps in order (Method Chaining)
+	builder.
+		fetchCommitHistory().      // Gathers initial Git data
+		fetchFileSize().           // Gets size
+		calculateChurn().          // Computes lines added/deleted
+		applyGlobalMaps().         // Adds recent metrics if global data exists
+		calculateDerivedMetrics(). // Calculates AgeDays and Gini
+		calculateScore()           // Computes the final composite score
 
-	out, err := internal.RunGitCommand(repo, args...)
-	if err != nil {
-		internal.Warning(fmt.Sprintf("Failed to get commit history for %s. Metrics will be zeroed.", path))
-		return metrics
-	}
-
-	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
-	contribCount := map[string]int{}
-	totalCommits := 0
-	var firstCommit time.Time
-
-	for _, l := range lines {
-		if l == "" {
-			continue
-		}
-		parts := strings.SplitN(l, ",", 2)
-		if len(parts) < 2 {
-			continue
-		}
-		author := parts[0]
-		dateStr := parts[1]
-		date, _ := time.Parse("2006-01-02 15:04:05 -0700", dateStr)
-
-		if !cfg.StartTime.IsZero() && date.Before(cfg.StartTime) {
-			continue
-		}
-		if !cfg.EndTime.IsZero() && date.After(cfg.EndTime) {
-			continue
-		}
-
-		contribCount[author]++
-		totalCommits++
-		if firstCommit.IsZero() || date.Before(firstCommit) {
-			firstCommit = date
-		}
-	}
-
-	metrics.UniqueContributors = len(contribCount)
-	metrics.Commits = totalCommits
-	metrics.FirstCommit = firstCommit
-	// If we couldn't determine a first commit (empty history or parsing issues),
-	// set AgeDays to 0 instead of a huge value to avoid skewing the score.
-	if firstCommit.IsZero() {
-		metrics.AgeDays = 0
-	} else {
-		metrics.AgeDays = int(time.Since(firstCommit).Hours() / 24)
-	}
-
-	// --- 2. FILE SIZE ---
-	if info, err := os.Stat(filepath.Join(repo, path)); err == nil {
-		metrics.SizeBytes = info.Size()
-	}
-
-	// --- 3. CHURN ANALYSIS ---
-	churnArgs := []string{"log"}
-	if useFollow {
-		churnArgs = append(churnArgs, "--follow")
-	}
-	if !cfg.StartTime.IsZero() {
-		churnArgs = append(churnArgs, "--since="+cfg.StartTime.Format(time.RFC3339))
-	}
-	churnArgs = append(churnArgs, "--numstat", "--", path)
-
-	out, err = internal.RunGitCommand(cfg.RepoPath, churnArgs...)
-	if err != nil {
-		internal.Warning(fmt.Sprintf("Failed to get churn data for %s. Churn metrics will be zeroed.", path))
-		// Continue, as other metrics might still be valid, but Churn is zero.
-	} else {
-		reader := csv.NewReader(bytes.NewReader(out))
-		reader.Comma = '\t'
-		totalChanges := 0
-		for {
-			rec, err := reader.Read()
-			if err != nil {
-				break
-			}
-			if len(rec) >= 2 {
-				add, _ := strconv.Atoi(rec[0])
-				del, _ := strconv.Atoi(rec[1])
-				totalChanges += add + del
-			}
-		}
-		// Update Churn only if the git command succeeded
-		metrics.Churn = totalChanges + totalCommits
-	}
-
-	// If we have global recent maps (populated by a single repo-wide pass),
-	// use them to populate recent metrics for this file without doing per-file
-	// git --follow invocations.
-	if recentCommitsMapGlobal := schema.GetRecentCommitsMapGlobal(); recentCommitsMapGlobal != nil {
-		if v, ok := recentCommitsMapGlobal[path]; ok {
-			metrics.RecentCommits = v
-		}
-	}
-	if recentChurnMapGlobal := schema.GetRecentChurnMapGlobal(); recentChurnMapGlobal != nil {
-		if v, ok := recentChurnMapGlobal[path]; ok {
-			metrics.RecentChurn = v
-		}
-	}
-	if recentContribMapGlobal := schema.GetRecentContribMapGlobal(); recentContribMapGlobal != nil {
-		if m, ok := recentContribMapGlobal[path]; ok {
-			metrics.RecentContributors = len(m)
-		}
-	}
-
-	// Gini coefficient for author diversity
-	values := make([]float64, 0, len(contribCount))
-	for _, c := range contribCount {
-		values = append(values, float64(c))
-	}
-	metrics.Gini = gini(values)
-
-	// Composite score (0–100)
-	metrics.Score = computeScore(&metrics, cfg.Mode)
-	return metrics
+	// 3. Return the final product
+	return builder.Build()
 }
