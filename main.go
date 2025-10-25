@@ -1,4 +1,4 @@
-// main holds all of the core and entry logic for hotspot CLI.
+// Package main invokes entrypoint logic for hotspot CLI.
 package main
 
 import (
