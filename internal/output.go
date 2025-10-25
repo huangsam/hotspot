@@ -35,7 +35,9 @@ func PrintResults(files []schema.FileMetrics, cfg *schema.Config) {
 		}
 	default:
 		// Default to human-readable table
-		printTableResults(files, cfg, fmtFloat, intFmt)
+		if err := printTableResults(files, cfg, fmtFloat, intFmt); err != nil {
+			FatalError("Error writing table output", err)
+		}
 	}
 }
 
@@ -80,7 +82,7 @@ func printCSVResults(files []schema.FileMetrics, cfg *schema.Config, fmtFloat fu
 }
 
 // printTableResults generates and prints the human-readable table.
-func printTableResults(files []schema.FileMetrics, cfg *schema.Config, fmtFloat func(float64) string, intFmt string) {
+func printTableResults(files []schema.FileMetrics, cfg *schema.Config, fmtFloat func(float64) string, intFmt string) error {
 	detail := cfg.Detail
 	explain := cfg.Explain
 
@@ -131,6 +133,8 @@ func printTableResults(files []schema.FileMetrics, cfg *schema.Config, fmtFloat 
 	}
 
 	// 4. Render the table
-	_ = table.Bulk(data)
-	_ = table.Render()
+	if err := table.Bulk(data); err != nil {
+		return err
+	}
+	return table.Render()
 }
