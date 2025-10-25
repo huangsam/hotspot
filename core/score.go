@@ -68,13 +68,12 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 			wChurnRisk  = 0.06
 			wCommRisk   = 0.04
 		)
-		breakdown["inv_contrib"] = wInvContrib * nInvContrib
-		breakdown["gini"] = wGini * nGiniRaw
-		breakdown["age"] = wAgeRisk * nAge
-		breakdown["size"] = wSizeRisk * nSize
-		breakdown["churn"] = wChurnRisk * nChurn
-		breakdown["commits"] = wCommRisk * nCommits
-		raw = breakdown["inv_contrib"] + breakdown["gini"] + breakdown["age"] + breakdown["size"] + breakdown["churn"] + breakdown["commits"]
+		breakdown[schema.BreakdownInvContrib] = wInvContrib * nInvContrib
+		breakdown[schema.BreakdownGini] = wGini * nGiniRaw
+		breakdown[schema.BreakdownAge] = wAgeRisk * nAge
+		breakdown[schema.BreakdownSize] = wSizeRisk * nSize
+		breakdown[schema.BreakdownChurn] = wChurnRisk * nChurn
+		breakdown[schema.BreakdownCommits] = wCommRisk * nCommits
 
 	case "complexity":
 		// Technical debt focus: large, old files with high total churn
@@ -86,12 +85,11 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 			wContribLow   = 0.05
 		)
 		// Complexity should favor files that aren't being actively fixed (low recent commits)
-		breakdown["size"] = wSizeComplex * nSize
-		breakdown["age"] = wAgeComplex * nAge
-		breakdown["churn"] = wChurnComplex * nChurn
-		breakdown["commits"] = wCommComplex * nCommits
-		breakdown["low_recent"] = wContribLow * nInvRecentCommits // low recent activity means complexity is "settled"
-		raw = breakdown["size"] + breakdown["age"] + breakdown["churn"] + breakdown["commits"] + breakdown["low_recent"]
+		breakdown[schema.BreakdownSize] = wSizeComplex * nSize
+		breakdown[schema.BreakdownAge] = wAgeComplex * nAge
+		breakdown[schema.BreakdownChurn] = wChurnComplex * nChurn
+		breakdown[schema.BreakdownCommits] = wCommComplex * nCommits
+		breakdown[schema.BreakdownLowRecent] = wContribLow * nInvRecentCommits // low recent activity means complexity is "settled"
 
 	case "stale":
 		// Maintenance debt: important but haven't been touched recently
@@ -102,12 +100,11 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 			wCommitsStale   = 0.15 // historically important
 			wContribStale   = 0.05
 		)
-		breakdown["age"] = wAgeStale * nAge
-		breakdown["size"] = wSizeStale * nSize
-		breakdown["inv_recent"] = wInvRecentStale * nInvRecentCommits
-		breakdown["commits"] = wCommitsStale * nCommits
-		breakdown["contrib"] = wContribStale * nContrib
-		raw = breakdown["age"] + breakdown["size"] + breakdown["inv_recent"] + breakdown["commits"] + breakdown["contrib"]
+		breakdown[schema.BreakdownAge] = wAgeStale * nAge
+		breakdown[schema.BreakdownSize] = wSizeStale * nSize
+		breakdown[schema.BreakdownInvRecent] = wInvRecentStale * nInvRecentCommits
+		breakdown[schema.BreakdownCommits] = wCommitsStale * nCommits
+		breakdown[schema.BreakdownContrib] = wContribStale * nContrib
 
 	default: // case "hot" (default)
 		// Hotspot scoring: where activity and volatility are concentrated
@@ -119,17 +116,20 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 			wChurn   = 0.26 // plenty of churn in the code
 			wGini    = 0.04
 		)
-		breakdown["contrib"] = wContrib * nContrib
-		breakdown["commits"] = wCommits * nCommits
-		breakdown["size"] = wSize * nSize
-		breakdown["age"] = wAge * nAge
-		breakdown["churn"] = wChurn * nChurn
+		breakdown[schema.BreakdownContrib] = wContrib * nContrib
+		breakdown[schema.BreakdownCommits] = wCommits * nCommits
+		breakdown[schema.BreakdownSize] = wSize * nSize
+		breakdown[schema.BreakdownAge] = wAge * nAge
+		breakdown[schema.BreakdownChurn] = wChurn * nChurn
 		// Note: nGini is 1.0 - m.Gini. Here we want low Gini to not contribute much.
-		breakdown["gini"] = wGini * (1.0 - nGiniRaw)
-		raw = breakdown["contrib"] + breakdown["commits"] + breakdown["size"] + breakdown["age"] + breakdown["churn"] + breakdown["gini"]
+		breakdown[schema.BreakdownGini] = wGini * (1.0 - nGiniRaw)
 	}
 
+	for _, value := range breakdown {
+		raw += value
+	}
 	score := raw * 100.0
+
 	// If risk mode and this looks like a test file, slightly reduce score since
 	// tests often have narrow contributors and shouldn't be first-class risks.
 	if strings.ToLower(mode) == "risk" {
@@ -137,6 +137,7 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 			score *= 0.75
 		}
 	}
+
 	// Save breakdown (scaled to percent contributions) in the metrics for explain mode.
 	if m.Breakdown == nil {
 		m.Breakdown = make(map[string]float64)
