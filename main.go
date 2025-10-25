@@ -27,7 +27,7 @@ var input = &schema.ConfigRawInput{
 var rootCmd = &cobra.Command{
 	Use:   "hotspot [repo-path]",
 	Short: "Analyze Git repository activity to find code hotspots.",
-	Long:  `hotspot analyzes Git history to identify frequently changed or high-risk files.`,
+	Long:  `Hotspot cuts through history to show you which files are your greatest risk.`,
 	Args:  cobra.ExactArgs(1),
 
 	// PreRunE handles validation and processing using the logic in schema/config.go
@@ -62,7 +62,7 @@ func init() {
 	rootCmd.Flags().StringVar(&input.StartTimeStr, "start", "", "Start date in ISO8601 format")
 	rootCmd.Flags().StringVar(&input.EndTimeStr, "end", "", "End date in ISO8601 format")
 	rootCmd.Flags().IntVar(&input.Workers, "workers", input.Workers, "Number of concurrent workers")
-	rootCmd.Flags().StringVar(&input.Mode, "mode", input.Mode, "Scoring mode: hot, risk, complexity, or stale")
+	rootCmd.Flags().StringVar(&input.Mode, "mode", input.Mode, "Scoring mode: hot or risk or complexity or stale")
 	rootCmd.Flags().StringVar(&input.ExcludeStr, "exclude", "", "Comma-separated list of path prefixes or patterns to ignore")
 	rootCmd.Flags().IntVar(&input.Precision, "precision", input.Precision, "Decimal precision for numeric columns")
 	rootCmd.Flags().StringVar(&input.Output, "output", input.Output, "Output format: text or csv or json")
