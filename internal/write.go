@@ -55,8 +55,8 @@ func writeCSVResults(w *csv.Writer, files []schema.FileMetrics, fmtFloat func(fl
 
 // JSONOutput represents the structure of the JSON data to be printed.
 type JSONOutput struct {
-	Rank  int    `json:"Rank"`
-	Label string `json:"Label"`
+	Rank  int    `json:"rank"`
+	Label string `json:"label"`
 	schema.FileMetrics
 }
 
