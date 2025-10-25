@@ -12,7 +12,8 @@ import (
 	"github.com/olekukonko/tablewriter/tw"
 )
 
-const maxPathWidth = 40
+// maximum width of filepath when rendered as table.
+const maxTablePathWidth = 40
 
 // PrintResults outputs the analysis results in a formatted table or exports them as CSV/JSON.
 func PrintResults(files []schema.FileMetrics, cfg *schema.Config) {
@@ -108,10 +109,10 @@ func printTableResults(files []schema.FileMetrics, cfg *schema.Config, fmtFloat 
 	for i, f := range files {
 		// Prepare the row data as a slice of strings
 		row := []string{
-			strconv.Itoa(i + 1),                // Rank
-			truncatePath(f.Path, maxPathWidth), // File
-			fmtFloat(f.Score),                  // Score
-			getColorLabel(f.Score),             // Label
+			strconv.Itoa(i + 1),                     // Rank
+			truncatePath(f.Path, maxTablePathWidth), // File
+			fmtFloat(f.Score),                       // Score
+			getColorLabel(f.Score),                  // Label
 		}
 		if detail {
 			row = append(
