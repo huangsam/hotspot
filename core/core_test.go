@@ -255,8 +255,8 @@ func TestRankFiles(t *testing.T) {
 // BenchmarkGini benchmarks the Gini coefficient calculation
 func BenchmarkGini(b *testing.B) {
 	values := []float64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		gini(values)
 	}
 }
@@ -272,8 +272,8 @@ func BenchmarkComputeScore(b *testing.B) {
 		Churn:              250,
 		Gini:               0.3,
 	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		computeScore(&metrics, "hot")
 	}
 }
