@@ -1,150 +1,116 @@
 package schema
 
 import (
-	"flag"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 )
 
+// Default values for configuration.
 const (
-	defaultLookbackDays = 90   // Default lookback window
-	defaultResultLimit  = 10   // Default number of results
-	maxResultLimit      = 1000 // Maximum number of results
-	defaultWorkers      = 4    // Default number of workers
-	defaultPrecision    = 1    // Default precision for floating number display
+	DefaultLookbackDays = 90
+	DefaultResultLimit  = 10
+	MaxResultLimit      = 1000
+	DefaultWorkers      = 4
+	DefaultPrecision    = 1
 )
 
+// TimeFormat is the default time representation.
+var TimeFormat = time.RFC3339
+
 // Config holds the runtime configuration for the analysis.
-// It includes repository location, time range filters, and execution parameters.
+// Fields that are set directly by simple flags remain the same (e.g., ResultLimit).
+// Fields that require complex parsing (like dates and excludes) are set by the
+// ProcessAndValidate function after flags are read.
 type Config struct {
-	RepoPath    string    // Absolute path to the Git repository
-	StartTime   time.Time // Start of time range for commit analysis (zero = no limit)
-	EndTime     time.Time // End of time range for commit analysis (zero = no limit)
+	RepoPath    string    // Absolute path to the Git repository (set by positional arg)
+	StartTime   time.Time // Start of time range for commit analysis
+	EndTime     time.Time // End of time range for commit analysis
 	PathFilter  string    // Optional path prefix filter for files
 	ResultLimit int       // Maximum number of files to show in results
 	Workers     int       // Number of concurrent workers for analysis
 	Mode        string    // Scoring mode: "hot" or "risk"
-	Excludes    []string  // Path prefixes/suffixes to ignore
-	Detail      bool      // If true, print per-file metadata
-	Explain     bool      // If true, print per-file breakdown
-	Precision   int       // Decimal precision for numeric columns (1 or 2)
-	Output      string    // Output format: "text" or "csv" or "json"
-	CSVFile     string    // Optional path to write CSV output directly
-	JSONFile    string    // Optional path to write JSON output directly
-	Follow      bool      // If true, re-run per-file analysis with `--follow` for the top -limit files
+	Excludes    []string  // Path prefixes/suffixes to ignore (FINAL processed list)
+	Detail      bool
+	Explain     bool
+	Precision   int
+	Output      string
+	CSVFile     string
+	JSONFile    string
+	Follow      bool
 }
 
-// ParseFlags processes command line arguments and returns a Config struct.
-// It uses the standard flag package to handle options for controlling the analysis.
-// Returns an error if required arguments are missing or invalid.
-func ParseFlags() (*Config, error) {
-	// Initialize with defaults.
-	endTime := time.Now()
-	startTime := endTime.Add(-defaultLookbackDays * 24 * time.Hour)
-	cfg := &Config{Workers: defaultWorkers, StartTime: startTime, EndTime: endTime}
+// ConfigRawInput holds the raw string inputs from flags that require parsing/validation.
+// These fields are bound directly to Cobra's flags in main.go.
+type ConfigRawInput struct {
+	StartTimeStr string
+	EndTimeStr   string
+	ExcludeStr   string
+	Mode         string
+	Output       string
+	Precision    int
+	ResultLimit  int
+	Workers      int
+}
 
-	// Define flags
-	limit := flag.Int("limit", defaultResultLimit, fmt.Sprintf("Number of files to display (default: %d, max: %d)", defaultResultLimit, maxResultLimit))
-	filter := flag.String("filter", "", "Filter files by path prefix")
-	startDate := flag.String("start", "", "Start date in ISO8601 format (e.g., 2023-01-01T00:00:00Z)")
-	endDate := flag.String("end", "", "End date in ISO8601 format (defaults to current time)")
-	workers := flag.Int("workers", defaultWorkers, "Number of concurrent workers")
-	mode := flag.String("mode", "hot", "Scoring mode: hot, risk, complexity, or stale")
-	exclude := flag.String("exclude", "", "Comma-separated list of path prefixes or patterns to ignore (e.g. go.sum)")
-	detail := flag.Bool("detail", false, "Print per-file metadata such as commit activity, contributor count, etc.")
-	explain := flag.Bool("explain", false, "Print per-file component score breakdown (for debugging/tuning)")
-	precision := flag.Int("precision", defaultPrecision, "Decimal precision for numeric columns: 1 or 2")
-	output := flag.String("output", "text", "Output format: text or csv or json")
-	csvFile := flag.String("csv-file", "", "Optional path to write CSV output directly")
-	jsonFile := flag.String("json-file", "", "Optional path to write JSON output directly")
-	follow := flag.Bool("follow", false, "Re-run per-file analysis with --follow for the top -limit files (slower but handles renames)")
-
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [options] <repo-path>\n\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "Options:\n")
-		flag.PrintDefaults()
+// ProcessAndValidate performs all complex parsing and validation on the raw inputs
+// and updates the final Config struct.
+func ProcessAndValidate(cfg *Config, input *ConfigRawInput) error {
+	// --- 1. ResultLimit Validation ---
+	if input.ResultLimit <= 0 || input.ResultLimit > MaxResultLimit {
+		return fmt.Errorf("limit must be greater than 0 and cannot exceed %d (received %d)", MaxResultLimit, input.ResultLimit)
 	}
+	cfg.ResultLimit = input.ResultLimit // Final assignment
 
-	flag.Parse()
-
-	// --- 1. Repository Path Validation ---
-	if flag.NArg() != 1 {
-		flag.Usage()
-		return nil, fmt.Errorf("repository path is required")
+	// --- 2. Workers Validation ---
+	if input.Workers <= 0 {
+		return fmt.Errorf("workers must be greater than 0 (received %d)", input.Workers)
 	}
-	cfg.RepoPath = flag.Arg(0)
+	cfg.Workers = input.Workers // Final assignment
 
-	// --- 2. ResultLimit Validation ---
-	if *limit <= 0 {
-		return nil, fmt.Errorf("limit must be greater than 0 (received %d)", *limit)
-	}
-	if *limit > maxResultLimit {
-		return nil, fmt.Errorf("limit cannot exceed %d files (received %d)", maxResultLimit, *limit)
-	}
-	cfg.ResultLimit = *limit
-
-	// --- 3. Workers Validation ---
-	if *workers <= 0 {
-		return nil, fmt.Errorf("workers must be greater than 0 (received %d)", *workers)
-	}
-	cfg.Workers = *workers
-
-	// --- 4. Mode Validation ---
+	// --- 3. Mode Validation ---
 	validModes := map[string]bool{"hot": true, "risk": true, "complexity": true, "stale": true}
-	cfg.Mode = strings.ToLower(*mode)
+	cfg.Mode = strings.ToLower(input.Mode)
 	if _, ok := validModes[cfg.Mode]; !ok {
-		return nil, fmt.Errorf("invalid mode '%s'. Must be one of: hot, risk, complexity, stale", *mode)
+		return fmt.Errorf("invalid mode '%s'. Must be one of: hot, risk, complexity, stale", input.Mode)
 	}
 
-	// --- 5. Precision Validation ---
-	if *precision < 1 || *precision > 2 {
-		return nil, fmt.Errorf("precision must be 1 or 2 (received %d)", *precision)
+	// --- 4. Precision and Output Validation ---
+	if input.Precision < 1 || input.Precision > 2 {
+		return fmt.Errorf("precision must be 1 or 2 (received %d)", input.Precision)
 	}
-	cfg.Precision = *precision
+	cfg.Precision = input.Precision
 
-	// --- 6. Output Format Validation ---
-	cfg.Output = strings.ToLower(*output)
+	cfg.Output = strings.ToLower(input.Output)
 	if cfg.Output != "text" && cfg.Output != "csv" && cfg.Output != "json" {
-		return nil, fmt.Errorf("invalid output format '%s'. Must be 'text' or 'csv' or 'json'", *output)
+		return fmt.Errorf("invalid output format '%s'. Must be 'text' or 'csv' or 'json'", cfg.Output)
 	}
-	cfg.CSVFile = *csvFile
-	cfg.JSONFile = *jsonFile
 
-	// --- 7. Date Parsing and Time Range Validation ---
+	// --- 5. Date Parsing and Time Range Validation ---
 
-	// Parse start date if provided
-	if *startDate != "" {
-		t, err := time.Parse(time.RFC3339, *startDate)
+	// Set defaults if strings are empty
+	cfg.EndTime = time.Now()
+	cfg.StartTime = cfg.EndTime.Add(-DefaultLookbackDays * 24 * time.Hour)
+
+	if input.StartTimeStr != "" {
+		t, err := time.Parse(time.RFC3339, input.StartTimeStr)
 		if err != nil {
-			return nil, fmt.Errorf("invalid start date format for '%s'. Must be RFC3339 (e.g., 2023-01-01T00:00:00Z): %v", *startDate, err)
+			return fmt.Errorf("invalid start date format for '%s'. Must be RFC3339: %v", input.StartTimeStr, err)
 		}
 		cfg.StartTime = t
 	}
-
-	// Parse end date if provided
-	if *endDate != "" {
-		t, err := time.Parse(time.RFC3339, *endDate)
+	if input.EndTimeStr != "" {
+		t, err := time.Parse(time.RFC3339, input.EndTimeStr)
 		if err != nil {
-			return nil, fmt.Errorf("invalid end date format for '%s'. Must be RFC3339: %v", *endDate, err)
+			return fmt.Errorf("invalid end date format for '%s'. Must be RFC3339: %v", input.EndTimeStr, err)
 		}
 		cfg.EndTime = t
 	}
-
-	// Check time range consistency (Start before End)
 	if !cfg.StartTime.IsZero() && !cfg.EndTime.IsZero() && cfg.StartTime.After(cfg.EndTime) {
-		return nil, fmt.Errorf("start time (%s) cannot be after end time (%s)", cfg.StartTime.Format(time.RFC3339), cfg.EndTime.Format(time.RFC3339))
+		return fmt.Errorf("start time (%s) cannot be after end time (%s)", cfg.StartTime.Format(time.RFC3339), cfg.EndTime.Format(time.RFC3339))
 	}
 
-	// --- 8. Remaining Config Assignment & Excludes Processing ---
-
-	cfg.PathFilter = *filter
-	cfg.Detail = *detail
-	cfg.Explain = *explain
-	cfg.Follow = *follow
-
-	// Excludes processing (using standard strings.Split)
+	// --- 6. Excludes Processing ---
 	defaults := []string{
 		// Dependency Lock File
 		"Cargo.lock",        // Rust
@@ -162,8 +128,9 @@ func ParseFlags() (*Config, error) {
 		"dist/", "build/", "out/", "target/", "bin/",
 	}
 	cfg.Excludes = defaults
-	if *exclude != "" {
-		parts := strings.SplitSeq(*exclude, ",") // Using standard Split
+
+	if input.ExcludeStr != "" {
+		parts := strings.SplitSeq(input.ExcludeStr, ",")
 		for p := range parts {
 			trimmedP := strings.TrimSpace(p)
 			if trimmedP != "" {
@@ -172,5 +139,5 @@ func ParseFlags() (*Config, error) {
 		}
 	}
 
-	return cfg, nil
+	return nil
 }
