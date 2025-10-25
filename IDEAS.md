@@ -10,9 +10,7 @@ Distribution
 Performance & Robustness
 
 - Progress indicators - For large repos, show progress (currently just emojis at start)
-- Graceful interruption - Handle Ctrl+C cleanly
 - Memory optimization - Large repos might consume lots of memory with current buffering
-- Git availability check - Verify git is installed before running
 
 User Experience
 
