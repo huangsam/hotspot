@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	maxLimitDefault  = 200
-	defaultWorkers   = 8
 	defaultLimit     = 10
+	maxLimitDefault  = 1000
+	defaultWorkers   = 4
 	defaultPrecision = 1
 )
 
@@ -38,6 +38,7 @@ type Config struct {
 // It uses the standard flag package to handle options for controlling the analysis.
 // Returns an error if required arguments are missing or invalid.
 func ParseFlags() (*Config, error) {
+	// Initialize with defaults. EndTime defaults to current time for analysis range.
 	cfg := &Config{Workers: defaultWorkers, EndTime: time.Now()}
 
 	// Define flags
@@ -63,23 +64,81 @@ func ParseFlags() (*Config, error) {
 
 	flag.Parse()
 
+	// --- 1. Repository Path Validation ---
 	if flag.NArg() != 1 {
 		flag.Usage()
 		return nil, fmt.Errorf("repository path is required")
 	}
-
 	cfg.RepoPath = flag.Arg(0)
+
+	// --- 2. ResultLimit Validation ---
+	if *limit <= 0 {
+		return nil, fmt.Errorf("limit must be greater than 0 (received %d)", *limit)
+	}
 	if *limit > maxLimitDefault {
-		return nil, fmt.Errorf("limit cannot exceed %d files", maxLimitDefault)
+		return nil, fmt.Errorf("limit cannot exceed %d files (received %d)", maxLimitDefault, *limit)
 	}
 	cfg.ResultLimit = *limit
-	cfg.PathFilter = *filter
+
+	// --- 3. Workers Validation ---
+	if *workers <= 0 {
+		return nil, fmt.Errorf("workers must be greater than 0 (received %d)", *workers)
+	}
 	cfg.Workers = *workers
-	cfg.Mode = *mode
+
+	// --- 4. Mode Validation ---
+	validModes := map[string]bool{"hot": true, "risk": true, "complexity": true, "stale": true}
+	cfg.Mode = strings.ToLower(*mode)
+	if _, ok := validModes[cfg.Mode]; !ok {
+		return nil, fmt.Errorf("invalid mode '%s'. Must be one of: hot, risk, complexity, stale", *mode)
+	}
+
+	// --- 5. Precision Validation ---
+	if *precision < 1 || *precision > 2 {
+		return nil, fmt.Errorf("precision must be 1 or 2 (received %d)", *precision)
+	}
+	cfg.Precision = *precision
+
+	// --- 6. Output Format Validation ---
+	cfg.Output = strings.ToLower(*output)
+	if cfg.Output != "text" && cfg.Output != "csv" {
+		return nil, fmt.Errorf("invalid output format '%s'. Must be 'text' or 'csv'", *output)
+	}
+	cfg.CSVFile = *csvFile // CSVFile is just a path, no complex validation needed here.
+
+	// --- 7. Date Parsing and Time Range Validation ---
+
+	// Parse start date if provided
+	if *startDate != "" {
+		t, err := time.Parse(time.RFC3339, *startDate)
+		if err != nil {
+			return nil, fmt.Errorf("invalid start date format for '%s'. Must be RFC3339 (e.g., 2023-01-01T00:00:00Z): %v", *startDate, err)
+		}
+		cfg.StartTime = t
+	}
+
+	// Parse end date if provided
+	if *endDate != "" {
+		t, err := time.Parse(time.RFC3339, *endDate)
+		if err != nil {
+			return nil, fmt.Errorf("invalid end date format for '%s'. Must be RFC3339: %v", *endDate, err)
+		}
+		cfg.EndTime = t
+	}
+
+	// Check time range consistency (Start before End)
+	if !cfg.StartTime.IsZero() && !cfg.EndTime.IsZero() && cfg.StartTime.After(cfg.EndTime) {
+		return nil, fmt.Errorf("start time (%s) cannot be after end time (%s)", cfg.StartTime.Format(time.RFC3339), cfg.EndTime.Format(time.RFC3339))
+	}
+
+	// --- 8. Remaining Config Assignment & Excludes Processing ---
+
+	cfg.PathFilter = *filter
 	cfg.Detail = *detail
 	cfg.Explain = *explain
+	cfg.Follow = *follow
 
-	// default excludes
+	// Excludes processing (using standard strings.Split)
 	defaults := []string{
 		// Dependency Lock File
 		"Cargo.lock",        // Rust
@@ -98,42 +157,13 @@ func ParseFlags() (*Config, error) {
 	}
 	cfg.Excludes = defaults
 	if *exclude != "" {
-		parts := strings.SplitSeq(*exclude, ",")
-		for p := range parts {
-			p = strings.TrimSpace(p)
-			if p != "" {
-				cfg.Excludes = append(cfg.Excludes, p)
+		parts := strings.Split(*exclude, ",") // Using standard Split
+		for _, p := range parts {
+			trimmedP := strings.TrimSpace(p)
+			if trimmedP != "" {
+				cfg.Excludes = append(cfg.Excludes, trimmedP)
 			}
 		}
-	}
-
-	if *precision < 1 {
-		*precision = 1
-	}
-	if *precision > 2 {
-		*precision = 2
-	}
-	cfg.Precision = *precision
-	cfg.Output = strings.ToLower(*output)
-	cfg.CSVFile = *csvFile
-	cfg.Follow = *follow
-
-	// Parse start date if provided
-	if *startDate != "" {
-		t, err := time.Parse(time.RFC3339, *startDate)
-		if err != nil {
-			return nil, fmt.Errorf("invalid start date: %v", err)
-		}
-		cfg.StartTime = t
-	}
-
-	// Parse end date if provided
-	if *endDate != "" {
-		t, err := time.Parse(time.RFC3339, *endDate)
-		if err != nil {
-			return nil, fmt.Errorf("invalid end date: %v", err)
-		}
-		cfg.EndTime = t
 	}
 
 	return cfg, nil
