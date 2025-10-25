@@ -30,6 +30,10 @@ var rootCmd = &cobra.Command{
 	Long:  `Hotspot cuts through history to show you which files are your greatest risk.`,
 	Args:  cobra.ExactArgs(1),
 
+	// Just let the main function print the error. The cobra library
+	// does not need to do it in this case
+	SilenceErrors: true,
+
 	// PreRunE handles validation and processing using the logic in schema/config.go
 	PreRunE: func(_ *cobra.Command, args []string) error {
 		// Set the positional argument (repo-path)
