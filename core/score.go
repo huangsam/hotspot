@@ -61,8 +61,8 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 	case "risk":
 		// Knowledge-risk focused scoring: prioritize concentration and bus-factor
 		const (
-			wInvContrib = 0.32
-			wGini       = 0.28
+			wInvContrib = 0.32 // Directly measures bus factor
+			wGini       = 0.28 // Measures contribution inequality
 			wAgeRisk    = 0.18
 			wSizeRisk   = 0.12
 			wChurnRisk  = 0.06
@@ -78,9 +78,9 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 	case "complexity":
 		// Technical debt focus: large, old files with high total churn
 		const (
-			wSizeComplex  = 0.35
-			wAgeComplex   = 0.25
-			wChurnComplex = 0.25
+			wSizeComplex  = 0.35 // The most fundamental measure of complexity
+			wAgeComplex   = 0.25 // Older code often contains legacy complexity
+			wChurnComplex = 0.25 // High churn suggests volatility and/or refactoring difficulty
 			wCommComplex  = 0.10
 			wContribLow   = 0.05
 		)
@@ -94,33 +94,33 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 	case "stale":
 		// Maintenance debt: important but haven't been touched recently
 		const (
-			wAgeStale       = 0.20
-			wSizeStale      = 0.25
-			wInvRecentStale = 0.35 // primary driver: lack of recent activity
-			wCommitsStale   = 0.15 // historically important
+			wInvRecentStale = 0.35 // This is the definition of "stale" — a lack of recent commits
+			wSizeStale      = 0.25 // A large file that goes untouched is a bigger debt than a small one.
+			wAgeStale       = 0.20 // Older files have a higher chance of accumulating maintenance debt
+			wCommitsStale   = 0.15
 			wContribStale   = 0.05
 		)
-		breakdown[schema.BreakdownAge] = wAgeStale * nAge
-		breakdown[schema.BreakdownSize] = wSizeStale * nSize
 		breakdown[schema.BreakdownInvRecent] = wInvRecentStale * nInvRecentCommits
+		breakdown[schema.BreakdownSize] = wSizeStale * nSize
+		breakdown[schema.BreakdownAge] = wAgeStale * nAge
 		breakdown[schema.BreakdownCommits] = wCommitsStale * nCommits
 		breakdown[schema.BreakdownContrib] = wContribStale * nContrib
 
 	default: // case "hot" (default)
 		// Hotspot scoring: where activity and volatility are concentrated
 		const (
+			wCommits = 0.28 // Raw commit count is a great measure of activity
+			wChurn   = 0.26 // Volatility (lines changed) is key to a "hotspot"
 			wContrib = 0.18
-			wCommits = 0.28 // many code changes
 			wSize    = 0.16
 			wAge     = 0.08
-			wChurn   = 0.26 // plenty of churn in the code
 			wGini    = 0.04
 		)
-		breakdown[schema.BreakdownContrib] = wContrib * nContrib
 		breakdown[schema.BreakdownCommits] = wCommits * nCommits
+		breakdown[schema.BreakdownChurn] = wChurn * nChurn
+		breakdown[schema.BreakdownContrib] = wContrib * nContrib
 		breakdown[schema.BreakdownSize] = wSize * nSize
 		breakdown[schema.BreakdownAge] = wAge * nAge
-		breakdown[schema.BreakdownChurn] = wChurn * nChurn
 		// Note: nGini is 1.0 - m.Gini. Here we want low Gini to not contribute much.
 		breakdown[schema.BreakdownGini] = wGini * (1.0 - nGiniRaw)
 	}
