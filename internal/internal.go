@@ -36,6 +36,20 @@ func getTextLabel(score float64) string {
 	}
 }
 
+// getPlainTextLabel gets the previous one but without color.
+func getPlainTextLabel(score float64) string {
+	switch {
+	case score >= 80:
+		return "Critical"
+	case score >= 60:
+		return "High"
+	case score >= 40:
+		return "Moderate"
+	default:
+		return "Low"
+	}
+}
+
 // metricBreakdown holds a key-value pair from the Breakdown map representing a metric's contribution.
 type metricBreakdown struct {
 	Name  string  // e.g., "commits", "churn", "size"
