@@ -26,7 +26,7 @@ hotspot .
 
 ## Scoring modes
 
-The core power of Hotspot is the `-mode` flag, which defines the ranking algorithm:
+The core power of Hotspot is the `--mode` flag, which defines the ranking algorithm:
 
 | Mode | Focus |
 |------|---------|
@@ -71,6 +71,7 @@ hotspot --mode complexity --limit 10 --follow .
 
 - Start with `hotspot .` for a quick snapshot
 - Combine filters and excludes for focus
-- Use CSV export for tracking trends
-- Try `--explain` to see how each metric affects ranking
+- Use CSV and JSON exports for tracking trends
+- Try `--explain` to see a breakdown of what influenced file rank
+- Try `--detail` to see metadata about each file
 - Adjust `--workers` based on your CPU cores for optimal performance
