@@ -29,8 +29,9 @@ type Config struct {
 	Detail      bool      // If true, print per-file metadata
 	Explain     bool      // If true, print per-file breakdown
 	Precision   int       // Decimal precision for numeric columns (1 or 2)
-	Output      string    // Output format: "text" (default) or "csv"
+	Output      string    // Output format: "text" or "csv" or "json"
 	CSVFile     string    // Optional path to write CSV output directly
+	JSONFile    string    // Optional path to write JSON output directly
 	Follow      bool      // If true, re-run per-file analysis with `--follow` for the top -limit files
 }
 
@@ -52,8 +53,9 @@ func ParseFlags() (*Config, error) {
 	detail := flag.Bool("detail", false, "Print per-file metadata such as commit activity, contributor count, etc.")
 	explain := flag.Bool("explain", false, "Print per-file component score breakdown (for debugging/tuning)")
 	precision := flag.Int("precision", defaultPrecision, "Decimal precision for numeric columns: 1 or 2")
-	output := flag.String("output", "text", "Output format: text or csv")
-	csvFile := flag.String("csv-file", "", "Optional path to write CSV output directly (overrides stdout)")
+	output := flag.String("output", "text", "Output format: text or csv or json")
+	csvFile := flag.String("csv-file", "", "Optional path to write CSV output directly")
+	jsonFile := flag.String("json-file", "", "Optional path to write JSON output directly")
 	follow := flag.Bool("follow", false, "Re-run per-file analysis with --follow for the top -limit files (slower but handles renames)")
 
 	flag.Usage = func() {
@@ -101,10 +103,11 @@ func ParseFlags() (*Config, error) {
 
 	// --- 6. Output Format Validation ---
 	cfg.Output = strings.ToLower(*output)
-	if cfg.Output != "text" && cfg.Output != "csv" {
-		return nil, fmt.Errorf("invalid output format '%s'. Must be 'text' or 'csv'", *output)
+	if cfg.Output != "text" && cfg.Output != "csv" && cfg.Output != "json" {
+		return nil, fmt.Errorf("invalid output format '%s'. Must be 'text' or 'csv' or 'json'", *output)
 	}
-	cfg.CSVFile = *csvFile // CSVFile is just a path, no complex validation needed here.
+	cfg.CSVFile = *csvFile
+	cfg.JSONFile = *jsonFile
 
 	// --- 7. Date Parsing and Time Range Validation ---
 

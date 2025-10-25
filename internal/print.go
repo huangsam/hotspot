@@ -32,9 +32,26 @@ func PrintResults(files []schema.FileMetrics, cfg *schema.Config) {
 		return fmt.Sprintf(numFmt, precision, v)
 	}
 
-	// If CSV output requested, skip printing the human-readable table
+	// JSON Output Handler
+	if outFmt == "json" {
+		// Use a utility function to determine the output file (JSONFile or stdout)
+		file := selectJSONOutputFile(cfg)
+		defer file.Close()
+
+		// The writeJSONResults function should be defined elsewhere (as requested previously)
+		if err := writeJSONResults(file, files); err != nil {
+			fmt.Fprintf(os.Stderr, "error writing JSON: %v\n", err)
+		}
+
+		if file != os.Stdout {
+			fmt.Fprintf(os.Stderr, "wrote JSON to %s\n", cfg.JSONFile)
+		}
+		return
+	}
+
+	// CSV Output Handler
 	if outFmt == "csv" {
-		file := selectOutputFile(cfg)
+		file := selectCSVOutputFile(cfg)
 		w := csv.NewWriter(file)
 		writeCSVResults(w, files, fmtFloat, intFmt)
 		w.Flush()
