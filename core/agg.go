@@ -1,11 +1,11 @@
 package core
 
 import (
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -13,14 +13,19 @@ import (
 // If pathFilter is non-empty, only files whose paths start with the filter are included.
 // Returns an error if the git command fails or the repository is invalid.
 func ListRepoFiles(repoPath, pathFilter string) ([]string, error) {
-	cmd := exec.Command("git", "-C", repoPath, "ls-files")
-	out, err := cmd.Output()
+	out, err := internal.RunGitCommand(repoPath, "ls-files")
 	if err != nil {
 		return nil, err
 	}
 	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+
+	// Explicitly handle case where output is empty (e.g., no tracked files)
+	if len(lines) == 0 || (len(lines) == 1 && lines[0] == "") {
+		return nil, nil
+	}
+
 	if pathFilter != "" {
-		filtered := []string{}
+		filtered := make([]string, 0, len(lines))
 		for _, f := range lines {
 			if strings.HasPrefix(f, pathFilter) {
 				filtered = append(filtered, f)
@@ -40,8 +45,7 @@ func AggregateRecent(cfg *schema.Config) error {
 	}
 
 	since := cfg.StartTime.Format(time.RFC3339)
-	cmd := exec.Command("git", "-C", cfg.RepoPath, "log", "--since="+since, "--numstat", "--pretty=format:--%H|%an")
-	out, err := cmd.Output()
+	out, err := internal.RunGitCommand(cfg.RepoPath, "log", "--since="+since, "--numstat", "--pretty=format:--%H|%an")
 	if err != nil {
 		return err
 	}

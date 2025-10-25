@@ -4,8 +4,8 @@ package core
 import (
 	"bytes"
 	"encoding/csv"
+	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -73,8 +73,8 @@ func AnalyzeFileCommon(cfg *schema.Config, path string, useFollow bool) schema.F
 	var metrics schema.FileMetrics
 	metrics.Path = path
 
-	// Build git log command with optional --follow
-	args := []string{"-C", repo, "log"}
+	// --- 1. COMMIT HISTORY ANALYSIS ---
+	args := []string{"log"}
 	if useFollow {
 		args = append(args, "--follow")
 	}
@@ -83,9 +83,9 @@ func AnalyzeFileCommon(cfg *schema.Config, path string, useFollow bool) schema.F
 	}
 	args = append(args, "--pretty=format:%an,%ad", "--date=iso", "--", path)
 
-	cmd := exec.Command("git", args...)
-	out, err := cmd.Output()
+	out, err := internal.RunGitCommand(repo, args...)
 	if err != nil {
+		internal.Warning(fmt.Sprintf("Failed to get commit history for %s. Metrics will be zeroed.", path))
 		return metrics
 	}
 
@@ -105,12 +105,14 @@ func AnalyzeFileCommon(cfg *schema.Config, path string, useFollow bool) schema.F
 		author := parts[0]
 		dateStr := parts[1]
 		date, _ := time.Parse("2006-01-02 15:04:05 -0700", dateStr)
+
 		if !cfg.StartTime.IsZero() && date.Before(cfg.StartTime) {
 			continue
 		}
 		if !cfg.EndTime.IsZero() && date.After(cfg.EndTime) {
 			continue
 		}
+
 		contribCount[author]++
 		totalCommits++
 		if firstCommit.IsZero() || date.Before(firstCommit) {
@@ -129,14 +131,13 @@ func AnalyzeFileCommon(cfg *schema.Config, path string, useFollow bool) schema.F
 		metrics.AgeDays = int(time.Since(firstCommit).Hours() / 24)
 	}
 
-	// File size
-	info, err := os.Stat(filepath.Join(repo, path))
-	if err == nil {
+	// --- 2. FILE SIZE ---
+	if info, err := os.Stat(filepath.Join(repo, path)); err == nil {
 		metrics.SizeBytes = info.Size()
 	}
 
-	// Churn
-	churnArgs := []string{"-C", repo, "log"}
+	// --- 3. CHURN ANALYSIS ---
+	churnArgs := []string{"log"}
 	if useFollow {
 		churnArgs = append(churnArgs, "--follow")
 	}
@@ -145,23 +146,28 @@ func AnalyzeFileCommon(cfg *schema.Config, path string, useFollow bool) schema.F
 	}
 	churnArgs = append(churnArgs, "--numstat", "--", path)
 
-	cmd = exec.Command("git", churnArgs...)
-	out, _ = cmd.Output()
-	reader := csv.NewReader(bytes.NewReader(out))
-	reader.Comma = '\t'
-	totalChanges := 0
-	for {
-		rec, err := reader.Read()
-		if err != nil {
-			break
+	out, err = internal.RunGitCommand(cfg.RepoPath, churnArgs...)
+	if err != nil {
+		internal.Warning(fmt.Sprintf("Failed to get churn data for %s. Churn metrics will be zeroed.", path))
+		// Continue, as other metrics might still be valid, but Churn is zero.
+	} else {
+		reader := csv.NewReader(bytes.NewReader(out))
+		reader.Comma = '\t'
+		totalChanges := 0
+		for {
+			rec, err := reader.Read()
+			if err != nil {
+				break
+			}
+			if len(rec) >= 2 {
+				add, _ := strconv.Atoi(rec[0])
+				del, _ := strconv.Atoi(rec[1])
+				totalChanges += add + del
+			}
 		}
-		if len(rec) >= 2 {
-			add, _ := strconv.Atoi(rec[0])
-			del, _ := strconv.Atoi(rec[1])
-			totalChanges += add + del
-		}
+		// Update Churn only if the git command succeeded
+		metrics.Churn = totalChanges + totalCommits
 	}
-	metrics.Churn = totalChanges + totalCommits
 
 	// If we have global recent maps (populated by a single repo-wide pass),
 	// use them to populate recent metrics for this file without doing per-file
