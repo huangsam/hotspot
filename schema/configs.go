@@ -72,7 +72,7 @@ func ProcessAndValidate(cfg *Config, input *ConfigRawInput) error {
 	validModes := map[string]bool{"hot": true, "risk": true, "complexity": true, "stale": true}
 	cfg.Mode = strings.ToLower(input.Mode)
 	if _, ok := validModes[cfg.Mode]; !ok {
-		return fmt.Errorf("invalid mode '%s'. Must be one of: hot, risk, complexity, stale", input.Mode)
+		return fmt.Errorf("invalid mode '%s'. must be hot, risk, complexity, stale", input.Mode)
 	}
 
 	// --- 4. Precision and Output Validation ---
@@ -84,7 +84,7 @@ func ProcessAndValidate(cfg *Config, input *ConfigRawInput) error {
 	cfg.Output = strings.ToLower(input.Output)
 	validOutputs := map[string]bool{"text": true, "csv": true, "json": true}
 	if _, ok := validOutputs[cfg.Output]; !ok {
-		return fmt.Errorf("invalid output format '%s'. Must be 'text' or 'csv' or 'json'", cfg.Output)
+		return fmt.Errorf("invalid output format '%s'. must be text, csv, json", cfg.Output)
 	}
 
 	// --- 5. Date Parsing and Time Range Validation ---
@@ -96,14 +96,14 @@ func ProcessAndValidate(cfg *Config, input *ConfigRawInput) error {
 	if input.StartTimeStr != "" {
 		t, err := time.Parse(time.RFC3339, input.StartTimeStr)
 		if err != nil {
-			return fmt.Errorf("invalid start date format for '%s'. Must be RFC3339: %v", input.StartTimeStr, err)
+			return fmt.Errorf("invalid start date format for '%s'. must be RFC3339: %v", input.StartTimeStr, err)
 		}
 		cfg.StartTime = t
 	}
 	if input.EndTimeStr != "" {
 		t, err := time.Parse(time.RFC3339, input.EndTimeStr)
 		if err != nil {
-			return fmt.Errorf("invalid end date format for '%s'. Must be RFC3339: %v", input.EndTimeStr, err)
+			return fmt.Errorf("invalid end date format for '%s'. must be RFC3339: %v", input.EndTimeStr, err)
 		}
 		cfg.EndTime = t
 	}

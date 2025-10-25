@@ -75,7 +75,7 @@ func init() {
 // main starts the execution of the logic.
 func main() {
 	if err := rootCmd.Execute(); err != nil {
-		internal.FatalError("CLI failed to execute", err)
+		internal.FatalError("CLI error", err)
 	}
 }
 
