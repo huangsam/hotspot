@@ -33,3 +33,6 @@ dist/
 *.cast
 /hotspot
 /coverage.txt
+
+# Output assets
+*.csv
