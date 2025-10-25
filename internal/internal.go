@@ -51,22 +51,10 @@ const (
 func formatTopMetricContributors(f *schema.FileMetrics) string {
 	var metrics []metricBreakdown
 
-	// Define the known metric keys you want to include in the breakdown
-	// (excluding inv_contrib if it's just the inverse of contrib).
-	metricKeys := map[string]bool{
-		"contrib": true,
-		"commits": true,
-		"size":    true,
-		"age":     true,
-		"churn":   true,
-		"gini":    true,
-		// Add other core metrics here, if any.
-	}
-
 	// 1. Filter and Convert Map to Slice
 	for k, v := range f.Breakdown {
-		// Only include known metrics, and skip those with zero contribution
-		if metricKeys[k] && v >= metricContribMinimum {
+		// Only include meaningful metrics
+		if v >= metricContribMinimum {
 			metrics = append(metrics, metricBreakdown{
 				Name:  k,
 				Value: v, // This is the percentage contribution
