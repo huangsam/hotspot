@@ -15,7 +15,6 @@ Performance & Robustness
 User Experience
 
 - Config file support - .hotspot.yml for default settings per repo
-- Validation - Check mode names, date formats earlier with clear errors
 - Shell completion - Bash/Zsh completion scripts for flags
 
 ## Medium-term projects
