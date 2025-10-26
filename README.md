@@ -41,23 +41,23 @@ The core power of Hotspot is the `--mode` flag, which defines the ranking algori
 
 ```bash
 # Current Activity Hotspots
-hotspot --mode hot --start 2024-10-01T00:00:00Z --limit 15 .
+hotspot --mode hot --start 2024-10-01T00:00:00Z --limit 15
 
 # Immediate Refactoring Targets
-hotspot --mode complexity --limit 20 .
+hotspot --mode complexity --limit 20
 ```
 
 ### Strategic Risk & Debt Management
 
 ```bash
 # Bus Factor/Knowledge Risk
-hotspot --mode risk --output csv --csv-file bus-factor.csv .
+hotspot --mode risk --output csv --csv-file bus-factor.csv
 
 # Maintenance Debt Audit
-hotspot --mode stale --exclude "test/,vendor/" .
+hotspot --mode stale --exclude "test/,vendor/"
 
 # Complex Files with History
-hotspot --mode complexity --limit 10 --follow .
+hotspot --mode complexity --limit 10 --follow
 ```
 
 ## Performance
