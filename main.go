@@ -28,7 +28,7 @@ var rootCmd = &cobra.Command{
 	Use:   "hotspot [repo-path]",
 	Short: "Analyze Git repository activity to find code hotspots.",
 	Long:  `Hotspot cuts through history to show you which files are your greatest risk.`,
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 
 	// Just let the main function print the error. The cobra library
 	// does not need to do it in this case
@@ -36,8 +36,13 @@ var rootCmd = &cobra.Command{
 
 	// PreRunE handles validation and processing using the logic in schema/config.go
 	PreRunE: func(_ *cobra.Command, args []string) error {
-		// Set the positional argument (repo-path)
-		cfg.RepoPath = args[0]
+		if len(args) == 1 {
+			// Assume provided path is contained by a Git repo
+			cfg.RepoPath = args[0]
+		} else {
+			// Assume current path is contained by a Git repo
+			cfg.RepoPath = "."
+		}
 
 		// Run all validation and complex parsing
 		return schema.ProcessAndValidate(cfg, input)
