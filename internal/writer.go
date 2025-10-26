@@ -23,11 +23,11 @@ func selectOutputFile(filePath string) (*os.File, error) {
 }
 
 // writeCSVResults writes the analysis results in CSV format.
-func writeCSVResults(w *csv.Writer, files []schema.FileMetrics, fmtFloat func(float64) string, intFmt string) error {
+func writeCSVResults(w *csv.Writer, files []schema.FileMetrics, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
 	// CSV header
 	header := []string{
 		"rank", "file", "score", "label", "contributors", "commits",
-		"size_kb", "age_days", "churn", "gini", "first_commit",
+		"size_kb", "age_days", "churn", "gini", "first_commit", "mode",
 	}
 	if err := w.Write(header); err != nil {
 		return err
@@ -45,6 +45,7 @@ func writeCSVResults(w *csv.Writer, files []schema.FileMetrics, fmtFloat func(fl
 			fmt.Sprintf(intFmt, f.Churn),
 			fmtFloat(f.Gini),
 			f.FirstCommit.Format("2006-01-02"),
+			cfg.Mode,
 		}
 		if err := w.Write(rec); err != nil {
 			return err
@@ -57,17 +58,19 @@ func writeCSVResults(w *csv.Writer, files []schema.FileMetrics, fmtFloat func(fl
 type JSONOutput struct {
 	Rank               int    `json:"rank"`
 	Label              string `json:"label"`
+	Mode               string `json:"mode"`
 	schema.FileMetrics        // Embeds Path, Score, etc.
 }
 
 // writeJSONResults writes the analysis results in JSON format.
-func writeJSONResults(w io.Writer, files []schema.FileMetrics) error {
+func writeJSONResults(w io.Writer, files []schema.FileMetrics, cfg *Config) error {
 	// 1. Prepare the data structure for JSON
 	output := make([]JSONOutput, len(files))
 	for i, f := range files {
 		output[i] = JSONOutput{
 			Rank:        i + 1,
 			Label:       getPlainLabel(f.Score),
+			Mode:        cfg.Mode,
 			FileMetrics: f,
 		}
 	}
