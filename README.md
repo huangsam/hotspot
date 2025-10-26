@@ -36,9 +36,9 @@ The core power of Hotspot is the `--mode` flag, which defines the ranking algori
 | Mode | Focus | Description |
 |------|---------|-------------|
 | **hot** (default) | Activity hotspots | Where activity is most concentrated. |
-| **risk** | Knowledge risk | Prioritizes files with high contribution inequality and few owners. |
+| **risk** | Knowledge risk | Finds files with high contribution inequality and few owners. |
 | **complexity** | Technical debt | Finds large, old files with high total changes and low recent activity. |
-| **stale** | Maintenance debt | Identifies untouched, important files that haven't been modified recently. |
+| **stale** | Maintenance debt | Finds untouched, important files that haven't been modified recently. |
 
 ## Common use cases
 
