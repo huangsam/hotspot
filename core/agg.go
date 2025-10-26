@@ -12,7 +12,7 @@ import (
 // AggregateRecent performs a single repository-wide git log since cfg.StartTime
 // and aggregates per-file recent commits, churn and contributors. It avoids
 // expensive per-file --follow calls and is fast even on large repositories.
-func AggregateRecent(cfg *schema.Config) error {
+func AggregateRecent(cfg *internal.Config) error {
 	if cfg.StartTime.IsZero() {
 		return nil
 	}

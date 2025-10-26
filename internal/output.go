@@ -19,7 +19,7 @@ import (
 const maxTablePathWidth = 40
 
 // PrintResults outputs the analysis results in a formatted table or exports them as CSV/JSON.
-func PrintResults(files []schema.FileMetrics, cfg *schema.Config) {
+func PrintResults(files []schema.FileMetrics, cfg *Config) {
 	// helper format strings and closure for number formatting
 	numFmt := "%.*f"
 	intFmt := "%d"
@@ -46,7 +46,7 @@ func PrintResults(files []schema.FileMetrics, cfg *schema.Config) {
 }
 
 // printJSONResults handles opening the file and calling the JSON writer.
-func printJSONResults(files []schema.FileMetrics, cfg *schema.Config) error {
+func printJSONResults(files []schema.FileMetrics, cfg *Config) error {
 	// Use the unified file selector defined in writers.go
 	file, err := selectOutputFile(cfg.JSONFile)
 	if err != nil {
@@ -65,7 +65,7 @@ func printJSONResults(files []schema.FileMetrics, cfg *schema.Config) error {
 }
 
 // printCSVResults handles opening the file and calling the CSV writer.
-func printCSVResults(files []schema.FileMetrics, cfg *schema.Config, fmtFloat func(float64) string, intFmt string) error {
+func printCSVResults(files []schema.FileMetrics, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
 	// Use the unified file selector defined in writers.go
 	file, err := selectOutputFile(cfg.CSVFile)
 	if err != nil {
@@ -86,7 +86,7 @@ func printCSVResults(files []schema.FileMetrics, cfg *schema.Config, fmtFloat fu
 }
 
 // printTableResults generates and prints the human-readable table.
-func printTableResults(files []schema.FileMetrics, cfg *schema.Config, fmtFloat func(float64) string, intFmt string) error {
+func printTableResults(files []schema.FileMetrics, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
 	detail := cfg.Detail
 	explain := cfg.Explain
 

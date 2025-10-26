@@ -17,7 +17,7 @@ import (
 // FileMetricsBuilder builds the file metric from Git output.
 type FileMetricsBuilder struct {
 	metrics   schema.FileMetrics
-	cfg       *schema.Config
+	cfg       *internal.Config
 	path      string
 	useFollow bool
 
@@ -27,7 +27,7 @@ type FileMetricsBuilder struct {
 }
 
 // NewFileMetricsBuilder is the starting point for building file metrics.
-func NewFileMetricsBuilder(cfg *schema.Config, path string, useFollow bool) *FileMetricsBuilder {
+func NewFileMetricsBuilder(cfg *internal.Config, path string, useFollow bool) *FileMetricsBuilder {
 	return &FileMetricsBuilder{
 		cfg:          cfg,
 		path:         path,

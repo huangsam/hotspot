@@ -1,7 +1,8 @@
-package schema
+package internal
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -43,6 +44,7 @@ type Config struct {
 // ConfigRawInput holds the raw string inputs from flags that require parsing/validation.
 // These fields are bound directly to Cobra's flags in main.go.
 type ConfigRawInput struct {
+	RepoPathStr  string
 	StartTimeStr string
 	EndTimeStr   string
 	ExcludeStr   string
@@ -136,6 +138,52 @@ func ProcessAndValidate(cfg *Config, input *ConfigRawInput) error {
 			trimmedP := strings.TrimSpace(p)
 			if trimmedP != "" {
 				cfg.Excludes = append(cfg.Excludes, trimmedP)
+			}
+		}
+	}
+
+	// --- 7. Git Repository Path Resolution and Implicit PathFilter ---
+
+	searchPath := input.RepoPathStr // This is the CWD or the user's positional argument
+
+	// 7a. Find the absolute Git repository root path
+	// We run the command using the user's path as context
+	rootOut, err := RunGitCommand(searchPath, "rev-parse", "--show-toplevel")
+	if err != nil {
+		// If git fails to find the repo root, return the error
+		return err
+	}
+
+	// Set cfg.RepoPath to the absolute Git root (CRUCIAL for consistent Git command execution)
+	gitRoot := strings.TrimSpace(string(rootOut))
+	cfg.RepoPath = gitRoot
+
+	// 7b. Calculate and apply the Implicit PathFilter
+	// Only proceed if the user hasn't already set the explicit --filter flag
+	if cfg.PathFilter == "" {
+		// Get the absolute path of the directory being analyzed (searchPath)
+		absSearchPath, err := filepath.Abs(searchPath)
+		if err != nil {
+			return err
+		}
+
+		// Ensure paths are clean before comparison (removes trailing slashes, etc.)
+		absSearchPath = filepath.Clean(absSearchPath)
+
+		// Only set an implicit filter if the execution path is NOT the repo root
+		if absSearchPath != gitRoot {
+
+			// Calculate the path relative to the Git root
+			relativePath, err := filepath.Rel(gitRoot, absSearchPath)
+			if err != nil {
+				return err
+			}
+
+			// If the relative path is not '.', set it as the filter
+			if relativePath != "." {
+				// We must use '/' for path filtering, as Git paths are always '/' based.
+				// The PathFilter is used to filter paths returned by Git.
+				cfg.PathFilter = relativePath + "/"
 			}
 		}
 	}

@@ -12,14 +12,14 @@ import (
 )
 
 // cfg will hold the validated, final configuration.
-var cfg = &schema.Config{}
+var cfg = &internal.Config{}
 
 // input require processing/validation after flag parsing.
-var input = &schema.ConfigRawInput{
-	ResultLimit: schema.DefaultResultLimit,
-	Workers:     schema.DefaultWorkers,
+var input = &internal.ConfigRawInput{
+	ResultLimit: internal.DefaultResultLimit,
+	Workers:     internal.DefaultWorkers,
 	Mode:        "hot",
-	Precision:   schema.DefaultPrecision,
+	Precision:   internal.DefaultPrecision,
 	Output:      "text",
 }
 
@@ -36,20 +36,16 @@ var rootCmd = &cobra.Command{
 
 	// PreRunE handles validation and processing using the logic in schema/config.go
 	PreRunE: func(_ *cobra.Command, args []string) error {
-		currentPath := "."
 		if len(args) == 1 {
-			currentPath = args[0]
+			// Pass the user-provided path to raw input
+			input.RepoPathStr = args[0]
+		} else {
+			// Pass the default path (CWD) to raw input
+			input.RepoPathStr = "."
 		}
 
-		// Find the Git repository root path
-		rootOut, err := internal.RunGitCommand(currentPath, "rev-parse", "--show-toplevel")
-		if err != nil {
-			return err
-		}
-		cfg.RepoPath = strings.TrimSpace(string(rootOut))
-
-		// Run all validation and complex parsing
-		return schema.ProcessAndValidate(cfg, input)
+		// Run all validation and complex parsing, including Git path resolution
+		return internal.ProcessAndValidate(cfg, input) // cfg.RepoPath is set inside here now
 	},
 
 	// Run executes the core business logic.
@@ -93,7 +89,7 @@ func executeHotspot() {
 	var files []string
 
 	// --- 1. Aggregation Phase ---
-	fmt.Printf("🔎 Aggregating recent activity since %s\n", cfg.StartTime.Format(schema.TimeFormat))
+	fmt.Printf("🔎 Aggregating recent activity since %s\n", cfg.StartTime.Format(internal.TimeFormat))
 	if err := core.AggregateRecent(cfg); err != nil {
 		internal.LogWarning("Cannot aggregate recent activity")
 	}
@@ -135,7 +131,7 @@ func executeHotspot() {
 
 	// --- 3. Core Analysis and Initial Ranking ---
 	fmt.Printf("🧠 hotspot: Analyzing %s\n", cfg.RepoPath)
-	fmt.Printf("📅 Range: %s → %s\n", cfg.StartTime.Format(schema.TimeFormat), cfg.EndTime.Format(schema.TimeFormat))
+	fmt.Printf("📅 Range: %s → %s\n", cfg.StartTime.Format(internal.TimeFormat), cfg.EndTime.Format(internal.TimeFormat))
 
 	results := core.AnalyzeRepo(cfg, files)
 	ranked := core.RankFiles(results, cfg.ResultLimit)
