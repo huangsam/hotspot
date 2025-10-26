@@ -75,7 +75,7 @@ func init() {
 // main starts the execution of the logic.
 func main() {
 	if err := rootCmd.Execute(); err != nil {
-		internal.FatalError("CLI error", err)
+		internal.LogFatal("CLI error", err)
 	}
 }
 
@@ -86,7 +86,7 @@ func executeHotspot() {
 	// --- 1. Aggregation Phase ---
 	fmt.Printf("🔎 Aggregating recent activity since %s\n", cfg.StartTime.Format(schema.TimeFormat))
 	if err := core.AggregateRecent(cfg); err != nil {
-		internal.Warning("Cannot aggregate recent activity")
+		internal.LogWarning("Cannot aggregate recent activity")
 	}
 
 	// --- 2. File List Building and Filtering ---
@@ -120,7 +120,7 @@ func executeHotspot() {
 	}
 
 	if len(files) == 0 {
-		internal.Warning("No files with activity found in the requested window")
+		internal.LogWarning("No files with activity found in the requested window")
 		return
 	}
 

@@ -51,7 +51,7 @@ func (b *FileMetricsBuilder) fetchCommitHistory() *FileMetricsBuilder {
 
 	out, err := internal.RunGitCommand(repo, args...)
 	if err != nil {
-		internal.Warning(fmt.Sprintf("Failed to get commit history for %s. Commits will be zeroed.", b.path))
+		internal.LogWarning(fmt.Sprintf("Failed to get commit history for %s. Commits will be zeroed.", b.path))
 		return b
 	}
 
@@ -112,7 +112,7 @@ func (b *FileMetricsBuilder) calculateChurn() *FileMetricsBuilder {
 
 	out, err := internal.RunGitCommand(b.cfg.RepoPath, churnArgs...)
 	if err != nil {
-		internal.Warning(fmt.Sprintf("Failed to get churn data for %s.", b.path))
+		internal.LogWarning(fmt.Sprintf("Failed to get churn data for %s.", b.path))
 		return b
 	}
 

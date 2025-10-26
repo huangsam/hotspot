@@ -31,16 +31,16 @@ func PrintResults(files []schema.FileMetrics, cfg *schema.Config) {
 	switch cfg.Output {
 	case "json":
 		if err := printJSONResults(files, cfg); err != nil {
-			FatalError("Error writing JSON output", err)
+			LogFatal("Error writing JSON output", err)
 		}
 	case "csv":
 		if err := printCSVResults(files, cfg, fmtFloat, intFmt); err != nil {
-			FatalError("Error writing CSV output", err)
+			LogFatal("Error writing CSV output", err)
 		}
 	default:
 		// Default to human-readable table
 		if err := printTableResults(files, cfg, fmtFloat, intFmt); err != nil {
-			FatalError("Error writing table output", err)
+			LogFatal("Error writing table output", err)
 		}
 	}
 }
