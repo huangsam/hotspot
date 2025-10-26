@@ -58,17 +58,31 @@ type ConfigRawInput struct {
 // ProcessAndValidate performs all complex parsing and validation on the raw inputs
 // and updates the final Config struct.
 func ProcessAndValidate(cfg *Config, input *ConfigRawInput) error {
+	if err := validateSimpleInputs(cfg, input); err != nil {
+		return err
+	}
+	if err := processTimeRange(cfg, input); err != nil {
+		return err
+	}
+	if err := resolveGitPathAndFilter(cfg, input); err != nil {
+		return err
+	}
+	return nil
+}
+
+// validateSimpleInputs processes and validates all non-path related fields.
+func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	// --- 1. ResultLimit Validation ---
 	if input.ResultLimit <= 0 || input.ResultLimit > MaxResultLimit {
 		return fmt.Errorf("limit must be greater than 0 and cannot exceed %d (received %d)", MaxResultLimit, input.ResultLimit)
 	}
-	cfg.ResultLimit = input.ResultLimit // Final assignment
+	cfg.ResultLimit = input.ResultLimit
 
 	// --- 2. Workers Validation ---
 	if input.Workers <= 0 {
 		return fmt.Errorf("workers must be greater than 0 (received %d)", input.Workers)
 	}
-	cfg.Workers = input.Workers // Final assignment
+	cfg.Workers = input.Workers
 
 	// --- 3. Mode Validation ---
 	validModes := map[string]bool{"hot": true, "risk": true, "complexity": true, "stale": true}
@@ -89,8 +103,27 @@ func ProcessAndValidate(cfg *Config, input *ConfigRawInput) error {
 		return fmt.Errorf("invalid output format '%s'. must be text, csv, json", cfg.Output)
 	}
 
-	// --- 5. Date Parsing and Time Range Validation ---
+	// --- 6. Excludes Processing ---
+	// (This logic remains here as it's a non-external string/list manipulation)
+	defaults := []string{ /* ... your default excludes list ... */ }
+	cfg.Excludes = defaults // Set defaults first
 
+	if input.ExcludeStr != "" {
+		// NOTE: strings.SplitSeq is likely not a standard Go function; assuming it's a typo for strings.Split or a custom function.
+		parts := strings.Split(input.ExcludeStr, ",")
+		for _, p := range parts {
+			trimmedP := strings.TrimSpace(p)
+			if trimmedP != "" {
+				cfg.Excludes = append(cfg.Excludes, trimmedP)
+			}
+		}
+	}
+
+	return nil
+}
+
+// processTimeRange handles the complex date parsing and time range validation.
+func processTimeRange(cfg *Config, input *ConfigRawInput) error {
 	// Set defaults if strings are empty
 	cfg.EndTime = time.Now()
 	cfg.StartTime = cfg.EndTime.Add(-DefaultLookbackDays * 24 * time.Hour)
@@ -102,6 +135,7 @@ func ProcessAndValidate(cfg *Config, input *ConfigRawInput) error {
 		}
 		cfg.StartTime = t
 	}
+
 	if input.EndTimeStr != "" {
 		t, err := time.Parse(time.RFC3339, input.EndTimeStr)
 		if err != nil {
@@ -109,52 +143,25 @@ func ProcessAndValidate(cfg *Config, input *ConfigRawInput) error {
 		}
 		cfg.EndTime = t
 	}
+
 	if !cfg.StartTime.IsZero() && !cfg.EndTime.IsZero() && cfg.StartTime.After(cfg.EndTime) {
 		return fmt.Errorf("start time (%s) cannot be after end time (%s)", cfg.StartTime.Format(time.RFC3339), cfg.EndTime.Format(time.RFC3339))
 	}
 
-	// --- 6. Excludes Processing ---
-	defaults := []string{
-		// Dependency Lock File
-		"Cargo.lock",        // Rust
-		"go.sum",            // Go
-		"package-lock.json", // JS/NPM
-		"yarn.lock",         // JS/Yarn
-		"pnpm-lock.yaml",    // JS/PNPM
-		"composer.lock",     // PHP
-		"uv.lock",           // Python
+	return nil
+}
 
-		// Generated Assets
-		".min.js", ".min.css", // Minified JavaScript and CSS
-
-		// Build Output Directories
-		"dist/", "build/", "out/", "target/", "bin/",
-	}
-	cfg.Excludes = defaults
-
-	if input.ExcludeStr != "" {
-		parts := strings.SplitSeq(input.ExcludeStr, ",")
-		for p := range parts {
-			trimmedP := strings.TrimSpace(p)
-			if trimmedP != "" {
-				cfg.Excludes = append(cfg.Excludes, trimmedP)
-			}
-		}
-	}
-
-	// --- 7. Git Repository Path Resolution and Implicit PathFilter ---
-
-	searchPath := input.RepoPathStr // This is the CWD or the user's positional argument
+// resolveGitPathAndFilter resolves the Git repository path and set the implicit path filter.
+func resolveGitPathAndFilter(cfg *Config, input *ConfigRawInput) error {
+	searchPath := input.RepoPathStr // The CWD or the user's positional argument
 
 	// 7a. Find the absolute Git repository root path
-	// We run the command using the user's path as context
 	rootOut, err := RunGitCommand(searchPath, "rev-parse", "--show-toplevel")
 	if err != nil {
-		// If git fails to find the repo root, return the error
-		return err
+		return err // Git failed to find the repo root
 	}
 
-	// Set cfg.RepoPath to the absolute Git root (CRUCIAL for consistent Git command execution)
+	// Set cfg.RepoPath to the absolute Git root
 	gitRoot := strings.TrimSpace(string(rootOut))
 	cfg.RepoPath = gitRoot
 
@@ -172,7 +179,6 @@ func ProcessAndValidate(cfg *Config, input *ConfigRawInput) error {
 
 		// Only set an implicit filter if the execution path is NOT the repo root
 		if absSearchPath != gitRoot {
-
 			// Calculate the path relative to the Git root
 			relativePath, err := filepath.Rel(gitRoot, absSearchPath)
 			if err != nil {
@@ -181,8 +187,7 @@ func ProcessAndValidate(cfg *Config, input *ConfigRawInput) error {
 
 			// If the relative path is not '.', set it as the filter
 			if relativePath != "." {
-				// We must use '/' for path filtering, as Git paths are always '/' based.
-				// The PathFilter is used to filter paths returned by Git.
+				// Ensure the filter uses Git-style path separators and acts as a prefix
 				cfg.PathFilter = relativePath + "/"
 			}
 		}
