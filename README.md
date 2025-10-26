@@ -21,7 +21,12 @@ Perfect for:
 
 ```bash
 go install github.com/huangsam/hotspot@latest
-hotspot .
+
+# For current path
+hotspot
+
+# For explicit path
+hotspot /path/to/repo
 ```
 
 ## Scoring modes
