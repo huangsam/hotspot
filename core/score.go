@@ -109,20 +109,17 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 	default: // case "hot" (default)
 		// Hotspot scoring: where activity and volatility are concentrated
 		const (
-			wCommits = 0.28 // Raw commit count is a great measure of activity
-			wChurn   = 0.26 // Volatility (lines changed) is key to a "hotspot"
+			wCommits = 0.30 // Raw commit count is a great measure of activity
+			wChurn   = 0.28 // Volatility (lines changed) is key to a "hotspot"
 			wContrib = 0.18
 			wSize    = 0.16
 			wAge     = 0.08
-			wGini    = 0.04
 		)
 		breakdown[schema.BreakdownCommits] = wCommits * nCommits
 		breakdown[schema.BreakdownChurn] = wChurn * nChurn
 		breakdown[schema.BreakdownContrib] = wContrib * nContrib
 		breakdown[schema.BreakdownSize] = wSize * nSize
 		breakdown[schema.BreakdownAge] = wAge * nAge
-		// Note: nGini is 1.0 - m.Gini. Here we want low Gini to not contribute much.
-		breakdown[schema.BreakdownGini] = wGini * (1.0 - nGiniRaw)
 	}
 
 	for _, value := range breakdown {
