@@ -130,7 +130,7 @@ func executeHotspot() {
 	}
 
 	// --- 3. Core Analysis and Initial Ranking ---
-	fmt.Printf("🧠 hotspot: Analyzing %s\n", cfg.RepoPath)
+	fmt.Printf("🧠 hotspot: Analyzing %s (Mode: %s)\n", cfg.RepoPath, cfg.Mode)
 	fmt.Printf("📅 Range: %s → %s\n", cfg.StartTime.Format(internal.TimeFormat), cfg.EndTime.Format(internal.TimeFormat))
 
 	results := core.AnalyzeRepo(cfg, files)
