@@ -126,8 +126,8 @@ func TestTruncatePath(t *testing.T) {
 	}
 }
 
-// TestGetTextLabel tests criticality label assignment
-func TestGePlainTextLabel(t *testing.T) {
+// TestGetPlainTextLabel tests criticality label assignment
+func TestGetPlainTextLabel(t *testing.T) {
 	tests := []struct {
 		score float64
 		want  string
