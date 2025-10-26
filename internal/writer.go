@@ -26,8 +26,18 @@ func selectOutputFile(filePath string) (*os.File, error) {
 func writeCSVResults(w *csv.Writer, files []schema.FileMetrics, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
 	// CSV header
 	header := []string{
-		"rank", "file", "score", "label", "contributors", "commits",
-		"size_kb", "age_days", "churn", "gini", "first_commit", "mode",
+		"rank",
+		"file",
+		"score",
+		"label",
+		"contributors",
+		"commits",
+		"size_kb",
+		"age_days",
+		"churn",
+		"gini",
+		"first_commit",
+		"mode",
 	}
 	if err := w.Write(header); err != nil {
 		return err
