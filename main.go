@@ -36,13 +36,17 @@ var rootCmd = &cobra.Command{
 
 	// PreRunE handles validation and processing using the logic in schema/config.go
 	PreRunE: func(_ *cobra.Command, args []string) error {
+		currentPath := "."
 		if len(args) == 1 {
-			// Assume provided path is contained by a Git repo
-			cfg.RepoPath = args[0]
-		} else {
-			// Assume current path is contained by a Git repo
-			cfg.RepoPath = "."
+			currentPath = args[0]
 		}
+
+		// Find the Git repository root path
+		rootOut, err := internal.RunGitCommand(currentPath, "rev-parse", "--show-toplevel")
+		if err != nil {
+			return err
+		}
+		cfg.RepoPath = strings.TrimSpace(string(rootOut))
 
 		// Run all validation and complex parsing
 		return schema.ProcessAndValidate(cfg, input)
