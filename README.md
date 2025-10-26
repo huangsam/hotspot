@@ -75,7 +75,7 @@ hotspot --mode complexity --limit 10 --follow
 
 ## Tips
 
-- Start with `hotspot .` for a quick snapshot
+- Start with `hotspot` for a quick snapshot
 - Combine filters and excludes for focus
 - Use CSV and JSON exports for tracking trends
 - Try `--explain` to see a breakdown of what influenced file rank
