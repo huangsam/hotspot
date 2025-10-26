@@ -106,13 +106,34 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 
 	// --- 6. Excludes Processing ---
 	// (This logic remains here as it's a non-external string/list manipulation)
-	defaults := []string{ /* ... your default excludes list ... */ }
+	defaults := []string{
+		// Dependency Lock File
+		"Cargo.lock",        // Rust
+		"go.sum",            // Go
+		"package-lock.json", // JS/NPM
+		"yarn.lock",         // JS/Yarn
+		"pnpm-lock.yaml",    // JS/PNPM
+		"composer.lock",     // PHP
+		"uv.lock",           // Python
+
+		// Generated Assets
+		".min.js", ".min.css", // Minified JavaScript and CSS
+
+		// Media assets
+		".jpg", ".jpeg", ".png", ".gif", ".svg", ".ico",
+		".mp4", ".mov", ".webm",
+		".mp3", ".ogg",
+		".pdf", ".webp",
+
+		// Build Output Directories
+		"dist/", "build/", "out/", "target/", "bin/",
+	}
 	cfg.Excludes = defaults // Set defaults first
 
 	if input.ExcludeStr != "" {
 		// NOTE: strings.SplitSeq is likely not a standard Go function; assuming it's a typo for strings.Split or a custom function.
-		parts := strings.Split(input.ExcludeStr, ",")
-		for _, p := range parts {
+		parts := strings.SplitSeq(input.ExcludeStr, ",")
+		for p := range parts {
 			trimmedP := strings.TrimSpace(p)
 			if trimmedP != "" {
 				cfg.Excludes = append(cfg.Excludes, trimmedP)
