@@ -45,7 +45,7 @@ func (b *FileMetricsBuilder) fetchCommitHistory() *FileMetricsBuilder {
 		args = append(args, "--follow")
 	}
 	if !b.cfg.StartTime.IsZero() {
-		args = append(args, "--since="+b.cfg.StartTime.Format(time.RFC3339))
+		args = append(args, "--since="+b.cfg.StartTime.Format(internal.DateTimeFormat))
 	}
 	args = append(args, "--pretty=format:%an,%ad", "--date=iso", "--", b.path)
 
@@ -106,7 +106,7 @@ func (b *FileMetricsBuilder) calculateChurn() *FileMetricsBuilder {
 		churnArgs = append(churnArgs, "--follow")
 	}
 	if !b.cfg.StartTime.IsZero() {
-		churnArgs = append(churnArgs, "--since="+b.cfg.StartTime.Format(time.RFC3339))
+		churnArgs = append(churnArgs, "--since="+b.cfg.StartTime.Format(internal.DateTimeFormat))
 	}
 	churnArgs = append(churnArgs, "--numstat", "--", b.path)
 

@@ -89,7 +89,7 @@ func executeHotspot() {
 	var files []string
 
 	// --- 1. Aggregation Phase ---
-	fmt.Printf("🔎 Aggregating recent activity since %s\n", cfg.StartTime.Format(internal.TimeFormat))
+	fmt.Printf("🔎 Aggregating recent activity since %s\n", cfg.StartTime.Format(internal.DateTimeFormat))
 	if err := core.AggregateRecent(cfg); err != nil {
 		internal.LogWarning("Cannot aggregate recent activity")
 	}
@@ -131,7 +131,7 @@ func executeHotspot() {
 
 	// --- 3. Core Analysis and Initial Ranking ---
 	fmt.Printf("🧠 hotspot: Analyzing %s (Mode: %s)\n", cfg.RepoPath, cfg.Mode)
-	fmt.Printf("📅 Range: %s → %s\n", cfg.StartTime.Format(internal.TimeFormat), cfg.EndTime.Format(internal.TimeFormat))
+	fmt.Printf("📅 Range: %s → %s\n", cfg.StartTime.Format(internal.DateTimeFormat), cfg.EndTime.Format(internal.DateTimeFormat))
 
 	results := core.AnalyzeRepo(cfg, files)
 	ranked := core.RankFiles(results, cfg.ResultLimit)
