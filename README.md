@@ -33,12 +33,12 @@ hotspot /path/to/repo
 
 The core power of Hotspot is the `--mode` flag, which defines the ranking algorithm:
 
-| Mode | Focus |
-|------|---------|
-| **hot** (default) | Activity hotspots |
-| **risk** | Knowledge/Bus factor risk |
-| **complexity** | Technical debt candidates |
-| **stale** | Maintenance debt |
+| Mode | Focus | Description |
+|------|---------|-------------|
+| **hot** (default) | Activity hotspots | Where activity is most concentrated (commits, churn). |
+| **risk** | Knowledge/Bus factor risk | Prioritizes files with high contribution inequality (Gini) and few owners. |
+| **complexity** | Technical debt candidates | Finds large, old files with high total changes and low recent activity. |
+| **stale** | Maintenance debt | Identifies untouched, important files that haven't been modified recently. |
 
 ## Common use cases
 
