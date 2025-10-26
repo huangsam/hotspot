@@ -11,7 +11,7 @@ import (
 // AnalyzeRepo processes all files in parallel using a worker pool.
 // It spawns cfg.Workers number of goroutines to analyze files concurrently
 // and aggregates their results into a single slice of schema.FileMetrics.
-func AnalyzeRepo(cfg *schema.Config, files []string) []schema.FileMetrics {
+func AnalyzeRepo(cfg *internal.Config, files []string) []schema.FileMetrics {
 	// Filter files according to excludes. This is required for consistency
 	// since ListRepoFiles only applies the path filter, not excludes.
 	filtered := make([]string, 0, len(files))
@@ -65,7 +65,7 @@ func AnalyzeRepo(cfg *schema.Config, files []string) []schema.FileMetrics {
 // derived metrics like churn and the Gini coefficient of author contributions.
 // The analysis is constrained by the time range in cfg if specified.
 // If useFollow is true, git --follow is used to track file renames.
-func AnalyzeFileCommon(cfg *schema.Config, path string, useFollow bool) schema.FileMetrics {
+func AnalyzeFileCommon(cfg *internal.Config, path string, useFollow bool) schema.FileMetrics {
 	// 1. Initialize the builder
 	builder := NewFileMetricsBuilder(cfg, path, useFollow)
 
