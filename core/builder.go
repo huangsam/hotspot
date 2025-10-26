@@ -40,16 +40,16 @@ func NewFileMetricsBuilder(cfg *internal.Config, path string, useFollow bool) *F
 // fetchCommitHistory runs 'git log' and populates basic metrics and internal counts.
 func (b *FileMetricsBuilder) fetchCommitHistory() *FileMetricsBuilder {
 	repo := b.cfg.RepoPath
-	args := []string{"log"}
+	historyArgs := []string{"log"}
 	if b.useFollow {
-		args = append(args, "--follow")
+		historyArgs = append(historyArgs, "--follow")
 	}
 	if !b.cfg.StartTime.IsZero() {
-		args = append(args, "--since="+b.cfg.StartTime.Format(internal.DateTimeFormat))
+		historyArgs = append(historyArgs, "--since="+b.cfg.StartTime.Format(internal.DateTimeFormat))
 	}
-	args = append(args, "--pretty=format:%an,%ad", "--date=iso", "--", b.path)
+	historyArgs = append(historyArgs, "--pretty=format:%an,%ad", "--date=iso", "--", b.path)
 
-	out, err := internal.RunGitCommand(repo, args...)
+	out, err := internal.RunGitCommand(repo, historyArgs...)
 	if err != nil {
 		internal.LogWarning(fmt.Sprintf("Failed to get commit history for %s. Commits will be zeroed.", b.path))
 		return b
