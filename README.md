@@ -52,6 +52,7 @@ hotspot --mode complexity --limit 20
 ```bash
 # Bus Factor/Knowledge Risk
 hotspot --mode risk --output csv --csv-file bus-factor.csv
+hotspot --mode risk --output json --json-file bus-factor.json
 
 # Maintenance Debt Audit
 hotspot --mode stale --exclude "test/,vendor/"
