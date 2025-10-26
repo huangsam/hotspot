@@ -2,18 +2,10 @@
 
 ## Short-term tasks
 
-Distribution
-
 - Release automation - Use GoReleaser for multi-platform binaries
 - Installation script - Make it easier for users without Go installed
-
-Performance & Robustness
-
 - Progress indicators - For large repos, show progress (currently just emojis at start)
 - Memory optimization - Large repos might consume lots of memory with current buffering
-
-User Experience
-
 - Config file support - .hotspot.yml for default settings per repo
 - Shell completion - Bash/Zsh completion scripts for flags
 
