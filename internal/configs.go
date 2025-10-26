@@ -17,8 +17,11 @@ const (
 	DefaultPrecision    = 1
 )
 
-// TimeFormat is the default time representation.
-var TimeFormat = time.RFC3339
+// DateTimeFormat is the default date time representation.
+var DateTimeFormat = time.RFC3339
+
+// DateFormat is the default date representation
+var DateFormat = time.DateOnly
 
 // Config holds the runtime configuration for the analysis.
 // Fields that are set directly by simple flags remain the same (e.g., ResultLimit).
@@ -151,23 +154,23 @@ func processTimeRange(cfg *Config, input *ConfigRawInput) error {
 	cfg.StartTime = cfg.EndTime.Add(-DefaultLookbackDays * 24 * time.Hour)
 
 	if input.StartTimeStr != "" {
-		t, err := time.Parse(time.RFC3339, input.StartTimeStr)
+		t, err := time.Parse(DateTimeFormat, input.StartTimeStr)
 		if err != nil {
-			return fmt.Errorf("invalid start date format for '%s'. must be RFC3339: %v", input.StartTimeStr, err)
+			return fmt.Errorf("invalid start date format for '%s': %v", input.StartTimeStr, err)
 		}
 		cfg.StartTime = t
 	}
 
 	if input.EndTimeStr != "" {
-		t, err := time.Parse(time.RFC3339, input.EndTimeStr)
+		t, err := time.Parse(DateTimeFormat, input.EndTimeStr)
 		if err != nil {
-			return fmt.Errorf("invalid end date format for '%s'. must be RFC3339: %v", input.EndTimeStr, err)
+			return fmt.Errorf("invalid end date format for '%s': %v", input.EndTimeStr, err)
 		}
 		cfg.EndTime = t
 	}
 
 	if !cfg.StartTime.IsZero() && !cfg.EndTime.IsZero() && cfg.StartTime.After(cfg.EndTime) {
-		return fmt.Errorf("start time (%s) cannot be after end time (%s)", cfg.StartTime.Format(time.RFC3339), cfg.EndTime.Format(time.RFC3339))
+		return fmt.Errorf("start time (%s) cannot be after end time (%s)", cfg.StartTime.Format(DateTimeFormat), cfg.EndTime.Format(DateTimeFormat))
 	}
 
 	return nil

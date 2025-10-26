@@ -44,7 +44,7 @@ func writeCSVResults(w *csv.Writer, files []schema.FileMetrics, cfg *Config, fmt
 			fmt.Sprintf(intFmt, f.AgeDays),
 			fmt.Sprintf(intFmt, f.Churn),
 			fmtFloat(f.Gini),
-			f.FirstCommit.Format("2006-01-02"),
+			f.FirstCommit.Format(DateFormat),
 			cfg.Mode,
 		}
 		if err := w.Write(rec); err != nil {

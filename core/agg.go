@@ -3,7 +3,6 @@ package core
 import (
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/schema"
@@ -17,7 +16,7 @@ func AggregateRecent(cfg *internal.Config) error {
 		return nil
 	}
 
-	since := cfg.StartTime.Format(time.RFC3339)
+	since := cfg.StartTime.Format(internal.DateTimeFormat)
 	out, err := internal.RunGitCommand(cfg.RepoPath, "log", "--since="+since, "--numstat", "--pretty=format:--%H|%an")
 	if err != nil {
 		return err

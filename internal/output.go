@@ -126,7 +126,7 @@ func printTableResults(files []schema.FileMetrics, cfg *Config, fmtFloat func(fl
 				fmt.Sprintf(intFmt, f.AgeDays),            // Age(d)
 				fmt.Sprintf(intFmt, f.Churn),              // Churn
 				fmtFloat(f.Gini),                          // Gini
-				f.FirstCommit.Format("2006-01-02"),        // First Commit
+				f.FirstCommit.Format(DateFormat),          // First Commit
 			)
 		}
 		if explain {
