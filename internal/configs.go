@@ -13,7 +13,7 @@ const (
 	DefaultLookbackDays = 180
 	DefaultResultLimit  = 25
 	MaxResultLimit      = 1000
-	DefaultWorkers      = 4
+	DefaultWorkers      = 8
 	DefaultPrecision    = 1
 )
 
