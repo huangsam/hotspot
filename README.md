@@ -64,7 +64,7 @@ hotspot --mode risk --start 2025-01-01T00:00:00Z --output json
 hotspot --mode stale --start 2020-01-01T00:00:00Z --exclude "test/,vendor/"
 
 # Complex Files with History
-hotspot --mode complexity --start 2023-01-01T00:00:00Z --limit 30 --workers 10 --follow
+hotspot --mode complexity --start 2024-01-01T00:00:00Z --limit 50 --follow
 ```
 
 ## Performance
