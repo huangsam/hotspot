@@ -73,6 +73,7 @@ func AnalyzeFileCommon(cfg *internal.Config, path string, useFollow bool) schema
 	builder.
 		fetchCommitHistory().      // Gathers initial Git data
 		fetchFileSize().           // Gets size
+		fetchLinesOfCode().        // Gets lines of code
 		calculateChurn().          // Computes lines added/deleted
 		applyGlobalMaps().         // Adds recent metrics if global data exists
 		calculateDerivedMetrics(). // Calculates AgeDays and Gini

@@ -99,6 +99,28 @@ func (b *FileMetricsBuilder) fetchFileSize() *FileMetricsBuilder {
 	return b
 }
 
+// fetchLinesOfCode reads the file and counts the Physical Lines of Code (PLOC),
+// including all lines (code, comments, and blank lines).
+// This is a fast, language-agnostic way to get a proxy for cognitive load.
+func (b *FileMetricsBuilder) fetchLinesOfCode() *FileMetricsBuilder {
+	fullPath := filepath.Join(b.cfg.RepoPath, b.path)
+
+	// Attempt to read the entire file content.
+	content, err := os.ReadFile(fullPath)
+	if err != nil {
+		// Log error if file can't be read, but set LinesOfCode to 0 gracefully.
+		b.metrics.LinesOfCode = 0
+		return b
+	}
+
+	// Efficiently count lines by splitting the content string on the newline character.
+	// The length of the resulting slice is the number of lines (PLOC).
+	lines := strings.Split(string(content), "\n")
+	b.metrics.LinesOfCode = len(lines)
+
+	return b
+}
+
 // calculateChurn runs 'git log --numstat' to get lines added/deleted.
 func (b *FileMetricsBuilder) calculateChurn() *FileMetricsBuilder {
 	churnArgs := []string{"log"}
