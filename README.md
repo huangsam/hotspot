@@ -57,8 +57,8 @@ hotspot --mode complexity --start 2025-01-01T00:00:00Z ./executors/kubernetes
 
 ```bash
 # Bus Factor/Knowledge Risk
-hotspot --mode risk --start 2025-01-01T00:00:00Z --output csv --csv-file bus-factor.csv
-hotspot --mode risk --start 2025-01-01T00:00:00Z --output json --json-file bus-factor.json
+hotspot --mode risk --start 2025-01-01T00:00:00Z --output csv
+hotspot --mode risk --start 2025-01-01T00:00:00Z --output json
 
 # Maintenance Debt Audit
 hotspot --mode stale --start 2020-01-01T00:00:00Z --exclude "test/,vendor/"

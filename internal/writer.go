@@ -3,7 +3,6 @@ package internal
 import (
 	"encoding/csv"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -17,7 +16,7 @@ import (
 // This function replaces both selectCSVOutputFile and selectJSONOutputFile.
 func selectOutputFile(filePath string) (*os.File, error) {
 	if filePath == "" {
-		return nil, errors.New("no file specified")
+		return os.Stdout, nil
 	}
 	return os.Create(filePath)
 }
