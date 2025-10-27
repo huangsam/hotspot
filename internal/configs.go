@@ -128,6 +128,9 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 		".mp3", ".ogg",
 		".pdf", ".webp",
 
+		// Data assets
+		".json", ".csv",
+
 		// Build Output Directories
 		"dist/", "build/", "out/", "target/", "bin/",
 	}
