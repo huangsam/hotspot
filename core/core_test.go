@@ -280,6 +280,7 @@ func TestComputeScoreComplexityMode(t *testing.T) {
 				Commits:            200,
 				RecentCommits:      1, // Low recent activity (settled complexity)
 				SizeBytes:          700 * 1024,
+				LinesOfCode:        15000,
 				AgeDays:            2000,
 				Churn:              7000,
 				Gini:               0.3,

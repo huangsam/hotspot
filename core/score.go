@@ -21,12 +21,13 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 
 	// Tunable maxima to normalize metrics.
 	const (
-		maxContrib = 20.0   // contributors beyond this saturate
-		maxCommits = 500.0  // commits beyond this saturate
-		maxSizeKB  = 500.0  // file size in KB beyond this saturate
-		maxAgeDays = 3650.0 // ~10 years
-		maxChurn   = 5000.0 // total added+deleted lines
-		maxRecent  = 50.0   // 50 recent commits is high activity
+		maxContrib = 20.0    // contributors beyond this saturate
+		maxCommits = 500.0   // commits beyond this saturate
+		maxSizeKB  = 500.0   // file size in KB beyond this saturate
+		maxAgeDays = 3650.0  // ~10 years
+		maxChurn   = 5000.0  // total added+deleted lines
+		maxRecent  = 50.0    // 50 recent commits is high activity
+		maxLOC     = 20000.0 // Lines of Code beyond this saturate (20k lines)
 	)
 
 	clamp01 := func(v float64) float64 {
@@ -45,6 +46,7 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 	nSize := clamp01((float64(m.SizeBytes) / 1024.0) / maxSizeKB)
 	nAge := clamp01(math.Log1p(float64(m.AgeDays)) / math.Log1p(maxAgeDays))
 	nChurn := clamp01(float64(m.Churn) / maxChurn)
+	nLOC := clamp01(float64(m.LinesOfCode) / maxLOC) // Normalized Lines of Code
 
 	// Inverted Metrics
 	nGiniRaw := clamp01(m.Gini)            // Gini (raw: high is bad)
@@ -60,13 +62,15 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 	switch strings.ToLower(mode) {
 	case "risk":
 		// Knowledge-risk focused scoring: prioritize concentration and bus-factor
+		// LOC is added to account for the cognitive burden of highly-owned files.
 		const (
-			wInvContrib = 0.32 // Directly measures bus factor
-			wGini       = 0.28 // Measures contribution inequality
-			wAgeRisk    = 0.18
+			wInvContrib = 0.30 // Directly measures bus factor
+			wGini       = 0.26 // Measures contribution inequality
+			wAgeRisk    = 0.16
 			wSizeRisk   = 0.12
 			wChurnRisk  = 0.06
 			wCommRisk   = 0.04
+			wLOCRisk    = 0.06
 		)
 		breakdown[schema.BreakdownInvContrib] = wInvContrib * nInvContrib
 		breakdown[schema.BreakdownGini] = wGini * nGiniRaw
@@ -74,18 +78,23 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 		breakdown[schema.BreakdownSize] = wSizeRisk * nSize
 		breakdown[schema.BreakdownChurn] = wChurnRisk * nChurn
 		breakdown[schema.BreakdownCommits] = wCommRisk * nCommits
+		breakdown[schema.BreakdownLOC] = wLOCRisk * nLOC
 
 	case "complexity":
-		// Technical debt focus: large, old files with high total churn
+		// Technical debt focus: large, old files with high total churn.
+		// LOC is the primary proxy for cognitive complexity, while Size is retained
+		// for structural/data bloat risk.
 		const (
-			wSizeComplex  = 0.35 // The most fundamental measure of complexity
+			wLOCComplex   = 0.30 // Primary measure of cognitive complexity
 			wAgeComplex   = 0.25 // Older code often contains legacy complexity
 			wChurnComplex = 0.25 // High churn suggests volatility and/or refactoring difficulty
 			wCommComplex  = 0.10
+			wSizeComplex  = 0.05
 			wContribLow   = 0.05
 		)
 		// Complexity should favor files that aren't being actively fixed (low recent commits)
-		breakdown[schema.BreakdownSize] = wSizeComplex * nSize
+		breakdown[schema.BreakdownLOC] = wLOCComplex * nLOC    // Using new nLOC metric
+		breakdown[schema.BreakdownSize] = wSizeComplex * nSize // Retained, lower weight
 		breakdown[schema.BreakdownAge] = wAgeComplex * nAge
 		breakdown[schema.BreakdownChurn] = wChurnComplex * nChurn
 		breakdown[schema.BreakdownCommits] = wCommComplex * nCommits
@@ -95,7 +104,7 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 		// Maintenance debt: important but haven't been touched recently
 		const (
 			wInvRecentStale = 0.35 // This is the definition of "stale" — a lack of recent commits
-			wSizeStale      = 0.25 // A large file that goes untouched is a bigger debt than a small one.
+			wSizeStale      = 0.25 // A large file that goes untouched is a bigger debt than a small one
 			wAgeStale       = 0.20 // Older files have a higher chance of accumulating maintenance debt
 			wCommitsStale   = 0.15
 			wContribStale   = 0.05
@@ -127,10 +136,10 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 	}
 	score := raw * 100.0
 
-	// If risk mode and this looks like a test file, slightly reduce score since
-	// tests often have narrow contributors and shouldn't be first-class risks.
+	// If risk mode and this looks like a test or generated file, slightly reduce score since
+	// these often have narrow contributors but don't represent critical bus factor risks.
 	if strings.ToLower(mode) == "risk" {
-		if strings.Contains(m.Path, "_test") || strings.HasSuffix(m.Path, "_test.go") {
+		if strings.Contains(m.Path, "test") || strings.Contains(m.Path, "generated") {
 			score *= 0.75
 		}
 	}
