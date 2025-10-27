@@ -81,6 +81,7 @@ hotspot --mode complexity --start 2024-01-01T00:00:00Z --limit 50 --follow
 - Export results as CSV/JSON to track trends and progress
 - Choose a 6-month window and 25 results to identify tactical risks
 - Choose a 12-month window and 50 results to identify strategic risks
+- Choose a 24-month window and 100 results to identify audit risks
 - Try `--explain` to understand a file's score better
 - Try `--detail` to inform refactoring scope
 - Tune `--workers` to match your CPU cores for optimal analysis speed
