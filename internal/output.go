@@ -16,7 +16,7 @@ import (
 )
 
 // maximum width of filepath when rendered as table.
-const maxTablePathWidth = 40
+const maxTablePathWidth = 60
 
 // PrintResults outputs the analysis results in a formatted table or exports them as CSV/JSON.
 func PrintResults(files []schema.FileMetrics, cfg *Config) {
