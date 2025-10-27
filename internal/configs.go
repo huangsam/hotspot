@@ -10,8 +10,8 @@ import (
 
 // Default values for configuration.
 const (
-	DefaultLookbackDays = 90
-	DefaultResultLimit  = 10
+	DefaultLookbackDays = 180
+	DefaultResultLimit  = 25
 	MaxResultLimit      = 1000
 	DefaultWorkers      = 4
 	DefaultPrecision    = 1

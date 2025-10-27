@@ -77,8 +77,10 @@ hotspot --mode complexity --start 2023-01-01T00:00:00Z --limit 30 --workers 10 -
 ## Tips
 
 - Start with `hotspot` for a quick snapshot
-- Combine filters and excludes for focus
-- Use CSV and JSON exports for tracking trends
-- Try `--explain` to see a breakdown of what influenced file rank
-- Try `--detail` to see metadata about each file
-- Adjust `--workers` based on your CPU cores for optimal performance
+- Exclude irrelevant files to focus the analysis
+- Export results as CSV/JSON to track trends and progress
+- Choose a 6-month window and 25 results to identify tactical risks
+- Choose a 12-month window and 50 results to identify strategic risks
+- Try `--explain` to understand a file's score better
+- Try `--detail` to inform refactoring scope
+- Tune `--workers` to match your CPU cores for optimal analysis speed
