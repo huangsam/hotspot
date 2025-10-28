@@ -95,7 +95,7 @@ func printTableResults(files []schema.FileMetrics, cfg *Config, fmtFloat func(fl
 	// 1. Define Headers
 	headers := []string{"Rank", "File", "Score", "Label"}
 	if detail {
-		headers = append(headers, "Contrib", "Commits", "Size(kb)", "Age(d)", "Churn", "Gini", "First Commit")
+		headers = append(headers, "Contrib", "Commits", "Size(kb)", "Age(d)", "Churn")
 	}
 	if explain {
 		headers = append(headers, "Explain")
@@ -125,8 +125,6 @@ func printTableResults(files []schema.FileMetrics, cfg *Config, fmtFloat func(fl
 				fmtFloat(float64(f.SizeBytes)/1024.0),     // Size(KB)
 				fmt.Sprintf(intFmt, f.AgeDays),            // Age(d)
 				fmt.Sprintf(intFmt, f.Churn),              // Churn
-				fmtFloat(f.Gini),                          // Gini
-				f.FirstCommit.Format(DateFormat),          // First Commit
 			)
 		}
 		if explain {
