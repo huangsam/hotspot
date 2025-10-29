@@ -23,6 +23,26 @@ type FileMetrics struct {
 	Breakdown          map[string]float64 `json:"breakdown"`           // Normalized contribution of each metric for debugging/tuning
 }
 
+// DirectoryMetrics represents the aggregated metrics for a single directory (or package/service).
+// This is the output unit for Global PIRS analysis.
+type DirectoryMetrics struct {
+	Path               string `json:"path"`                // Relative path to the directory
+	FileCount          int    `json:"file_count"`          // Total number of files aggregated
+	TotalLinesOfCode   int    `json:"total_loc"`           // Sum of LinesOfCode of all files
+	TotalCommits       int    `json:"total_commits"`       // Sum of Commits of all files
+	TotalChurn         int    `json:"total_churn"`         // Sum of Churn of all files
+	UniqueContributors int    `json:"unique_contributors"` // Union of all unique contributors across all files
+
+	// --- The Core PIRS Metrics ---
+	// The main score, calculated via Weighted Average of file scores.
+	Score float64 `json:"score"`
+
+	// The Weighted Incident Score (WIC) and Final BPIRS will be added here
+	// once you integrate the external incident data source.
+	WeightedIncidentScore float64 `json:"weighted_incident_score"` // External score based on historical business impact
+	BPIRSFinalScore       float64 `json:"bpirs_final_score"`       // Final score = f(Score, WeightedIncidentScore)
+}
+
 // Breakdown keys used in the scoring logic.
 const (
 	BreakdownContrib = "contrib" // nContrib
