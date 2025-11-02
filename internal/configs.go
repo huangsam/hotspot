@@ -40,8 +40,7 @@ type Config struct {
 	Explain     bool
 	Precision   int
 	Output      string
-	CSVFile     string
-	JSONFile    string
+	OutputFile  string
 	Follow      bool
 }
 

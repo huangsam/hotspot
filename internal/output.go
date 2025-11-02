@@ -48,7 +48,7 @@ func PrintResults(files []schema.FileMetrics, cfg *Config) {
 // printJSONResults handles opening the file and calling the JSON writer.
 func printJSONResults(files []schema.FileMetrics, cfg *Config) error {
 	// Use the unified file selector defined in writers.go
-	file, err := selectOutputFile(cfg.JSONFile)
+	file, err := selectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func printJSONResults(files []schema.FileMetrics, cfg *Config) error {
 	}
 
 	if file != os.Stdout {
-		fmt.Fprintf(os.Stderr, "Wrote JSON to %s\n", cfg.JSONFile)
+		fmt.Fprintf(os.Stderr, "Wrote JSON to %s\n", cfg.OutputFile)
 	}
 	return nil
 }
@@ -67,7 +67,7 @@ func printJSONResults(files []schema.FileMetrics, cfg *Config) error {
 // printCSVResults handles opening the file and calling the CSV writer.
 func printCSVResults(files []schema.FileMetrics, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
 	// Use the unified file selector defined in writers.go
-	file, err := selectOutputFile(cfg.CSVFile)
+	file, err := selectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func printCSVResults(files []schema.FileMetrics, cfg *Config, fmtFloat func(floa
 	w.Flush()
 
 	if file != os.Stdout {
-		fmt.Fprintf(os.Stderr, "Wrote CSV to %s\n", cfg.CSVFile)
+		fmt.Fprintf(os.Stderr, "Wrote CSV to %s\n", cfg.OutputFile)
 	}
 	return nil
 }

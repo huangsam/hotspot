@@ -25,22 +25,38 @@ var input = &internal.ConfigRawInput{
 
 // rootCmd is the command-line entrypoint for all other commands.
 var rootCmd = &cobra.Command{
-	Use:   "hotspot [repo-path]",
 	Short: "Analyze Git repository activity to find code hotspots.",
 	Long:  `Hotspot cuts through history to show you which files are your greatest risk.`,
-	Args:  cobra.MaximumNArgs(1),
 
-	// Just let the main function print the error. The cobra library
-	// does not need to do it in this case
+	// Just let the main function print the error.
 	SilenceErrors: true,
 
-	// PreRunE handles validation and processing using the logic in schema/config.go
+	// PreRunE logic is being moved to subcommands to ensure
+	// command-specific flags and arguments are processed just before execution.
+	// The root command only handles the global flags.
+
+	// The root command no longer executes logic, it just lists subcommands.
+	Run: func(cmd *cobra.Command, _ []string) {
+		// If no subcommand is provided, print help
+		_ = cmd.Help()
+	},
+}
+
+// filesCmd focuses on tactical, file-level analysis.
+var filesCmd = &cobra.Command{
+	// NOTE: The usage pattern must also reflect the optional [repo-path] argument.
+	Use:   "files [repo-path]",
+	Short: "Show the top files ranked by risk score.",
+	Long:  `The files command performs deep Git analysis and ranks individual files.`,
+	Args:  cobra.MaximumNArgs(1),
+
+	// PreRunE is moved here to ensure config validation runs right before execution.
 	PreRunE: func(_ *cobra.Command, args []string) error {
 		if len(args) == 1 {
 			// Pass the user-provided path to raw input
 			input.RepoPathStr = args[0]
 		} else {
-			// Pass the default path (CWD) to raw input
+			// Pass the default path (CWD) to raw input, or use the root command's argument if present
 			input.RepoPathStr = "."
 		}
 
@@ -48,44 +64,47 @@ var rootCmd = &cobra.Command{
 		return internal.ProcessAndValidate(cfg, input) // cfg.RepoPath is set inside here now
 	},
 
-	// Run executes the core business logic.
 	Run: func(_ *cobra.Command, _ []string) {
-		executeHotspot()
+		executeHotspotFiles()
 	},
 }
 
 // init defines and binds all flags.
 func init() {
-	// --- Bind Simple Flags Directly to Config ---
-	// Note: We bind simple, non-parsing flags directly to the final 'cfg' to keep them clean.
-	rootCmd.Flags().StringVarP(&cfg.PathFilter, "filter", "f", "", "Filter files by path prefix")
-	rootCmd.Flags().BoolVar(&cfg.Detail, "detail", false, "Print per-file metadata")
-	rootCmd.Flags().BoolVar(&cfg.Explain, "explain", false, "Print per-file component score breakdown")
-	rootCmd.Flags().StringVar(&cfg.CSVFile, "csv-file", "", "Optional path to write CSV output directly")
-	rootCmd.Flags().StringVar(&cfg.JSONFile, "json-file", "", "Optional path to write JSON output directly")
-	rootCmd.Flags().BoolVar(&cfg.Follow, "follow", false, "Re-run per-file analysis with --follow (slower)")
+	// Add subcommands to the root command
+	rootCmd.AddCommand(filesCmd)
+	// NOTE: In the future, you will add foldersCmd and reposCmd here.
 
-	// --- Bind Complex Flags to Raw Input Struct ---
-	// These flags use the ConfigInput struct as they require post-parsing validation/conversion.
-	rootCmd.Flags().IntVarP(&input.ResultLimit, "limit", "l", input.ResultLimit, "Number of files to display")
-	rootCmd.Flags().StringVar(&input.StartTimeStr, "start", "", "Start date in ISO8601 format")
-	rootCmd.Flags().StringVar(&input.EndTimeStr, "end", "", "End date in ISO8601 format")
-	rootCmd.Flags().IntVar(&input.Workers, "workers", input.Workers, "Number of concurrent workers")
-	rootCmd.Flags().StringVar(&input.Mode, "mode", input.Mode, "Scoring mode: hot or risk or complexity or stale")
-	rootCmd.Flags().StringVar(&input.ExcludeStr, "exclude", "", "Comma-separated list of path prefixes or patterns to ignore")
-	rootCmd.Flags().IntVar(&input.Precision, "precision", input.Precision, "Decimal precision for numeric columns")
-	rootCmd.Flags().StringVar(&input.Output, "output", input.Output, "Output format: text or csv or json")
+	// --- Bind Simple Global Flags as PERSISTENT Flags (Available and Visible to ALL subcommands) ---
+	rootCmd.PersistentFlags().StringVarP(&cfg.PathFilter, "filter", "f", "", "Filter files by path prefix")
+	rootCmd.PersistentFlags().StringVar(&cfg.OutputFile, "output-file", "", "Optional path to write output to")
+
+	// --- Bind Complex Global Flags as PERSISTENT Flags to Raw Input Struct (Available and Visible to ALL subcommands) ---
+	rootCmd.PersistentFlags().IntVarP(&input.ResultLimit, "limit", "l", input.ResultLimit, "Number of results to display (files or folders)")
+	rootCmd.PersistentFlags().StringVar(&input.StartTimeStr, "start", "", "Start date in ISO8601 format")
+	rootCmd.PersistentFlags().StringVar(&input.EndTimeStr, "end", "", "End date in ISO8601 format")
+	rootCmd.PersistentFlags().IntVar(&input.Workers, "workers", input.Workers, "Number of concurrent workers")
+	rootCmd.PersistentFlags().StringVar(&input.Mode, "mode", input.Mode, "Scoring mode: hot or risk or complexity or stale")
+	rootCmd.PersistentFlags().StringVar(&input.ExcludeStr, "exclude", "", "Comma-separated list of path prefixes or patterns to ignore")
+	rootCmd.PersistentFlags().IntVar(&input.Precision, "precision", input.Precision, "Decimal precision for numeric columns")
+	rootCmd.PersistentFlags().StringVar(&input.Output, "output", input.Output, "Output format: text or csv or json")
+
+	// --- Bind Flags Specific to `hotspot files` ---
+	// These flags remain defined only on the 'files' subcommand.
+	filesCmd.Flags().BoolVar(&cfg.Detail, "detail", false, "Print per-file metadata (lines of code, size, age)")
+	filesCmd.Flags().BoolVar(&cfg.Explain, "explain", false, "Print per-file component score breakdown")
+	filesCmd.Flags().BoolVar(&cfg.Follow, "follow", false, "Re-run per-file analysis with --follow (slower)")
 }
 
 // main starts the execution of the logic.
 func main() {
 	if err := rootCmd.Execute(); err != nil {
-		internal.LogFatal("CLI error", err)
+		internal.LogFatal("Error", err)
 	}
 }
 
-// executeHotspot contains the application's main business logic.
-func executeHotspot() {
+// executeHotspotFiles contains the application's core business logic for file-level analysis.
+func executeHotspotFiles() {
 	var files []string
 
 	// --- 1. Aggregation Phase ---

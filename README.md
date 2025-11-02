@@ -23,10 +23,10 @@ Perfect for:
 go install github.com/huangsam/hotspot@latest
 
 # For current path
-hotspot
+hotspot files
 
 # For explicit path
-hotspot /path/to/repo
+hotspot files /path/to/repo
 ```
 
 ## Scoring modes
@@ -46,25 +46,25 @@ The core power of Hotspot is the `--mode` flag, which defines the ranking algori
 
 ```bash
 # Current Activity Hotspots
-hotspot --mode hot
+hotspot files --mode hot
 
 # Immediate Refactoring Targets
 # After finding a problem path from the 'hot' mode, analyze its complexity
-hotspot --mode complexity --start 2025-01-01T00:00:00Z ./executors/kubernetes
+hotspot files --mode complexity --start 2025-01-01T00:00:00Z ./executors/kubernetes
 ```
 
 ### Strategic Risk & Debt Management
 
 ```bash
 # Bus Factor/Knowledge Risk
-hotspot --mode risk --start 2025-01-01T00:00:00Z --output csv
-hotspot --mode risk --start 2025-01-01T00:00:00Z --output json
+hotspot files --mode risk --start 2025-01-01T00:00:00Z --output csv
+hotspot files --mode risk --start 2025-01-01T00:00:00Z --output json
 
 # Maintenance Debt Audit
-hotspot --mode stale --start 2020-01-01T00:00:00Z --exclude "test/,vendor/"
+hotspot files --mode stale --start 2020-01-01T00:00:00Z --exclude "test/,vendor/"
 
 # Complex Files with History
-hotspot --mode complexity --start 2024-01-01T00:00:00Z --limit 50 --follow
+hotspot files --mode complexity --start 2024-01-01T00:00:00Z --limit 50 --follow
 ```
 
 ## Performance
@@ -82,6 +82,3 @@ hotspot --mode complexity --start 2024-01-01T00:00:00Z --limit 50 --follow
 - Choose a 6-month window and 25 results to identify tactical risks
 - Choose a 12-month window and 50 results to identify strategic risks
 - Choose a 24-month window and 100 results to identify audit risks
-- Try `--explain` to understand a file's score better
-- Try `--detail` to inform refactoring scope
-- Tune `--workers` to match your CPU cores for optimal analysis speed
