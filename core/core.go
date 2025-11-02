@@ -2,83 +2,89 @@
 package core
 
 import (
-	"sync"
+	"fmt"
+	"strings"
 
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/schema"
 )
 
-// AnalyzeRepo processes all files in parallel using a worker pool.
-// It spawns cfg.Workers number of goroutines to analyze files concurrently
-// and aggregates their results into a single slice of schema.FileMetrics.
-func AnalyzeRepo(cfg *internal.Config, files []string) []schema.FileMetrics {
-	// Filter files according to excludes. This is required for consistency
-	// since ListRepoFiles only applies the path filter, not excludes.
-	filtered := make([]string, 0, len(files))
-	for _, f := range files {
+// ExecuteHotspotFiles contains the application's core business logic for file-level analysis.
+func ExecuteHotspotFiles(cfg *internal.Config) {
+	var files []string
+
+	// --- 1. Aggregation Phase ---
+	fmt.Printf("🔎 Aggregating recent activity since %s\n", cfg.StartTime.Format(internal.DateTimeFormat))
+	if err := AggregateRecent(cfg); err != nil {
+		internal.LogWarning("Cannot aggregate recent activity")
+	}
+
+	// --- 2. File List Building and Filtering ---
+	// Build file list from union of recent maps so we only analyze files touched since StartTime
+	seen := make(map[string]bool)
+
+	// Add files seen in recent commit activity
+	for k := range schema.GetRecentCommitsMapGlobal() {
+		seen[k] = true
+	}
+	// Add files seen in recent churn activity
+	for k := range schema.GetRecentChurnMapGlobal() {
+		seen[k] = true
+	}
+	// Add files seen in recent contributor activity
+	for k := range schema.GetRecentContribMapGlobal() {
+		seen[k] = true
+	}
+
+	for f := range seen {
+		// apply path filter
+		if cfg.PathFilter != "" && !strings.HasPrefix(f, cfg.PathFilter) {
+			continue
+		}
+
+		// apply excludes filter
 		if internal.ShouldIgnore(f, cfg.Excludes) {
 			continue
 		}
-		// NOTE: Path filtering is mostly redundant here, as it's done in main/ListRepoFiles,
-		// but excluding files is necessary.
-		filtered = append(filtered, f)
+		files = append(files, f)
 	}
 
-	// Initialize channels based on the final number of files to be processed.
-	fileCh := make(chan string, len(filtered))
-	resultCh := make(chan schema.FileMetrics, len(filtered)) // Use len(filtered) instead of len(files)
-	var wg sync.WaitGroup
-
-	// Start worker pool
-	for range cfg.Workers {
-		// Add one to wait group for each worker
-		wg.Go(func() {
-			for f := range fileCh {
-				// Analysis with useFollow=false for initial run
-				metrics := AnalyzeFileCommon(cfg, f, false)
-				resultCh <- metrics
-			}
-		})
+	if len(files) == 0 {
+		internal.LogWarning("No files with activity found in the requested window")
+		return
 	}
 
-	// Send files to worker channel
-	for _, f := range filtered {
-		fileCh <- f
+	// --- 3. Core Analysis and Initial Ranking ---
+	fmt.Printf("🧠 hotspot: Analyzing %s (Mode: %s)\n", cfg.RepoPath, cfg.Mode)
+	fmt.Printf("📅 Range: %s → %s\n", cfg.StartTime.Format(internal.DateTimeFormat), cfg.EndTime.Format(internal.DateTimeFormat))
+
+	results := AnalyzeRepo(cfg, files)
+	ranked := RankFiles(results, cfg.ResultLimit)
+
+	// --- 4. Optional --follow Re-analysis and Re-ranking ---
+	// If the user requested a follow-pass, re-analyze the top N files using
+	// git --follow to account for renames/history and then re-rank.
+	if cfg.Follow && len(ranked) > 0 {
+		// Determine the number of files to re-analyze (min of limit or actual results)
+		n := min(cfg.ResultLimit, len(ranked))
+
+		fmt.Printf("🔁 Running --follow re-analysis for top %d files...\n", n)
+
+		for i := range n {
+			f := ranked[i]
+
+			// re-analyze with follow enabled (passing 'true' for the follow flag)
+			rean := AnalyzeFileCommon(cfg, f.Path, true)
+
+			// preserve path but update metrics and score
+			rean.Path = f.Path
+			ranked[i] = rean
+		}
+
+		// re-rank after follow pass
+		ranked = RankFiles(ranked, cfg.ResultLimit)
 	}
-	close(fileCh)
 
-	// Wait for all workers to finish processing
-	wg.Wait()
-	close(resultCh)
-
-	// Aggregate results directly into the slice (removing the intermediate map)
-	results := make([]schema.FileMetrics, 0, len(filtered))
-	for r := range resultCh {
-		results = append(results, r)
-	}
-
-	return results
-}
-
-// AnalyzeFileCommon computes all metrics for a single file in the repository.
-// It gathers Git history data (commits, authors, dates), file size, and calculates
-// derived metrics like churn and the Gini coefficient of author contributions.
-// The analysis is constrained by the time range in cfg if specified.
-// If useFollow is true, git --follow is used to track file renames.
-func AnalyzeFileCommon(cfg *internal.Config, path string, useFollow bool) schema.FileMetrics {
-	// 1. Initialize the builder
-	builder := NewFileMetricsBuilder(cfg, path, useFollow)
-
-	// 2. Execute the required steps in order (Method Chaining)
-	builder.
-		fetchCommitHistory().      // Gathers initial Git data
-		fetchFileSize().           // Gets size
-		fetchLinesOfCode().        // Gets lines of code
-		calculateChurn().          // Computes lines added/deleted
-		applyGlobalMaps().         // Adds recent metrics if global data exists
-		calculateDerivedMetrics(). // Calculates AgeDays and Gini
-		calculateScore()           // Computes the final composite score
-
-	// 3. Return the final product
-	return builder.Build()
+	// --- 5. Output Results ---
+	internal.PrintResults(ranked, cfg)
 }
