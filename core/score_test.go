@@ -96,7 +96,7 @@ func TestComputeScoreHotMode(t *testing.T) {
 				Churn:              500,
 				Gini:               0.3,
 			},
-			minScore: 25,
+			minScore: 20,
 			maxScore: 35,
 		},
 		{
@@ -185,7 +185,7 @@ func TestComputeScoreRiskMode(t *testing.T) {
 				Gini:               0.9,
 			},
 			minScore: 0,
-			maxScore: 60, // should be reduced by 0.75 multiplier
+			maxScore: 60,
 		},
 	}
 
@@ -218,7 +218,7 @@ func TestComputeScoreStaleMode(t *testing.T) {
 				Churn:              10,
 				Gini:               0.9,
 			},
-			minScore: 45, // Relaxed from 65 to 45 to account for low Size/Churn metrics
+			minScore: 45,
 			maxScore: 100,
 		},
 		{
@@ -233,8 +233,8 @@ func TestComputeScoreStaleMode(t *testing.T) {
 				Churn:              500,
 				Gini:               0.3,
 			},
-			minScore: 0,  // Expect low score
-			maxScore: 35, // Relaxed from 20 to 35 to account for residual scoring factors
+			minScore: 0,
+			maxScore: 35,
 		},
 		{
 			name: "test file should get lower score",
@@ -248,7 +248,7 @@ func TestComputeScoreStaleMode(t *testing.T) {
 				Churn:              50,
 				Gini:               0.9,
 			},
-			minScore: 30, // Should still score medium/high but be reduced by test multiplier (if that were active in stale mode)
+			minScore: 15,
 			maxScore: 70,
 		},
 	}
@@ -285,7 +285,7 @@ func TestComputeScoreComplexityMode(t *testing.T) {
 				Churn:              7000,
 				Gini:               0.3,
 			},
-			minScore: 70, // High score expected from maxed Size, Age, Churn
+			minScore: 70,
 			maxScore: 100,
 		},
 		{

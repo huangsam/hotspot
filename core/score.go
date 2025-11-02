@@ -27,7 +27,7 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 		maxAgeDays = 3650.0  // ~10 years
 		maxChurn   = 5000.0  // total added+deleted lines
 		maxRecent  = 50.0    // 50 recent commits is high activity
-		maxLOC     = 20000.0 // Lines of Code beyond this saturate (20k lines)
+		maxLOC     = 10000.0 // Lines of Code beyond this saturate (10k lines)
 	)
 
 	clamp01 := func(v float64) float64 {
@@ -72,33 +72,33 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 			wCommRisk   = 0.04
 			wLOCRisk    = 0.06
 		)
-		breakdown[schema.BreakdownInvContrib] = wInvContrib * nInvContrib
-		breakdown[schema.BreakdownGini] = wGini * nGiniRaw
 		breakdown[schema.BreakdownAge] = wAgeRisk * nAge
-		breakdown[schema.BreakdownSize] = wSizeRisk * nSize
 		breakdown[schema.BreakdownChurn] = wChurnRisk * nChurn
 		breakdown[schema.BreakdownCommits] = wCommRisk * nCommits
+		breakdown[schema.BreakdownGini] = wGini * nGiniRaw
+		breakdown[schema.BreakdownInvContrib] = wInvContrib * nInvContrib
 		breakdown[schema.BreakdownLOC] = wLOCRisk * nLOC
+		breakdown[schema.BreakdownSize] = wSizeRisk * nSize
 
 	case "complexity":
 		// Technical debt focus: large, old files with high total churn.
 		// LOC is the primary proxy for cognitive complexity, while Size is retained
 		// for structural/data bloat risk.
 		const (
-			wLOCComplex   = 0.30 // Primary measure of cognitive complexity
-			wAgeComplex   = 0.25 // Older code often contains legacy complexity
-			wChurnComplex = 0.25 // High churn suggests volatility and/or refactoring difficulty
+			wAgeComplex   = 0.30 // Older code often contains legacy complexity
+			wChurnComplex = 0.30 // High churn suggests volatility and/or refactoring difficulty
+			wLOCComplex   = 0.20 // High measure of cognitive complexity
 			wCommComplex  = 0.10
 			wSizeComplex  = 0.05
 			wContribLow   = 0.05
 		)
 		// Complexity should favor files that aren't being actively fixed (low recent commits)
-		breakdown[schema.BreakdownLOC] = wLOCComplex * nLOC    // Using new nLOC metric
-		breakdown[schema.BreakdownSize] = wSizeComplex * nSize // Retained, lower weight
 		breakdown[schema.BreakdownAge] = wAgeComplex * nAge
 		breakdown[schema.BreakdownChurn] = wChurnComplex * nChurn
 		breakdown[schema.BreakdownCommits] = wCommComplex * nCommits
-		breakdown[schema.BreakdownLowRecent] = wContribLow * nInvRecentCommits // low recent activity means complexity is "settled"
+		breakdown[schema.BreakdownLOC] = wLOCComplex * nLOC
+		breakdown[schema.BreakdownLowRecent] = wContribLow * nInvRecentCommits
+		breakdown[schema.BreakdownSize] = wSizeComplex * nSize
 
 	case "stale":
 		// Maintenance debt: important but haven't been touched recently
@@ -109,26 +109,26 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 			wCommitsStale   = 0.15
 			wContribStale   = 0.05
 		)
-		breakdown[schema.BreakdownInvRecent] = wInvRecentStale * nInvRecentCommits
-		breakdown[schema.BreakdownSize] = wSizeStale * nSize
 		breakdown[schema.BreakdownAge] = wAgeStale * nAge
 		breakdown[schema.BreakdownCommits] = wCommitsStale * nCommits
 		breakdown[schema.BreakdownContrib] = wContribStale * nContrib
+		breakdown[schema.BreakdownInvRecent] = wInvRecentStale * nInvRecentCommits
+		breakdown[schema.BreakdownSize] = wSizeStale * nSize
 
 	default: // case "hot" (default)
 		// Hotspot scoring: where activity and volatility are concentrated
 		const (
-			wCommits = 0.30 // Raw commit count is a great measure of activity
-			wChurn   = 0.28 // Volatility (lines changed) is key to a "hotspot"
-			wContrib = 0.18
-			wSize    = 0.16
-			wAge     = 0.08
+			wCommits = 0.40 // Raw commit count is a great measure of activity
+			wChurn   = 0.40 // Volatility (lines changed) is key to a "hotspot"
+			wAge     = 0.10
+			wContrib = 0.05
+			wSize    = 0.05
 		)
-		breakdown[schema.BreakdownCommits] = wCommits * nCommits
+		breakdown[schema.BreakdownAge] = wAge * nAge
 		breakdown[schema.BreakdownChurn] = wChurn * nChurn
+		breakdown[schema.BreakdownCommits] = wCommits * nCommits
 		breakdown[schema.BreakdownContrib] = wContrib * nContrib
 		breakdown[schema.BreakdownSize] = wSize * nSize
-		breakdown[schema.BreakdownAge] = wAge * nAge
 	}
 
 	for _, value := range breakdown {
@@ -136,11 +136,12 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 	}
 	score := raw * 100.0
 
-	// If risk mode and this looks like a test or generated file, slightly reduce score since
-	// these often have narrow contributors but don't represent critical bus factor risks.
-	if strings.ToLower(mode) == "risk" {
-		if strings.Contains(m.Path, "test") || strings.Contains(m.Path, "generated") {
+	if strings.Contains(m.Path, "test") || strings.Contains(m.Path, "generated") {
+		modeLower := strings.ToLower(mode)
+		if modeLower == "risk" {
 			score *= 0.75
+		} else {
+			score *= 0.50
 		}
 	}
 
