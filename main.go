@@ -21,6 +21,7 @@ var input = &internal.ConfigRawInput{
 
 // rootCmd is the command-line entrypoint for all other commands.
 var rootCmd = &cobra.Command{
+	Use:   "hotspot",
 	Short: "Analyze Git repository activity to find code hotspots.",
 	Long:  `Hotspot cuts through history to show you which files are your greatest risk.`,
 
@@ -40,7 +41,6 @@ var rootCmd = &cobra.Command{
 
 // filesCmd focuses on tactical, file-level analysis.
 var filesCmd = &cobra.Command{
-	// NOTE: The usage pattern must also reflect the optional [repo-path] argument.
 	Use:   "files [repo-path]",
 	Short: "Show the top files ranked by risk score.",
 	Long:  `The files command performs deep Git analysis and ranks individual files.`,
