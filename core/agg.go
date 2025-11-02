@@ -12,7 +12,7 @@ import (
 // recent commits, churn and contributors. It avoids expensive calls and is fast
 // even on large repositories.
 func aggregate(cfg *internal.Config) error {
-	args := []string{"log", "--numstat", "--pretty=format:--%H|%an"}
+	args := []string{"log", "--numstat", "--pretty=format:'--%H|%an'"}
 	if !cfg.StartTime.IsZero() {
 		since := cfg.StartTime.Format(internal.DateTimeFormat)
 		args = append(args, "--since="+since)
