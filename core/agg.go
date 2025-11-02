@@ -8,10 +8,10 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// AggregateRecent performs a single repository-wide git log since cfg.StartTime
+// aggregateRecent performs a single repository-wide git log since cfg.StartTime
 // and aggregates per-file recent commits, churn and contributors. It avoids
 // expensive per-file --follow calls and is fast even on large repositories.
-func AggregateRecent(cfg *internal.Config) error {
+func aggregateRecent(cfg *internal.Config) error {
 	if cfg.StartTime.IsZero() {
 		return nil
 	}

@@ -15,7 +15,7 @@ func ExecuteHotspotFiles(cfg *internal.Config) {
 
 	// --- 1. Aggregation Phase ---
 	fmt.Printf("🔎 Aggregating recent activity since %s\n", cfg.StartTime.Format(internal.DateTimeFormat))
-	if err := AggregateRecent(cfg); err != nil {
+	if err := aggregateRecent(cfg); err != nil {
 		internal.LogWarning("Cannot aggregate recent activity")
 	}
 
@@ -58,8 +58,8 @@ func ExecuteHotspotFiles(cfg *internal.Config) {
 	fmt.Printf("🧠 hotspot: Analyzing %s (Mode: %s)\n", cfg.RepoPath, cfg.Mode)
 	fmt.Printf("📅 Range: %s → %s\n", cfg.StartTime.Format(internal.DateTimeFormat), cfg.EndTime.Format(internal.DateTimeFormat))
 
-	results := AnalyzeRepo(cfg, files)
-	ranked := RankFiles(results, cfg.ResultLimit)
+	results := analyzeRepo(cfg, files)
+	ranked := rankFiles(results, cfg.ResultLimit)
 
 	// --- 4. Optional --follow Re-analysis and Re-ranking ---
 	// If the user requested a follow-pass, re-analyze the top N files using
@@ -74,7 +74,7 @@ func ExecuteHotspotFiles(cfg *internal.Config) {
 			f := ranked[i]
 
 			// re-analyze with follow enabled (passing 'true' for the follow flag)
-			rean := AnalyzeFileCommon(cfg, f.Path, true)
+			rean := analyzeFileCommon(cfg, f.Path, true)
 
 			// preserve path but update metrics and score
 			rean.Path = f.Path
@@ -82,7 +82,7 @@ func ExecuteHotspotFiles(cfg *internal.Config) {
 		}
 
 		// re-rank after follow pass
-		ranked = RankFiles(ranked, cfg.ResultLimit)
+		ranked = rankFiles(ranked, cfg.ResultLimit)
 	}
 
 	// --- 5. Output Results ---

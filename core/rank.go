@@ -6,10 +6,10 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// RankFiles sorts files by their importance score in descending order
+// rankFiles sorts files by their importance score in descending order
 // and returns the top 'limit' files. If limit is greater than the number
 // of files, all files are returned in sorted order.
-func RankFiles(files []schema.FileMetrics, limit int) []schema.FileMetrics {
+func rankFiles(files []schema.FileMetrics, limit int) []schema.FileMetrics {
 	sort.Slice(files, func(i, j int) bool {
 		return files[i].Score > files[j].Score
 	})
