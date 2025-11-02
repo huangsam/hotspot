@@ -8,24 +8,45 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// aggregate performs a single repository-wide git log and aggregates per-file
-// recent commits, churn and contributors. It avoids expensive calls and is fast
-// even on large repositories.
-func aggregate(cfg *internal.Config) error {
+// aggregateActivity performs a single repository-wide git log and aggregates per-file
+// commits, churn and contributors. It runs over the entire history if
+// cfg.StartTime is zero, or runs since cfg.StartTime otherwise.
+// It filters out files that no longer exist in a single pass.
+func aggregateActivity(cfg *internal.Config) error {
+	// 1. Get the list of currently existing files FIRST.
+	// This git call is very fast.
+	currentFiles, err := listRepoFiles(cfg.RepoPath)
+	if err != nil {
+		return err
+	}
+	// Build a lookup map for O(1) existence checks.
+	fileExists := make(map[string]bool)
+	for _, file := range currentFiles {
+		fileExists[file] = true
+	}
+
+	// 2. Build the git command and select the correct maps
 	args := []string{"log", "--numstat", "--pretty=format:'--%H|%an'"}
+
+	commitsMap := schema.GetRecentCommitsMapGlobal()
+	churnMap := schema.GetRecentChurnMapGlobal()
+	contribMap := schema.GetRecentContribMapGlobal()
+
 	if !cfg.StartTime.IsZero() {
+		// If we get to the place where we need global maps for "all" time, then
+		// we should refactor this function to return an "immutable" output
+		// instead of relying on globals
 		since := cfg.StartTime.Format(internal.DateTimeFormat)
 		args = append(args, "--since="+since)
 	}
+
+	// 3. Run the expensive git log command ONCE
 	out, err := internal.RunGitCommand(cfg.RepoPath, args...)
 	if err != nil {
 		return err
 	}
 
-	recentCommitsMapGlobal := schema.GetRecentCommitsMapGlobal()
-	recentChurnMapGlobal := schema.GetRecentChurnMapGlobal()
-	recentContribMapGlobal := schema.GetRecentContribMapGlobal()
-
+	// 4. Perform aggregation AND filtering in a single pass
 	lines := strings.Split(string(out), "\n")
 	var currentAuthor string
 	for _, l := range lines {
@@ -49,6 +70,11 @@ func aggregate(cfg *internal.Config) error {
 		addStr := parts[0]
 		delStr := parts[1]
 		path := parts[2]
+
+		if !fileExists[path] {
+			continue // Skip this file; it no longer exists.
+		}
+
 		add := 0
 		del := 0
 		if addStr != "-" {
@@ -57,14 +83,27 @@ func aggregate(cfg *internal.Config) error {
 		if delStr != "-" {
 			del, _ = strconv.Atoi(delStr)
 		}
-		recentChurnMapGlobal[path] += add + del
-		recentCommitsMapGlobal[path]++
+
+		// Aggregate using the dynamically selected maps
+		churnMap[path] += add + del
+		commitsMap[path]++
 		if currentAuthor != "" {
-			if recentContribMapGlobal[path] == nil {
-				recentContribMapGlobal[path] = make(map[string]int)
+			if contribMap[path] == nil {
+				contribMap[path] = make(map[string]int)
 			}
-			recentContribMapGlobal[path][currentAuthor]++
+			contribMap[path][currentAuthor]++
 		}
 	}
+
+	// 5. No filtering loops are needed. The maps are already clean.
 	return nil
+}
+
+// listRepoFiles returns a list of all tracked files in the Git repository.
+func listRepoFiles(repoPath string) ([]string, error) {
+	out, err := internal.RunGitCommand(repoPath, "ls-files")
+	if err != nil {
+		return nil, err
+	}
+	return strings.Split(strings.TrimSpace(string(out)), "\n"), nil
 }
