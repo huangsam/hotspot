@@ -76,8 +76,8 @@ hotspot files --mode complexity --start 2024-01-01T00:00:00Z --limit 50 --follow
 
 ## Tips
 
-- Start with `hotspot` for a quick snapshot
-- Exclude irrelevant files to focus the analysis
+- Start with `hotspot files` for a quick snapshot
+- Exclude irrelevant files and folders to focus the analysis
 - Export results as CSV/JSON to track trends and progress
 - Choose a 6-month window and 25 results to identify tactical risks
 - Choose a 12-month window and 50 results to identify strategic risks
