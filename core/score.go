@@ -152,7 +152,7 @@ func computeScore(m *schema.FileMetrics, mode string) float64 {
 	}
 
 	// Debuff signals on configuration
-	if slices.Contains([]string{"yml", "yaml", "json", "toml"}, extLower) {
+	if slices.Contains([]string{"yml", "yaml", "json", "toml", "cfg"}, extLower) {
 		if modeLower == "complexity" {
 			score *= 0.50
 		}
