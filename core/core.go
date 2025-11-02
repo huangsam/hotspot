@@ -15,7 +15,7 @@ func ExecuteHotspotFiles(cfg *internal.Config) {
 
 	// --- 1. Aggregation Phase ---
 	fmt.Printf("🔎 Aggregating recent activity since %s\n", cfg.StartTime.Format(internal.DateTimeFormat))
-	if err := aggregateRecent(cfg); err != nil {
+	if err := aggregate(cfg); err != nil {
 		internal.LogWarning("Cannot aggregate recent activity")
 	}
 
