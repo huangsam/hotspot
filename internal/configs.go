@@ -130,6 +130,12 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 		// Data assets
 		".json", ".csv",
 
+		// Documentation
+		".md", "LICENSE",
+
+		// Other assets
+		".DS_Store", ".gitignore",
+
 		// Build Output Directories
 		"dist/", "build/", "out/", "target/", "bin/",
 	}
