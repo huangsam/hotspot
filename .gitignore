@@ -30,6 +30,7 @@ dist/
 # Local developer assets
 .DS_Store
 .idea/
+brainstorm/
 *.cast
 /hotspot
 /coverage.txt
