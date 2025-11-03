@@ -70,13 +70,13 @@ func analyzeFileCommon(cfg *internal.Config, path string, output *schema.Aggrega
 
 	// 2. Execute the required steps in order (Method Chaining)
 	builder.
-		fetchCommitHistory().      // Gathers initial Git data
-		fetchFileSize().           // Gets size
-		fetchLinesOfCode().        // Gets lines of code
-		calculateChurn().          // Computes lines added/deleted
-		applyGlobalMaps().         // Adds recent metrics if global data exists
-		calculateDerivedMetrics(). // Calculates AgeDays and Gini
-		calculateScore()           // Computes the final composite score
+		FetchCommitHistory().      // Gathers initial Git data
+		FetchFileSize().           // Gets size
+		FetchLinesOfCode().        // Gets lines of code
+		CalculateChurn().          // Computes lines added/deleted
+		FetchRecentInfo().         // Adds recent metrics if it exists
+		CalculateDerivedMetrics(). // Calculates AgeDays and Gini
+		CalculateScore()           // Computes the final composite score
 
 	// 3. Return the final product
 	return builder.Build()

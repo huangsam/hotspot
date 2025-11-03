@@ -39,8 +39,8 @@ func NewFileMetricsBuilder(cfg *internal.Config, path string, output *schema.Agg
 	}
 }
 
-// fetchCommitHistory runs 'git log' and populates basic metrics and internal counts.
-func (b *FileMetricsBuilder) fetchCommitHistory() *FileMetricsBuilder {
+// FetchCommitHistory runs 'git log' and populates basic metrics and internal counts.
+func (b *FileMetricsBuilder) FetchCommitHistory() *FileMetricsBuilder {
 	repo := b.cfg.RepoPath
 	historyArgs := []string{"log"}
 	if b.useFollow {
@@ -93,17 +93,17 @@ func (b *FileMetricsBuilder) fetchCommitHistory() *FileMetricsBuilder {
 	return b
 }
 
-// fetchFileSize runs os.Stat to get the file size.
-func (b *FileMetricsBuilder) fetchFileSize() *FileMetricsBuilder {
+// FetchFileSize runs os.Stat to get the file size.
+func (b *FileMetricsBuilder) FetchFileSize() *FileMetricsBuilder {
 	if info, err := os.Stat(filepath.Join(b.cfg.RepoPath, b.path)); err == nil {
 		b.metrics.SizeBytes = info.Size()
 	}
 	return b
 }
 
-// fetchLinesOfCode reads the file and counts the Physical Lines of Code (PLOC)
+// FetchLinesOfCode reads the file and counts the Physical Lines of Code (PLOC)
 // by counting the number of newline characters, which replicates wc -l behavior.
-func (b *FileMetricsBuilder) fetchLinesOfCode() *FileMetricsBuilder {
+func (b *FileMetricsBuilder) FetchLinesOfCode() *FileMetricsBuilder {
 	fullPath := filepath.Join(b.cfg.RepoPath, b.path)
 
 	// 1. Read the entire file content as a byte slice.
@@ -123,8 +123,8 @@ func (b *FileMetricsBuilder) fetchLinesOfCode() *FileMetricsBuilder {
 	return b
 }
 
-// calculateChurn runs 'git log --numstat' to get lines added/deleted.
-func (b *FileMetricsBuilder) calculateChurn() *FileMetricsBuilder {
+// CalculateChurn runs 'git log --numstat' to get lines added/deleted.
+func (b *FileMetricsBuilder) CalculateChurn() *FileMetricsBuilder {
 	churnArgs := []string{"log"}
 	if b.useFollow {
 		churnArgs = append(churnArgs, "--follow")
@@ -172,8 +172,8 @@ func (b *FileMetricsBuilder) calculateChurn() *FileMetricsBuilder {
 	return b
 }
 
-// calculateDerivedMetrics computes metrics that depend on previously collected data.
-func (b *FileMetricsBuilder) calculateDerivedMetrics() *FileMetricsBuilder {
+// CalculateDerivedMetrics computes metrics that depend on previously collected data.
+func (b *FileMetricsBuilder) CalculateDerivedMetrics() *FileMetricsBuilder {
 	// AgeDays
 	if b.metrics.FirstCommit.IsZero() {
 		b.metrics.AgeDays = 0
@@ -191,8 +191,8 @@ func (b *FileMetricsBuilder) calculateDerivedMetrics() *FileMetricsBuilder {
 	return b
 }
 
-// applyGlobalMaps populates recent metrics from global maps if available.
-func (b *FileMetricsBuilder) applyGlobalMaps() *FileMetricsBuilder {
+// FetchRecentInfo populates recent metrics from recent info if available.
+func (b *FileMetricsBuilder) FetchRecentInfo() *FileMetricsBuilder {
 	if recentCommitsMapGlobal := b.output.CommitMap; recentCommitsMapGlobal != nil {
 		if v, ok := recentCommitsMapGlobal[b.path]; ok {
 			b.metrics.RecentCommits = v
@@ -211,8 +211,8 @@ func (b *FileMetricsBuilder) applyGlobalMaps() *FileMetricsBuilder {
 	return b
 }
 
-// calculateScore computes the final composite score.
-func (b *FileMetricsBuilder) calculateScore() *FileMetricsBuilder {
+// CalculateScore computes the final composite score.
+func (b *FileMetricsBuilder) CalculateScore() *FileMetricsBuilder {
 	b.metrics.Score = computeScore(b.metrics, b.cfg.Mode) // Assuming computeScore() is a helper function
 	return b
 }
