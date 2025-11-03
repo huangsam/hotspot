@@ -43,6 +43,8 @@ Here is what the tool shows for [kubernetes/kubernetes](https://github.com/kuber
 
 <img src="./images/ranking.png" alt="Hotspot" width="768px" />
 
+> **Note:** The ranking displays the **risk score** and a color-coded **LABEL** (High, Moderate, Low) based on the chosen mode.
+
 ## Scoring modes
 
 The core power of Hotspot is the `--mode` flag, which defines the ranking algorithm:
