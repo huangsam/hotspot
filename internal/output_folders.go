@@ -54,7 +54,7 @@ func printJSONResultsForFolders(results []schema.FolderResults, cfg *Config) err
 	}
 
 	if file != os.Stdout {
-		fmt.Fprintf(os.Stderr, "Wrote JSON to %s\n", cfg.OutputFile)
+		fmt.Fprintf(os.Stderr, "💾 Wrote JSON to %s\n", cfg.OutputFile)
 	}
 	return nil
 }
@@ -83,7 +83,7 @@ func printCSVResultsForFolders(results []schema.FolderResults, cfg *Config, fmtF
 	w.Flush()
 
 	if file != os.Stdout {
-		fmt.Fprintf(os.Stderr, "Wrote CSV to %s\n", cfg.OutputFile)
+		fmt.Fprintf(os.Stderr, "💾 Wrote CSV to %s\n", cfg.OutputFile)
 	}
 	return nil
 }

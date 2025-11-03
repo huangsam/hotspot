@@ -56,7 +56,7 @@ func printJSONResults(files []schema.FileMetrics, cfg *Config) error {
 	}
 
 	if file != os.Stdout {
-		fmt.Fprintf(os.Stderr, "Wrote JSON to %s\n", cfg.OutputFile)
+		fmt.Fprintf(os.Stderr, "💾 Wrote JSON to %s\n", cfg.OutputFile)
 	}
 	return nil
 }
@@ -77,7 +77,7 @@ func printCSVResults(files []schema.FileMetrics, cfg *Config, fmtFloat func(floa
 	w.Flush()
 
 	if file != os.Stdout {
-		fmt.Fprintf(os.Stderr, "Wrote CSV to %s\n", cfg.OutputFile)
+		fmt.Fprintf(os.Stderr, "💾 Wrote CSV to %s\n", cfg.OutputFile)
 	}
 	return nil
 }
