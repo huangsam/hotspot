@@ -12,7 +12,7 @@ build:
 # Clean build artifacts
 clean:
 	@echo "Cleaning..."
-	@rm -f $(BINARY_NAME)
+	@rm -f ./bin/$(BINARY_NAME)
 	@echo "✅ Clean complete"
 
 # Install to $GOPATH/bin
