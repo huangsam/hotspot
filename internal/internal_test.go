@@ -48,6 +48,7 @@ func TestGetPlainLabel(t *testing.T) {
 			expected: criticalValue,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.expected, getPlainLabel(tt.input))
