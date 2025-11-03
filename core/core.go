@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/huangsam/hotspot/internal"
-	"github.com/huangsam/hotspot/schema"
 )
 
 // ExecuteHotspotFiles contains the application's core business logic for file-level analysis.
@@ -16,7 +15,8 @@ func ExecuteHotspotFiles(cfg *internal.Config) {
 
 	// --- 1. Aggregation Phase ---
 	fmt.Printf("🔎 Aggregating activity since %s\n", cfg.StartTime.Format(internal.DateTimeFormat))
-	if err := aggregateActivity(cfg); err != nil {
+	output, err := aggregateActivity(cfg)
+	if err != nil {
 		internal.LogWarning("Cannot aggregate activity")
 	}
 
@@ -25,15 +25,15 @@ func ExecuteHotspotFiles(cfg *internal.Config) {
 	seen := make(map[string]bool)
 
 	// Add files seen in recent commit activity
-	for k := range schema.GetRecentCommitsMapGlobal() {
+	for k := range output.CommitMap {
 		seen[k] = true
 	}
 	// Add files seen in recent churn activity
-	for k := range schema.GetRecentChurnMapGlobal() {
+	for k := range output.ChurnMap {
 		seen[k] = true
 	}
 	// Add files seen in recent contributor activity
-	for k := range schema.GetRecentContribMapGlobal() {
+	for k := range output.ContribMap {
 		seen[k] = true
 	}
 
@@ -59,7 +59,7 @@ func ExecuteHotspotFiles(cfg *internal.Config) {
 	fmt.Printf("🧠 hotspot: Analyzing %s (Mode: %s)\n", cfg.RepoPath, cfg.Mode)
 	fmt.Printf("📅 Range: %s → %s\n", cfg.StartTime.Format(internal.DateTimeFormat), cfg.EndTime.Format(internal.DateTimeFormat))
 
-	results := analyzeRepo(cfg, files)
+	results := analyzeRepo(cfg, output, files)
 	ranked := rankFiles(results, cfg.ResultLimit)
 
 	// --- 4. Optional --follow Re-analysis and Re-ranking ---
@@ -75,7 +75,7 @@ func ExecuteHotspotFiles(cfg *internal.Config) {
 			f := ranked[i]
 
 			// re-analyze with follow enabled (passing 'true' for the follow flag)
-			rean := analyzeFileCommon(cfg, f.Path, true)
+			rean := analyzeFileCommon(cfg, f.Path, output, true)
 
 			// preserve path but update metrics and score
 			rean.Path = f.Path
@@ -97,7 +97,8 @@ func ExecuteHotspotFolders(cfg *internal.Config) {
 	// --- 1. Aggregation Phase (Identical to file analysis) ---
 	// The aggregation is file-level, so this part is the same.
 	fmt.Printf("🔎 Aggregating activity since %s\n", cfg.StartTime.Format(internal.DateTimeFormat))
-	if err := aggregateActivity(cfg); err != nil {
+	output, err := aggregateActivity(cfg)
+	if err != nil {
 		internal.LogWarning("Cannot aggregate activity")
 	}
 
@@ -107,13 +108,13 @@ func ExecuteHotspotFolders(cfg *internal.Config) {
 	seenFolders := make(map[string]bool) // New map to track unique folders
 
 	// Add files seen in recent activity
-	for k := range schema.GetRecentCommitsMapGlobal() {
+	for k := range output.CommitMap {
 		seenFiles[k] = true
 	}
-	for k := range schema.GetRecentChurnMapGlobal() {
+	for k := range output.ChurnMap {
 		seenFiles[k] = true
 	}
-	for k := range schema.GetRecentContribMapGlobal() {
+	for k := range output.ContribMap {
 		seenFiles[k] = true
 	}
 
@@ -159,7 +160,7 @@ func ExecuteHotspotFolders(cfg *internal.Config) {
 	fmt.Printf("📅 Range: %s → %s\n", cfg.StartTime.Format(internal.DateTimeFormat), cfg.EndTime.Format(internal.DateTimeFormat))
 
 	// New logic: Aggregate file results into folder results
-	fileMetrics := analyzeRepo(cfg, files)
+	fileMetrics := analyzeRepo(cfg, output, files)
 	folderResults := aggregateAndScoreFolders(cfg, fileMetrics)
 
 	// The Folder-mode ranking will rank the folder results

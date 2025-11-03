@@ -13,12 +13,12 @@ import (
 // commits, churn and contributors. It runs over the entire history if
 // cfg.StartTime is zero, or runs since cfg.StartTime otherwise.
 // It filters out files that no longer exist in a single pass.
-func aggregateActivity(cfg *internal.Config) error {
+func aggregateActivity(cfg *internal.Config) (*schema.AggregateOutput, error) {
 	// 1. Get the list of currently existing files FIRST.
 	// This git call is very fast.
 	currentFiles, err := listRepoFiles(cfg.RepoPath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// Build a lookup map for O(1) existence checks.
 	fileExists := make(map[string]bool)
@@ -29,9 +29,9 @@ func aggregateActivity(cfg *internal.Config) error {
 	// 2. Build the git command and select the correct maps
 	args := []string{"log", "--numstat", "--pretty=format:'--%H|%an'"}
 
-	commitsMap := schema.GetRecentCommitsMapGlobal()
-	churnMap := schema.GetRecentChurnMapGlobal()
-	contribMap := schema.GetRecentContribMapGlobal()
+	commitsMap := make(map[string]int)
+	churnMap := make(map[string]int)
+	contribMap := make(map[string]map[string]int)
 
 	if !cfg.StartTime.IsZero() {
 		// If we get to the place where we need global maps for "all" time, then
@@ -44,7 +44,7 @@ func aggregateActivity(cfg *internal.Config) error {
 	// 3. Run the expensive git log command ONCE
 	out, err := internal.RunGitCommand(cfg.RepoPath, args...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// 4. Perform aggregation AND filtering in a single pass
@@ -96,8 +96,14 @@ func aggregateActivity(cfg *internal.Config) error {
 		}
 	}
 
+	output := &schema.AggregateOutput{
+		ChurnMap:   churnMap,
+		CommitMap:  commitsMap,
+		ContribMap: contribMap,
+	}
+
 	// 5. No filtering loops are needed. The maps are already clean.
-	return nil
+	return output, nil
 }
 
 // listRepoFiles returns a list of all tracked files in the Git repository.

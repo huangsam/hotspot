@@ -16,8 +16,9 @@ import (
 
 // FileMetricsBuilder builds the file metric from Git output.
 type FileMetricsBuilder struct {
-	metrics   schema.FileMetrics
 	cfg       *internal.Config
+	metrics   *schema.FileMetrics
+	output    *schema.AggregateOutput
 	path      string
 	useFollow bool
 
@@ -27,12 +28,13 @@ type FileMetricsBuilder struct {
 }
 
 // NewFileMetricsBuilder is the starting point for building file metrics.
-func NewFileMetricsBuilder(cfg *internal.Config, path string, useFollow bool) *FileMetricsBuilder {
+func NewFileMetricsBuilder(cfg *internal.Config, path string, output *schema.AggregateOutput, useFollow bool) *FileMetricsBuilder {
 	return &FileMetricsBuilder{
 		cfg:          cfg,
+		metrics:      &schema.FileMetrics{Path: path},
+		output:       output,
 		path:         path,
 		useFollow:    useFollow,
-		metrics:      schema.FileMetrics{Path: path},
 		contribCount: make(map[string]int),
 	}
 }
@@ -191,17 +193,17 @@ func (b *FileMetricsBuilder) calculateDerivedMetrics() *FileMetricsBuilder {
 
 // applyGlobalMaps populates recent metrics from global maps if available.
 func (b *FileMetricsBuilder) applyGlobalMaps() *FileMetricsBuilder {
-	if recentCommitsMapGlobal := schema.GetRecentCommitsMapGlobal(); recentCommitsMapGlobal != nil {
+	if recentCommitsMapGlobal := b.output.CommitMap; recentCommitsMapGlobal != nil {
 		if v, ok := recentCommitsMapGlobal[b.path]; ok {
 			b.metrics.RecentCommits = v
 		}
 	}
-	if recentChurnMapGlobal := schema.GetRecentChurnMapGlobal(); recentChurnMapGlobal != nil {
+	if recentChurnMapGlobal := b.output.ChurnMap; recentChurnMapGlobal != nil {
 		if v, ok := recentChurnMapGlobal[b.path]; ok {
 			b.metrics.RecentChurn = v
 		}
 	}
-	if recentContribMapGlobal := schema.GetRecentContribMapGlobal(); recentContribMapGlobal != nil {
+	if recentContribMapGlobal := b.output.ContribMap; recentContribMapGlobal != nil {
 		if m, ok := recentContribMapGlobal[b.path]; ok {
 			b.metrics.RecentContributors = len(m)
 		}
@@ -211,11 +213,11 @@ func (b *FileMetricsBuilder) applyGlobalMaps() *FileMetricsBuilder {
 
 // calculateScore computes the final composite score.
 func (b *FileMetricsBuilder) calculateScore() *FileMetricsBuilder {
-	b.metrics.Score = computeScore(&b.metrics, b.cfg.Mode) // Assuming computeScore() is a helper function
+	b.metrics.Score = computeScore(b.metrics, b.cfg.Mode) // Assuming computeScore() is a helper function
 	return b
 }
 
 // Build finalizes the construction and returns the completed metrics object.
 func (b *FileMetricsBuilder) Build() schema.FileMetrics {
-	return b.metrics
+	return *b.metrics
 }
