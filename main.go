@@ -87,7 +87,6 @@ func init() {
 	// Add subcommands to the root command
 	rootCmd.AddCommand(filesCmd)
 	rootCmd.AddCommand(foldersCmd)
-	// NOTE: In the future, you will add foldersCmd and reposCmd here.
 
 	// --- Bind Simple Global Flags as PERSISTENT Flags (Available and Visible to ALL subcommands) ---
 	rootCmd.PersistentFlags().StringVarP(&cfg.PathFilter, "filter", "f", "", "Filter files by path prefix")
