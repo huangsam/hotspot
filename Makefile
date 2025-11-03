@@ -6,7 +6,7 @@ BINARY_NAME=hotspot
 # Build the binary
 build:
 	@echo "Building $(BINARY_NAME)..."
-	go build -o $(BINARY_NAME) main.go
+	go build -o ./bin/$(BINARY_NAME) main.go
 	@echo "✅ Build complete: ./$(BINARY_NAME)"
 
 # Clean build artifacts
@@ -18,7 +18,7 @@ clean:
 # Install to $GOPATH/bin
 install: build
 	@echo "Installing $(BINARY_NAME) to $(GOPATH)/bin..."
-	@cp $(BINARY_NAME) $(GOPATH)/bin/
+	@cp ./bin/$(BINARY_NAME) $(GOPATH)/bin/
 	@echo "✅ Installed: $(GOPATH)/bin/$(BINARY_NAME)"
 
 # Run tests
