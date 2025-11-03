@@ -23,7 +23,7 @@ var input = &internal.ConfigRawInput{
 var rootCmd = &cobra.Command{
 	Use:   "hotspot",
 	Short: "Analyze Git repository activity to find code hotspots.",
-	Long:  `Hotspot cuts through history to show you which files are your greatest risk.`,
+	Long:  `Hotspot cuts through Git history to show you which files and folders are your greatest risk.`,
 
 	// Just let the main function print the error.
 	SilenceErrors: true,
