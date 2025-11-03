@@ -30,6 +30,7 @@ func writeCSVResultsForFolders(w *csv.Writer, results []schema.FolderResults, fm
 		"total_commits",
 		"total_churn",
 		"total_loc",
+		"owner",
 	}
 	if err := w.Write(header); err != nil {
 		return err
@@ -45,6 +46,7 @@ func writeCSVResultsForFolders(w *csv.Writer, results []schema.FolderResults, fm
 			fmt.Sprintf(intFmt, r.Commits),  // Total Commits
 			fmt.Sprintf(intFmt, r.Churn),    // Total Churn
 			fmt.Sprintf(intFmt, r.TotalLOC), // Total LOC
+			r.Owner,                         // Owner
 		}
 		if err := w.Write(row); err != nil {
 			return err

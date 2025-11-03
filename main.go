@@ -104,11 +104,13 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&input.Output, "output", input.Output, "Output format: text or csv or json")
 
 	// --- Bind Flags Specific to `hotspot files` ---
-	// These flags remain defined only on the 'files' subcommand.
 	filesCmd.Flags().BoolVar(&cfg.Detail, "detail", false, "Print per-file metadata (lines of code, size, age)")
 	filesCmd.Flags().BoolVar(&cfg.Explain, "explain", false, "Print per-file component score breakdown")
 	filesCmd.Flags().BoolVar(&cfg.Owner, "owner", false, "Print per-file owner")
 	filesCmd.Flags().BoolVar(&cfg.Follow, "follow", false, "Re-run per-file analysis with --follow (slower)")
+
+	// --- Bind Flags Specific to `hotspot folders` ---
+	foldersCmd.Flags().BoolVar(&cfg.Owner, "owner", false, "Print per-folder owner")
 }
 
 // main starts the execution of the logic.

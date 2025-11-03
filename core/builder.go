@@ -216,7 +216,7 @@ func (b *FileMetricsBuilder) CalculateOwner() *FileMetricsBuilder {
 	if recentContribGlobal := b.output.ContribMap; recentContribGlobal != nil {
 		var owner string
 		var maxCommits int
-		if authorMap, ok := recentContribGlobal[b.path]; ok {
+		if authorMap := recentContribGlobal[b.path]; len(authorMap) > 0 {
 			for author, commits := range authorMap {
 				if maxCommits < commits {
 					maxCommits = commits

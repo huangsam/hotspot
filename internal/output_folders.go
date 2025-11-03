@@ -33,7 +33,7 @@ func PrintFolderResults(results []schema.FolderResults, cfg *Config) {
 		}
 	default:
 		// Default to human-readable table
-		if err := printFolderTable(results, fmtFloat, intFmt); err != nil {
+		if err := printFolderTable(results, cfg, fmtFloat, intFmt); err != nil {
 			LogFatal("Error writing table output", err)
 		}
 	}
@@ -79,11 +79,14 @@ func printCSVResultsForFolders(results []schema.FolderResults, cfg *Config, fmtF
 
 // printFolderTable prints the results in the custom folder-centric format,
 // using the tablewriter API.
-func printFolderTable(results []schema.FolderResults, fmtFloat func(float64) string, intFmt string) error {
+func printFolderTable(results []schema.FolderResults, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
 	table := tablewriter.NewWriter(os.Stdout)
 
 	// 1. Define Headers (Folder Mode - Custom)
 	headers := []string{"Rank", "Folder", "Score", "Label", "Total Commits", "Total Churn", "Total LOC"}
+	if cfg.Owner {
+		headers = append(headers, "Owner")
+	}
 	table.Header(headers)
 
 	// 2. Configure Alignment
@@ -103,6 +106,9 @@ func printFolderTable(results []schema.FolderResults, fmtFloat func(float64) str
 			fmt.Sprintf(intFmt, r.Commits),          // Total Commits
 			fmt.Sprintf(intFmt, r.Churn),            // Total Churn
 			fmt.Sprintf(intFmt, r.TotalLOC),         // Total LOC
+		}
+		if cfg.Owner {
+			row = append(row, r.Owner) // Owner
 		}
 		data = append(data, row)
 	}

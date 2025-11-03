@@ -30,6 +30,7 @@ type FolderResults struct {
 	Commits int
 	Churn   int
 	Score   float64
+	Owner   string
 
 	// Fields for folder scoring calculation:
 	TotalLOC         int     // Sum of LOC of all contained files (used for weighted average)

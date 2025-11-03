@@ -124,7 +124,12 @@ func listRepoFiles(repoPath string) ([]string, error) {
 func aggregateAndScoreFolders(cfg *internal.Config, fileMetrics []schema.FileMetrics) []schema.FolderResults {
 	folderResults := make(map[string]*schema.FolderResults)
 
+	// Map to track the aggregate commit count per author per folder:
+	// folderPath -> authorName -> totalCommitsByAuthorInFolder
+	folderAuthorContributions := make(map[string]map[string]int)
+
 	for _, fm := range fileMetrics {
+		// 1. Determine the folder path
 		folderPath := filepath.Dir(fm.Path)
 		if cfg.PathFilter == "" && folderPath == "." {
 			continue // Skip the root if not filtered
@@ -136,20 +141,44 @@ func aggregateAndScoreFolders(cfg *internal.Config, fileMetrics []schema.FileMet
 			}
 		}
 
-		// 1. Sum simple metrics
-		// These are assumed to be the *recent* metrics from global maps.
+		// 2. Aggregate simple metrics and score components
 		folderResults[folderPath].Commits += fm.Commits
 		folderResults[folderPath].Churn += fm.Churn
-
-		// 2. Sum for weighted average
 		folderResults[folderPath].TotalLOC += fm.LinesOfCode
 		folderResults[folderPath].WeightedScoreSum += fm.Score * float64(fm.LinesOfCode)
+
+		// 3. Aggregate author contributions for owner calculation
+		if fm.Owner != "" {
+			if folderAuthorContributions[folderPath] == nil {
+				folderAuthorContributions[folderPath] = make(map[string]int)
+			}
+
+			// Use the file's total commits as the weight for its primary author's contribution
+			// to the folder. This finds the author who has done the most work (measured by commits)
+			// across all files in the folder.
+			folderAuthorContributions[folderPath][fm.Owner] += fm.Commits
+		}
 	}
 
 	// Finalize: Calculate unique contributor count and the final score
 	results := make([]schema.FolderResults, 0, len(folderResults))
 	for _, res := range folderResults {
+		// Calculate the score (Average File Score, weighted by LOC)
 		res.Score = calculateFolderScore(res)
+
+		// Determine the Most Frequent Author (Owner)
+		if authorMap := folderAuthorContributions[res.Path]; len(authorMap) > 0 {
+			var owner string
+			var maxCommits int
+			for author, commits := range authorMap {
+				if maxCommits < commits {
+					maxCommits = commits
+					owner = author
+				}
+			}
+			res.Owner = owner
+		}
+
 		results = append(results, *res)
 	}
 
