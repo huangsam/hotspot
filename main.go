@@ -39,6 +39,7 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+// sharedSetup sets up the Config object for all subcommands.
 func sharedSetup(_ *cobra.Command, args []string) error {
 	if len(args) == 1 {
 		// Pass the user-provided path to raw input
