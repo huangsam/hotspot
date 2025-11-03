@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+
+# https://goreleaser.com/customization/hooks/
+before:
+  hooks:
+    - go mod tidy
+
+# https://goreleaser.com/customization/builds/
+builds:
+  - main: ./
+    id: hotspot
+    binary: hotspot
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    flags:
+      - -trimpath
+
+# https://goreleaser.com/customization/changelog/
+changelog:
+  sort: asc
+  use: github
+  format: "{{.SHA}}: {{.Message}} ({{.AuthorName}})"
+  filters:
+    exclude:
+      - "^(Refactor|Update|Rename)" # common chore
+      - "^(Migrate|Normalize|Reformat|Remove|Shorten)" # uncommon chore
+      - comment
+      - test
+      - unused
+
+# https://goreleaser.com/customization/release/
+release:
+  github:
+    owner: huangsam
+    name: hotspot
+  name_template: "v{{ .Version }}"
