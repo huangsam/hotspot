@@ -66,7 +66,7 @@ hotspot files --mode complexity --start 2025-01-01T00:00:00Z ./path/from/file/ho
 ```bash
 # Bus Factor/Knowledge Risk (Strategic Ownership Audit)
 # Identify the subsystems with the highest knowledge concentration
-hotspot folders --mode risk --start 2025-01-01T00:00:00Z --output csv
+hotspot folders --mode risk --start 2025-01-01T00:00:00Z
 
 # Maintenance Debt Audit (Legacy Subsystem Triage)
 # Identify entire modules that have been neglected (old, large, little recent change)
