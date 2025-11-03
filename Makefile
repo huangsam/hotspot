@@ -26,6 +26,11 @@ test:
 	@echo "Running tests..."
 	go test ./...
 
+# Run benchmarks
+bench:
+	@echo "Running benchmarks..."
+	go test -bench=. ./...
+
 # Format code
 format:
 	@echo "Formatting code..."
