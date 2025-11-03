@@ -122,7 +122,7 @@ func listRepoFiles(repoPath string) ([]string, error) {
 
 // aggregateAndScoreFolders correctly aggregates file results into folders.
 func aggregateAndScoreFolders(cfg *internal.Config, fileMetrics []schema.FileMetrics) []schema.FolderResults {
-	folderMetrics := make(map[string]*schema.FolderResults)
+	folderResults := make(map[string]*schema.FolderResults)
 
 	for _, fm := range fileMetrics {
 		folderPath := filepath.Dir(fm.Path)
@@ -130,25 +130,25 @@ func aggregateAndScoreFolders(cfg *internal.Config, fileMetrics []schema.FileMet
 			continue // Skip the root if not filtered
 		}
 
-		if _, ok := folderMetrics[folderPath]; !ok {
-			folderMetrics[folderPath] = &schema.FolderResults{
+		if _, ok := folderResults[folderPath]; !ok {
+			folderResults[folderPath] = &schema.FolderResults{
 				Path: folderPath,
 			}
 		}
 
 		// 1. Sum simple metrics
 		// These are assumed to be the *recent* metrics from global maps.
-		folderMetrics[folderPath].Commits += fm.Commits
-		folderMetrics[folderPath].Churn += fm.Churn
+		folderResults[folderPath].Commits += fm.Commits
+		folderResults[folderPath].Churn += fm.Churn
 
 		// 2. Sum for weighted average
-		folderMetrics[folderPath].TotalLOC += fm.LinesOfCode
-		folderMetrics[folderPath].WeightedScoreSum += fm.Score * float64(fm.LinesOfCode)
+		folderResults[folderPath].TotalLOC += fm.LinesOfCode
+		folderResults[folderPath].WeightedScoreSum += fm.Score * float64(fm.LinesOfCode)
 	}
 
 	// Finalize: Calculate unique contributor count and the final score
-	results := make([]schema.FolderResults, 0, len(folderMetrics))
-	for _, res := range folderMetrics {
+	results := make([]schema.FolderResults, 0, len(folderResults))
+	for _, res := range folderResults {
 		res.Score = calculateFolderScore(res)
 		results = append(results, *res)
 	}
