@@ -26,11 +26,11 @@ type FileMetrics struct {
 
 // FolderResults holds the final computed scores and aggregated metrics for a folder.
 type FolderResults struct {
-	Path    string  `json:"path"`
-	Commits int     `json:"commits"`
-	Churn   int     `json:"churn"`
-	Score   float64 `json:"score"`
-	Owner   string  `json:"owner"`
+	Path    string  `json:"path"`    // Relative path to the folder in the repository
+	Commits int     `json:"commits"` // Total number of commits across all contained files
+	Churn   int     `json:"churn"`   // Total number of lines added/deleted across all contained files
+	Score   float64 `json:"score"`   // Computed importance score for the folder
+	Owner   string  `json:"owner"`   // Owner is the individual who has committed the most to the files in this folder
 
 	// Fields for folder scoring calculation:
 	TotalLOC         int     `json:"total_loc"`          // Sum of LOC of all contained files (used for weighted average)
@@ -39,7 +39,7 @@ type FolderResults struct {
 
 // AggregateOutput is the aggregation of all things from the one-pass Git operation.
 type AggregateOutput struct {
-	CommitMap  map[string]int
-	ChurnMap   map[string]int
-	ContribMap map[string]map[string]int
+	CommitMap  map[string]int            // Maps file path to its commit count
+	ChurnMap   map[string]int            // Maps file path to its churn (lines added/deleted) count
+	ContribMap map[string]map[string]int // Maps file path to an inner map of AuthorName:CommitCount
 }
