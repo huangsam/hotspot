@@ -26,15 +26,15 @@ type FileMetrics struct {
 
 // FolderResults holds the final computed scores and aggregated metrics for a folder.
 type FolderResults struct {
-	Path    string
-	Commits int
-	Churn   int
-	Score   float64
-	Owner   string
+	Path    string  `json:"path"`
+	Commits int     `json:"commits"`
+	Churn   int     `json:"churn"`
+	Score   float64 `json:"score"`
+	Owner   string  `json:"owner"`
 
 	// Fields for folder scoring calculation:
-	TotalLOC         int     // Sum of LOC of all contained files (used for weighted average)
-	WeightedScoreSum float64 // Sum of (FileScore * FileLOC)
+	TotalLOC         int     `json:"total_loc"`          // Sum of LOC of all contained files (used for weighted average)
+	WeightedScoreSum float64 `json:"weighted_score_sum"` // Sum of (FileScore * FileLOC)
 }
 
 // AggregateOutput is the aggregation of all things from the one-pass Git operation.
