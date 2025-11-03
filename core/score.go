@@ -199,8 +199,7 @@ func gini(values []float64) float64 {
 	return math.Min(math.Max(g, 0), 1) // clamp to [0,1]
 }
 
-// calculateFolderScore computes the final score for a folder as a weighted average
-// and finalizes the contributor count.
+// calculateFolderScore computes the final score for a folder as a weighted average.
 // The weight for the average is Lines of Code (LOC).
 func calculateFolderScore(folderResult *schema.FolderResults) float64 {
 	// Calculate Weighted Average Score
