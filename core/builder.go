@@ -211,6 +211,24 @@ func (b *FileMetricsBuilder) FetchRecentInfo() *FileMetricsBuilder {
 	return b
 }
 
+// CalculateOwner identifies the owner based on commit volume.
+func (b *FileMetricsBuilder) CalculateOwner() *FileMetricsBuilder {
+	if recentContribGlobal := b.output.ContribMap; recentContribGlobal != nil {
+		var owner string
+		var maxCommits int
+		if authorMap, ok := recentContribGlobal[b.path]; ok {
+			for author, commits := range authorMap {
+				if maxCommits < commits {
+					maxCommits = commits
+					owner = author
+				}
+			}
+		}
+		b.metrics.Owner = owner
+	}
+	return b
+}
+
 // CalculateScore computes the final composite score.
 func (b *FileMetricsBuilder) CalculateScore() *FileMetricsBuilder {
 	b.metrics.Score = computeScore(b.metrics, b.cfg.Mode) // Assuming computeScore() is a helper function

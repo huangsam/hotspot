@@ -51,22 +51,27 @@ func aggregateActivity(cfg *internal.Config) (*schema.AggregateOutput, error) {
 	lines := strings.Split(string(out), "\n")
 	var currentAuthor string
 	for _, l := range lines {
+		// Strip the surrounding single quotes, whitespace, and carriage returns
+		l = strings.Trim(l, " \t\r\n'")
+
 		if strings.HasPrefix(l, "--") {
-			// commit header
-			parts := strings.SplitN(l[2:], "|", 2)
+			// Commit header line
+			parts := strings.SplitN(l[2:], "|", 2) // Slice off the leading "--"
 			if len(parts) == 2 {
 				currentAuthor = parts[1]
 			} else {
-				currentAuthor = ""
+				currentAuthor = "" // Should not happen with this format
 			}
 			continue
 		}
-		if strings.TrimSpace(l) == "" {
-			continue
+		if l == "" {
+			continue // Skip blank lines after trimming
 		}
+
+		// This is a file stats line
 		parts := strings.SplitN(l, "\t", 3)
 		if len(parts) < 3 {
-			continue
+			continue // Skip unexpected lines (like merge info without stats)
 		}
 		addStr := parts[0]
 		delStr := parts[1]

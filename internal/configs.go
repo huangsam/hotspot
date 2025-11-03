@@ -42,6 +42,7 @@ type Config struct {
 	Output      string
 	OutputFile  string
 	Follow      bool
+	Owner       bool
 }
 
 // ConfigRawInput holds the raw string inputs from flags that require parsing/validation.

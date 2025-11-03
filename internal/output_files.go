@@ -84,18 +84,22 @@ func printCSVResults(files []schema.FileMetrics, cfg *Config, fmtFloat func(floa
 
 // printTableResults generates and prints the human-readable table.
 func printTableResults(files []schema.FileMetrics, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
-	detail := cfg.Detail
-	explain := cfg.Explain
+	isDetail := cfg.Detail
+	isExplain := cfg.Explain
+	isOwner := cfg.Owner
 
 	table := tablewriter.NewWriter(os.Stdout)
 
 	// 1. Define Headers
 	headers := []string{"Rank", "File", "Score", "Label"}
-	if detail {
+	if isDetail {
 		headers = append(headers, "Contrib", "Commits", "LOC", "Churn")
 	}
-	if explain {
+	if isExplain {
 		headers = append(headers, "Explain")
+	}
+	if isOwner {
+		headers = append(headers, "Owner")
 	}
 	table.Header(headers)
 
@@ -114,7 +118,7 @@ func printTableResults(files []schema.FileMetrics, cfg *Config, fmtFloat func(fl
 			fmtFloat(f.Score),                       // Score
 			getColorLabel(f.Score),                  // Label
 		}
-		if detail {
+		if isDetail {
 			row = append(
 				row,
 				fmt.Sprintf(intFmt, f.UniqueContributors), // Contrib
@@ -123,9 +127,12 @@ func printTableResults(files []schema.FileMetrics, cfg *Config, fmtFloat func(fl
 				fmt.Sprintf(intFmt, f.Churn),              // Churn
 			)
 		}
-		if explain {
+		if isExplain {
 			topOnes := formatTopMetricContributors(&f)
-			row = append(row, topOnes)
+			row = append(row, topOnes) // Breakdown explanation
+		}
+		if isOwner {
+			row = append(row, f.Owner) // File owner
 		}
 		data = append(data, row)
 	}

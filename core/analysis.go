@@ -76,6 +76,7 @@ func analyzeFileCommon(cfg *internal.Config, path string, output *schema.Aggrega
 		CalculateChurn().          // Computes lines added/deleted
 		FetchRecentInfo().         // Adds recent metrics if it exists
 		CalculateDerivedMetrics(). // Calculates AgeDays and Gini
+		CalculateOwner().          // Calculates file owner
 		CalculateScore()           // Computes the final composite score
 
 	// 3. Return the final product

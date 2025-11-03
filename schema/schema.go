@@ -21,6 +21,7 @@ type FileMetrics struct {
 	FirstCommit        time.Time          `json:"first_commit"`        // Timestamp of the file's first commit
 	Score              float64            `json:"score"`               // Computed importance score (0-100)
 	Breakdown          map[string]float64 `json:"breakdown"`           // Normalized contribution of each metric for debugging/tuning
+	Owner              string             `json:"owner"`               // Owner is the individual who has committed the most to this file
 }
 
 // FolderResults holds the final computed scores and aggregated metrics for a folder.

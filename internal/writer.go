@@ -37,6 +37,7 @@ func writeCSVResults(w *csv.Writer, files []schema.FileMetrics, cfg *Config, fmt
 		"gini",
 		"first_commit",
 		"mode",
+		"owner",
 	}
 	if err := w.Write(header); err != nil {
 		return err
@@ -55,6 +56,7 @@ func writeCSVResults(w *csv.Writer, files []schema.FileMetrics, cfg *Config, fmt
 			fmtFloat(f.Gini),
 			f.FirstCommit.Format(DateTimeFormat),
 			cfg.Mode,
+			f.Owner,
 		}
 		if err := w.Write(rec); err != nil {
 			return err
