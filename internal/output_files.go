@@ -124,7 +124,7 @@ func printTableResults(files []schema.FileMetrics, cfg *Config, fmtFloat func(fl
 			)
 		}
 		if cfg.Explain {
-			topOnes := formatTopMetricContributors(&f)
+			topOnes := formatTopMetricBreakdown(&f)
 			row = append(row, topOnes) // Breakdown explanation
 		}
 		if cfg.Owner {
@@ -151,8 +151,8 @@ const (
 	metricContribMinimum = 0.5
 )
 
-// formatTopMetricContributors computes the top 3 metric components that contribute to the final score.
-func formatTopMetricContributors(f *schema.FileMetrics) string {
+// formatTopMetricBreakdown computes the top 3 metric components that contribute to the final score.
+func formatTopMetricBreakdown(f *schema.FileMetrics) string {
 	var metrics []metricBreakdown
 
 	// 1. Filter and Convert Map to Slice
