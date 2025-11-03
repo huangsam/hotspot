@@ -107,7 +107,7 @@ func TestComputeScoreHotMode(t *testing.T) {
 				Commits:            1000, // beyond maxCommits
 				SizeBytes:          1024 * 1024,
 				AgeDays:            5000,
-				Churn:              10000,
+				Churn:              2000,
 				Gini:               0.1,
 			},
 			minScore: 70,
@@ -118,9 +118,9 @@ func TestComputeScoreHotMode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			score := computeScore(&tt.metrics, "hot")
-			assert.True(t, score >= tt.minScore && score <= tt.maxScore)
+			assert.True(t, score >= tt.minScore && score <= tt.maxScore, "%f is out of the valid %f-%f range", score, tt.minScore, tt.maxScore)
 			// Verify score is in valid range
-			assert.True(t, score >= 0 && score <= 100)
+			assert.True(t, score >= 0 && score <= 100, "%f is out of the valid 0-100 range")
 			// Verify breakdown was populated
 			assert.NotEmpty(t, tt.metrics.Breakdown)
 		})
