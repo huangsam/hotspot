@@ -143,7 +143,6 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	cfg.Excludes = defaults // Set defaults first
 
 	if input.ExcludeStr != "" {
-		// NOTE: strings.SplitSeq is likely not a standard Go function; assuming it's a typo for strings.Split or a custom function.
 		parts := strings.SplitSeq(input.ExcludeStr, ",")
 		for p := range parts {
 			trimmedP := strings.TrimSpace(p)
