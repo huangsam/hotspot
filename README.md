@@ -39,19 +39,9 @@ hotspot files /path/to/repo/pkg
 
 ### Sample output
 
-```text
-🔎 Aggregating activity since 2025-05-07T00:36:03-07:00
-🧠 hotspot: Analyzing /path/to/kubernetes (Mode: risk)
-📅 Range: 2025-05-07T00:36:03-07:00 → 2025-11-02T23:36:03-08:00
-┌──────┬──────────────────────────────────────────────────────────────┬───────┬──────────┐
-│ RANK │                             FILE                             │ SCORE │  LABEL   │
-├──────┼──────────────────────────────────────────────────────────────┼───────┼──────────┤
-│    1 │     staging/src/k8s.io/cri-api/pkg/apis/runtime/v1/api.pb.go │  61.6 │     High │
-│    2 │        vendor/golang.org/x/tools/internal/stdlib/manifest.go │  60.4 │     High │
-│    3 │         vendor/go.etcd.io/etcd/api/v3/etcdserverpb/rpc.pb.go │  58.1 │ Moderate │
-│    4 │                                staging/publishing/rules.yaml │  53.7 │ Moderate │
-...
-```
+Here is what the tool shows for [kubernetes/kubernetes](https://github.com/kubernetes/kubernetes):
+
+<img src="./images/ranking.png" alt="Hotspot" width="768px" />
 
 ## Scoring modes
 
