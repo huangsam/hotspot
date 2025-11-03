@@ -1,9 +1,11 @@
 package internal
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetPlainLabel(t *testing.T) {
@@ -54,4 +56,10 @@ func TestGetPlainLabel(t *testing.T) {
 			assert.Equal(t, tt.expected, getPlainLabel(tt.input))
 		})
 	}
+}
+
+func TestSelectOutputFile_Fallback(t *testing.T) {
+	file, err := selectOutputFile("")
+	require.NoError(t, err)
+	assert.Equal(t, os.Stdout, file)
 }
