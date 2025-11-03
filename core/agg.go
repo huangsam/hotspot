@@ -116,7 +116,6 @@ func listRepoFiles(repoPath string) ([]string, error) {
 }
 
 // aggregateAndScoreFolders correctly aggregates file results into folders.
-// This version is UPDATED to read metrics from r.FileMetrics.
 func aggregateAndScoreFolders(cfg *internal.Config, fileMetrics []schema.FileMetrics) []schema.FolderResults {
 	folderMetrics := make(map[string]*schema.FolderResults)
 
@@ -145,7 +144,6 @@ func aggregateAndScoreFolders(cfg *internal.Config, fileMetrics []schema.FileMet
 	// Finalize: Calculate unique contributor count and the final score
 	results := make([]schema.FolderResults, 0, len(folderMetrics))
 	for _, res := range folderMetrics {
-		// Call the function from internal.go to finalize the score
 		res.Score = calculateFolderScore(res)
 		results = append(results, *res)
 	}
