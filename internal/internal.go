@@ -3,6 +3,9 @@ package internal
 
 import "github.com/fatih/color"
 
+// maxTablePathWidth is the max width of filepath when rendered inside a table.
+const maxTablePathWidth = 60
+
 const (
 	criticalValue = "Critical" // Critical value
 	highValue     = "High"     // High value

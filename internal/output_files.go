@@ -15,9 +15,6 @@ import (
 	"github.com/olekukonko/tablewriter/tw"
 )
 
-// maximum width of filepath when rendered as table.
-const maxTablePathWidth = 60
-
 // PrintFileResults outputs the analysis results in a formatted table or exports them as CSV/JSON.
 func PrintFileResults(files []schema.FileMetrics, cfg *Config) {
 	// helper format strings and closure for number formatting
