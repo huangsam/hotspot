@@ -22,7 +22,7 @@ Perfect for:
 ```bash
 go install github.com/huangsam/hotspot@latest
 
-# Analyze files for immediate, tactical risk (default mode is 'hot')
+# Analyze files for immediate, tactical risk
 hotspot files
 
 # Analyze folders for strategic, subsystem risk
