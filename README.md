@@ -51,7 +51,7 @@ Here is what the tool shows for [kubernetes/kubernetes](https://github.com/kuber
 
 <img src="./images/ranking.png" alt="Hotspot" width="768px" />
 
-> **Note:** The ranking displays the **risk score** and a color-coded label based on `hotspot files --mode risk`
+> **Note:** The ranking displays the **risk score** and a colored label based on `hotspot files --mode risk`
 
 ## Scoring modes
 
