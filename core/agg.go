@@ -164,7 +164,7 @@ func aggregateAndScoreFolders(cfg *internal.Config, fileMetrics []schema.FileMet
 	results := make([]schema.FolderResults, 0, len(folderResults))
 	for _, res := range folderResults {
 		// Calculate the score (Average File Score, weighted by LOC)
-		res.Score = calculateFolderScore(res)
+		res.Score = computeFolderScore(res)
 
 		// Determine the Most Frequent Author (Owner)
 		if authorMap := folderAuthorContributions[res.Path]; len(authorMap) > 0 {
