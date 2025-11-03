@@ -4,18 +4,18 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/huangsam/hotspot)](https://goreportcard.com/report/github.com/huangsam/hotspot)
 [![License](https://img.shields.io/github/license/huangsam/hotspot)](https://github.com/huangsam/hotspot/blob/main/LICENSE)
 
+Hotspot is the Git analyzer that cuts through history to show you which files and folders are your greatest risk.
+
 <img src="./images/logo.png" alt="Hotspot" width="250px" />
 
-## Overview
-
-Hotspot is the Git analyzer that cuts through history to show you which files and folders are your greatest risk.
+Offerred capabilities:
 
 - 🔍 **See what matters** - rank files and folders by activity, complexity, etc.
 - ⚡ **Fast results** - analyze thousands of files in seconds
 - 🧮 **Rich insights** - contributors, churn, size, age, and risk metrics
 - 🎯 **Actionable filters** - narrow down by path, exclude noise, or track trends over time
 
-Perfect for:
+Target audience:
 
 - 🧑‍💻 **Developers** tracking sprint or release activity
 - 🧹 **Tech leads** prioritizing refactors and risk
