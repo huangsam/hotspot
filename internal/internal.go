@@ -1,7 +1,11 @@
 // Package internal has helpers that are exclusive to the app runtime.
 package internal
 
-import "github.com/fatih/color"
+import (
+	"os"
+
+	"github.com/fatih/color"
+)
 
 // maxTablePathWidth is the max width of filepath when rendered inside a table.
 const maxTablePathWidth = 60
@@ -55,4 +59,14 @@ func getColorLabel(score float64) string {
 	default: // "Low"
 		return lowColor.Sprint(text)
 	}
+}
+
+// selectOutputFile returns the appropriate file handle for output, based on the provided
+// file path and format type. It falls back to os.Stdout on error.
+// This function replaces both selectCSVOutputFile and selectJSONOutputFile.
+func selectOutputFile(filePath string) (*os.File, error) {
+	if filePath == "" {
+		return os.Stdout, nil
+	}
+	return os.Create(filePath)
 }

@@ -5,21 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 
 	"github.com/huangsam/hotspot/schema"
 )
-
-// selectOutputFile returns the appropriate file handle for output, based on the provided
-// file path and format type. It falls back to os.Stdout on error.
-// This function replaces both selectCSVOutputFile and selectJSONOutputFile.
-func selectOutputFile(filePath string) (*os.File, error) {
-	if filePath == "" {
-		return os.Stdout, nil
-	}
-	return os.Create(filePath)
-}
 
 // writeCSVResults writes the analysis results in CSV format.
 func writeCSVResults(w *csv.Writer, files []schema.FileMetrics, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
