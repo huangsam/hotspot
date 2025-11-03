@@ -39,6 +39,19 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+func sharedSetup(_ *cobra.Command, args []string) error {
+	if len(args) == 1 {
+		// Pass the user-provided path to raw input
+		input.RepoPathStr = args[0]
+	} else {
+		// Pass the default path (CWD) to raw input, or use the root command's argument if present
+		input.RepoPathStr = "."
+	}
+
+	// Run all validation and complex parsing, including Git path resolution
+	return internal.ProcessAndValidate(cfg, input) // cfg.RepoPath is set inside here now
+}
+
 // filesCmd focuses on tactical, file-level analysis.
 var filesCmd = &cobra.Command{
 	Use:   "files [repo-path]",
@@ -47,21 +60,25 @@ var filesCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 
 	// PreRunE is moved here to ensure config validation runs right before execution.
-	PreRunE: func(_ *cobra.Command, args []string) error {
-		if len(args) == 1 {
-			// Pass the user-provided path to raw input
-			input.RepoPathStr = args[0]
-		} else {
-			// Pass the default path (CWD) to raw input, or use the root command's argument if present
-			input.RepoPathStr = "."
-		}
-
-		// Run all validation and complex parsing, including Git path resolution
-		return internal.ProcessAndValidate(cfg, input) // cfg.RepoPath is set inside here now
-	},
+	PreRunE: sharedSetup,
 
 	Run: func(_ *cobra.Command, _ []string) {
 		core.ExecuteHotspotFiles(cfg)
+	},
+}
+
+// foldersCmd focuses on tactical, folder-level analysis.
+var foldersCmd = &cobra.Command{
+	Use:   "folders [repo-path]",
+	Short: "Show the top folders ranked by risk score.",
+	Long:  `The folders command performs deep Git analysis and ranks individual folders.`,
+	Args:  cobra.MaximumNArgs(1),
+
+	// PreRunE is moved here to ensure config validation runs right before execution.
+	PreRunE: sharedSetup,
+
+	Run: func(_ *cobra.Command, _ []string) {
+		core.ExecuteHotspotFolders(cfg)
 	},
 }
 
@@ -69,6 +86,7 @@ var filesCmd = &cobra.Command{
 func init() {
 	// Add subcommands to the root command
 	rootCmd.AddCommand(filesCmd)
+	rootCmd.AddCommand(foldersCmd)
 	// NOTE: In the future, you will add foldersCmd and reposCmd here.
 
 	// --- Bind Simple Global Flags as PERSISTENT Flags (Available and Visible to ALL subcommands) ---

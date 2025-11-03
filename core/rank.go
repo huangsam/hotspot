@@ -18,3 +18,16 @@ func rankFiles(files []schema.FileMetrics, limit int) []schema.FileMetrics {
 	}
 	return files
 }
+
+// rankFolders sorts folders by their importance score in descending order
+// and returns the top 'limit' files. If limit is greater than the number
+// of files, all files are returned in sorted order.
+func rankFolders(folders []schema.FolderResults, limit int) []schema.FolderResults {
+	sort.Slice(folders, func(i, j int) bool {
+		return folders[i].Score > folders[j].Score
+	})
+	if len(folders) > limit {
+		return folders[:limit]
+	}
+	return folders
+}

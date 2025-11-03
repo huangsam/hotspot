@@ -18,8 +18,8 @@ import (
 // maximum width of filepath when rendered as table.
 const maxTablePathWidth = 60
 
-// PrintResults outputs the analysis results in a formatted table or exports them as CSV/JSON.
-func PrintResults(files []schema.FileMetrics, cfg *Config) {
+// PrintFileResults outputs the analysis results in a formatted table or exports them as CSV/JSON.
+func PrintFileResults(files []schema.FileMetrics, cfg *Config) {
 	// helper format strings and closure for number formatting
 	numFmt := "%.*f"
 	intFmt := "%d"

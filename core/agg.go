@@ -1,6 +1,7 @@
 package core
 
 import (
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -106,4 +107,42 @@ func listRepoFiles(repoPath string) ([]string, error) {
 		return nil, err
 	}
 	return strings.Split(strings.TrimSpace(string(out)), "\n"), nil
+}
+
+// aggregateAndScoreFolders correctly aggregates file results into folders.
+// This version is UPDATED to read metrics from r.FileMetrics.
+func aggregateAndScoreFolders(cfg *internal.Config, fileMetrics []schema.FileMetrics) []schema.FolderResults {
+	folderMetrics := make(map[string]*schema.FolderResults)
+
+	for _, fm := range fileMetrics {
+		folderPath := filepath.Dir(fm.Path)
+		if cfg.PathFilter == "" && folderPath == "." {
+			continue // Skip the root if not filtered
+		}
+
+		if _, ok := folderMetrics[folderPath]; !ok {
+			folderMetrics[folderPath] = &schema.FolderResults{
+				Path: folderPath,
+			}
+		}
+
+		// 1. Sum simple metrics
+		// These are assumed to be the *recent* metrics from global maps.
+		folderMetrics[folderPath].Commits += fm.Commits
+		folderMetrics[folderPath].Churn += fm.Churn
+
+		// 2. Sum for weighted average
+		folderMetrics[folderPath].TotalLOC += fm.LinesOfCode
+		folderMetrics[folderPath].WeightedScoreSum += fm.Score * float64(fm.LinesOfCode)
+	}
+
+	// Finalize: Calculate unique contributor count and the final score
+	results := make([]schema.FolderResults, 0, len(folderMetrics))
+	for _, res := range folderMetrics {
+		// Call the function from internal.go to finalize the score
+		res.Score = calculateFolderScore(res)
+		results = append(results, *res)
+	}
+
+	return results
 }

@@ -1,8 +1,8 @@
 package core
 
 import (
+	"bufio"
 	"bytes"
-	"encoding/csv"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -134,25 +134,38 @@ func (b *FileMetricsBuilder) calculateChurn() *FileMetricsBuilder {
 
 	out, err := internal.RunGitCommand(b.cfg.RepoPath, churnArgs...)
 	if err != nil {
-		internal.LogWarning(fmt.Sprintf("Failed to get churn data for %s.", b.path))
+		internal.LogWarning(fmt.Sprintf("Failed to get churn data for %s. Error: %v", b.path, err))
 		return b
 	}
 
-	reader := csv.NewReader(bytes.NewReader(out))
-	reader.Comma = '\t'
+	// Use bufio.Scanner to process the output line by line,
+	// filtering out all header/commit information.
+	scanner := bufio.NewScanner(bytes.NewReader(out))
 	totalChanges := 0
-	for {
-		rec, err := reader.Read()
-		if err != nil {
-			break
-		}
-		if len(rec) >= 2 {
-			add, _ := strconv.Atoi(rec[0])
-			del, _ := strconv.Atoi(rec[1])
-			totalChanges += add + del
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		// Numstat lines are always tab-separated and typically start with a number or '-'
+		parts := strings.Split(line, "\t")
+
+		// A valid numstat line has at least three parts (additions, deletions, filename)
+		if len(parts) >= 3 {
+			addStr := strings.TrimSpace(parts[0])
+			delStr := strings.TrimSpace(parts[1])
+
+			add, errA := strconv.Atoi(addStr)
+			del, errD := strconv.Atoi(delStr)
+
+			// Ignore lines that aren't valid numbers (like the 'total' summary if it exists)
+			// Or cases where the file was binary (represented by '-')
+			if errA == nil && errD == nil {
+				totalChanges += add + del
+			}
 		}
 	}
-	b.metrics.Churn = totalChanges + b.totalCommits
+
+	// Set Churn to ONLY the total line changes
+	b.metrics.Churn = totalChanges
 
 	return b
 }

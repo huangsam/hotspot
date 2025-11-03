@@ -23,6 +23,20 @@ type FileMetrics struct {
 	Breakdown          map[string]float64 `json:"breakdown"`           // Normalized contribution of each metric for debugging/tuning
 }
 
+// FolderResults holds the final computed scores and aggregated metrics for a folder.
+type FolderResults struct {
+	Path         string
+	Commits      int
+	Churn        int
+	Contributors int // Unique contributor count
+	Score        float64
+	Breakdown    map[string]float64
+
+	// Fields for folder scoring calculation:
+	TotalLOC         int     // Sum of LOC of all contained files (used for weighted average)
+	WeightedScoreSum float64 // Sum of (FileScore * FileLOC)
+}
+
 // Breakdown keys used in the scoring logic.
 const (
 	BreakdownContrib = "contrib" // nContrib
