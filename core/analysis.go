@@ -1,4 +1,3 @@
-// Package core has core logic for analysis, scoring and ranking.
 package core
 
 import (
