@@ -109,7 +109,7 @@ hotspot files --mode risk --start 2025-01-01T00:00:00Z --path ./path/from/folder
 
 ## Tips
 
-- Start with hotspot folders for a high-level strategic overview
+- Start with `hotspot folders` for a high-level strategic overview
 - Exclude irrelevant files and folders (`test/`, `vendor/`) to focus the analysis
 - Export results as CSV/JSON to track trends and progress
 - **Tactical Risk:** Use a 6-month window to identify immediate project risks (hot, risk)
