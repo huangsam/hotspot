@@ -4,12 +4,12 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/huangsam/hotspot)](https://goreportcard.com/report/github.com/huangsam/hotspot)
 [![License](https://img.shields.io/github/license/huangsam/hotspot)](https://github.com/huangsam/hotspot/blob/main/LICENSE)
 
-Hotspot is the Git analyzer that cuts through history to show you which files are your greatest risk.
+Hotspot is the Git analyzer that cuts through history to show you which files and folders are your greatest risk.
 
-- 🔍 **See what matters** - rank files by activity, ownership, or complexity
+- 🔍 **See what matters** - rank files and folders by activity, complexity, etc.
 - ⚡ **Fast results** - analyze thousands of files in seconds
 - 🧮 **Rich insights** - contributors, churn, size, age, and risk metrics
-- 🎯 **Actionable filters** - narrow down by folder, exclude noise, or track trends over time
+- 🎯 **Actionable filters** - narrow down by path, exclude noise, or track trends over time
 
 Perfect for:
 
@@ -22,11 +22,14 @@ Perfect for:
 ```bash
 go install github.com/huangsam/hotspot@latest
 
-# For current path
+# Analyze files for immediate, tactical risk (default mode is 'hot')
 hotspot files
 
-# For explicit path
-hotspot files /path/to/repo
+# Analyze folders for strategic, subsystem risk
+hotspot folders
+
+# For an explicit path
+hotspot files /path/to/repo/pkg
 ```
 
 ## Scoring modes
@@ -45,26 +48,36 @@ The core power of Hotspot is the `--mode` flag, which defines the ranking algori
 ### Daily & Sprint Workflows
 
 ```bash
-# Current Activity Hotspots
-hotspot files --mode hot
+# Identify active subsystems for daily standup/priority setting
+hotspot folders --mode hot
 
-# Immediate Refactoring Targets
-# After finding a problem path from the 'hot' mode, analyze its complexity
-hotspot files --mode complexity --start 2025-01-01T00:00:00Z ./executors/kubernetes
+# Check the high-level risk of the target subsystem
+hotspot folders --mode risk
+
+# Drill down to the specific active files within the target path
+hotspot files --mode hot ./path/from/folder/hot
+
+# Immediate Refactoring Targets (after finding a problem path)
+hotspot files --mode complexity --start 2025-01-01T00:00:00Z ./path/from/file/hot
 ```
 
 ### Strategic Risk & Debt Management
 
 ```bash
-# Bus Factor/Knowledge Risk
-hotspot files --mode risk --start 2025-01-01T00:00:00Z --output csv
-hotspot files --mode risk --start 2025-01-01T00:00:00Z --output json
+# Bus Factor/Knowledge Risk (Strategic Ownership Audit)
+# Identify the subsystems with the highest knowledge concentration
+hotspot folders --mode risk --start 2025-01-01T00:00:00Z --output csv
 
-# Maintenance Debt Audit
-hotspot files --mode stale --start 2020-01-01T00:00:00Z --exclude "test/,vendor/"
+# Maintenance Debt Audit (Legacy Subsystem Triage)
+# Identify entire modules that have been neglected (old, large, little recent change)
+hotspot folders --mode stale --start 2020-01-01T00:00:00Z --exclude "test/,vendor/"
 
-# Complex Files with History
-hotspot files --mode complexity --start 2024-01-01T00:00:00Z --limit 50 --follow
+# Structural Bottleneck Audit (Core Complexity)
+# Identify the largest, most-churned, core subsystems
+hotspot folders --mode complexity --start 2024-01-01T00:00:00Z
+
+# Drill down: Find the high-risk files within the high-risk folders
+hotspot files --mode risk --start 2025-01-01T00:00:00Z --path ./path/from/folder/risk
 ```
 
 ## Performance
@@ -76,9 +89,8 @@ hotspot files --mode complexity --start 2024-01-01T00:00:00Z --limit 50 --follow
 
 ## Tips
 
-- Start with `hotspot files` for a quick snapshot
-- Exclude irrelevant files and folders to focus the analysis
+- Start with hotspot folders for a high-level strategic overview
+- Exclude irrelevant files and folders (test/, vendor/) to focus the analysis
 - Export results as CSV/JSON to track trends and progress
-- Choose a 6-month window and 25 results to identify tactical risks
-- Choose a 12-month window and 50 results to identify strategic risks
-- Choose a 24-month window and 100 results to identify audit risks
+- **Tactical Risk:** Use a 6-month window to identify immediate project risks (hot, risk)
+- **Strategic Debt:** Use a 12-24 month window for long-term audits (complexity, stale)
