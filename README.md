@@ -118,6 +118,8 @@ hotspot files --mode risk --start "1 year ago" --path ./path/from/folder/risk
 |**Typical repo (1k files)**|2-5 seconds|
 |**Large repo (10k+ files)**|15-30 seconds|
 
+These details were measured from running Hotspot over a 6-month window.
+
 ## Tips
 
 - Start with `hotspot folders` for a high-level strategic overview
