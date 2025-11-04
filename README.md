@@ -51,7 +51,9 @@ Here is what the tool shows for [kubernetes/kubernetes](https://github.com/kuber
 
 <img src="./images/ranking.png" alt="Hotspot" width="768px" />
 
-> **Note:** The ranking displays the **risk score** and a colored label based on `hotspot files --mode risk`
+This ranking displays the **risk score** and a colored label based on the following command:
+
+`hotspot files --mode complexity --start 2024-01-01T00:00:00Z --end 2025-01-01T00:00:00Z --workers 16`
 
 ## Scoring modes
 
