@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/schema"
@@ -39,6 +40,12 @@ func aggregateActivity(cfg *internal.Config) (*schema.AggregateOutput, error) {
 		// instead of relying on globals
 		since := cfg.StartTime.Format(internal.DateTimeFormat)
 		args = append(args, "--since="+since)
+	}
+
+	if !cfg.EndTime.IsZero() && cfg.EndTime.Before(time.Now().UTC()) {
+		// Only apply if EndTime is explicitly set and is in the past/present
+		until := cfg.EndTime.Format(internal.DateTimeFormat)
+		args = append(args, "--until="+until)
 	}
 
 	// 3. Run the expensive git log command ONCE
