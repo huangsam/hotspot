@@ -1,0 +1,63 @@
+name: 🐛 Bug Report
+description: Report an unexpected error, crash, or incorrect output.
+title: "[BUG] Concise Summary of the Issue"
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping us validate Hotspot! Please fill out the details below so we can quickly reproduce and fix the issue.
+
+  - type: input
+    id: version
+    attributes:
+      label: Hotspot Version
+      description: What version of Hotspot are you running? (e.g., v0.1.0)
+      placeholder: v0.1.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: command
+    attributes:
+      label: Command Run
+      description: Please provide the exact command you ran.
+      placeholder: hotspot files --mode risk --start 2025-01-01T00:00:00Z ./path/to/repo
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen? (e.g., "The output should show a rank 1 file with a Moderate score.")
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened? (Please paste terminal output, stack trace, or error messages.)
+      render: shell
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: What OS are you running Hotspot on?
+      placeholder: macOS 14 (Sonoma), Ubuntu 22.04, Windows 11
+    validations:
+      required: true
+
+  - type: dropdown
+    id: output-type
+    attributes:
+      label: Output Format Used
+      description: Were you using text, CSV, or JSON output?
+      options:
+        - Text (default)
+        - CSV
+        - JSON

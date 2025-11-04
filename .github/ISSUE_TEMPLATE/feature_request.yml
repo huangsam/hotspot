@@ -1,0 +1,43 @@
+name: ✨ Feature Request or Feedback
+description: Suggest an enhancement, new mode, or provide general usability feedback.
+title: "[FEAT] Concise Title for the Suggestion"
+labels: ["enhancement", "feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping shape the future of Hotspot! Please provide as much detail as possible for your suggestion.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The Problem or Use Case You Are Trying to Solve
+      description: Describe the current limitation or the specific job you were trying to do that Hotspot didn't handle well. (e.g., "I need to see the complexity score of a single file, not just folders.")
+      placeholder: Describe the need here...
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: The Solution/Feature You Propose
+      description: Describe the new feature or change you'd like to see. Be specific about commands or output. (e.g., "Add a 'hotspot file --output-json' option for single-file analysis.")
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives You've Considered
+      description: Were there other ways you tried to solve this problem?
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Hotspot Version Tested
+      description: What version of Hotspot did you use when this idea came up? (e.g., v0.1.0)
+      placeholder: v0.1.0
+    validations:
+      required: true
