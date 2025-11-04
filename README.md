@@ -70,16 +70,16 @@ The core power of Hotspot is the `--mode` flag, which defines the ranking algori
 
 ```bash
 # Identify active subsystems for daily standup/priority setting
-hotspot folders --mode hot
+hotspot folders --mode hot --start "2 weeks ago"
 
 # Check the high-level risk of the target subsystem
-hotspot folders --mode risk
+hotspot folders --mode risk --start "1 month ago"
 
 # Drill down to the specific active files within the target path
-hotspot files --mode hot ./path/from/folder/hot
+hotspot files --mode hot ./path/from/folder/hot --start "2 weeks ago"
 
 # Immediate Refactoring Targets (after finding a problem path)
-hotspot files --mode complexity --start 2025-01-01T00:00:00Z ./path/from/file/hot
+hotspot files --mode complexity --start "3 months ago" ./path/from/file/hot
 ```
 
 ### Strategic Risk & Debt Management
@@ -87,18 +87,23 @@ hotspot files --mode complexity --start 2025-01-01T00:00:00Z ./path/from/file/ho
 ```bash
 # Bus Factor/Knowledge Risk (Strategic Ownership Audit)
 # Identify the subsystems with the highest knowledge concentration
-hotspot folders --mode risk --start 2025-01-01T00:00:00Z
+
+# Option A (Precise Audit): Use ISO 8601 for a fixed, auditable period
+hotspot folders --mode risk --start 2024-01-01T00:00:00Z
+
+# Option B (Rolling Audit): Use natural language for a rolling window
+hotspot folders --mode risk --start "1 year ago"
 
 # Maintenance Debt Audit (Legacy Subsystem Triage)
 # Identify entire modules that have been neglected (old, large, little recent change)
-hotspot folders --mode stale --start 2020-01-01T00:00:00Z --exclude "test/,vendor/"
+hotspot folders --mode stale --start "5 years ago" --exclude "test/,vendor/"
 
 # Structural Bottleneck Audit (Core Complexity)
 # Identify the largest, most-churned, core subsystems
-hotspot folders --mode complexity --start 2024-01-01T00:00:00Z
+hotspot folders --mode complexity --start "18 months ago"
 
 # Drill down: Find the high-risk files within the high-risk folders
-hotspot files --mode risk --start 2025-01-01T00:00:00Z --path ./path/from/folder/risk
+hotspot files --mode risk --start "1 year ago" --path ./path/from/folder/risk
 ```
 
 ## Performance
