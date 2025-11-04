@@ -2,9 +2,18 @@
 package main
 
 import (
+	"runtime"
+
 	"github.com/huangsam/hotspot/core"
 	"github.com/huangsam/hotspot/internal"
 	"github.com/spf13/cobra"
+)
+
+// All linker flags will be set by goreleaser infra at build time
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
 )
 
 // cfg will hold the validated, final configuration.
@@ -24,6 +33,9 @@ var rootCmd = &cobra.Command{
 	Use:   "hotspot",
 	Short: "Analyze Git repository activity to find code hotspots.",
 	Long:  `Hotspot cuts through Git history to show you which files and folders are your greatest risk.`,
+
+	// Set the application version here
+	Version: version,
 
 	// Just let the main function print the error.
 	SilenceErrors: true,
@@ -83,11 +95,25 @@ var foldersCmd = &cobra.Command{
 	},
 }
 
+// versionCmd show the verbose version for diagnostic purposes.
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Print the version number of hotspot",
+	Run: func(cmd *cobra.Command, args []string) {
+		cmd.Printf("hotspot CLI\n")
+		cmd.Printf("  Version: %s\n", version)
+		cmd.Printf("  Commit:  %s\n", commit)
+		cmd.Printf("  Built:   %s\n", date)
+		cmd.Printf("  Runtime: %s\n", runtime.Version())
+	},
+}
+
 // init defines and binds all flags.
 func init() {
 	// Add subcommands to the root command
 	rootCmd.AddCommand(filesCmd)
 	rootCmd.AddCommand(foldersCmd)
+	rootCmd.AddCommand(versionCmd)
 
 	// --- Bind Simple Global Flags as PERSISTENT Flags (Available and Visible to ALL subcommands) ---
 	rootCmd.PersistentFlags().StringVarP(&cfg.PathFilter, "filter", "f", "", "Filter files by path prefix")
