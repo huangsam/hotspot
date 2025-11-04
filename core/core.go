@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/huangsam/hotspot/internal"
 )
@@ -71,16 +72,17 @@ func ExecuteHotspotFiles(cfg *internal.Config) {
 
 		fmt.Printf("🔁 Running --follow re-analysis for top %d files...\n", n)
 
+		// We run a goroutine for each file since N is small
+		var wg sync.WaitGroup
 		for i := range n {
-			f := ranked[i]
-
-			// re-analyze with follow enabled (passing 'true' for the follow flag)
-			rean := analyzeFileCommon(cfg, f.Path, output, true)
-
-			// preserve path but update metrics and score
-			rean.Path = f.Path
-			ranked[i] = rean
+			idx := i
+			rankedFile := ranked[idx]
+			wg.Go(func() {
+				rean := analyzeFileCommon(cfg, rankedFile.Path, output, true)
+				ranked[idx] = rean
+			})
 		}
+		wg.Wait()
 
 		// re-rank after follow pass
 		ranked = rankFiles(ranked, cfg.ResultLimit)
