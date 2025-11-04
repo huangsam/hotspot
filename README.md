@@ -116,7 +116,7 @@ hotspot files --mode risk --start "1 year ago" --path ./path/from/folder/risk
 ## Tips
 
 - Start with `hotspot folders` for a high-level strategic overview
-- Exclude irrelevant files and folders (`test/`, `vendor/`) to focus the analysis
+- Exclude irrelevant files and folders to focus the analysis
 - Export results as CSV/JSON to track trends and progress
-- **Tactical Risk:** Use a 6-month window to identify immediate project risks (hot, risk)
-- **Strategic Debt:** Use a 12-24 month window for long-term audits (complexity, stale)
+- **Tactical Risk:** Use `"6 months ago"` or `"2 weeks ago"` to identify immediate risks
+- **Strategic Debt:** Use `"2 years ago"` for long-term audits
