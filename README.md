@@ -94,6 +94,9 @@ hotspot folders --mode risk --start 2024-01-01T00:00:00Z
 # Option B (Rolling Audit): Use natural language for a rolling window
 hotspot folders --mode risk --start "1 year ago"
 
+# Option C (Historical Window Audit): Define a precise range using start and end
+hotspot folders --mode risk --start 2024-01-01T00:00:00Z --end "1 month ago"
+
 # Maintenance Debt Audit (Legacy Subsystem Triage)
 # Identify entire modules that have been neglected (old, large, little recent change)
 hotspot folders --mode stale --start "5 years ago" --exclude "test/,vendor/"
