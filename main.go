@@ -99,7 +99,7 @@ var foldersCmd = &cobra.Command{
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number of hotspot",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		cmd.Printf("hotspot CLI\n")
 		cmd.Printf("  Version: %s\n", version)
 		cmd.Printf("  Commit:  %s\n", commit)
