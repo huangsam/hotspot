@@ -49,6 +49,9 @@ install: $(BIN_DIR)/$(BINARY_NAME)
 	@cp $(BIN_DIR)/$(BINARY_NAME) $$(go env GOPATH)/bin/
 	@echo "✅ Installed: $$(go env GOPATH)/bin/$(BINARY_NAME)"
 
+# Reinstall the built binary
+reinstall: clean install
+
 # Run tests
 test:
 	@echo "🧪 Running tests..."
@@ -77,15 +80,13 @@ check: format lint test
 	@echo "✅ All checks passed"
 
 # Run a snapshot release
-snapshot:
+snapshot: clean
 	@echo "🚀 Running snapshot release..."
-	@rm -rf dist
 	@$(GORELEASER) release --snapshot
 
 # Run a real release
-release:
+release: clean
 	@echo "🚀 Running real release..."
-	@rm -rf dist
 	@$(GORELEASER) release
 
 # Show help
@@ -96,6 +97,7 @@ help:
 	@echo "  make build (default) - Builds the binary into $(BIN_DIR)/$(BINARY_NAME)."
 	@echo "  make clean           - Removes build artifacts ($(BIN_DIR)) and release files (dist)."
 	@echo "  make install         - Installs the built binary to $$(go env GOPATH)/bin."
+	@echo "  make reinstall.      - Reinstalls the built binary."
 	@echo "  make test            - Runs all Go tests."
 	@echo "  make bench           - Runs Go benchmarks."
 	@echo "  make format          - Runs code formatting."
