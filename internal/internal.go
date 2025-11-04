@@ -28,7 +28,7 @@ var (
 	moderateColor = color.New(color.FgYellow)
 
 	// Low Heat: Informational/Low-priority signal
-	lowColor = color.New(color.FgBlue)
+	lowColor = color.New(color.FgCyan)
 )
 
 // getPlainLabel returns a plain text label indicating the criticality level
