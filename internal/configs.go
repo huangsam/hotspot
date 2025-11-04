@@ -157,26 +157,42 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 
 // processTimeRange handles the complex date parsing and time range validation.
 func processTimeRange(cfg *Config, input *ConfigRawInput) error {
-	// Set defaults if strings are empty
+	// 1. Set EndTime default and use it as the 'now' reference for relative lookbacks.
 	cfg.EndTime = time.Now()
+	// Set StartTime default using the existing constant.
 	cfg.StartTime = cfg.EndTime.Add(-DefaultLookbackDays * 24 * time.Hour)
 
-	if input.StartTimeStr != "" {
-		t, err := time.Parse(DateTimeFormat, input.StartTimeStr)
-		if err != nil {
-			return fmt.Errorf("invalid start date format for '%s': %v", input.StartTimeStr, err)
-		}
-		cfg.StartTime = t
+	// Helper function to try absolute ISO8601 parsing
+	parseAbsolute := func(s string) (time.Time, error) {
+		return time.Parse(DateTimeFormat, s)
 	}
 
+	// --- Process Start Time ---
+	if input.StartTimeStr != "" {
+		t, err := parseAbsolute(input.StartTimeStr)
+		if err == nil {
+			cfg.StartTime = t // Absolute parse successful
+		} else {
+			// If absolute parse fails, try relative parse
+			t, relErr := parseRelativeTime(input.StartTimeStr, cfg.EndTime)
+			if relErr != nil {
+				// Failed both absolute and relative parsing
+				return fmt.Errorf("invalid start date format for '%s'. Expected absolute ISO8601 or 'N [units] ago': %v", input.StartTimeStr, err)
+			}
+			cfg.StartTime = t // Relative parse successful
+		}
+	}
+
+	// --- Process End Time ---
 	if input.EndTimeStr != "" {
-		t, err := time.Parse(DateTimeFormat, input.EndTimeStr)
+		t, err := parseAbsolute(input.EndTimeStr)
 		if err != nil {
-			return fmt.Errorf("invalid end date format for '%s': %v", input.EndTimeStr, err)
+			return fmt.Errorf("invalid end date format for '%s'. Expected absolute ISO8601: %v", input.EndTimeStr, err)
 		}
 		cfg.EndTime = t
 	}
 
+	// --- Final Validation ---
 	if !cfg.StartTime.IsZero() && !cfg.EndTime.IsZero() && cfg.StartTime.After(cfg.EndTime) {
 		return fmt.Errorf("start time (%s) cannot be after end time (%s)", cfg.StartTime.Format(DateTimeFormat), cfg.EndTime.Format(DateTimeFormat))
 	}

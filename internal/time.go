@@ -1,0 +1,47 @@
+package internal
+
+import (
+	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+)
+
+// Define the regular expression to capture "N [units] ago"
+// e.g., "2 years ago", "3 months ago", "1 week ago"
+var relativeTimeRe = regexp.MustCompile(`^(\d+)\s+(year|month|week|day|hour|minute)s?\s+ago$`)
+
+// parseRelativeTime converts strings like "2 years ago" into a time.Time in the past.
+func parseRelativeTime(s string, now time.Time) (time.Time, error) {
+	s = strings.TrimSpace(strings.ToLower(s))
+	matches := relativeTimeRe.FindStringSubmatch(s)
+
+	if len(matches) == 0 {
+		return time.Time{}, fmt.Errorf("invalid relative time format: %s", s)
+	}
+
+	// 1: Value (e.g., "2")
+	// 2: Unit (e.g., "year" or "month")
+	value, _ := strconv.Atoi(matches[1])
+	unit := matches[2]
+
+	switch unit {
+	case "year":
+		return now.AddDate(-value, 0, 0), nil
+	case "month":
+		return now.AddDate(0, -value, 0), nil
+	case "week":
+		// time.Duration uses nanoseconds, 7 * 24 * time.Hour is 1 week
+		return now.Add(time.Duration(-value) * 7 * 24 * time.Hour), nil
+	case "day":
+		return now.Add(time.Duration(-value) * 24 * time.Hour), nil
+	case "hour":
+		return now.Add(time.Duration(-value) * time.Hour), nil
+	case "minute":
+		return now.Add(time.Duration(-value) * time.Minute), nil
+	default:
+		// Should be caught by the regex, but good for safety
+		return time.Time{}, fmt.Errorf("unsupported time unit: %s", unit)
+	}
+}
