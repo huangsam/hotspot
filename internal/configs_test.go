@@ -122,6 +122,58 @@ func TestProcessTimeRange(t *testing.T) {
 			},
 			expectError: false,
 		},
+		// --- New Relative End Time Tests ---
+		{
+			name: "valid relative end time (plural)",
+			input: &ConfigRawInput{
+				StartTimeStr: "2024-01-01T00:00:00Z", // Stable start time
+				EndTimeStr:   "10 days ago",          // Valid relative end time
+			},
+			expectError: false,
+		},
+		{
+			name: "valid relative end time (singular, mixed case)",
+			input: &ConfigRawInput{
+				StartTimeStr: "2024-01-01T00:00:00Z",
+				EndTimeStr:   "1 HouR AgO", // Valid mixed-case relative end time
+			},
+			expectError: false,
+		},
+		{
+			name: "invalid relative end time format (missing ago)",
+			input: &ConfigRawInput{
+				StartTimeStr: "2024-01-01T00:00:00Z",
+				EndTimeStr:   "5 weeks", // Invalid relative format
+			},
+			expectError: true,
+		},
+		{
+			name: "invalid relative end time format (bad unit)",
+			input: &ConfigRawInput{
+				StartTimeStr: "2024-01-01T00:00:00Z",
+				EndTimeStr:   "2 seconds ago", // Unsupported unit
+			},
+			expectError: true,
+		},
+		// --- New Cross-Validation Tests (Relative Start vs. Relative End) ---
+		{
+			name: "relative start time after relative end time",
+			input: &ConfigRawInput{
+				StartTimeStr: "1 minute ago", // Closest to 'now'
+				EndTimeStr:   "1 day ago",    // Further from 'now'
+			},
+			// StartTime (Now - 1min) is AFTER EndTime (Now - 1 day), which is invalid.
+			expectError: true,
+		},
+		{
+			name: "relative end time after relative start time",
+			input: &ConfigRawInput{
+				StartTimeStr: "1 day ago",
+				EndTimeStr:   "1 minute ago",
+			},
+			// StartTime (Now - 1 day) is BEFORE EndTime (Now - 1 min), which is valid.
+			expectError: false,
+		},
 		// --- Failed/Validation Tests ---
 		{
 			name: "invalid relative time format (missing ago)",

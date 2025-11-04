@@ -157,8 +157,11 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 
 // processTimeRange handles the complex date parsing and time range validation.
 func processTimeRange(cfg *Config, input *ConfigRawInput) error {
-	// 1. Set EndTime default and use it as the 'now' reference for relative lookbacks.
-	cfg.EndTime = time.Now()
+	// Get the current time once to use as the consistent reference for 'now'.
+	now := time.Now()
+
+	// 1. Set EndTime default
+	cfg.EndTime = now
 	// Set StartTime default using the existing constant.
 	cfg.StartTime = cfg.EndTime.Add(-DefaultLookbackDays * 24 * time.Hour)
 
@@ -174,7 +177,7 @@ func processTimeRange(cfg *Config, input *ConfigRawInput) error {
 			cfg.StartTime = t // Absolute parse successful
 		} else {
 			// If absolute parse fails, try relative parse
-			t, relErr := parseRelativeTime(input.StartTimeStr, cfg.EndTime)
+			t, relErr := parseRelativeTime(input.StartTimeStr, now) // Use 'now' as reference
 			if relErr != nil {
 				// Failed both absolute and relative parsing
 				return fmt.Errorf("invalid start date format for '%s'. Expected absolute ISO8601 or 'N [units] ago': %v", input.StartTimeStr, err)
@@ -186,10 +189,17 @@ func processTimeRange(cfg *Config, input *ConfigRawInput) error {
 	// --- Process End Time ---
 	if input.EndTimeStr != "" {
 		t, err := parseAbsolute(input.EndTimeStr)
-		if err != nil {
-			return fmt.Errorf("invalid end date format for '%s'. Expected absolute ISO8601: %v", input.EndTimeStr, err)
+		if err == nil {
+			cfg.EndTime = t // Absolute parse successful
+		} else {
+			// If absolute parse fails, try relative parse
+			t, relErr := parseRelativeTime(input.EndTimeStr, now) // Use 'now' as reference
+			if relErr != nil {
+				// Failed both absolute and relative parsing
+				return fmt.Errorf("invalid end date format for '%s'. Expected absolute ISO8601 or 'N [units] ago': %v", input.EndTimeStr, err)
+			}
+			cfg.EndTime = t // Relative parse successful
 		}
-		cfg.EndTime = t
 	}
 
 	// --- Final Validation ---
