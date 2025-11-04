@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -61,7 +62,7 @@ func TestParseRelativeTimeUnit(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, tt.expected.Round(time.Second), tResult.Round(time.Second), "Parsed time mismatch")
+				assert.Equal(t, tt.expected.Round(time.Second), tResult.Round(time.Second), "Parsed time mismatch")
 			}
 		})
 	}
