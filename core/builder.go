@@ -39,118 +39,67 @@ func NewFileMetricsBuilder(cfg *internal.Config, path string, output *schema.Agg
 	}
 }
 
-// FetchCommitHistory runs 'git log' and populates basic metrics and internal counts.
-func (b *FileMetricsBuilder) FetchCommitHistory() *FileMetricsBuilder {
+// FetchAllGitMetrics runs 'git log' once to populate basic metrics (commits, contributors) and churn.
+func (b *FileMetricsBuilder) FetchAllGitMetrics() *FileMetricsBuilder {
+	const CommitDelimiter = "DELIMITER_COMMIT_START"
+
 	repo := b.cfg.RepoPath
 	historyArgs := []string{"log"}
 	if b.useFollow {
 		historyArgs = append(historyArgs, "--follow")
 	}
+	// EFFICIENT: Let Git handle the time filtering
 	if !b.cfg.StartTime.IsZero() {
 		historyArgs = append(historyArgs, "--since="+b.cfg.StartTime.Format(internal.DateTimeFormat))
 	}
-	historyArgs = append(historyArgs, "--pretty=format:%an,%ad", "--date=iso", "--", b.path)
+	if !b.cfg.EndTime.IsZero() {
+		historyArgs = append(historyArgs, "--until="+b.cfg.EndTime.Format(internal.DateTimeFormat))
+	}
+	// Use the combined format: custom delimiter, author/date, and numstat
+	historyArgs = append(historyArgs, "--pretty=format:"+CommitDelimiter+"%an,%ad", "--date=iso", "--numstat", "--", b.path)
 
 	out, err := internal.RunGitCommand(repo, historyArgs...)
 	if err != nil {
-		internal.LogWarning(fmt.Sprintf("Failed to get commit history for %s. Commits will be zeroed.", b.path))
+		internal.LogWarning(fmt.Sprintf("Failed to get metrics for %s. Error: %v", b.path, err))
 		return b
 	}
 
-	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
-	var firstCommit time.Time
-
-	for _, l := range lines {
-		if l == "" {
-			continue
-		}
-		parts := strings.SplitN(l, ",", 2)
-		if len(parts) < 2 {
-			continue
-		}
-		author := parts[0]
-		dateStr := parts[1]
-		date, err := time.Parse("2006-01-02 15:04:05 -0700", dateStr)
-		if err != nil {
-			continue
-		}
-
-		if (!b.cfg.StartTime.IsZero() && date.Before(b.cfg.StartTime)) ||
-			(!b.cfg.EndTime.IsZero() && date.After(b.cfg.EndTime)) {
-			continue
-		}
-
-		b.contribCount[author]++
-		b.totalCommits++
-		if firstCommit.IsZero() || date.Before(firstCommit) {
-			firstCommit = date
-		}
-	}
-	b.metrics.UniqueContributors = len(b.contribCount)
-	b.metrics.Commits = b.totalCommits
-	b.metrics.FirstCommit = firstCommit
-
-	return b
-}
-
-// FetchFileSize runs os.Stat to get the file size.
-func (b *FileMetricsBuilder) FetchFileSize() *FileMetricsBuilder {
-	if info, err := os.Stat(filepath.Join(b.cfg.RepoPath, b.path)); err == nil {
-		b.metrics.SizeBytes = info.Size()
-	}
-	return b
-}
-
-// FetchLinesOfCode reads the file and counts the Physical Lines of Code (PLOC)
-// by counting the number of newline characters, which replicates wc -l behavior.
-func (b *FileMetricsBuilder) FetchLinesOfCode() *FileMetricsBuilder {
-	fullPath := filepath.Join(b.cfg.RepoPath, b.path)
-
-	// 1. Read the entire file content as a byte slice.
-	content, err := os.ReadFile(fullPath)
-	if err != nil {
-		b.metrics.LinesOfCode = 0
-		return b
-	}
-
-	// 2. Count the number of newline characters directly in the byte slice.
-	// This is extremely fast as it avoids any string conversion or line iteration logic.
-	lineCount := bytes.Count(content, []byte{'\n'})
-
-	// 3. Assign the count. This lineCount is identical to the output of `wc -l`.
-	b.metrics.LinesOfCode = lineCount
-
-	return b
-}
-
-// CalculateChurn runs 'git log --numstat' to get lines added/deleted.
-func (b *FileMetricsBuilder) CalculateChurn() *FileMetricsBuilder {
-	churnArgs := []string{"log"}
-	if b.useFollow {
-		churnArgs = append(churnArgs, "--follow")
-	}
-	if !b.cfg.StartTime.IsZero() {
-		churnArgs = append(churnArgs, "--since="+b.cfg.StartTime.Format(internal.DateTimeFormat))
-	}
-	churnArgs = append(churnArgs, "--numstat", "--", b.path)
-
-	out, err := internal.RunGitCommand(b.cfg.RepoPath, churnArgs...)
-	if err != nil {
-		internal.LogWarning(fmt.Sprintf("Failed to get churn data for %s. Error: %v", b.path, err))
-		return b
-	}
-
-	// Use bufio.Scanner to process the output line by line,
-	// filtering out all header/commit information.
+	// Use bufio.Scanner for efficient line-by-line processing
 	scanner := bufio.NewScanner(bytes.NewReader(out))
+	var firstCommit time.Time
 	totalChanges := 0
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		// Numstat lines are always tab-separated and typically start with a number or '-'
-		parts := strings.Split(line, "\t")
 
-		// A valid numstat line has at least three parts (additions, deletions, filename)
+		// 1. Process Commit Metadata
+		if after, ok := strings.CutPrefix(line, CommitDelimiter); ok {
+			// Trim the delimiter prefix
+			metadata := after
+			parts := strings.SplitN(metadata, ",", 2)
+			if len(parts) < 2 {
+				continue
+			}
+			author := parts[0]
+			dateStr := parts[1]
+
+			date, err := time.Parse("2006-01-02 15:04:05 -0700", dateStr)
+			if err != nil {
+				continue
+			}
+
+			// Populate commit history metrics
+			b.contribCount[author]++
+			b.totalCommits++
+			if firstCommit.IsZero() || date.Before(firstCommit) {
+				firstCommit = date
+			}
+			continue // Move to the next line (which should be numstat)
+		}
+
+		// 2. Process Churn Data (Numstat Line)
+		// This part is unchanged and correctly processes lines added/deleted.
+		parts := strings.Split(line, "\t")
 		if len(parts) >= 3 {
 			addStr := strings.TrimSpace(parts[0])
 			delStr := strings.TrimSpace(parts[1])
@@ -158,16 +107,46 @@ func (b *FileMetricsBuilder) CalculateChurn() *FileMetricsBuilder {
 			add, errA := strconv.Atoi(addStr)
 			del, errD := strconv.Atoi(delStr)
 
-			// Ignore lines that aren't valid numbers (like the 'total' summary if it exists)
-			// Or cases where the file was binary (represented by '-')
+			// Ignore binary files ('-') or other non-numeric lines
 			if errA == nil && errD == nil {
 				totalChanges += add + del
 			}
 		}
 	}
 
-	// Set Churn to ONLY the total line changes
+	// Finalize metrics after the loop
+	b.metrics.UniqueContributors = len(b.contribCount)
+	b.metrics.Commits = b.totalCommits
+	b.metrics.FirstCommit = firstCommit
 	b.metrics.Churn = totalChanges
+
+	return b
+}
+
+// FetchFileStats reads the file once to populate SizeBytes and LinesOfCode (PLOC).
+func (b *FileMetricsBuilder) FetchFileStats() *FileMetricsBuilder {
+	fullPath := filepath.Join(b.cfg.RepoPath, b.path)
+
+	// 1. Read the entire file content as a byte slice. This is the main disk I/O.
+	content, err := os.ReadFile(fullPath)
+	if err != nil {
+		b.metrics.LinesOfCode = 0
+
+		// If file read fails (e.g., deleted file), we still try os.Stat
+		// in case the error was transient or specific (though usually nil here).
+		// For robustness, we try to grab the size from stat if content reading failed.
+		if info, statErr := os.Stat(fullPath); statErr == nil {
+			b.metrics.SizeBytes = info.Size()
+		}
+		return b
+	}
+
+	// 2. Get Size from the already-read byte slice length (instant).
+	b.metrics.SizeBytes = int64(len(content))
+
+	// 3. Count the number of newline characters (extremely fast byte operation).
+	lineCount := bytes.Count(content, []byte{'\n'})
+	b.metrics.LinesOfCode = lineCount
 
 	return b
 }
@@ -193,20 +172,14 @@ func (b *FileMetricsBuilder) CalculateDerivedMetrics() *FileMetricsBuilder {
 
 // FetchRecentInfo populates recent metrics from recent info if available.
 func (b *FileMetricsBuilder) FetchRecentInfo() *FileMetricsBuilder {
-	if recentCommitsMapGlobal := b.output.CommitMap; recentCommitsMapGlobal != nil {
-		if v, ok := recentCommitsMapGlobal[b.path]; ok {
-			b.metrics.RecentCommits = v
-		}
+	if v, ok := b.output.CommitMap[b.path]; ok {
+		b.metrics.RecentCommits = v
 	}
-	if recentChurnMapGlobal := b.output.ChurnMap; recentChurnMapGlobal != nil {
-		if v, ok := recentChurnMapGlobal[b.path]; ok {
-			b.metrics.RecentChurn = v
-		}
+	if v, ok := b.output.ChurnMap[b.path]; ok {
+		b.metrics.RecentChurn = v
 	}
-	if recentContribMapGlobal := b.output.ContribMap; recentContribMapGlobal != nil {
-		if m, ok := recentContribMapGlobal[b.path]; ok {
-			b.metrics.RecentContributors = len(m)
-		}
+	if m, ok := b.output.ContribMap[b.path]; ok {
+		b.metrics.RecentContributors = len(m)
 	}
 	return b
 }
