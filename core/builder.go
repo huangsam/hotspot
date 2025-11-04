@@ -45,16 +45,20 @@ func (b *FileMetricsBuilder) FetchAllGitMetrics() *FileMetricsBuilder {
 
 	repo := b.cfg.RepoPath
 	historyArgs := []string{"log"}
+
+	// Follow files in case they have been renamed
 	if b.useFollow {
 		historyArgs = append(historyArgs, "--follow")
 	}
-	// EFFICIENT: Let Git handle the time filtering
+
+	// Let Git handle the time filtering
 	if !b.cfg.StartTime.IsZero() {
 		historyArgs = append(historyArgs, "--since="+b.cfg.StartTime.Format(internal.DateTimeFormat))
 	}
 	if !b.cfg.EndTime.IsZero() {
 		historyArgs = append(historyArgs, "--until="+b.cfg.EndTime.Format(internal.DateTimeFormat))
 	}
+
 	// Use the combined format: custom delimiter, author/date, and numstat
 	historyArgs = append(historyArgs, "--pretty=format:"+CommitDelimiter+"%an,%ad", "--date=iso", "--numstat", "--", b.path)
 
