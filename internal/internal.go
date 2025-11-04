@@ -18,10 +18,10 @@ const (
 )
 
 var (
-	criticalColor = color.New(color.FgRed, color.Bold)     // Critical Heat
-	highColor     = color.RGB(255, 128, 0).Add(color.Bold) // High Heat
-	moderateColor = color.New(color.FgYellow)              // Moderate Heat
-	lowColor      = color.New(color.FgHiBlack)             // Low Heat
+	criticalColor = color.New(color.FgRed, color.Bold)    // Critical Heat
+	highColor     = color.New(color.FgYellow, color.Bold) // High Heat
+	moderateColor = color.New(color.FgYellow)             // Moderate Heat
+	lowColor      = color.New(color.FgHiBlack)            // Low Heat
 )
 
 // getPlainLabel returns a plain text label indicating the criticality level
