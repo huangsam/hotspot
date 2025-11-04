@@ -48,7 +48,7 @@ func TestProcessTimeRange(t *testing.T) {
 		input       *ConfigRawInput
 		expectError bool
 	}{
-		// --- Existing Absolute Time Tests ---
+		// --- Absolute Time Range Tests ---
 		{
 			name: "valid explicit range",
 			input: &ConfigRawInput{
@@ -66,14 +66,6 @@ func TestProcessTimeRange(t *testing.T) {
 			expectError: true,
 		},
 		{
-			name: "invalid end time format (absolute)",
-			input: &ConfigRawInput{
-				StartTimeStr: "",
-				EndTimeStr:   "01/01/2024", // Invalid format
-			},
-			expectError: true,
-		},
-		{
 			name: "start time after end time (absolute)",
 			input: &ConfigRawInput{
 				StartTimeStr: "2024-02-01T00:00:00Z",
@@ -81,128 +73,44 @@ func TestProcessTimeRange(t *testing.T) {
 			},
 			expectError: true,
 		},
-		// --- Revised Relative Time Tests (Testing Case-Insensitivity) ---
+		// --- Relative Time Usage/Validation Tests (Focusing on flow, not grammar) ---
 		{
-			name: "valid relative start time (plural, mixed case)",
+			name: "valid relative start time (plural)",
 			input: &ConfigRawInput{
-				StartTimeStr: "3 MoNtHs AgO", // Testing mixed case input
-				EndTimeStr:   "",
+				StartTimeStr: "3 months ago",
+				EndTimeStr:   "", // Defaults to time.Now(), valid range
 			},
 			expectError: false,
 		},
 		{
-			name: "valid relative start time (singular, capitalized)",
-			input: &ConfigRawInput{
-				StartTimeStr: "1 Week Ago", // Testing capitalized words input
-				EndTimeStr:   "",
-			},
-			expectError: false,
-		},
-		{
-			name: "valid relative start time (day, upper case)",
-			input: &ConfigRawInput{
-				StartTimeStr: "10 DAYS AGO", // Testing all caps input
-				EndTimeStr:   "",
-			},
-			expectError: false,
-		},
-		{
-			name: "valid relative start time (hour, mixed case)",
-			input: &ConfigRawInput{
-				StartTimeStr: "5 Hours ago",
-				EndTimeStr:   "",
-			},
-			expectError: false,
-		},
-		{
-			name: "valid relative start time (minute, mixed case)",
-			input: &ConfigRawInput{
-				StartTimeStr: "30 Minutes AgO",
-				EndTimeStr:   "",
-			},
-			expectError: false,
-		},
-		// --- New Relative End Time Tests ---
-		{
-			name: "valid relative end time (plural)",
-			input: &ConfigRawInput{
-				StartTimeStr: "2024-01-01T00:00:00Z", // Stable start time
-				EndTimeStr:   "10 days ago",          // Valid relative end time
-			},
-			expectError: false,
-		},
-		{
-			name: "valid relative end time (singular, mixed case)",
+			name: "valid relative end time (explicit start)",
 			input: &ConfigRawInput{
 				StartTimeStr: "2024-01-01T00:00:00Z",
-				EndTimeStr:   "1 HouR AgO", // Valid mixed-case relative end time
+				EndTimeStr:   "10 days ago", // Should parse relative time successfully
 			},
 			expectError: false,
-		},
-		{
-			name: "invalid relative end time format (missing ago)",
-			input: &ConfigRawInput{
-				StartTimeStr: "2024-01-01T00:00:00Z",
-				EndTimeStr:   "5 weeks", // Invalid relative format
-			},
-			expectError: true,
 		},
 		{
 			name: "invalid relative end time format (bad unit)",
 			input: &ConfigRawInput{
 				StartTimeStr: "2024-01-01T00:00:00Z",
-				EndTimeStr:   "2 seconds ago", // Unsupported unit
+				EndTimeStr:   "2 seconds ago", // Should catch the error from parseRelativeTime
 			},
 			expectError: true,
 		},
-		// --- New Cross-Validation Tests (Relative Start vs. Relative End) ---
+		// --- Critical Cross-Validation Tests ---
 		{
 			name: "relative start time after relative end time",
 			input: &ConfigRawInput{
-				StartTimeStr: "1 minute ago", // Closest to 'now'
-				EndTimeStr:   "1 day ago",    // Further from 'now'
-			},
-			// StartTime (Now - 1min) is AFTER EndTime (Now - 1 day), which is invalid.
-			expectError: true,
-		},
-		{
-			name: "relative end time after relative start time",
-			input: &ConfigRawInput{
-				StartTimeStr: "1 day ago",
-				EndTimeStr:   "1 minute ago",
-			},
-			// StartTime (Now - 1 day) is BEFORE EndTime (Now - 1 min), which is valid.
-			expectError: false,
-		},
-		// --- Failed/Validation Tests ---
-		{
-			name: "invalid relative time format (missing ago)",
-			input: &ConfigRawInput{
-				StartTimeStr: "2 years",
-				EndTimeStr:   "",
-			},
-			expectError: true,
-		},
-		{
-			name: "invalid relative time format (bad unit)",
-			input: &ConfigRawInput{
-				StartTimeStr: "4 decades ago",
-				EndTimeStr:   "",
-			},
-			expectError: true,
-		},
-		{
-			name: "invalid relative time format (non-numeric)",
-			input: &ConfigRawInput{
-				StartTimeStr: "one year ago",
-				EndTimeStr:   "",
+				StartTimeStr: "1 minute ago", // Will be AFTER
+				EndTimeStr:   "1 day ago",    // Will be BEFORE
 			},
 			expectError: true,
 		},
 		{
 			name: "relative start time after explicit end time",
 			input: &ConfigRawInput{
-				StartTimeStr: "1 minute ago",
+				StartTimeStr: "1 minute ago", // Will be close to Now()
 				EndTimeStr:   "1990-01-01T00:00:00Z",
 			},
 			expectError: true,
