@@ -45,13 +45,13 @@ hotspot files /path/to/repo/pkg
     * **Windows:** Extract `hotspot.exe` to a known location
 3. **Verify Installation:** Run `hotspot --help` in your terminal
 
-### Sample output
+### Example output
 
 Here is what the tool shows for [kubernetes/kubernetes](https://github.com/kubernetes/kubernetes):
 
 <img src="./images/ranking.png" alt="Hotspot" width="768px" />
 
-This ranking displays the **risk score** and a colored label based on the following command:
+This ranking displays the **complexity score** and a colored label based on:
 
 `hotspot files --mode complexity --start 2024-01-01T00:00:00Z --end 2025-01-01T00:00:00Z --workers 16`
 
