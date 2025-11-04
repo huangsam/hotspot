@@ -62,6 +62,7 @@ bench:
 # Format code
 format:
 	@echo "📐 Formatting code..."
+	@$(GOLANGCI_LINT) run --fix
 	@$(GOLANGCI_LINT) fmt
 	@echo "✅ Format complete"
 
