@@ -69,7 +69,7 @@ The core power of Hotspot is the `--mode` flag, which defines the ranking algori
 
 ## Risk comparison & delta tracking
 
-The `compare` subcommand allows you to measure the change in metrics between two different points in your repository's history (e.g., a feature branch vs. main). This is the most effective way to audit the impact of a new change set.
+The `compare` subcommand allows you to measure the change in metrics between two different points in your repository's history. This is the most effective way to audit the impact of a new change set across multiple dimensions.
 
 **Example:** Compare between releases, focusing only on files in the `pkg/auth` module, using a 3-month activity window:
 
