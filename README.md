@@ -15,6 +15,7 @@ Offerred capabilities:
 - ⚡ **Fast results** - analyze thousands of files in seconds
 - 🧮 **Rich insights** - contributors, churn, size, age, and risk metrics
 - 🎯 **Actionable filters** - narrow down by path, exclude noise, or track trends over time
+- 📊 **Export results** - save to CSV/JSON to track trends and progress
 
 Target audience:
 
@@ -60,11 +61,25 @@ This ranking displays the **complexity score** and a colored label based on:
 The core power of Hotspot is the `--mode` flag, which defines the ranking algorithm:
 
 | Mode | Focus | Description |
-|------|---------|-------------|
+|------|-------|-------------|
 | **hot** | Activity hotspots | Where activity is most concentrated. |
 | **risk** | Knowledge risk | Targets with contribution inequality and few owners. |
 | **complexity** | Technical debt | Large targets with high churn and low recent activity. |
 | **stale** | Maintenance debt | Important targets that haven't been modified recently. |
+
+## Risk Comparison & Delta Tracking
+
+The compare subcommand allows you to measure the change in risk metrics between two different points in your repository's history (e.g., a feature branch vs. main). This is the most effective way to audit the impact of a new change set.
+
+**Example:** Compare your current branch against main, focusing only on files in the pkg/auth module, using a 3-month activity window:
+
+`hotspot compare files --base-ref main --lookback "3 months" --folder pkg/auth`
+
+| Flags | Description |
+|-------|-------------|
+| `--base-ref` | The BEFORE Git reference (e.g., `main`, `v1.0.0`, a commit hash). |
+| `--target-ref` | The AFTER Git reference (defaults to `HEAD`). |
+| `--lookback` | Time window of activity (e.g. `6 months`) used for calculation. |
 
 ## Common use cases
 
@@ -119,11 +134,3 @@ hotspot files --mode risk --start "1 year ago" --path ./path/from/folder/risk
 |**Large repo (10k+ files)**|15-30 seconds|
 
 These details were measured from running Hotspot over a 6-month window.
-
-## Tips
-
-- Start with `hotspot folders` for a high-level strategic overview
-- Exclude irrelevant files and folders to focus the analysis
-- Export results as CSV/JSON to track trends and progress
-- **Tactical Risk:** Use `"6 months ago"` or `"2 weeks ago"` to identify immediate risks
-- **Strategic Debt:** Use `"2 years ago"` for long-term audits
