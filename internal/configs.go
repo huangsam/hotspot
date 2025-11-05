@@ -61,14 +61,14 @@ type ConfigRawInput struct {
 
 // ProcessAndValidate performs all complex parsing and validation on the raw inputs
 // and updates the final Config struct.
-func ProcessAndValidate(cfg *Config, input *ConfigRawInput) error {
+func ProcessAndValidate(cfg *Config, client GitClient, input *ConfigRawInput) error {
 	if err := validateSimpleInputs(cfg, input); err != nil {
 		return err
 	}
 	if err := processTimeRange(cfg, input); err != nil {
 		return err
 	}
-	if err := resolveGitPathAndFilter(cfg, input); err != nil {
+	if err := resolveGitPathAndFilter(cfg, client, input); err != nil {
 		return err
 	}
 	return nil
@@ -211,7 +211,7 @@ func processTimeRange(cfg *Config, input *ConfigRawInput) error {
 }
 
 // resolveGitPathAndFilter resolves the Git repository path and set the implicit path filter.
-func resolveGitPathAndFilter(cfg *Config, input *ConfigRawInput) error {
+func resolveGitPathAndFilter(cfg *Config, client GitClient, input *ConfigRawInput) error {
 	// 1. Determine the absolute path of the user's input
 	searchPath := input.RepoPathStr
 	absSearchPath, err := filepath.Abs(searchPath)
@@ -234,7 +234,7 @@ func resolveGitPathAndFilter(cfg *Config, input *ConfigRawInput) error {
 
 	// 7a. Find the absolute Git repository root path
 	// We run the command using the safe gitContextPath
-	rootOut, err := RunGitCommand(gitContextPath, "rev-parse", "--show-toplevel")
+	rootOut, err := client.Run(gitContextPath, "rev-parse", "--show-toplevel")
 	if err != nil {
 		// If git still fails (e.g., gitContextPath is not in a repo), return the error.
 		return err

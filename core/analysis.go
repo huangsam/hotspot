@@ -10,17 +10,17 @@ import (
 
 // AnalyzeFolders performs a full folder-level hotspot analysis and returns
 // the ranked folder results.
-func AnalyzeFolders(cfg *internal.Config) ([]schema.FolderResults, error) {
+func AnalyzeFolders(cfg *internal.Config, client internal.GitClient) ([]schema.FolderResults, error) {
 	// --- 1. Aggregation Phase ---
 	fmt.Printf("🔎 Aggregating activity since %s\n", cfg.StartTime.Format(internal.DateTimeFormat))
-	output, err := aggregateActivity(cfg)
+	output, err := aggregateActivity(cfg, client)
 	if err != nil {
 		internal.LogWarning("Cannot aggregate activity")
 		return nil, err
 	}
 
 	// --- 2. File List Building and Filtering ---
-	files := buildFilteredFileList(output, cfg)
+	files := buildFilteredFileList(cfg, output)
 	if len(files) == 0 {
 		internal.LogWarning("No files with activity found in the requested window")
 		return []schema.FolderResults{}, nil // Return empty, not an error
@@ -35,7 +35,7 @@ func AnalyzeFolders(cfg *internal.Config) ([]schema.FolderResults, error) {
 	logAnalysisHeader(cfg)
 
 	// We analyze the *files* to get metrics,
-	fileMetrics := analyzeRepo(cfg, output, files)
+	fileMetrics := analyzeRepo(cfg, client, output, files)
 	// ...then aggregate those metrics into folders.
 	folderResults := aggregateAndScoreFolders(cfg, fileMetrics)
 
@@ -53,17 +53,17 @@ func AnalyzeFolders(cfg *internal.Config) ([]schema.FolderResults, error) {
 // ranked results. It encapsulates aggregation, filtering, analysis,
 // and the optional --follow pass. This function is designed to be
 // reusable for comparison logic, as it does not print to stdout.
-func AnalyzeFiles(cfg *internal.Config) ([]schema.FileMetrics, error) {
+func AnalyzeFiles(cfg *internal.Config, client internal.GitClient) ([]schema.FileMetrics, error) {
 	// --- 1. Aggregation Phase ---
 	fmt.Printf("🔎 Aggregating activity since %s\n", cfg.StartTime.Format(internal.DateTimeFormat))
-	output, err := aggregateActivity(cfg)
+	output, err := aggregateActivity(cfg, client)
 	if err != nil {
 		internal.LogWarning("Cannot aggregate activity")
 		return nil, err
 	}
 
 	// --- 2. File List Building and Filtering ---
-	files := buildFilteredFileList(output, cfg)
+	files := buildFilteredFileList(cfg, output)
 	if len(files) == 0 {
 		internal.LogWarning("No files with activity found in the requested window")
 		return []schema.FileMetrics{}, nil // Return empty, not an error
@@ -71,12 +71,12 @@ func AnalyzeFiles(cfg *internal.Config) ([]schema.FileMetrics, error) {
 
 	// --- 3. Core Analysis and Initial Ranking ---
 	logAnalysisHeader(cfg)
-	results := analyzeRepo(cfg, output, files)
+	results := analyzeRepo(cfg, client, output, files)
 	ranked := rankFiles(results, cfg.ResultLimit)
 
 	// --- 4. Optional --follow Re-analysis and Re-ranking ---
 	if cfg.Follow && len(ranked) > 0 {
-		ranked = runFollowPass(ranked, cfg, output)
+		ranked = runFollowPass(cfg, client, ranked, output)
 	}
 
 	// --- 5. Return Data ---
@@ -91,7 +91,7 @@ func logAnalysisHeader(cfg *internal.Config) {
 
 // runFollowPass re-analyzes the top N ranked files using 'git --follow'
 // to account for renames, and then returns a new, re-ranked list.
-func runFollowPass(ranked []schema.FileMetrics, cfg *internal.Config, output *schema.AggregateOutput) []schema.FileMetrics {
+func runFollowPass(cfg *internal.Config, client internal.GitClient, ranked []schema.FileMetrics, output *schema.AggregateOutput) []schema.FileMetrics {
 	// Determine the number of files to re-analyze
 	n := min(cfg.ResultLimit, len(ranked))
 	if n == 0 {
@@ -107,7 +107,7 @@ func runFollowPass(ranked []schema.FileMetrics, cfg *internal.Config, output *sc
 			// Note: This modifies the 'ranked' slice concurrently,
 			// but each goroutine writes to a *unique* index (ranked[idx]), which is safe.
 			rankedFile := ranked[idx]
-			rean := analyzeFileCommon(cfg, rankedFile.Path, output, true)
+			rean := analyzeFileCommon(cfg, client, rankedFile.Path, output, true)
 			ranked[idx] = rean
 		})
 	}
@@ -120,7 +120,7 @@ func runFollowPass(ranked []schema.FileMetrics, cfg *internal.Config, output *sc
 // analyzeRepo processes all files in parallel using a worker pool.
 // It spawns cfg.Workers number of goroutines to analyze files concurrently
 // and aggregates their results into a single slice of schema.FileMetrics.
-func analyzeRepo(cfg *internal.Config, output *schema.AggregateOutput, files []string) []schema.FileMetrics {
+func analyzeRepo(cfg *internal.Config, client internal.GitClient, output *schema.AggregateOutput, files []string) []schema.FileMetrics {
 	// Initialize channels based on the final number of files to be processed.
 	fileCh := make(chan string, len(files))
 	resultCh := make(chan schema.FileMetrics, len(files))
@@ -132,7 +132,7 @@ func analyzeRepo(cfg *internal.Config, output *schema.AggregateOutput, files []s
 		wg.Go(func() {
 			for f := range fileCh {
 				// Analysis with useFollow=false for initial run
-				metrics := analyzeFileCommon(cfg, f, output, false)
+				metrics := analyzeFileCommon(cfg, client, f, output, false)
 				resultCh <- metrics
 			}
 		})
@@ -162,9 +162,9 @@ func analyzeRepo(cfg *internal.Config, output *schema.AggregateOutput, files []s
 // derived metrics like churn and the Gini coefficient of author contributions.
 // The analysis is constrained by the time range in cfg if specified.
 // If useFollow is true, git --follow is used to track file renames.
-func analyzeFileCommon(cfg *internal.Config, path string, output *schema.AggregateOutput, useFollow bool) schema.FileMetrics {
+func analyzeFileCommon(cfg *internal.Config, client internal.GitClient, path string, output *schema.AggregateOutput, useFollow bool) schema.FileMetrics {
 	// 1. Initialize the builder
-	builder := NewFileMetricsBuilder(cfg, path, output, useFollow)
+	builder := NewFileMetricsBuilder(cfg, client, path, output, useFollow)
 
 	// 2. Execute the required steps in order (Method Chaining)
 	builder.

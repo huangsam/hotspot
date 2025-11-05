@@ -17,6 +17,7 @@ import (
 // FileMetricsBuilder builds the file metric from Git output.
 type FileMetricsBuilder struct {
 	cfg       *internal.Config
+	git       internal.GitClient
 	metrics   *schema.FileMetrics
 	output    *schema.AggregateOutput
 	path      string
@@ -28,9 +29,10 @@ type FileMetricsBuilder struct {
 }
 
 // NewFileMetricsBuilder is the starting point for building file metrics.
-func NewFileMetricsBuilder(cfg *internal.Config, path string, output *schema.AggregateOutput, useFollow bool) *FileMetricsBuilder {
+func NewFileMetricsBuilder(cfg *internal.Config, client internal.GitClient, path string, output *schema.AggregateOutput, useFollow bool) *FileMetricsBuilder {
 	return &FileMetricsBuilder{
 		cfg:          cfg,
+		git:          client,
 		metrics:      &schema.FileMetrics{Path: path},
 		output:       output,
 		path:         path,
@@ -62,7 +64,7 @@ func (b *FileMetricsBuilder) FetchAllGitMetrics() *FileMetricsBuilder {
 	// Use the combined format: custom delimiter, author/date, and numstat
 	historyArgs = append(historyArgs, "--pretty=format:"+CommitDelimiter+"%an,%ad", "--date=iso", "--numstat", "--", b.path)
 
-	out, err := internal.RunGitCommand(repo, historyArgs...)
+	out, err := b.git.Run(repo, historyArgs...)
 	if err != nil {
 		internal.LogWarning(fmt.Sprintf("Failed to get metrics for %s. Error: %v", b.path, err))
 		return b

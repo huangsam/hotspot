@@ -62,7 +62,8 @@ func sharedSetup(_ *cobra.Command, args []string) error {
 	}
 
 	// Run all validation and complex parsing, including Git path resolution
-	return internal.ProcessAndValidate(cfg, input) // cfg.RepoPath is set inside here now
+	client := internal.NewLocalGitClient()
+	return internal.ProcessAndValidate(cfg, client, input) // cfg.RepoPath is set inside here now
 }
 
 // filesCmd focuses on tactical, file-level analysis.

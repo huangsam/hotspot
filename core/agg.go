@@ -14,10 +14,10 @@ import (
 // commits, churn and contributors. It runs over the entire history if
 // cfg.StartTime is zero, or runs since cfg.StartTime otherwise.
 // It filters out files that no longer exist in a single pass.
-func aggregateActivity(cfg *internal.Config) (*schema.AggregateOutput, error) {
+func aggregateActivity(cfg *internal.Config, client internal.GitClient) (*schema.AggregateOutput, error) {
 	// 1. Get the list of currently existing files FIRST.
 	// This git call is very fast.
-	currentFiles, err := listRepoFiles(cfg.RepoPath)
+	currentFiles, err := listRepoFiles(cfg.RepoPath, client)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func aggregateActivity(cfg *internal.Config) (*schema.AggregateOutput, error) {
 	}
 
 	// 3. Run the expensive git log command ONCE
-	out, err := internal.RunGitCommand(cfg.RepoPath, args...)
+	out, err := client.Run(cfg.RepoPath, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -119,8 +119,8 @@ func aggregateActivity(cfg *internal.Config) (*schema.AggregateOutput, error) {
 }
 
 // listRepoFiles returns a list of all tracked files in the Git repository.
-func listRepoFiles(repoPath string) ([]string, error) {
-	out, err := internal.RunGitCommand(repoPath, "ls-files")
+func listRepoFiles(repoPath string, client internal.GitClient) ([]string, error) {
+	out, err := client.Run(repoPath, "ls-files")
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func listRepoFiles(repoPath string) ([]string, error) {
 
 // buildFilteredFileList creates a unified list of files from activity maps
 // and filters them based on the configuration.
-func buildFilteredFileList(output *schema.AggregateOutput, cfg *internal.Config) []string {
+func buildFilteredFileList(cfg *internal.Config, output *schema.AggregateOutput) []string {
 	// 1. Estimate capacity for 'seen'. Use a good guess based on the largest map.
 	capacity := max(
 		len(output.ContribMap), max(

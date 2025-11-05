@@ -6,7 +6,8 @@ import "github.com/huangsam/hotspot/internal"
 // ExecuteHotspotFiles runs the file-level analysis and prints results to stdout.
 // It serves as the main entry point for the 'files' mode.
 func ExecuteHotspotFiles(cfg *internal.Config) {
-	ranked, err := AnalyzeFiles(cfg)
+	client := internal.NewLocalGitClient()
+	ranked, err := AnalyzeFiles(cfg, client)
 	if err != nil || len(ranked) == 0 {
 		return
 	}
@@ -16,7 +17,8 @@ func ExecuteHotspotFiles(cfg *internal.Config) {
 // ExecuteHotspotFolders runs the folder-level analysis and prints results to stdout.
 // It serves as the main entry point for the 'folders' mode.
 func ExecuteHotspotFolders(cfg *internal.Config) {
-	ranked, err := AnalyzeFolders(cfg)
+	client := internal.NewLocalGitClient()
+	ranked, err := AnalyzeFolders(cfg, client)
 	if err != nil || len(ranked) == 0 {
 		return
 	}
