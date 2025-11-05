@@ -136,14 +136,6 @@ func (b *FileMetricsBuilder) FetchFileStats() *FileMetricsBuilder {
 	// 1. Read the entire file content as a byte slice. This is the main disk I/O.
 	content, err := os.ReadFile(fullPath)
 	if err != nil {
-		b.metrics.LinesOfCode = 0
-
-		// If file read fails (e.g., deleted file), we still try os.Stat
-		// in case the error was transient or specific (though usually nil here).
-		// For robustness, we try to grab the size from stat if content reading failed.
-		if info, statErr := os.Stat(fullPath); statErr == nil {
-			b.metrics.SizeBytes = info.Size()
-		}
 		return b
 	}
 
@@ -192,19 +184,22 @@ func (b *FileMetricsBuilder) FetchRecentInfo() *FileMetricsBuilder {
 
 // CalculateOwner identifies the owner based on commit volume.
 func (b *FileMetricsBuilder) CalculateOwner() *FileMetricsBuilder {
-	if recentContribGlobal := b.output.ContribMap; recentContribGlobal != nil {
-		var owner string
-		var maxCommits int
-		if authorMap := recentContribGlobal[b.path]; len(authorMap) > 0 {
-			for author, commits := range authorMap {
-				if maxCommits < commits {
-					maxCommits = commits
-					owner = author
-				}
-			}
-		}
-		b.metrics.Owner = owner
+	authorMap, ok := b.output.ContribMap[b.path]
+	if !ok || len(authorMap) == 0 {
+		return b
 	}
+
+	var owner string
+	var maxCommits int
+
+	for author, commits := range authorMap {
+		if maxCommits < commits {
+			maxCommits = commits
+			owner = author
+		}
+	}
+
+	b.metrics.Owner = owner
 	return b
 }
 
