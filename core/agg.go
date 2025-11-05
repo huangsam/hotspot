@@ -127,6 +127,41 @@ func listRepoFiles(repoPath string) ([]string, error) {
 	return strings.Split(strings.TrimSpace(string(out)), "\n"), nil
 }
 
+// buildFilteredFileList creates a unified list of files from activity maps
+// (CommitMap, ChurnMap, ContribMap) and filters them based on the
+// PathFilter and Excludes settings in the configuration.
+func buildFilteredFileList(output *schema.AggregateOutput, cfg *internal.Config) []string {
+	seen := make(map[string]bool)
+	var files []string
+
+	// Build file list from union of recent maps
+	for k := range output.CommitMap {
+		seen[k] = true
+	}
+	for k := range output.ChurnMap {
+		seen[k] = true
+	}
+	for k := range output.ContribMap {
+		seen[k] = true
+	}
+
+	// Apply filters
+	for f := range seen {
+		// apply path filter
+		if cfg.PathFilter != "" && !strings.HasPrefix(f, cfg.PathFilter) {
+			continue
+		}
+
+		// apply excludes filter
+		if internal.ShouldIgnore(f, cfg.Excludes) {
+			continue
+		}
+		files = append(files, f)
+	}
+
+	return files
+}
+
 // aggregateAndScoreFolders correctly aggregates file results into folders.
 func aggregateAndScoreFolders(cfg *internal.Config, fileMetrics []schema.FileMetrics) []schema.FolderResults {
 	folderResults := make(map[string]*schema.FolderResults)

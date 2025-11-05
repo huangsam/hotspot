@@ -1,11 +1,121 @@
 package core
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/schema"
 )
+
+// AnalyzeFolders performs a full folder-level hotspot analysis and returns
+// the ranked folder results.
+func AnalyzeFolders(cfg *internal.Config) ([]schema.FolderResults, error) {
+	// --- 1. Aggregation Phase ---
+	fmt.Printf("🔎 Aggregating activity since %s\n", cfg.StartTime.Format(internal.DateTimeFormat))
+	output, err := aggregateActivity(cfg)
+	if err != nil {
+		internal.LogWarning("Cannot aggregate activity")
+		return nil, err
+	}
+
+	// --- 2. File List Building and Filtering ---
+	files := buildFilteredFileList(output, cfg)
+	if len(files) == 0 {
+		internal.LogWarning("No files with activity found in the requested window")
+		return []schema.FolderResults{}, nil // Return empty, not an error
+	}
+
+	// Note: Folder-specific logic for building 'seenFolders' map
+	// is removed as it wasn't used downstream. If it's needed
+	// by 'aggregateAndScoreFolders', it can be rebuilt there
+	// by iterating over the 'fileMetrics'.
+
+	// --- 3. Core Analysis and Initial Ranking ---
+	logAnalysisHeader(cfg)
+
+	// We analyze the *files* to get metrics,
+	fileMetrics := analyzeRepo(cfg, output, files)
+	// ...then aggregate those metrics into folders.
+	folderResults := aggregateAndScoreFolders(cfg, fileMetrics)
+
+	// Rank the folder results
+	ranked := rankFolders(folderResults, cfg.ResultLimit)
+
+	// --- 4. Optional --follow Re-analysis and Re-ranking ---
+	// (Skipped for folder analysis as in the original)
+
+	// --- 5. Return Data ---
+	return ranked, nil
+}
+
+// AnalyzeFiles performs a full file-level hotspot analysis and returns the
+// ranked results. It encapsulates aggregation, filtering, analysis,
+// and the optional --follow pass. This function is designed to be
+// reusable for comparison logic, as it does not print to stdout.
+func AnalyzeFiles(cfg *internal.Config) ([]schema.FileMetrics, error) {
+	// --- 1. Aggregation Phase ---
+	fmt.Printf("🔎 Aggregating activity since %s\n", cfg.StartTime.Format(internal.DateTimeFormat))
+	output, err := aggregateActivity(cfg)
+	if err != nil {
+		internal.LogWarning("Cannot aggregate activity")
+		return nil, err
+	}
+
+	// --- 2. File List Building and Filtering ---
+	files := buildFilteredFileList(output, cfg)
+	if len(files) == 0 {
+		internal.LogWarning("No files with activity found in the requested window")
+		return []schema.FileMetrics{}, nil // Return empty, not an error
+	}
+
+	// --- 3. Core Analysis and Initial Ranking ---
+	logAnalysisHeader(cfg)
+	results := analyzeRepo(cfg, output, files)
+	ranked := rankFiles(results, cfg.ResultLimit)
+
+	// --- 4. Optional --follow Re-analysis and Re-ranking ---
+	if cfg.Follow && len(ranked) > 0 {
+		ranked = runFollowPass(ranked, cfg, output)
+	}
+
+	// --- 5. Return Data ---
+	return ranked, nil
+}
+
+// logAnalysisHeader prints the standard analysis startup message.
+func logAnalysisHeader(cfg *internal.Config) {
+	fmt.Printf("🧠 hotspot: Analyzing %s (Mode: %s)\n", cfg.RepoPath, cfg.Mode)
+	fmt.Printf("📅 Range: %s → %s\n", cfg.StartTime.Format(internal.DateTimeFormat), cfg.EndTime.Format(internal.DateTimeFormat))
+}
+
+// runFollowPass re-analyzes the top N ranked files using 'git --follow'
+// to account for renames, and then returns a new, re-ranked list.
+func runFollowPass(ranked []schema.FileMetrics, cfg *internal.Config, output *schema.AggregateOutput) []schema.FileMetrics {
+	// Determine the number of files to re-analyze
+	n := min(cfg.ResultLimit, len(ranked))
+	if n == 0 {
+		return ranked // Nothing to do
+	}
+
+	fmt.Printf("🔁 Running --follow re-analysis for top %d files...\n", n)
+
+	var wg sync.WaitGroup
+	for i := range n {
+		idx := i // Capture loop variable for goroutine
+		wg.Go(func() {
+			// Note: This modifies the 'ranked' slice concurrently,
+			// but each goroutine writes to a *unique* index (ranked[idx]), which is safe.
+			rankedFile := ranked[idx]
+			rean := analyzeFileCommon(cfg, rankedFile.Path, output, true)
+			ranked[idx] = rean
+		})
+	}
+	wg.Wait()
+
+	// re-rank after follow pass
+	return rankFiles(ranked, cfg.ResultLimit)
+}
 
 // analyzeRepo processes all files in parallel using a worker pool.
 // It spawns cfg.Workers number of goroutines to analyze files concurrently
