@@ -2,6 +2,7 @@
 package main
 
 import (
+	"errors"
 	"runtime"
 
 	"github.com/huangsam/hotspot/core"
@@ -96,6 +97,26 @@ var foldersCmd = &cobra.Command{
 	},
 }
 
+var compareCmd = &cobra.Command{
+	Use:   "compare [repo-path]",
+	Short: "Compare file analysis between two Git references (commits/branches).",
+	Long:  `The compare command runs two separate file analyses (Base vs. Target) and reports change in risk scores.`,
+	Args:  cobra.MaximumNArgs(1),
+
+	// PreRunE ensures config validation runs right before execution.
+	PreRunE: sharedSetup,
+
+	Run: func(_ *cobra.Command, _ []string) {
+		// Only execute comparison if the comparison mode has been turned on
+		if cfg.CompareMode {
+			core.ExecuteHotspotCompare(cfg)
+		} else {
+			// This should ideally be caught in sharedSetup, but serves as a fallback.
+			internal.LogFatal("Cannot run compare analysis", errors.New("compare mode is off"))
+		}
+	},
+}
+
 // versionCmd show the verbose version for diagnostic purposes.
 var versionCmd = &cobra.Command{
 	Use:   "version",
@@ -114,6 +135,7 @@ func init() {
 	// Add subcommands to the root command
 	rootCmd.AddCommand(filesCmd)
 	rootCmd.AddCommand(foldersCmd)
+	rootCmd.AddCommand(compareCmd)
 	rootCmd.AddCommand(versionCmd)
 
 	// --- Bind Simple Global Flags as PERSISTENT Flags (Available and Visible to ALL subcommands) ---
@@ -138,6 +160,11 @@ func init() {
 
 	// --- Bind Flags Specific to `hotspot folders` ---
 	foldersCmd.Flags().BoolVar(&cfg.Owner, "owner", false, "Print per-folder owner")
+
+	// --- Bind Flags Specific to `hotspot compare` ---
+	compareCmd.Flags().BoolVar(&cfg.Detail, "detail", false, "Print additional per-file diff info")
+	compareCmd.Flags().StringVar(&input.BaseRefStr, "base-ref", "", "Base Git reference (commit, branch, or tag) for the BEFORE state")
+	compareCmd.Flags().StringVar(&input.TargetRefStr, "target-ref", "HEAD", "Target Git reference for the AFTER state (defaults to HEAD)")
 }
 
 // main starts the execution of the logic.

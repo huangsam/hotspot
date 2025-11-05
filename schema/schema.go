@@ -37,6 +37,19 @@ type FolderResults struct {
 	WeightedScoreSum float64 `json:"weighted_score_sum"` // Sum of (FileScore * FileLOC)
 }
 
+// ComparisonMetrics holds the base metrics, comparison metrics, and their deltas.
+type ComparisonMetrics struct {
+	Path      string
+	BaseScore float64 // Score from the original/base analysis
+	CompScore float64 // Score from the comparison/new analysis
+	Delta     float64 // CompScore - BaseScore (Positive means worse/higher)
+
+	// Add other fields you want to track the delta for, e.g.:
+	DeltaCommits int
+	DeltaChurn   int
+	// ...
+}
+
 // AggregateOutput is the aggregation of all things from the one-pass Git operation.
 type AggregateOutput struct {
 	CommitMap  map[string]int            // Maps file path to its commit count

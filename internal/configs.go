@@ -43,6 +43,10 @@ type Config struct {
 	OutputFile  string
 	Follow      bool
 	Owner       bool
+
+	CompareMode bool
+	BaseRef     string
+	TargetRef   string
 }
 
 // ConfigRawInput holds the raw string inputs from flags that require parsing/validation.
@@ -57,6 +61,36 @@ type ConfigRawInput struct {
 	Precision    int
 	ResultLimit  int
 	Workers      int
+
+	BaseRefStr   string
+	TargetRefStr string
+}
+
+// Clone returns a deep copy of the Config struct.
+func (c *Config) Clone() *Config {
+	// Perform a shallow copy of the Config struct (efficient for most fields)
+	clone := *c
+
+	// Deep copy slices (only Excludes is a slice here)
+	if c.Excludes != nil {
+		clone.Excludes = make([]string, len(c.Excludes))
+		copy(clone.Excludes, c.Excludes)
+	}
+
+	// Return a pointer to the cloned struct
+	return &clone
+}
+
+// CloneWithTimeWindow creates a copy of the Config and sets the new StartTime and EndTime.
+func (c *Config) CloneWithTimeWindow(start time.Time, end time.Time) *Config {
+	// 1. Clone the base configuration first
+	clone := c.Clone()
+
+	// 2. Mutate the clone with the specific time window for this run
+	clone.StartTime = start
+	clone.EndTime = end
+
+	return clone
 }
 
 // ProcessAndValidate performs all complex parsing and validation on the raw inputs
@@ -66,6 +100,9 @@ func ProcessAndValidate(cfg *Config, client GitClient, input *ConfigRawInput) er
 		return err
 	}
 	if err := processTimeRange(cfg, input); err != nil {
+		return err
+	}
+	if err := processGitRefs(cfg, input); err != nil {
 		return err
 	}
 	if err := resolveGitPathAndFilter(cfg, client, input); err != nil {
@@ -206,6 +243,40 @@ func processTimeRange(cfg *Config, input *ConfigRawInput) error {
 	if !cfg.StartTime.IsZero() && !cfg.EndTime.IsZero() && cfg.StartTime.After(cfg.EndTime) {
 		return fmt.Errorf("start time (%s) cannot be after end time (%s)", cfg.StartTime.Format(DateTimeFormat), cfg.EndTime.Format(DateTimeFormat))
 	}
+
+	return nil
+}
+
+// processGitRefs handles the comparison references and sets the final time range
+// if a comparison is being performed.
+func processGitRefs(cfg *Config, input *ConfigRawInput) error {
+	cfg.BaseRef = strings.TrimSpace(input.BaseRefStr)
+	cfg.TargetRef = strings.TrimSpace(input.TargetRefStr)
+
+	// Check if we are in comparison mode
+	if cfg.BaseRef == "" && cfg.TargetRef == "" {
+		cfg.CompareMode = false
+		return nil
+	}
+	cfg.CompareMode = true
+
+	// Validation and defaulting
+	if cfg.BaseRef == "" {
+		return fmt.Errorf("must specify --base-ref when running the compare command")
+	}
+	if cfg.TargetRef == "" {
+		cfg.TargetRef = "HEAD"
+	}
+
+	// NOTE: We don't override cfg.StartTime/EndTime here.
+	// We simply confirm the BaseRef is resolvable. The time window for the
+	// second run (TargetRef) will use the existing cfg.StartTime/EndTime,
+	// which will be resolved to the TargetRef's time window in the core analysis logic.
+
+	// The key here is that if BaseRef/TargetRef are set,
+	// the core logic (ExecuteHotspotCompare) will be responsible for:
+	// a) Getting the time window for the TargetRef
+	// b) Cloning the config and setting the BaseRef's time window.
 
 	return nil
 }
