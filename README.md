@@ -73,7 +73,7 @@ The `compare` subcommand allows you to measure the change in metrics between two
 
 **Example:** Compare your current branch against `main`, focusing only on files in the `pkg/auth` module, using a 3-month activity window:
 
-`hotspot compare files --base-ref main --lookback "3 months" --folder pkg/auth`
+`hotspot compare files --base-ref main --lookback "3 months" ./pkg/auth`
 
 | Flags | Description |
 |-------|-------------|
