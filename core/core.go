@@ -39,7 +39,7 @@ func ExecuteHotspotCompare(cfg *internal.Config) {
 	// --- A. Prepare and Run the Base (Before) Analysis ---
 
 	// Convert the BaseRef commit to a time window (e.g., 6 months before that commit)
-	baseStartTime, baseEndTime, err := getAnalysisWindowForRef(client, cfg.RepoPath, cfg.BaseRef)
+	baseStartTime, baseEndTime, err := getAnalysisWindowForRef(client, cfg.RepoPath, cfg.BaseRef, cfg.Lookback)
 	if err != nil {
 		internal.LogFatal(fmt.Sprintf("Failed to resolve time window for BaseRef '%s'", cfg.BaseRef), err)
 		return
@@ -58,7 +58,7 @@ func ExecuteHotspotCompare(cfg *internal.Config) {
 	// --- B. Prepare and Run the Target (After) Analysis ---
 
 	// Convert the TargetRef commit to a time window
-	targetStartTime, targetEndTime, err := getAnalysisWindowForRef(client, cfg.RepoPath, cfg.TargetRef)
+	targetStartTime, targetEndTime, err := getAnalysisWindowForRef(client, cfg.RepoPath, cfg.TargetRef, cfg.Lookback)
 	if err != nil {
 		internal.LogFatal(fmt.Sprintf("Failed to resolve time window for TargetRef '%s'", cfg.TargetRef), err)
 		return

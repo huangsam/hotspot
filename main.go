@@ -165,6 +165,7 @@ func init() {
 	compareCmd.Flags().BoolVar(&cfg.Detail, "detail", false, "Print additional per-file diff info")
 	compareCmd.Flags().StringVar(&input.BaseRefStr, "base-ref", "", "Base Git reference (commit, branch, or tag) for the BEFORE state")
 	compareCmd.Flags().StringVar(&input.TargetRefStr, "target-ref", "HEAD", "Target Git reference for the AFTER state (defaults to HEAD)")
+	compareCmd.Flags().StringVar(&input.LookbackStr, "lookback", "6 months", "Time duration to look back from Base/Target ref commit time (e.g., '3 months', '4 weeks', '10 days')")
 }
 
 // main starts the execution of the logic.

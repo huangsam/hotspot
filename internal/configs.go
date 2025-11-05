@@ -47,6 +47,7 @@ type Config struct {
 	CompareMode bool
 	BaseRef     string
 	TargetRef   string
+	Lookback    time.Duration
 }
 
 // ConfigRawInput holds the raw string inputs from flags that require parsing/validation.
@@ -64,6 +65,7 @@ type ConfigRawInput struct {
 
 	BaseRefStr   string
 	TargetRefStr string
+	LookbackStr  string
 }
 
 // Clone returns a deep copy of the Config struct.
@@ -102,7 +104,7 @@ func ProcessAndValidate(cfg *Config, client GitClient, input *ConfigRawInput) er
 	if err := processTimeRange(cfg, input); err != nil {
 		return err
 	}
-	if err := processGitRefs(cfg, input); err != nil {
+	if err := processCompareMode(cfg, input); err != nil {
 		return err
 	}
 	if err := resolveGitPathAndFilter(cfg, client, input); err != nil {
@@ -247,9 +249,8 @@ func processTimeRange(cfg *Config, input *ConfigRawInput) error {
 	return nil
 }
 
-// processGitRefs handles the comparison references and sets the final time range
-// if a comparison is being performed.
-func processGitRefs(cfg *Config, input *ConfigRawInput) error {
+// processCompareMode handles the comparison references and lookback.
+func processCompareMode(cfg *Config, input *ConfigRawInput) error {
 	cfg.BaseRef = strings.TrimSpace(input.BaseRefStr)
 	cfg.TargetRef = strings.TrimSpace(input.TargetRefStr)
 
@@ -277,6 +278,13 @@ func processGitRefs(cfg *Config, input *ConfigRawInput) error {
 	// the core logic (ExecuteHotspotCompare) will be responsible for:
 	// a) Getting the time window for the TargetRef
 	// b) Cloning the config and setting the BaseRef's time window.
+
+	// Set the lookback duration here
+	lookback, err := parseLookbackDuration(input.LookbackStr)
+	if err != nil {
+		return err
+	}
+	cfg.Lookback = lookback
 
 	return nil
 }

@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -44,4 +45,50 @@ func parseRelativeTime(s string, now time.Time) (time.Time, error) {
 		// Should be caught by the regex, but good for safety
 		return time.Time{}, fmt.Errorf("unsupported time unit: %s", unit)
 	}
+}
+
+// Define the regular expression to capture "N [units]"
+var lookbackDurationRe = regexp.MustCompile(`^(\d+)\s+(year|month|week|day|hour|minute)s?$`)
+
+// parseLookbackDuration converts strings like "3 months" into a single time.Duration.
+func parseLookbackDuration(s string) (time.Duration, error) {
+	s = strings.TrimSpace(strings.ToLower(s))
+	matches := lookbackDurationRe.FindStringSubmatch(s)
+
+	if len(matches) == 0 {
+		return 0, fmt.Errorf("invalid lookback duration format: %s", s)
+	}
+
+	// 1: Value (e.g., "2")
+	// 2: Unit (e.g., "year" or "month")
+	value, _ := strconv.Atoi(matches[1])
+	unit := matches[2]
+
+	var totalDuration time.Duration
+
+	switch unit {
+	case "year":
+		// Approximation: 1 year ≈ 365 days
+		totalDuration = time.Duration(value) * 365 * 24 * time.Hour
+	case "month":
+		// Approximation: 1 month ≈ 30 days
+		totalDuration = time.Duration(value) * 30 * 24 * time.Hour
+	case "week":
+		totalDuration = time.Duration(value) * 7 * 24 * time.Hour
+	case "day":
+		totalDuration = time.Duration(value) * 24 * time.Hour
+	case "hour":
+		totalDuration = time.Duration(value) * time.Hour
+	case "minute":
+		totalDuration = time.Duration(value) * time.Minute
+	default:
+		// Should be caught by the regex
+		return 0, errors.New("unsupported time unit")
+	}
+
+	if totalDuration == 0 {
+		return 0, errors.New("zero duration is not useful")
+	}
+
+	return totalDuration, nil
 }
