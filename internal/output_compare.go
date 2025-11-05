@@ -1,16 +1,18 @@
 package internal
 
 import (
+	"encoding/csv"
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/huangsam/hotspot/schema"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
 )
 
-// PrintComparisonResults outputs the analysis results in a formatted table.
+// PrintComparisonResults outputs the analysis results, dispatching based on the output format configured.
 func PrintComparisonResults(metrics []schema.ComparisonMetrics, cfg *Config) {
 	// Helper format strings and closure for number formatting
 	numFmt := "%.*f"
@@ -19,13 +21,60 @@ func PrintComparisonResults(metrics []schema.ComparisonMetrics, cfg *Config) {
 		return fmt.Sprintf(numFmt, cfg.Precision, v)
 	}
 
-	// NOTE: For brevity, we'll only implement the default table view here.
-	// JSON and CSV helpers would also be needed if supported.
-
-	// Default to human-readable table
-	if err := printComparisonTable(metrics, cfg, fmtFloat, intFmt); err != nil {
-		LogFatal("Error writing comparison table output", err)
+	// Dispatcher: Handle different output formats
+	switch strings.ToLower(cfg.Output) {
+	case "json":
+		if err := printJSONResultsForComparison(metrics, cfg); err != nil {
+			LogFatal("Error writing JSON output", err)
+		}
+	case "csv":
+		if err := printCSVResultsForComparison(metrics, cfg, fmtFloat, intFmt); err != nil {
+			LogFatal("Error writing CSV output", err)
+		}
+	default:
+		// Default to human-readable table
+		if err := printComparisonTable(metrics, cfg, fmtFloat, intFmt); err != nil {
+			LogFatal("Error writing comparison table output", err)
+		}
 	}
+}
+
+// printJSONResultsForComparison handles opening the file and calling the JSON writer.
+func printJSONResultsForComparison(metrics []schema.ComparisonMetrics, cfg *Config) error {
+	file, err := selectOutputFile(cfg.OutputFile)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = file.Close() }()
+
+	if err := writeJSONResultsForComparison(file, metrics); err != nil {
+		return err
+	}
+
+	if file != os.Stdout {
+		fmt.Fprintf(os.Stderr, "💾 Wrote JSON comparison results to %s\n", cfg.OutputFile)
+	}
+	return nil
+}
+
+// printCSVResultsForComparison handles opening the file and calling the CSV writer.
+func printCSVResultsForComparison(metrics []schema.ComparisonMetrics, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
+	file, err := selectOutputFile(cfg.OutputFile)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = file.Close() }()
+
+	w := csv.NewWriter(file)
+	if err := writeCSVResultsForComparison(w, metrics, cfg, fmtFloat, intFmt); err != nil {
+		return err
+	}
+	w.Flush()
+
+	if file != os.Stdout {
+		fmt.Fprintf(os.Stderr, "💾 Wrote CSV comparison results to %s\n", cfg.OutputFile)
+	}
+	return nil
 }
 
 // printComparisonTable prints the metrics in a custom comparison format.
