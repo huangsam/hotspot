@@ -40,9 +40,9 @@ hotspot files /path/to/repo/pkg
 
 ### Early testing
 
-1. **Download the Binary:** Visit the [latest release page](https://github.com/huangsam/hotspot/releases/latest) and download the `tar` archive for your system
+1. **Download the Binary:** Visit the [latest release](https://github.com/huangsam/hotspot/releases/latest) and download the `tar` archive for your system
 2. **Extract & Install:**
-    * **Linux/macOS:** Extract the archive and move the `hotspot` binary to a directory in your `$PATH`
+    * **Linux/macOS:** Extract `hotspot` binary to your `$PATH`
     * **Windows:** Extract `hotspot.exe` to a known location
 3. **Verify Installation:** Run `hotspot --help` in your terminal
 
