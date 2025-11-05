@@ -200,7 +200,7 @@ func getAnalysisWindowForRef(client internal.GitClient, repoPath, ref string, lo
 	}
 
 	// 3. Calculate the StartTime (Look-Back Window)
-	// StartTime is the commit time minus the fixed look-back duration.
+	// StartTime is the commit time minus the look-back duration.
 	startTime = endTime.Add(-lookback)
 
 	return startTime, endTime, nil
