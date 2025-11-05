@@ -163,7 +163,7 @@ func init() {
 
 	// --- Bind Complex Flags as PERSISTENT Flags to ALL compare subcommands ---
 	compareCmd.PersistentFlags().StringVar(&input.BaseRefStr, "base-ref", "", "Base Git reference for the BEFORE state")
-	compareCmd.PersistentFlags().StringVar(&input.TargetRefStr, "target-ref", "HEAD", "Target Git reference for the AFTER state")
+	compareCmd.PersistentFlags().StringVar(&input.TargetRefStr, "target-ref", "", "Target Git reference for the AFTER state")
 	compareCmd.PersistentFlags().StringVar(&input.LookbackStr, "lookback", "6 months", "Time duration to look back from Base/Target ref commit time")
 
 	// --- Bind Flags Specific to `hotspot compare files` ---
