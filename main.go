@@ -41,10 +41,6 @@ var rootCmd = &cobra.Command{
 	// Just let the main function print the error.
 	SilenceErrors: true,
 
-	// PreRunE logic is being moved to subcommands to ensure
-	// command-specific flags and arguments are processed just before execution.
-	// The root command only handles the global flags.
-
 	// The root command no longer executes logic, it just lists subcommands.
 	Run: func(cmd *cobra.Command, _ []string) {
 		// If no subcommand is provided, print help
@@ -55,16 +51,14 @@ var rootCmd = &cobra.Command{
 // sharedSetup sets up the Config object for all subcommands.
 func sharedSetup(_ *cobra.Command, args []string) error {
 	if len(args) == 1 {
-		// Pass the user-provided path to raw input
 		input.RepoPathStr = args[0]
 	} else {
-		// Pass the default path (CWD) to raw input, or use the root command's argument if present
 		input.RepoPathStr = "."
 	}
 
 	// Run all validation and complex parsing, including Git path resolution
 	client := internal.NewLocalGitClient()
-	return internal.ProcessAndValidate(cfg, client, input) // cfg.RepoPath is set inside here now
+	return internal.ProcessAndValidate(cfg, client, input)
 }
 
 // filesCmd focuses on tactical, file-level analysis.
@@ -74,7 +68,6 @@ var filesCmd = &cobra.Command{
 	Long:  `The files command performs deep Git analysis and ranks individual files.`,
 	Args:  cobra.MaximumNArgs(1),
 
-	// PreRunE is moved here to ensure config validation runs right before execution.
 	PreRunE: sharedSetup,
 
 	Run: func(_ *cobra.Command, _ []string) {
@@ -89,7 +82,6 @@ var foldersCmd = &cobra.Command{
 	Long:  `The folders command performs deep Git analysis and ranks individual folders.`,
 	Args:  cobra.MaximumNArgs(1),
 
-	// PreRunE is moved here to ensure config validation runs right before execution.
 	PreRunE: sharedSetup,
 
 	Run: func(_ *cobra.Command, _ []string) {
@@ -98,12 +90,17 @@ var foldersCmd = &cobra.Command{
 }
 
 var compareCmd = &cobra.Command{
-	Use:   "compare [repo-path]",
-	Short: "Compare file analysis between two Git references (commits/branches).",
-	Long:  `The compare command runs two separate file analyses (Base vs. Target) and reports change in risk scores.`,
+	Use:   "compare",
+	Short: "Compare analysis results between two Git references.",
+	Long:  `The compare command provides insight into how risk metrics have changed for different units (files, folders, etc.).`,
+}
+
+var compareFilesCmd = &cobra.Command{
+	Use:   "files [repo-path]",
+	Short: "Compare file-level risk metrics (the default unit of comparison).",
+	Long:  `The files subcommand runs two separate file analyses (Base vs. Target) and reports change in risk scores.`,
 	Args:  cobra.MaximumNArgs(1),
 
-	// PreRunE ensures config validation runs right before execution.
 	PreRunE: sharedSetup,
 
 	Run: func(_ *cobra.Command, _ []string) {
@@ -132,11 +129,14 @@ var versionCmd = &cobra.Command{
 
 // init defines and binds all flags.
 func init() {
-	// Add subcommands to the root command
+	// Add primary subcommands to the root command
 	rootCmd.AddCommand(filesCmd)
 	rootCmd.AddCommand(foldersCmd)
-	rootCmd.AddCommand(compareCmd)
+	rootCmd.AddCommand(compareCmd) // Add the new parent compare command
 	rootCmd.AddCommand(versionCmd)
+
+	// Add the file comparison subcommand to the parent compare command
+	compareCmd.AddCommand(compareFilesCmd)
 
 	// --- Bind Simple Global Flags as PERSISTENT Flags (Available and Visible to ALL subcommands) ---
 	rootCmd.PersistentFlags().StringVarP(&cfg.PathFilter, "filter", "f", "", "Filter files by path prefix")
@@ -144,8 +144,8 @@ func init() {
 
 	// --- Bind Complex Global Flags as PERSISTENT Flags to Raw Input Struct (Available and Visible to ALL subcommands) ---
 	rootCmd.PersistentFlags().IntVarP(&input.ResultLimit, "limit", "l", input.ResultLimit, "Number of results to display (files or folders)")
-	rootCmd.PersistentFlags().StringVar(&input.StartTimeStr, "start", "", "Start date in ISO8601 format")
-	rootCmd.PersistentFlags().StringVar(&input.EndTimeStr, "end", "", "End date in ISO8601 format")
+	rootCmd.PersistentFlags().StringVar(&input.StartTimeStr, "start", "", "Start date in ISO8601 or time ago")
+	rootCmd.PersistentFlags().StringVar(&input.EndTimeStr, "end", "", "End date in ISO8601 or time ago")
 	rootCmd.PersistentFlags().IntVar(&input.Workers, "workers", input.Workers, "Number of concurrent workers")
 	rootCmd.PersistentFlags().StringVar(&input.Mode, "mode", input.Mode, "Scoring mode: hot or risk or complexity or stale")
 	rootCmd.PersistentFlags().StringVar(&input.ExcludeStr, "exclude", "", "Comma-separated list of path prefixes or patterns to ignore")
@@ -161,11 +161,13 @@ func init() {
 	// --- Bind Flags Specific to `hotspot folders` ---
 	foldersCmd.Flags().BoolVar(&cfg.Owner, "owner", false, "Print per-folder owner")
 
-	// --- Bind Flags Specific to `hotspot compare` ---
-	compareCmd.Flags().BoolVar(&cfg.Detail, "detail", false, "Print additional per-file diff info")
-	compareCmd.Flags().StringVar(&input.BaseRefStr, "base-ref", "", "Base Git reference (commit, branch, or tag) for the BEFORE state")
-	compareCmd.Flags().StringVar(&input.TargetRefStr, "target-ref", "HEAD", "Target Git reference for the AFTER state (defaults to HEAD)")
-	compareCmd.Flags().StringVar(&input.LookbackStr, "lookback", "6 months", "Time duration to look back from Base/Target ref commit time (e.g., '3 months', '4 weeks', '10 days')")
+	// --- Bind Complex Flags as PERSISTENT Flags to ALL compare subcommands ---
+	compareCmd.PersistentFlags().StringVar(&input.BaseRefStr, "base-ref", "", "Base Git reference for the BEFORE state")
+	compareCmd.PersistentFlags().StringVar(&input.TargetRefStr, "target-ref", "HEAD", "Target Git reference for the AFTER state")
+	compareCmd.PersistentFlags().StringVar(&input.LookbackStr, "lookback", "6 months", "Time duration to look back from Base/Target ref commit time")
+
+	// --- Bind Flags Specific to `hotspot compare files` ---
+	compareFilesCmd.Flags().BoolVar(&cfg.Detail, "detail", false, "Print additional per-file diff info")
 }
 
 // main starts the execution of the logic.
