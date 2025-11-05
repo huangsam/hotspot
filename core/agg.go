@@ -128,34 +128,50 @@ func listRepoFiles(repoPath string) ([]string, error) {
 }
 
 // buildFilteredFileList creates a unified list of files from activity maps
-// (CommitMap, ChurnMap, ContribMap) and filters them based on the
-// PathFilter and Excludes settings in the configuration.
+// and filters them based on the configuration.
 func buildFilteredFileList(output *schema.AggregateOutput, cfg *internal.Config) []string {
-	seen := make(map[string]bool)
-	var files []string
+	// 1. Estimate capacity for 'seen'. Use a good guess based on the largest map.
+	capacity := max(
+		len(output.ContribMap), max(
+			len(output.ChurnMap), len(output.CommitMap)))
 
-	// Build file list from union of recent maps
+	// Use struct{} for zero-memory value.
+	seen := make(map[string]struct{}, capacity)
+
+	// 2. Populate 'seen' map from all three sources.
+
+	// a) CommitMap and ChurnMap (Simple Iteration)
+	// We combine this by iterating over the simple maps first.
 	for k := range output.CommitMap {
-		seen[k] = true
+		seen[k] = struct{}{}
 	}
 	for k := range output.ChurnMap {
-		seen[k] = true
-	}
-	for k := range output.ContribMap {
-		seen[k] = true
+		seen[k] = struct{}{}
 	}
 
-	// Apply filters
+	// b) ContribMap (Nested Iteration)
+	// We only care about the file path, which is the outer key (k).
+	for k := range output.ContribMap {
+		seen[k] = struct{}{}
+	}
+
+	// 3. Apply filters and build final list
+	files := make([]string, 0, len(seen))
+
+	// Pre-calculate filter state (only if PathFilter is set)
+	pathFilterSet := cfg.PathFilter != ""
+
 	for f := range seen {
-		// apply path filter
-		if cfg.PathFilter != "" && !strings.HasPrefix(f, cfg.PathFilter) {
+		// Apply path filter check only if the filter is set
+		if pathFilterSet && !strings.HasPrefix(f, cfg.PathFilter) {
 			continue
 		}
 
-		// apply excludes filter
+		// Apply excludes filter
 		if internal.ShouldIgnore(f, cfg.Excludes) {
 			continue
 		}
+
 		files = append(files, f)
 	}
 

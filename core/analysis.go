@@ -121,21 +121,9 @@ func runFollowPass(ranked []schema.FileMetrics, cfg *internal.Config, output *sc
 // It spawns cfg.Workers number of goroutines to analyze files concurrently
 // and aggregates their results into a single slice of schema.FileMetrics.
 func analyzeRepo(cfg *internal.Config, output *schema.AggregateOutput, files []string) []schema.FileMetrics {
-	// Filter files according to excludes. This is required for consistency
-	// since ListRepoFiles only applies the path filter, not excludes.
-	filtered := make([]string, 0, len(files))
-	for _, f := range files {
-		if internal.ShouldIgnore(f, cfg.Excludes) {
-			continue
-		}
-		// NOTE: Path filtering is mostly redundant here, as it's done in main/ListRepoFiles,
-		// but excluding files is necessary.
-		filtered = append(filtered, f)
-	}
-
 	// Initialize channels based on the final number of files to be processed.
-	fileCh := make(chan string, len(filtered))
-	resultCh := make(chan schema.FileMetrics, len(filtered)) // Use len(filtered) instead of len(files)
+	fileCh := make(chan string, len(files))
+	resultCh := make(chan schema.FileMetrics, len(files))
 	var wg sync.WaitGroup
 
 	// Start worker pool
@@ -151,7 +139,7 @@ func analyzeRepo(cfg *internal.Config, output *schema.AggregateOutput, files []s
 	}
 
 	// Send files to worker channel
-	for _, f := range filtered {
+	for _, f := range files {
 		fileCh <- f
 	}
 	close(fileCh)
@@ -161,7 +149,7 @@ func analyzeRepo(cfg *internal.Config, output *schema.AggregateOutput, files []s
 	close(resultCh)
 
 	// Aggregate results directly into the slice (removing the intermediate map)
-	results := make([]schema.FileMetrics, 0, len(filtered))
+	results := make([]schema.FileMetrics, 0, len(files))
 	for r := range resultCh {
 		results = append(results, r)
 	}
