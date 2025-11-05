@@ -83,7 +83,7 @@ func printFolderTable(results []schema.FolderResults, cfg *Config, fmtFloat func
 	table := tablewriter.NewWriter(os.Stdout)
 
 	// 1. Define Headers (Folder Mode - Custom)
-	headers := []string{"Rank", "Folder", "Score", "Label", "Total Commits", "Total Churn", "Total LOC"}
+	headers := []string{"Rank", "Folder", "Score", "Label", "Commits", "Churn", "LOC"}
 	if cfg.Owner {
 		headers = append(headers, "Owner")
 	}
