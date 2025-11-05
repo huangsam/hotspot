@@ -11,19 +11,33 @@ import (
 // compareFileMetrics matches metrics from the base run against the comparison run
 // and computes the difference (delta) for key metrics like Score.
 func compareFileMetrics(baseMetrics, compareMetrics []schema.FileMetrics) []schema.ComparisonMetrics {
-	// 1. Create a quick-lookup map for the base metrics, keyed by file path.
 	baseMap := make(map[string]schema.FileMetrics, len(baseMetrics))
+	compareMap := make(map[string]schema.FileMetrics, len(compareMetrics))
+	allPaths := make(map[string]struct{}) // Set to hold all unique paths
+
+	// 1. Populate maps and the set of ALL paths
 	for _, m := range baseMetrics {
 		baseMap[m.Path] = m
+		allPaths[m.Path] = struct{}{}
+	}
+	for _, m := range compareMetrics {
+		compareMap[m.Path] = m
+		allPaths[m.Path] = struct{}{}
 	}
 
-	comparisonResults := make([]schema.ComparisonMetrics, 0)
+	comparisonResults := make([]schema.ComparisonMetrics, 0, len(allPaths))
 
-	// 2. Iterate over the Comparison (New) metrics
-	for _, compM := range compareMetrics {
-		baseM, ok := baseMap[compM.Path]
-		if !ok {
-			continue
+	// 2. Iterate over ALL unique paths (Full Outer Join)
+	for path := range allPaths {
+		baseM, baseExists := baseMap[path]
+		compM, compExists := compareMap[path]
+
+		// Initialize default/zero metrics for non-existent files
+		if !baseExists {
+			baseM = schema.FileMetrics{} // Zero values (Score=0, Commits=0, Churn=0)
+		}
+		if !compExists {
+			compM = schema.FileMetrics{} // Zero values
 		}
 
 		// 3. Calculate Delta and assemble the result
@@ -32,11 +46,12 @@ func compareFileMetrics(baseMetrics, compareMetrics []schema.FileMetrics) []sche
 		deltaChurn := compM.Churn - baseM.Churn
 
 		// Only track and report files where the score actually changed significantly
-		// A small epsilon check (e.g., math.Abs(deltaScore) > 0.01) is ideal,
-		// but for now, checking against zero works if your scores have limited precision.
 		if math.Abs(deltaScore) > 0.01 {
+			// Crucially, use the *actual* path for files that only exist in one set
+			// For DELETED files: BaseScore > 0, CompScore = 0, Delta < 0
+			// For NEW files: BaseScore = 0, CompScore > 0, Delta > 0
 			comparisonResults = append(comparisonResults, schema.ComparisonMetrics{
-				Path:         compM.Path,
+				Path:         path,
 				BaseScore:    baseM.Score,
 				CompScore:    compM.Score,
 				Delta:        deltaScore,
