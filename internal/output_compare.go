@@ -41,10 +41,12 @@ func printComparisonTable(metrics []schema.ComparisonMetrics, cfg *Config, fmtFl
 		"Base Score",
 		"Comp Score",
 		"Delta",
-		// Add headers for other delta fields if you track them (e.g., DeltaCommits)
 	}
 	if cfg.Detail {
-		headers = append(headers, "Delta Commits", "Delta Churn")
+		headers = append(headers,
+			"Δ Commits",
+			"Δ Churn",
+		)
 	}
 	table.Header(headers)
 
@@ -79,7 +81,10 @@ func printComparisonTable(metrics []schema.ComparisonMetrics, cfg *Config, fmtFl
 			deltaStr,                                // Delta Score
 		}
 		if cfg.Detail {
-			row = append(row, fmt.Sprintf(intFmt, r.DeltaCommits), fmt.Sprintf(intFmt, r.DeltaChurn))
+			row = append(row,
+				fmt.Sprintf(intFmt, r.DeltaCommits),
+				fmt.Sprintf(intFmt, r.DeltaChurn),
+			)
 		}
 		data = append(data, row)
 	}

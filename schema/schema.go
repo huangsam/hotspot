@@ -44,10 +44,10 @@ type ComparisonMetrics struct {
 	CompScore float64 // Score from the comparison/new analysis
 	Delta     float64 // CompScore - BaseScore (Positive means worse/higher)
 
-	// Add other fields you want to track the delta for, e.g.:
-	DeltaCommits int
-	DeltaChurn   int
-	// ...
+	DeltaCommits int // Change in total commits (Positive means more activity)
+	DeltaChurn   int // Change in total churn (Positive means more volatility)
+	DeltaLOC     int // Change in Lines of Code (Positive means file growth)
+	DeltaContrib int // Change in Unique Contributors (Positive means more contrib growth)
 }
 
 // AggregateOutput is the aggregation of all things from the one-pass Git operation.

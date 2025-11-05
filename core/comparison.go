@@ -44,6 +44,8 @@ func compareFileMetrics(baseMetrics, compareMetrics []schema.FileMetrics, limit 
 		deltaScore := compM.Score - baseM.Score
 		deltaCommits := compM.Commits - baseM.Commits
 		deltaChurn := compM.Churn - baseM.Churn
+		deltaLOC := compM.LinesOfCode - baseM.LinesOfCode
+		deltaContrib := compM.UniqueContributors - baseM.UniqueContributors
 
 		// Only track and report files where the score actually changed significantly
 		if math.Abs(deltaScore) > 0.01 {
@@ -57,6 +59,8 @@ func compareFileMetrics(baseMetrics, compareMetrics []schema.FileMetrics, limit 
 				Delta:        deltaScore,
 				DeltaCommits: deltaCommits,
 				DeltaChurn:   deltaChurn,
+				DeltaLOC:     deltaLOC,
+				DeltaContrib: deltaContrib,
 			})
 		}
 	}
