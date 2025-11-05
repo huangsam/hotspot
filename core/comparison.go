@@ -10,7 +10,7 @@ import (
 
 // compareFileMetrics matches metrics from the base run against the comparison run
 // and computes the difference (delta) for key metrics like Score.
-func compareFileMetrics(baseMetrics, compareMetrics []schema.FileMetrics) []schema.ComparisonMetrics {
+func compareFileMetrics(baseMetrics, compareMetrics []schema.FileMetrics, limit int) []schema.ComparisonMetrics {
 	baseMap := make(map[string]schema.FileMetrics, len(baseMetrics))
 	compareMap := make(map[string]schema.FileMetrics, len(compareMetrics))
 	allPaths := make(map[string]struct{}) // Set to hold all unique paths
@@ -87,5 +87,9 @@ func compareFileMetrics(baseMetrics, compareMetrics []schema.FileMetrics) []sche
 		return strings.Compare(a.Path, b.Path) < 0
 	})
 
+	if len(comparisonResults) > 0 && limit > 0 {
+		newLimit := min(len(comparisonResults), limit)
+		return comparisonResults[:newLimit]
+	}
 	return comparisonResults
 }

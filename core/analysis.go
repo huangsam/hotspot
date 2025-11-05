@@ -10,52 +10,9 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// AnalyzeFolders performs a full folder-level hotspot analysis and returns
-// the ranked folder results.
-func AnalyzeFolders(cfg *internal.Config, client internal.GitClient) ([]schema.FolderResults, error) {
-	// --- 1. Aggregation Phase ---
-	fmt.Printf("🔎 Aggregating activity since %s\n", cfg.StartTime.Format(internal.DateTimeFormat))
-	output, err := aggregateActivity(cfg, client)
-	if err != nil {
-		internal.LogWarning("Cannot aggregate activity")
-		return nil, err
-	}
-
-	// --- 2. File List Building and Filtering ---
-	files := buildFilteredFileList(cfg, output)
-	if len(files) == 0 {
-		internal.LogWarning("No files with activity found in the requested window")
-		return []schema.FolderResults{}, nil // Return empty, not an error
-	}
-
-	// Note: Folder-specific logic for building 'seenFolders' map
-	// is removed as it wasn't used downstream. If it's needed
-	// by 'aggregateAndScoreFolders', it can be rebuilt there
-	// by iterating over the 'fileMetrics'.
-
-	// --- 3. Core Analysis and Initial Ranking ---
-	logAnalysisHeader(cfg)
-
-	// We analyze the *files* to get metrics,
-	fileMetrics := analyzeRepo(cfg, client, output, files)
-	// ...then aggregate those metrics into folders.
-	folderResults := aggregateAndScoreFolders(cfg, fileMetrics)
-
-	// Rank the folder results
-	ranked := rankFolders(folderResults, cfg.ResultLimit)
-
-	// --- 4. Optional --follow Re-analysis and Re-ranking ---
-	// (Skipped for folder analysis as in the original)
-
-	// --- 5. Return Data ---
-	return ranked, nil
-}
-
-// AnalyzeFiles performs a full file-level hotspot analysis and returns the
-// ranked results. It encapsulates aggregation, filtering, analysis,
-// and the optional --follow pass. This function is designed to be
-// reusable for comparison logic, as it does not print to stdout.
-func AnalyzeFiles(cfg *internal.Config, client internal.GitClient) ([]schema.FileMetrics, error) {
+// analyzeAllFiles performs a full file-level hotspot analysis. This function is designed
+// to be used for comparison logic, as it does not rank files preemptively.
+func analyzeAllFiles(cfg *internal.Config, client internal.GitClient) ([]schema.FileMetrics, error) {
 	// --- 1. Aggregation Phase ---
 	fmt.Printf("🔎 Aggregating activity since %s\n", cfg.StartTime.Format(internal.DateTimeFormat))
 	output, err := aggregateActivity(cfg, client)
@@ -74,15 +31,9 @@ func AnalyzeFiles(cfg *internal.Config, client internal.GitClient) ([]schema.Fil
 	// --- 3. Core Analysis and Initial Ranking ---
 	logAnalysisHeader(cfg)
 	results := analyzeRepo(cfg, client, output, files)
-	ranked := rankFiles(results, cfg.ResultLimit)
-
-	// --- 4. Optional --follow Re-analysis and Re-ranking ---
-	if cfg.Follow && len(ranked) > 0 {
-		ranked = runFollowPass(cfg, client, ranked, output)
-	}
 
 	// --- 5. Return Data ---
-	return ranked, nil
+	return results, nil
 }
 
 // logAnalysisHeader prints the standard analysis startup message.

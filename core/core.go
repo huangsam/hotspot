@@ -12,10 +12,41 @@ import (
 // It serves as the main entry point for the 'files' mode.
 func ExecuteHotspotFiles(cfg *internal.Config) {
 	client := internal.NewLocalGitClient()
-	ranked, err := AnalyzeFiles(cfg, client)
-	if err != nil || len(ranked) == 0 {
+
+	// --- 1. Aggregation Phase ---
+	fmt.Printf("🔎 Aggregating activity since %s\n", cfg.StartTime.Format(internal.DateTimeFormat))
+	output, err := aggregateActivity(cfg, client)
+	if err != nil {
+		internal.LogWarning("Cannot aggregate activity")
 		return
 	}
+
+	// --- 2. File List Building and Filtering ---
+	files := buildFilteredFileList(cfg, output)
+	if len(files) == 0 {
+		internal.LogWarning("No files with activity found in the requested window")
+		return
+	}
+
+	// --- 3. Core Analysis ---
+	logAnalysisHeader(cfg)
+	results := analyzeRepo(cfg, client, output, files) // Full scored list
+
+	// --- 4. Optional --follow Re-analysis (Limited for Efficiency) ---
+	if cfg.Follow && len(results) > 0 {
+		// A. Rank the full results to identify the expensive top-N files.
+		// NOTE: We rely on rankFiles to return a *new* limited slice.
+		rankedForFollow := rankFiles(results, cfg.ResultLimit)
+
+		// B. Run the follow pass only on the limited list, which updates the scores
+		// in the original 'results' list, or returns a merged set.
+		results = runFollowPass(cfg, client, rankedForFollow, output)
+	}
+
+	// --- 5. Final Ranking, Limiting, and Presentation ---
+	// The full result set ('results') is ranked, limited, and printed here.
+	ranked := rankFiles(results, cfg.ResultLimit)
+
 	internal.PrintFileResults(ranked, cfg)
 }
 
@@ -23,10 +54,31 @@ func ExecuteHotspotFiles(cfg *internal.Config) {
 // It serves as the main entry point for the 'folders' mode.
 func ExecuteHotspotFolders(cfg *internal.Config) {
 	client := internal.NewLocalGitClient()
-	ranked, err := AnalyzeFolders(cfg, client)
-	if err != nil || len(ranked) == 0 {
+	// --- 1. Aggregation Phase ---
+	fmt.Printf("🔎 Aggregating activity since %s\n", cfg.StartTime.Format(internal.DateTimeFormat))
+	output, err := aggregateActivity(cfg, client)
+	if err != nil {
+		internal.LogWarning("Cannot aggregate activity")
 		return
 	}
+
+	// --- 2. File List Building and Filtering ---
+	files := buildFilteredFileList(cfg, output)
+	if len(files) == 0 {
+		internal.LogWarning("No files with activity found in the requested window")
+		return
+	}
+
+	// --- 3. Core Analysis ---
+	logAnalysisHeader(cfg)
+
+	// We analyze the *files* to get metrics,
+	fileMetrics := analyzeRepo(cfg, client, output, files)
+
+	// Aggregate and score the folders
+	folderResults := aggregateAndScoreFolders(cfg, fileMetrics)
+	ranked := rankFolders(folderResults, cfg.ResultLimit)
+
 	internal.PrintFolderResults(ranked, cfg)
 }
 
@@ -49,7 +101,7 @@ func ExecuteHotspotCompare(cfg *internal.Config) {
 	cfgBase := cfg.CloneWithTimeWindow(baseStartTime, baseEndTime)
 
 	// Run the analysis for the Base state
-	baseMetrics, err := AnalyzeFiles(cfgBase, client)
+	baseMetrics, err := analyzeAllFiles(cfgBase, client)
 	if err != nil {
 		internal.LogWarning(fmt.Sprintf("Base Analysis failed for ref %s", cfg.BaseRef))
 		return
@@ -68,7 +120,7 @@ func ExecuteHotspotCompare(cfg *internal.Config) {
 	cfgTarget := cfg.CloneWithTimeWindow(targetStartTime, targetEndTime)
 
 	// Run the analysis for the Target state
-	targetMetrics, err := AnalyzeFiles(cfgTarget, client)
+	targetMetrics, err := analyzeAllFiles(cfgTarget, client)
 	if err != nil {
 		internal.LogWarning(fmt.Sprintf("Target Analysis failed for ref %s", cfg.TargetRef))
 		return
@@ -83,7 +135,7 @@ func ExecuteHotspotCompare(cfg *internal.Config) {
 	sort.Slice(targetMetrics, func(i, j int) bool {
 		return targetMetrics[i].Path < targetMetrics[j].Path
 	})
-	comparisonResults := compareFileMetrics(baseMetrics, targetMetrics)
+	comparisonResults := compareFileMetrics(baseMetrics, targetMetrics, cfg.ResultLimit)
 
 	// Output the final comparison table
 	internal.PrintComparisonResults(comparisonResults, cfg)
