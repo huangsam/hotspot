@@ -38,16 +38,25 @@ type FolderResults struct {
 
 // ComparisonMetrics holds the base metrics, comparison metrics, and their deltas.
 type ComparisonMetrics struct {
-	Path      string  `json:"path"`       // Relative path to the target in the repository
-	BaseScore float64 `json:"base_score"` // Score from the original/base analysis
-	CompScore float64 `json:"comp_score"` // Score from the comparison/new analysis
-	Delta     float64 `json:"delta"`      // CompScore - BaseScore (Positive means worse/higher)
+	Path         string  `json:"path"`          // Relative path to the target in the repository
+	BaseScore    float64 `json:"base_score"`    // Score from the original/base analysis
+	CompScore    float64 `json:"comp_score"`    // Score from the comparison/new analysis
+	Delta        float64 `json:"delta"`         // CompScore - BaseScore (Positive means worse/higher)
+	DeltaCommits int     `json:"delta_commits"` // Change in total commits (Positive means more activity)
+	DeltaChurn   int     `json:"delta_churn"`   // Change in total churn (Positive means more volatility)
 
-	DeltaCommits int `json:"delta_commits"` // Change in total commits (Positive means more activity)
-	DeltaChurn   int `json:"delta_churn"`   // Change in total churn (Positive means more volatility)
+	*FileComparison   `json:"file_compare,omitempty"`
+	*FolderComparison `json:"folder_compare,omitempty"`
+}
+
+// FileComparison has file deltas.
+type FileComparison struct {
 	DeltaLOC     int `json:"delta_loc"`     // Change in LOC (Positive means file growth)
 	DeltaContrib int `json:"delta_contrib"` // Change in contributors (Positive means contrib growth)
 }
+
+// FolderComparison has folder deltas.
+type FolderComparison struct{}
 
 // AggregateOutput is the aggregation of all things from the one-pass Git operation.
 type AggregateOutput struct {

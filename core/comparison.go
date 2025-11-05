@@ -52,15 +52,15 @@ func compareFileMetrics(baseMetrics, compareMetrics []schema.FileMetrics, limit 
 			// Crucially, use the *actual* path for files that only exist in one set
 			// For DELETED files: BaseScore > 0, CompScore = 0, Delta < 0
 			// For NEW files: BaseScore = 0, CompScore > 0, Delta > 0
+			file := &schema.FileComparison{DeltaLOC: deltaLOC, DeltaContrib: deltaContrib}
 			comparisonResults = append(comparisonResults, schema.ComparisonMetrics{
-				Path:         path,
-				BaseScore:    baseM.Score,
-				CompScore:    compM.Score,
-				Delta:        deltaScore,
-				DeltaCommits: deltaCommits,
-				DeltaChurn:   deltaChurn,
-				DeltaLOC:     deltaLOC,
-				DeltaContrib: deltaContrib,
+				Path:           path,
+				BaseScore:      baseM.Score,
+				CompScore:      compM.Score,
+				Delta:          deltaScore,
+				DeltaCommits:   deltaCommits,
+				DeltaChurn:     deltaChurn,
+				FileComparison: file,
 			})
 		}
 	}
