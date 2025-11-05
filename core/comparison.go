@@ -47,6 +47,19 @@ func compareFileMetrics(baseMetrics, compareMetrics []schema.FileMetrics, limit 
 		deltaLOC := compM.LinesOfCode - baseM.LinesOfCode
 		deltaContrib := compM.UniqueContributors - baseM.UniqueContributors
 
+		// Determine status based on existence in each analysis
+		var status string
+		switch {
+		case !baseExists && compExists:
+			status = "new"
+		case baseExists && compExists:
+			status = "active"
+		case baseExists && !compExists:
+			status = "inactive"
+		default:
+			status = "unknown"
+		}
+
 		// Only track and report files where the score actually changed significantly
 		if math.Abs(deltaScore) > 0.01 {
 			// Crucially, use the *actual* path for files that only exist in one set
@@ -61,6 +74,7 @@ func compareFileMetrics(baseMetrics, compareMetrics []schema.FileMetrics, limit 
 				DeltaCommits:   deltaCommits,
 				DeltaChurn:     deltaChurn,
 				FileComparison: file,
+				Status:         status,
 			})
 		}
 	}

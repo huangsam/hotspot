@@ -87,15 +87,13 @@ func printComparisonTable(metrics []schema.ComparisonMetrics, cfg *Config, fmtFl
 	headers := []string{
 		"Rank",
 		"File",
-		"Base Score",
-		"Comp Score",
+		"Base",
+		"Comp",
 		"Delta",
+		"Status",
 	}
 	if cfg.Detail {
-		headers = append(headers,
-			"Δ Commits",
-			"Δ Churn",
-		)
+		headers = append(headers, "Δ Churn")
 	}
 	table.Header(headers)
 
@@ -128,12 +126,10 @@ func printComparisonTable(metrics []schema.ComparisonMetrics, cfg *Config, fmtFl
 			fmtFloat(r.BaseScore),                   // Base Score
 			fmtFloat(r.CompScore),                   // Comparison Score
 			deltaStr,                                // Delta Score
+			r.Status,                                // Status
 		}
 		if cfg.Detail {
-			row = append(row,
-				fmt.Sprintf(intFmt, r.DeltaCommits),
-				fmt.Sprintf(intFmt, r.DeltaChurn),
-			)
+			row = append(row, fmt.Sprintf(intFmt, r.DeltaChurn))
 		}
 		data = append(data, row)
 	}

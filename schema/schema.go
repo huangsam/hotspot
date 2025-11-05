@@ -44,6 +44,7 @@ type ComparisonMetrics struct {
 	Delta        float64 `json:"delta"`         // CompScore - BaseScore (Positive means worse/higher)
 	DeltaCommits int     `json:"delta_commits"` // Change in total commits (Positive means more activity)
 	DeltaChurn   int     `json:"delta_churn"`   // Change in total churn (Positive means more volatility)
+	Status       string  `json:"status"`        // Intrinsic status of the file as of now
 
 	*FileComparison   `json:"file_compare,omitempty"`
 	*FolderComparison `json:"folder_compare,omitempty"`
