@@ -67,11 +67,11 @@ The core power of Hotspot is the `--mode` flag, which defines the ranking algori
 | **complexity** | Technical debt | Large targets with high churn and low recent activity. |
 | **stale** | Maintenance debt | Important targets that haven't been modified recently. |
 
-## Risk Comparison & Delta Tracking
+## Risk comparison & delta tracking
 
-The compare subcommand allows you to measure the change in risk metrics between two different points in your repository's history (e.g., a feature branch vs. main). This is the most effective way to audit the impact of a new change set.
+The `compare` subcommand allows you to measure the change in metrics between two different points in your repository's history (e.g., a feature branch vs. main). This is the most effective way to audit the impact of a new change set.
 
-**Example:** Compare your current branch against main, focusing only on files in the pkg/auth module, using a 3-month activity window:
+**Example:** Compare your current branch against `main`, focusing only on files in the `pkg/auth` module, using a 3-month activity window:
 
 `hotspot compare files --base-ref main --lookback "3 months" --folder pkg/auth`
 
