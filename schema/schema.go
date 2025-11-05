@@ -32,22 +32,21 @@ type FolderResults struct {
 	Score   float64 `json:"score"`   // Computed importance score for the folder
 	Owner   string  `json:"owner"`   // Owner is the individual who has committed the most to the files in this folder
 
-	// Fields for folder scoring calculation:
 	TotalLOC         int     `json:"total_loc"`          // Sum of LOC of all contained files (used for weighted average)
 	WeightedScoreSum float64 `json:"weighted_score_sum"` // Sum of (FileScore * FileLOC)
 }
 
 // ComparisonMetrics holds the base metrics, comparison metrics, and their deltas.
 type ComparisonMetrics struct {
-	Path      string
-	BaseScore float64 // Score from the original/base analysis
-	CompScore float64 // Score from the comparison/new analysis
-	Delta     float64 // CompScore - BaseScore (Positive means worse/higher)
+	Path      string  `json:"path"`       // Relative path to the target in the repository
+	BaseScore float64 `json:"base_score"` // Score from the original/base analysis
+	CompScore float64 `json:"comp_score"` // Score from the comparison/new analysis
+	Delta     float64 `json:"delta"`      // CompScore - BaseScore (Positive means worse/higher)
 
-	DeltaCommits int // Change in total commits (Positive means more activity)
-	DeltaChurn   int // Change in total churn (Positive means more volatility)
-	DeltaLOC     int // Change in Lines of Code (Positive means file growth)
-	DeltaContrib int // Change in Unique Contributors (Positive means more contrib growth)
+	DeltaCommits int `json:"delta_commits"` // Change in total commits (Positive means more activity)
+	DeltaChurn   int `json:"delta_churn"`   // Change in total churn (Positive means more volatility)
+	DeltaLOC     int `json:"delta_loc"`     // Change in LOC (Positive means file growth)
+	DeltaContrib int `json:"delta_contrib"` // Change in contributors (Positive means contrib growth)
 }
 
 // AggregateOutput is the aggregation of all things from the one-pass Git operation.
