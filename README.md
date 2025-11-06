@@ -96,9 +96,9 @@ This allows you to manage settings without long command-line strings. Flags alwa
 
 We provide three documented examples in the `examples/` directory to cover common use cases:
 
-1.  [hotspot.basic.yaml](./examples/hotspot.basic.yml): Quick setup for local development.
-2.  [hotspot.ci.yaml](./examples/hotspot.ci.yml): Optimized settings for automated CI/CD runs (e.g., JSON output).
-3.  [hotspot.docs.yaml](./examples/hotspot.docs.yml): The canonical template listing every available setting.
+1.  [hotspot.basic.yml](./examples/hotspot.basic.yml): Quick setup for local development
+2.  [hotspot.ci.yml](./examples/hotspot.ci.yml): Optimized settings for automated CI/CD runs (e.g., JSON output)
+3.  [hotspot.docs.yml](./examples/hotspot.docs.yml): The canonical template listing every available setting
 
 ## Common use cases
 
