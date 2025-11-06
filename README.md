@@ -67,7 +67,7 @@ The core power of Hotspot is the `--mode` flag, which defines the ranking algori
 
 | Mode | Focus | Description |
 |------|-------|-------------|
-| **hot** | Activity hotspots | Identify files and subsystems with the most concentrated recent activity. |
+| **hot** | Activity hotspots | Identify files and subsystems with the most activity. |
 | **risk** | Knowledge risk | Find areas with unequal contribution and few owners. |
 | **complexity** | Technical debt | Triage files with high churn, large size, and high complexity. |
 | **stale** | Maintenance debt | Highlight critical files that are large, old, but rarely touched. |
