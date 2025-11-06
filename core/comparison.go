@@ -10,9 +10,9 @@ import (
 
 // compareFileMetrics matches metrics from the base run against the comparison run
 // and computes the difference (delta) for key metrics like Score.
-func compareFileMetrics(baseMetrics, compareMetrics []schema.FileMetrics, limit int) []schema.ComparisonMetrics {
+func compareFileMetrics(baseMetrics, targetMetrics []schema.FileMetrics, limit int) []schema.ComparisonMetrics {
 	baseMap := make(map[string]schema.FileMetrics, len(baseMetrics))
-	compareMap := make(map[string]schema.FileMetrics, len(compareMetrics))
+	targetMap := make(map[string]schema.FileMetrics, len(targetMetrics))
 	allPaths := make(map[string]struct{}) // Set to hold all unique paths
 
 	// 1. Populate maps and the set of ALL paths
@@ -20,8 +20,8 @@ func compareFileMetrics(baseMetrics, compareMetrics []schema.FileMetrics, limit 
 		baseMap[m.Path] = m
 		allPaths[m.Path] = struct{}{}
 	}
-	for _, m := range compareMetrics {
-		compareMap[m.Path] = m
+	for _, m := range targetMetrics {
+		targetMap[m.Path] = m
 		allPaths[m.Path] = struct{}{}
 	}
 
@@ -30,31 +30,31 @@ func compareFileMetrics(baseMetrics, compareMetrics []schema.FileMetrics, limit 
 	// 2. Iterate over ALL unique paths (Full Outer Join)
 	for path := range allPaths {
 		baseM, baseExists := baseMap[path]
-		compM, compExists := compareMap[path]
+		targetM, targetExists := targetMap[path]
 
 		// Initialize default/zero metrics for non-existent files
 		if !baseExists {
 			baseM = schema.FileMetrics{} // Zero values (Score=0, Commits=0, Churn=0)
 		}
-		if !compExists {
-			compM = schema.FileMetrics{} // Zero values
+		if !targetExists {
+			targetM = schema.FileMetrics{} // Zero values
 		}
 
 		// 3. Calculate Delta and assemble the result
-		deltaScore := compM.Score - baseM.Score
-		deltaCommits := compM.Commits - baseM.Commits
-		deltaChurn := compM.Churn - baseM.Churn
-		deltaLOC := compM.LinesOfCode - baseM.LinesOfCode
-		deltaContrib := compM.UniqueContributors - baseM.UniqueContributors
+		deltaScore := targetM.Score - baseM.Score
+		deltaCommits := targetM.Commits - baseM.Commits
+		deltaChurn := targetM.Churn - baseM.Churn
+		deltaLOC := targetM.LinesOfCode - baseM.LinesOfCode
+		deltaContrib := targetM.UniqueContributors - baseM.UniqueContributors
 
 		// Determine status based on existence in each analysis
 		var status string
 		switch {
-		case !baseExists && compExists:
+		case !baseExists && targetExists:
 			status = "new"
-		case baseExists && compExists:
+		case baseExists && targetExists:
 			status = "active"
-		case baseExists && !compExists:
+		case baseExists && !targetExists:
 			status = "inactive"
 		default:
 			status = "unknown"
@@ -68,8 +68,8 @@ func compareFileMetrics(baseMetrics, compareMetrics []schema.FileMetrics, limit 
 			file := &schema.FileComparison{DeltaLOC: deltaLOC, DeltaContrib: deltaContrib}
 			comparisonResults = append(comparisonResults, schema.ComparisonMetrics{
 				Path:           path,
-				BaseScore:      baseM.Score,
-				CompScore:      compM.Score,
+				BeforeScore:    baseM.Score,
+				AfterScore:     targetM.Score,
 				Delta:          deltaScore,
 				DeltaCommits:   deltaCommits,
 				DeltaChurn:     deltaChurn,
@@ -168,8 +168,8 @@ func compareFolderMetrics(baseMetrics, targetMetrics []schema.FolderResults, lim
 		if math.Abs(deltaScore) > 0.01 {
 			comparisonResults = append(comparisonResults, schema.ComparisonMetrics{
 				Path:         path,
-				BaseScore:    baseScore,
-				CompScore:    targetScore,
+				BeforeScore:  baseScore,
+				AfterScore:   targetScore,
 				Delta:        deltaScore,
 				Status:       status,
 				DeltaCommits: deltaCommits,

@@ -123,8 +123,8 @@ func printComparisonTable(metrics []schema.ComparisonMetrics, cfg *Config, fmtFl
 		row := []string{
 			strconv.Itoa(i + 1),                     // Rank
 			truncatePath(r.Path, maxTablePathWidth), // File Path
-			fmtFloat(r.BaseScore),                   // Base Score
-			fmtFloat(r.CompScore),                   // Comparison Score
+			fmtFloat(r.BeforeScore),                 // Base Score
+			fmtFloat(r.AfterScore),                  // Comparison Score
 			deltaStr,                                // Delta Score
 			r.Status,                                // Status
 		}

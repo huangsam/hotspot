@@ -44,8 +44,8 @@ func writeCSVResultsForComparison(w *csv.Writer, metrics []schema.ComparisonMetr
 		row := []string{
 			strconv.Itoa(i + 1), // Rank
 			r.Path,              // Path
-			fmtFloat(r.BaseScore),
-			fmtFloat(r.CompScore),
+			fmtFloat(r.BeforeScore),
+			fmtFloat(r.AfterScore),
 			fmtFloat(r.Delta), // Delta Score (Comp - Base)
 		}
 		if cfg.Detail {
