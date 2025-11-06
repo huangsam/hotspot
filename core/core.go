@@ -140,3 +140,72 @@ func ExecuteHotspotCompare(cfg *internal.Config) {
 	// Output the final comparison table
 	internal.PrintComparisonResults(comparisonResults, cfg)
 }
+
+// ExecuteHotspotCompareFolders runs two folder-level analyses (Base and Target)
+// based on Git references and computes the delta results.
+// It follows the same pattern as ExecuteHotspotCompare but aggregates to folders
+// before performing the comparison.
+func ExecuteHotspotCompareFolders(cfg *internal.Config) {
+	// 1. Instantiate the single GitClient for both runs
+	client := internal.NewLocalGitClient()
+
+	// --- A. Prepare and Run the Base (Before) Analysis ---
+
+	// Resolve the time window for the Base reference
+	baseStartTime, baseEndTime, err := getAnalysisWindowForRef(client, cfg.RepoPath, cfg.BaseRef, cfg.Lookback)
+	if err != nil {
+		internal.LogFatal(fmt.Sprintf("Failed to resolve time window for BaseRef '%s'", cfg.BaseRef), err)
+		return
+	}
+
+	// Create the isolated config for the Base run
+	cfgBase := cfg.CloneWithTimeWindow(baseStartTime, baseEndTime)
+
+	// 1a. Run file analysis for the Base state
+	baseFileMetrics, err := analyzeAllFiles(cfgBase, client)
+	if err != nil {
+		internal.LogWarning(fmt.Sprintf("Base File Analysis failed for ref %s", cfg.BaseRef))
+		return
+	}
+
+	// 1b. Aggregate file metrics into folder results for the Base state
+	baseFolderResults := aggregateAndScoreFolders(cfgBase, baseFileMetrics)
+
+	// --- B. Prepare and Run the Target (After) Analysis ---
+
+	// Resolve the time window for the Target reference
+	targetStartTime, targetEndTime, err := getAnalysisWindowForRef(client, cfg.RepoPath, cfg.TargetRef, cfg.Lookback)
+	if err != nil {
+		internal.LogFatal(fmt.Sprintf("Failed to resolve time window for TargetRef '%s'", cfg.TargetRef), err)
+		return
+	}
+
+	// Create the isolated config for the Target run
+	cfgTarget := cfg.CloneWithTimeWindow(targetStartTime, targetEndTime)
+
+	// 2a. Run file analysis for the Target state
+	targetFileMetrics, err := analyzeAllFiles(cfgTarget, client)
+	if err != nil {
+		internal.LogWarning(fmt.Sprintf("Target File Analysis failed for ref %s", cfg.TargetRef))
+		return
+	}
+
+	// 2b. Aggregate file metrics into folder results for the Target state
+	targetFolderResults := aggregateAndScoreFolders(cfgTarget, targetFileMetrics)
+
+	// --- C. Compute Delta and Output Results ---
+
+	// Sort both sets of folder results by path for stable comparison
+	sort.Slice(baseFolderResults, func(i, j int) bool {
+		return baseFolderResults[i].Path < baseFolderResults[j].Path
+	})
+	sort.Slice(targetFolderResults, func(i, j int) bool {
+		return targetFolderResults[i].Path < targetFolderResults[j].Path
+	})
+
+	// Compute the delta comparison for folders
+	comparisonResults := compareFolderMetrics(baseFolderResults, targetFolderResults, cfg.ResultLimit)
+
+	// Output the final comparison table
+	internal.PrintComparisonResults(comparisonResults, cfg)
+}

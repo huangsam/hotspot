@@ -86,7 +86,7 @@ func printComparisonTable(metrics []schema.ComparisonMetrics, cfg *Config, fmtFl
 	// Note: Use clear headers for base, comparison, and the change (Delta)
 	headers := []string{
 		"Rank",
-		"File",
+		"Path",
 		"Base",
 		"Comp",
 		"Delta",

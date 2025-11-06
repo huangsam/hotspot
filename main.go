@@ -114,6 +114,25 @@ var compareFilesCmd = &cobra.Command{
 	},
 }
 
+var compareFoldersCmd = &cobra.Command{
+	Use:   "folders [repo-path]",
+	Short: "Compare folder-level risk metrics (the default unit of comparison).",
+	Long:  `The files subcommand runs two separate folder analyses (Base vs. Target) and reports change in risk scores.`,
+	Args:  cobra.MaximumNArgs(1),
+
+	PreRunE: sharedSetup,
+
+	Run: func(_ *cobra.Command, _ []string) {
+		// Only execute comparison if the comparison mode has been turned on
+		if cfg.CompareMode {
+			core.ExecuteHotspotCompareFolders(cfg)
+		} else {
+			// This should ideally be caught in sharedSetup, but serves as a fallback.
+			internal.LogFatal("Cannot run compare analysis", errors.New("compare mode is off"))
+		}
+	},
+}
+
 // versionCmd show the verbose version for diagnostic purposes.
 var versionCmd = &cobra.Command{
 	Use:   "version",
@@ -137,6 +156,7 @@ func init() {
 
 	// Add the file comparison subcommand to the parent compare command
 	compareCmd.AddCommand(compareFilesCmd)
+	compareCmd.AddCommand(compareFoldersCmd)
 
 	// --- Bind Simple Global Flags as PERSISTENT Flags (Available and Visible to ALL subcommands) ---
 	rootCmd.PersistentFlags().StringVarP(&cfg.PathFilter, "filter", "f", "", "Filter files by path prefix")
@@ -165,9 +185,7 @@ func init() {
 	compareCmd.PersistentFlags().StringVar(&input.BaseRefStr, "base-ref", "", "Base Git reference for the BEFORE state")
 	compareCmd.PersistentFlags().StringVar(&input.TargetRefStr, "target-ref", "", "Target Git reference for the AFTER state")
 	compareCmd.PersistentFlags().StringVar(&input.LookbackStr, "lookback", "6 months", "Time duration to look back from Base/Target ref commit time")
-
-	// --- Bind Flags Specific to `hotspot compare files` ---
-	compareFilesCmd.Flags().BoolVar(&cfg.Detail, "detail", false, "Print additional per-file diff info")
+	compareCmd.PersistentFlags().BoolVar(&cfg.Detail, "detail", false, "Print additional per-target info")
 }
 
 // main starts the execution of the logic.
