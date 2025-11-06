@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
@@ -104,19 +105,22 @@ func printComparisonTable(metrics []schema.ComparisonResult, cfg *Config, fmtFlo
 
 	// --- 3. Prepare Data Rows ---
 	var data [][]string
+	red := color.New(color.FgRed).SprintFunc()
+	green := color.New(color.FgGreen).SprintFunc()
+	yellow := color.New(color.FgYellow).SprintFunc()
 	for i, r := range metrics {
 		var deltaStr string
 		deltaValue := r.Delta
 		switch {
 		case deltaValue > 0:
 			// Explicitly add + sign
-			deltaStr = fmt.Sprintf("+%.*f ▲", cfg.Precision, deltaValue)
+			deltaStr = red(fmt.Sprintf("+%.*f ▲", cfg.Precision, deltaValue))
 		case deltaValue < 0:
 			// Keeps the - sign from the float
-			deltaStr = fmt.Sprintf("%.*f ▼", cfg.Precision, deltaValue)
+			deltaStr = green(fmt.Sprintf("%.*f ▼", cfg.Precision, deltaValue))
 		default:
 			// For 0.0 deltas, format simply without an indicator
-			deltaStr = fmt.Sprintf("%.*f", cfg.Precision, 0.0)
+			deltaStr = yellow(fmt.Sprintf("%.*f", cfg.Precision, 0.0))
 		}
 
 		// Prepare the row data as a slice of strings
