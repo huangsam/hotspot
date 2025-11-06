@@ -9,7 +9,7 @@ import (
 // rankFiles sorts files by their importance score in descending order
 // and returns the top 'limit' files. If limit is greater than the number
 // of files, all files are returned in sorted order.
-func rankFiles(files []schema.FileMetrics, limit int) []schema.FileMetrics {
+func rankFiles(files []schema.FileResult, limit int) []schema.FileResult {
 	sort.Slice(files, func(i, j int) bool {
 		return files[i].Score > files[j].Score
 	})
@@ -22,7 +22,7 @@ func rankFiles(files []schema.FileMetrics, limit int) []schema.FileMetrics {
 // rankFolders sorts folders by their importance score in descending order
 // and returns the top 'limit' files. If limit is greater than the number
 // of files, all files are returned in sorted order.
-func rankFolders(folders []schema.FolderResults, limit int) []schema.FolderResults {
+func rankFolders(folders []schema.FolderResult, limit int) []schema.FolderResult {
 	sort.Slice(folders, func(i, j int) bool {
 		return folders[i].Score > folders[j].Score
 	})

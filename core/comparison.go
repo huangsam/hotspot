@@ -8,24 +8,24 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// compareFileMetrics matches metrics from the base run against the comparison run
+// compareFileResults matches metrics from the base run against the comparison run
 // and computes the difference (delta) for key metrics like Score.
-func compareFileMetrics(baseMetrics, targetMetrics []schema.FileMetrics, limit int) []schema.ComparisonMetrics {
-	baseMap := make(map[string]schema.FileMetrics, len(baseMetrics))
-	targetMap := make(map[string]schema.FileMetrics, len(targetMetrics))
+func compareFileResults(baseResults, targetResults []schema.FileResult, limit int) []schema.ComparisonResult {
+	baseMap := make(map[string]schema.FileResult, len(baseResults))
+	targetMap := make(map[string]schema.FileResult, len(targetResults))
 	allPaths := make(map[string]struct{}) // Set to hold all unique paths
 
 	// 1. Populate maps and the set of ALL paths
-	for _, m := range baseMetrics {
+	for _, m := range baseResults {
 		baseMap[m.Path] = m
 		allPaths[m.Path] = struct{}{}
 	}
-	for _, m := range targetMetrics {
+	for _, m := range targetResults {
 		targetMap[m.Path] = m
 		allPaths[m.Path] = struct{}{}
 	}
 
-	comparisonResults := make([]schema.ComparisonMetrics, 0, len(allPaths))
+	comparisonResults := make([]schema.ComparisonResult, 0, len(allPaths))
 
 	// 2. Iterate over ALL unique paths (Full Outer Join)
 	for path := range allPaths {
@@ -34,10 +34,10 @@ func compareFileMetrics(baseMetrics, targetMetrics []schema.FileMetrics, limit i
 
 		// Initialize default/zero metrics for non-existent files
 		if !baseExists {
-			baseM = schema.FileMetrics{} // Zero values (Score=0, Commits=0, Churn=0)
+			baseM = schema.FileResult{} // Zero values (Score=0, Commits=0, Churn=0)
 		}
 		if !targetExists {
-			targetM = schema.FileMetrics{} // Zero values
+			targetM = schema.FileResult{} // Zero values
 		}
 
 		// 3. Calculate Delta and assemble the result
@@ -66,7 +66,7 @@ func compareFileMetrics(baseMetrics, targetMetrics []schema.FileMetrics, limit i
 			// For DELETED files: BaseScore > 0, CompScore = 0, Delta < 0
 			// For NEW files: BaseScore = 0, CompScore > 0, Delta > 0
 			file := &schema.FileComparison{DeltaLOC: deltaLOC, DeltaContrib: deltaContrib}
-			comparisonResults = append(comparisonResults, schema.ComparisonMetrics{
+			comparisonResults = append(comparisonResults, schema.ComparisonResult{
 				Path:           path,
 				BeforeScore:    baseM.Score,
 				AfterScore:     targetM.Score,
@@ -113,22 +113,22 @@ func compareFileMetrics(baseMetrics, targetMetrics []schema.FileMetrics, limit i
 
 // compareFolderMetrics matches metrics from the base run against the target run
 // and computes the difference (delta) for the Score metric.
-func compareFolderMetrics(baseMetrics, targetMetrics []schema.FolderResults, limit int) []schema.ComparisonMetrics {
-	baseMap := make(map[string]schema.FolderResults, len(baseMetrics))
-	targetMap := make(map[string]schema.FolderResults, len(targetMetrics))
+func compareFolderMetrics(baseResults, targetResults []schema.FolderResult, limit int) []schema.ComparisonResult {
+	baseMap := make(map[string]schema.FolderResult, len(baseResults))
+	targetMap := make(map[string]schema.FolderResult, len(targetResults))
 	allPaths := make(map[string]struct{}) // Set to hold all unique folder paths
 
 	// 1. Populate maps and the set of ALL paths
-	for _, m := range baseMetrics {
+	for _, m := range baseResults {
 		baseMap[m.Path] = m
 		allPaths[m.Path] = struct{}{}
 	}
-	for _, m := range targetMetrics {
+	for _, m := range targetResults {
 		targetMap[m.Path] = m
 		allPaths[m.Path] = struct{}{}
 	}
 
-	comparisonResults := make([]schema.ComparisonMetrics, 0, len(allPaths))
+	comparisonResults := make([]schema.ComparisonResult, 0, len(allPaths))
 
 	// 2. Iterate over ALL unique paths (Full Outer Join)
 	for path := range allPaths {
@@ -166,7 +166,7 @@ func compareFolderMetrics(baseMetrics, targetMetrics []schema.FolderResults, lim
 		// Only track and report folders where the score actually changed significantly.
 		// Using a tolerance of 0.01 to match the file comparison logic.
 		if math.Abs(deltaScore) > 0.01 {
-			comparisonResults = append(comparisonResults, schema.ComparisonMetrics{
+			comparisonResults = append(comparisonResults, schema.ComparisonResult{
 				Path:         path,
 				BeforeScore:  baseScore,
 				AfterScore:   targetScore,

@@ -13,7 +13,7 @@ import (
 )
 
 // PrintComparisonResults outputs the analysis results, dispatching based on the output format configured.
-func PrintComparisonResults(metrics []schema.ComparisonMetrics, cfg *Config) {
+func PrintComparisonResults(metrics []schema.ComparisonResult, cfg *Config) {
 	// Helper format strings and closure for number formatting
 	numFmt := "%.*f"
 	intFmt := "%d"
@@ -40,7 +40,7 @@ func PrintComparisonResults(metrics []schema.ComparisonMetrics, cfg *Config) {
 }
 
 // printJSONResultsForComparison handles opening the file and calling the JSON writer.
-func printJSONResultsForComparison(metrics []schema.ComparisonMetrics, cfg *Config) error {
+func printJSONResultsForComparison(metrics []schema.ComparisonResult, cfg *Config) error {
 	file, err := selectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func printJSONResultsForComparison(metrics []schema.ComparisonMetrics, cfg *Conf
 }
 
 // printCSVResultsForComparison handles opening the file and calling the CSV writer.
-func printCSVResultsForComparison(metrics []schema.ComparisonMetrics, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
+func printCSVResultsForComparison(metrics []schema.ComparisonResult, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
 	file, err := selectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
@@ -78,7 +78,7 @@ func printCSVResultsForComparison(metrics []schema.ComparisonMetrics, cfg *Confi
 }
 
 // printComparisonTable prints the metrics in a custom comparison format.
-func printComparisonTable(metrics []schema.ComparisonMetrics, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
+func printComparisonTable(metrics []schema.ComparisonResult, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
 	// Use os.Stdout, consistent with existing table printing
 	table := tablewriter.NewWriter(os.Stdout)
 

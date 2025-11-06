@@ -13,7 +13,7 @@ import (
 )
 
 // PrintFolderResults outputs the analysis results, dispatching based on the output format configured.
-func PrintFolderResults(results []schema.FolderResults, cfg *Config) {
+func PrintFolderResults(results []schema.FolderResult, cfg *Config) {
 	// helper format strings and closure for number formatting
 	numFmt := "%.*f"
 	intFmt := "%d"
@@ -40,7 +40,7 @@ func PrintFolderResults(results []schema.FolderResults, cfg *Config) {
 }
 
 // printJSONResultsForFolders handles opening the file and calling the JSON writer.
-func printJSONResultsForFolders(results []schema.FolderResults, cfg *Config) error {
+func printJSONResultsForFolders(results []schema.FolderResult, cfg *Config) error {
 	file, err := selectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func printJSONResultsForFolders(results []schema.FolderResults, cfg *Config) err
 }
 
 // printCSVResultsForFolders handles opening the file and calling the CSV writer.
-func printCSVResultsForFolders(results []schema.FolderResults, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
+func printCSVResultsForFolders(results []schema.FolderResult, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
 	file, err := selectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
@@ -79,7 +79,7 @@ func printCSVResultsForFolders(results []schema.FolderResults, cfg *Config, fmtF
 
 // printFolderTable prints the results in the custom folder-centric format,
 // using the tablewriter API.
-func printFolderTable(results []schema.FolderResults, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
+func printFolderTable(results []schema.FolderResult, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
 	table := tablewriter.NewWriter(os.Stdout)
 
 	// 1. Define Headers (Folder Mode - Custom)

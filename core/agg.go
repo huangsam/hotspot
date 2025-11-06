@@ -179,34 +179,34 @@ func buildFilteredFileList(cfg *internal.Config, output *schema.AggregateOutput)
 }
 
 // aggregateAndScoreFolders correctly aggregates file results into folders.
-func aggregateAndScoreFolders(cfg *internal.Config, fileMetrics []schema.FileMetrics) []schema.FolderResults {
-	folderResults := make(map[string]*schema.FolderResults)
+func aggregateAndScoreFolders(cfg *internal.Config, fileResults []schema.FileResult) []schema.FolderResult {
+	folderResults := make(map[string]*schema.FolderResult)
 
 	// Map to track the aggregate commit count per author per folder:
 	// folderPath -> authorName -> totalCommitsByAuthorInFolder
 	folderAuthorContributions := make(map[string]map[string]int)
 
-	for _, fm := range fileMetrics {
+	for _, fr := range fileResults {
 		// 1. Determine the folder path
-		folderPath := filepath.Dir(fm.Path)
+		folderPath := filepath.Dir(fr.Path)
 		if cfg.PathFilter == "" && folderPath == "." {
 			continue // Skip the root if not filtered
 		}
 
 		if _, ok := folderResults[folderPath]; !ok {
-			folderResults[folderPath] = &schema.FolderResults{
+			folderResults[folderPath] = &schema.FolderResult{
 				Path: folderPath,
 			}
 		}
 
 		// 2. Aggregate simple metrics and score components
-		folderResults[folderPath].Commits += fm.Commits
-		folderResults[folderPath].Churn += fm.Churn
-		folderResults[folderPath].TotalLOC += fm.LinesOfCode
-		folderResults[folderPath].WeightedScoreSum += fm.Score * float64(fm.LinesOfCode)
+		folderResults[folderPath].Commits += fr.Commits
+		folderResults[folderPath].Churn += fr.Churn
+		folderResults[folderPath].TotalLOC += fr.LinesOfCode
+		folderResults[folderPath].WeightedScoreSum += fr.Score * float64(fr.LinesOfCode)
 
 		// 3. Aggregate author contributions for owner calculation
-		if fm.Owner != "" {
+		if fr.Owner != "" {
 			if folderAuthorContributions[folderPath] == nil {
 				folderAuthorContributions[folderPath] = make(map[string]int)
 			}
@@ -214,12 +214,12 @@ func aggregateAndScoreFolders(cfg *internal.Config, fileMetrics []schema.FileMet
 			// Use the file's total commits as the weight for its primary author's contribution
 			// to the folder. This finds the author who has done the most work (measured by commits)
 			// across all files in the folder.
-			folderAuthorContributions[folderPath][fm.Owner] += fm.Commits
+			folderAuthorContributions[folderPath][fr.Owner] += fr.Commits
 		}
 	}
 
 	// Finalize: Calculate unique contributor count and the final score
-	results := make([]schema.FolderResults, 0, len(folderResults))
+	finalResults := make([]schema.FolderResult, 0, len(folderResults))
 	for _, res := range folderResults {
 		// Calculate the score (Average File Score, weighted by LOC)
 		res.Score = computeFolderScore(res)
@@ -237,8 +237,8 @@ func aggregateAndScoreFolders(cfg *internal.Config, fileMetrics []schema.FileMet
 			res.Owner = owner
 		}
 
-		results = append(results, *res)
+		finalResults = append(finalResults, *res)
 	}
 
-	return results
+	return finalResults
 }

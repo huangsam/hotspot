@@ -11,7 +11,7 @@ import (
 )
 
 // writeJSONResultsForComparison marshals the schema.ComparisonMetrics slice to JSON and writes it.
-func writeJSONResultsForComparison(w io.Writer, metrics []schema.ComparisonMetrics) error {
+func writeJSONResultsForComparison(w io.Writer, metrics []schema.ComparisonResult) error {
 	encoder := json.NewEncoder(w)
 	encoder.SetIndent("", "  ")
 	// NOTE: The ComparisonMetrics struct fields are already public (uppercase),
@@ -20,7 +20,7 @@ func writeJSONResultsForComparison(w io.Writer, metrics []schema.ComparisonMetri
 }
 
 // writeCSVResultsForComparison writes the schema.ComparisonMetrics data to a CSV writer.
-func writeCSVResultsForComparison(w *csv.Writer, metrics []schema.ComparisonMetrics, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
+func writeCSVResultsForComparison(w *csv.Writer, metrics []schema.ComparisonResult, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
 	// 1. Write Header Row
 	header := []string{
 		"rank",

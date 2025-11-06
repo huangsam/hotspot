@@ -9,7 +9,7 @@ import (
 
 // TestRankFiles tests file ranking logic
 func TestRankFiles(t *testing.T) {
-	files := []schema.FileMetrics{
+	files := []schema.FileResult{
 		{Path: "low.go", SizeBytes: 1, Score: 10},
 		{Path: "high.go", SizeBytes: 1, Score: 90},
 		{Path: "medium.go", SizeBytes: 1, Score: 50},

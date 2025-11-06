@@ -14,11 +14,11 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// FileMetricsBuilder builds the file metric from Git output.
-type FileMetricsBuilder struct {
+// FileResultBuilder builds the file metric from Git output.
+type FileResultBuilder struct {
 	cfg       *internal.Config
 	git       internal.GitClient
-	metrics   *schema.FileMetrics
+	result    *schema.FileResult
 	output    *schema.AggregateOutput
 	path      string
 	useFollow bool
@@ -29,11 +29,11 @@ type FileMetricsBuilder struct {
 }
 
 // NewFileMetricsBuilder is the starting point for building file metrics.
-func NewFileMetricsBuilder(cfg *internal.Config, client internal.GitClient, path string, output *schema.AggregateOutput, useFollow bool) *FileMetricsBuilder {
-	return &FileMetricsBuilder{
+func NewFileMetricsBuilder(cfg *internal.Config, client internal.GitClient, path string, output *schema.AggregateOutput, useFollow bool) *FileResultBuilder {
+	return &FileResultBuilder{
 		cfg:          cfg,
 		git:          client,
-		metrics:      &schema.FileMetrics{Path: path},
+		result:       &schema.FileResult{Path: path},
 		output:       output,
 		path:         path,
 		useFollow:    useFollow,
@@ -42,7 +42,7 @@ func NewFileMetricsBuilder(cfg *internal.Config, client internal.GitClient, path
 }
 
 // FetchAllGitMetrics runs 'git log' once to populate basic metrics (commits, contributors) and churn.
-func (b *FileMetricsBuilder) FetchAllGitMetrics() *FileMetricsBuilder {
+func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 	const CommitDelimiter = "DELIMITER_COMMIT_START"
 
 	repo := b.cfg.RepoPath
@@ -121,16 +121,16 @@ func (b *FileMetricsBuilder) FetchAllGitMetrics() *FileMetricsBuilder {
 	}
 
 	// Finalize metrics after the loop
-	b.metrics.UniqueContributors = len(b.contribCount)
-	b.metrics.Commits = b.totalCommits
-	b.metrics.FirstCommit = firstCommit
-	b.metrics.Churn = totalChanges
+	b.result.UniqueContributors = len(b.contribCount)
+	b.result.Commits = b.totalCommits
+	b.result.FirstCommit = firstCommit
+	b.result.Churn = totalChanges
 
 	return b
 }
 
 // FetchFileStats reads the file once to populate SizeBytes and LinesOfCode (PLOC).
-func (b *FileMetricsBuilder) FetchFileStats() *FileMetricsBuilder {
+func (b *FileResultBuilder) FetchFileStats() *FileResultBuilder {
 	fullPath := filepath.Join(b.cfg.RepoPath, b.path)
 
 	// 1. Read the entire file content as a byte slice. This is the main disk I/O.
@@ -140,22 +140,22 @@ func (b *FileMetricsBuilder) FetchFileStats() *FileMetricsBuilder {
 	}
 
 	// 2. Get Size from the already-read byte slice length (instant).
-	b.metrics.SizeBytes = int64(len(content))
+	b.result.SizeBytes = int64(len(content))
 
 	// 3. Count the number of newline characters (extremely fast byte operation).
 	lineCount := bytes.Count(content, []byte{'\n'})
-	b.metrics.LinesOfCode = lineCount
+	b.result.LinesOfCode = lineCount
 
 	return b
 }
 
 // CalculateDerivedMetrics computes metrics that depend on previously collected data.
-func (b *FileMetricsBuilder) CalculateDerivedMetrics() *FileMetricsBuilder {
+func (b *FileResultBuilder) CalculateDerivedMetrics() *FileResultBuilder {
 	// AgeDays
-	if b.metrics.FirstCommit.IsZero() {
-		b.metrics.AgeDays = 0
+	if b.result.FirstCommit.IsZero() {
+		b.result.AgeDays = 0
 	} else {
-		b.metrics.AgeDays = int(time.Since(b.metrics.FirstCommit).Hours() / 24)
+		b.result.AgeDays = int(time.Since(b.result.FirstCommit).Hours() / 24)
 	}
 
 	// Gini coefficient for author diversity
@@ -163,27 +163,27 @@ func (b *FileMetricsBuilder) CalculateDerivedMetrics() *FileMetricsBuilder {
 	for _, c := range b.contribCount {
 		values = append(values, float64(c))
 	}
-	b.metrics.Gini = gini(values) // Assuming gini() is a helper function
+	b.result.Gini = gini(values) // Assuming gini() is a helper function
 
 	return b
 }
 
 // FetchRecentInfo populates recent metrics from recent info if available.
-func (b *FileMetricsBuilder) FetchRecentInfo() *FileMetricsBuilder {
+func (b *FileResultBuilder) FetchRecentInfo() *FileResultBuilder {
 	if v, ok := b.output.CommitMap[b.path]; ok {
-		b.metrics.RecentCommits = v
+		b.result.RecentCommits = v
 	}
 	if v, ok := b.output.ChurnMap[b.path]; ok {
-		b.metrics.RecentChurn = v
+		b.result.RecentChurn = v
 	}
 	if m, ok := b.output.ContribMap[b.path]; ok {
-		b.metrics.RecentContributors = len(m)
+		b.result.RecentContributors = len(m)
 	}
 	return b
 }
 
 // CalculateOwner identifies the owner based on commit volume.
-func (b *FileMetricsBuilder) CalculateOwner() *FileMetricsBuilder {
+func (b *FileResultBuilder) CalculateOwner() *FileResultBuilder {
 	authorMap, ok := b.output.ContribMap[b.path]
 	if !ok || len(authorMap) == 0 {
 		return b
@@ -199,17 +199,17 @@ func (b *FileMetricsBuilder) CalculateOwner() *FileMetricsBuilder {
 		}
 	}
 
-	b.metrics.Owner = owner
+	b.result.Owner = owner
 	return b
 }
 
 // CalculateScore computes the final composite score.
-func (b *FileMetricsBuilder) CalculateScore() *FileMetricsBuilder {
-	b.metrics.Score = computeScore(b.metrics, b.cfg.Mode) // Assuming computeScore() is a helper function
+func (b *FileResultBuilder) CalculateScore() *FileResultBuilder {
+	b.result.Score = computeScore(b.result, b.cfg.Mode) // Assuming computeScore() is a helper function
 	return b
 }
 
 // Build finalizes the construction and returns the completed metrics object.
-func (b *FileMetricsBuilder) Build() schema.FileMetrics {
-	return *b.metrics
+func (b *FileResultBuilder) Build() schema.FileResult {
+	return *b.result
 }

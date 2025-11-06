@@ -12,7 +12,7 @@ import (
 
 // analyzeAllFiles performs a full file-level hotspot analysis. This function is designed
 // to be used for comparison logic, as it does not rank files preemptively.
-func analyzeAllFiles(cfg *internal.Config, client internal.GitClient) ([]schema.FileMetrics, error) {
+func analyzeAllFiles(cfg *internal.Config, client internal.GitClient) ([]schema.FileResult, error) {
 	// --- 1. Aggregation Phase ---
 	fmt.Printf("🔎 Aggregating activity since %s\n", cfg.StartTime.Format(internal.DateTimeFormat))
 	output, err := aggregateActivity(cfg, client)
@@ -25,7 +25,7 @@ func analyzeAllFiles(cfg *internal.Config, client internal.GitClient) ([]schema.
 	files := buildFilteredFileList(cfg, output)
 	if len(files) == 0 {
 		internal.LogWarning("No files with activity found in the requested window")
-		return []schema.FileMetrics{}, nil // Return empty, not an error
+		return []schema.FileResult{}, nil // Return empty, not an error
 	}
 
 	// --- 3. Core Analysis and Initial Ranking ---
@@ -44,7 +44,7 @@ func logAnalysisHeader(cfg *internal.Config) {
 
 // runFollowPass re-analyzes the top N ranked files using 'git --follow'
 // to account for renames, and then returns a new, re-ranked list.
-func runFollowPass(cfg *internal.Config, client internal.GitClient, ranked []schema.FileMetrics, output *schema.AggregateOutput) []schema.FileMetrics {
+func runFollowPass(cfg *internal.Config, client internal.GitClient, ranked []schema.FileResult, output *schema.AggregateOutput) []schema.FileResult {
 	// Determine the number of files to re-analyze
 	n := min(cfg.ResultLimit, len(ranked))
 	if n == 0 {
@@ -73,10 +73,10 @@ func runFollowPass(cfg *internal.Config, client internal.GitClient, ranked []sch
 // analyzeRepo processes all files in parallel using a worker pool.
 // It spawns cfg.Workers number of goroutines to analyze files concurrently
 // and aggregates their results into a single slice of schema.FileMetrics.
-func analyzeRepo(cfg *internal.Config, client internal.GitClient, output *schema.AggregateOutput, files []string) []schema.FileMetrics {
+func analyzeRepo(cfg *internal.Config, client internal.GitClient, output *schema.AggregateOutput, files []string) []schema.FileResult {
 	// Initialize channels based on the final number of files to be processed.
 	fileCh := make(chan string, len(files))
-	resultCh := make(chan schema.FileMetrics, len(files))
+	fileResultCh := make(chan schema.FileResult, len(files))
 	var wg sync.WaitGroup
 
 	// Start worker pool
@@ -85,8 +85,8 @@ func analyzeRepo(cfg *internal.Config, client internal.GitClient, output *schema
 		wg.Go(func() {
 			for f := range fileCh {
 				// Analysis with useFollow=false for initial run
-				metrics := analyzeFileCommon(cfg, client, f, output, false)
-				resultCh <- metrics
+				result := analyzeFileCommon(cfg, client, f, output, false)
+				fileResultCh <- result
 			}
 		})
 	}
@@ -99,11 +99,11 @@ func analyzeRepo(cfg *internal.Config, client internal.GitClient, output *schema
 
 	// Wait for all workers to finish processing
 	wg.Wait()
-	close(resultCh)
+	close(fileResultCh)
 
 	// Aggregate results directly into the slice (removing the intermediate map)
-	results := make([]schema.FileMetrics, 0, len(files))
-	for r := range resultCh {
+	results := make([]schema.FileResult, 0, len(files))
+	for r := range fileResultCh {
 		results = append(results, r)
 	}
 
@@ -115,7 +115,7 @@ func analyzeRepo(cfg *internal.Config, client internal.GitClient, output *schema
 // derived metrics like churn and the Gini coefficient of author contributions.
 // The analysis is constrained by the time range in cfg if specified.
 // If useFollow is true, git --follow is used to track file renames.
-func analyzeFileCommon(cfg *internal.Config, client internal.GitClient, path string, output *schema.AggregateOutput, useFollow bool) schema.FileMetrics {
+func analyzeFileCommon(cfg *internal.Config, client internal.GitClient, path string, output *schema.AggregateOutput, useFollow bool) schema.FileResult {
 	// 1. Initialize the builder
 	builder := NewFileMetricsBuilder(cfg, client, path, output, useFollow)
 

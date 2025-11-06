@@ -68,13 +68,13 @@ func TestComputeScoreHotMode(t *testing.T) {
 	// Hot Mode Weights: wCommits=0.40, wChurn=0.40, wAge=0.10, wContrib=0.05, wSize=0.05
 	tests := []struct {
 		name     string
-		metrics  schema.FileMetrics
+		metrics  schema.FileResult
 		minScore float64
 		maxScore float64
 	}{
 		{
 			name: "zero metrics",
-			metrics: schema.FileMetrics{
+			metrics: schema.FileResult{
 				Path:               "test.go",
 				UniqueContributors: 0,
 				Commits:            0,
@@ -89,7 +89,7 @@ func TestComputeScoreHotMode(t *testing.T) {
 		},
 		{
 			name: "high activity file",
-			metrics: schema.FileMetrics{
+			metrics: schema.FileResult{
 				Path:               "active.go",
 				UniqueContributors: 10,        // 10/20 = 0.5 nContrib
 				Commits:            100,       // 100/500 = 0.2 nCommits
@@ -106,7 +106,7 @@ func TestComputeScoreHotMode(t *testing.T) {
 		},
 		{
 			name: "saturated metrics",
-			metrics: schema.FileMetrics{
+			metrics: schema.FileResult{
 				Path:               "huge.go",
 				UniqueContributors: 30,   // >= maxContrib -> 1.0 nContrib
 				Commits:            1000, // >= maxCommits -> 1.0 nCommits
@@ -136,7 +136,7 @@ func TestComputeScoreHotMode(t *testing.T) {
 }
 
 func TestComputeScoreHotMode_EmptyFile(t *testing.T) {
-	metrics := schema.FileMetrics{
+	metrics := schema.FileResult{
 		Path:      "active.go",
 		SizeBytes: 0,
 	}
@@ -150,13 +150,13 @@ func TestComputeScoreRiskMode(t *testing.T) {
 	// Risk Mode Weights: wInvContrib=0.30, wGini=0.26, wAgeRisk=0.16, wSizeRisk=0.12, wChurnRisk=0.06, wCommRisk=0.04, wLOCRisk=0.06
 	tests := []struct {
 		name     string
-		metrics  schema.FileMetrics
+		metrics  schema.FileResult
 		minScore float64
 		maxScore float64
 	}{
 		{
 			name: "low risk - many contributors, low gini",
-			metrics: schema.FileMetrics{
+			metrics: schema.FileResult{
 				Path:               "safe.go",
 				UniqueContributors: 15,        // 15/20 = 0.75 nContrib -> 0.25 nInvContrib
 				Commits:            50,        // 50/500 = 0.1 nCommits
@@ -176,7 +176,7 @@ func TestComputeScoreRiskMode(t *testing.T) {
 		},
 		{
 			name: "high risk - few contributors, high gini",
-			metrics: schema.FileMetrics{
+			metrics: schema.FileResult{
 				Path:               "risky.go",
 				UniqueContributors: 2,          // 2/20 = 0.1 nContrib -> 0.9 nInvContrib
 				Commits:            100,        // 0.2 nCommits
@@ -196,7 +196,7 @@ func TestComputeScoreRiskMode(t *testing.T) {
 		},
 		{
 			name: "test file should get reduced score",
-			metrics: schema.FileMetrics{
+			metrics: schema.FileResult{
 				Path:               "controller_test.go", // Debuff: score *= 0.75
 				UniqueContributors: 1,                    // 0.95 nInvContrib
 				Commits:            50,
@@ -228,13 +228,13 @@ func TestComputeScoreStaleMode(t *testing.T) {
 	// Stale Mode Weights: wInvRecentStale=0.35, wSizeStale=0.25, wAgeStale=0.20, wCommitsStale=0.15, wContribStale=0.05
 	tests := []struct {
 		name     string
-		metrics  schema.FileMetrics
+		metrics  schema.FileResult
 		minScore float64
 		maxScore float64
 	}{
 		{
 			name: "high stale - old and inactive",
-			metrics: schema.FileMetrics{
+			metrics: schema.FileResult{
 				Path:               "stale_code.go",
 				UniqueContributors: 1,         // 0.05 nContrib
 				Commits:            5,         // 0.01 nCommits
@@ -253,7 +253,7 @@ func TestComputeScoreStaleMode(t *testing.T) {
 		},
 		{
 			name: "low stale - new and active",
-			metrics: schema.FileMetrics{
+			metrics: schema.FileResult{
 				Path:               "new_feature.go",
 				UniqueContributors: 5,         // 0.25 nContrib
 				Commits:            30,        // 0.06 nCommits
@@ -272,7 +272,7 @@ func TestComputeScoreStaleMode(t *testing.T) {
 		},
 		{
 			name: "test file should get lower score",
-			metrics: schema.FileMetrics{
+			metrics: schema.FileResult{
 				Path:               "stale_test.go", // Debuff: score *= 0.50
 				UniqueContributors: 1,
 				Commits:            10,
@@ -306,13 +306,13 @@ func TestComputeScoreComplexityMode(t *testing.T) {
 	// Complexity Mode Weights: wAgeComplex=0.30, wChurnComplex=0.30, wLOCComplex=0.20, wCommComplex=0.10, wSizeComplex=0.05, wContribLow=0.05
 	tests := []struct {
 		name     string
-		metrics  schema.FileMetrics
+		metrics  schema.FileResult
 		minScore float64
 		maxScore float64
 	}{
 		{
 			name: "high complexity - large, old, churny",
-			metrics: schema.FileMetrics{
+			metrics: schema.FileResult{
 				Path:               "legacy_api.go",
 				UniqueContributors: 5,
 				Commits:            200,        // 0.4 nCommits
@@ -332,7 +332,7 @@ func TestComputeScoreComplexityMode(t *testing.T) {
 		},
 		{
 			name: "low complexity - small, new, low churn",
-			metrics: schema.FileMetrics{
+			metrics: schema.FileResult{
 				Path:               "small_helper.go",
 				UniqueContributors: 1,
 				Commits:            10,       // 0.02 nCommits
@@ -366,7 +366,7 @@ func TestComputeScoreComplexityMode(t *testing.T) {
 func TestComputeScoreAllModes(t *testing.T) {
 	modes := []string{"hot", "risk", "complexity", "stale"}
 
-	metrics := schema.FileMetrics{
+	metrics := schema.FileResult{
 		Path:               "test.go",
 		UniqueContributors: 5,
 		Commits:            50,
@@ -390,7 +390,7 @@ func TestComputeScoreAllModes(t *testing.T) {
 // TestComputeFolderScore validates folder computation
 func TestComputeFolderScore(t *testing.T) {
 	t.Run("divide by zero", func(t *testing.T) {
-		results := &schema.FolderResults{
+		results := &schema.FolderResult{
 			Path:             ".",
 			TotalLOC:         0,
 			WeightedScoreSum: 100.0,
@@ -400,7 +400,7 @@ func TestComputeFolderScore(t *testing.T) {
 	})
 
 	t.Run("valid calculation", func(t *testing.T) {
-		results := &schema.FolderResults{
+		results := &schema.FolderResult{
 			Path:             ".",
 			TotalLOC:         100,
 			WeightedScoreSum: 92.0,
@@ -421,7 +421,7 @@ func BenchmarkGini(b *testing.B) {
 
 // BenchmarkComputeScore benchmarks score calculation
 func BenchmarkComputeScore(b *testing.B) {
-	metrics := schema.FileMetrics{
+	metrics := schema.FileResult{
 		Path:               "test.go",
 		UniqueContributors: 5,
 		Commits:            50,

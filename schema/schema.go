@@ -3,10 +3,10 @@ package schema
 
 import "time"
 
-// FileMetrics represents the Git and file system metrics for a single file.
+// FileResult represents the Git and file system metrics for a single file.
 // It includes contribution statistics, commit history, size, age, and derived metrics
 // used to determine the file's overall importance score.
-type FileMetrics struct {
+type FileResult struct {
 	Path               string             `json:"path"`                // Relative path to the file in the repository
 	UniqueContributors int                `json:"unique_contributors"` // Number of different authors who modified the file
 	Commits            int                `json:"commits"`             // Total number of commits affecting this file
@@ -24,8 +24,8 @@ type FileMetrics struct {
 	Owner              string             `json:"owner"`               // Owner is the individual who has committed the most to this file
 }
 
-// FolderResults holds the final computed scores and aggregated metrics for a folder.
-type FolderResults struct {
+// FolderResult holds the final computed scores and aggregated metrics for a folder.
+type FolderResult struct {
 	Path    string  `json:"path"`    // Relative path to the folder in the repository
 	Commits int     `json:"commits"` // Total number of commits across all contained files
 	Churn   int     `json:"churn"`   // Total number of lines added/deleted across all contained files
@@ -36,8 +36,8 @@ type FolderResults struct {
 	WeightedScoreSum float64 `json:"weighted_score_sum"` // Sum of (FileScore * FileLOC)
 }
 
-// ComparisonMetrics holds the base metrics, comparison metrics, and their deltas.
-type ComparisonMetrics struct {
+// ComparisonResult holds the base info, target info, and their associated deltas.
+type ComparisonResult struct {
 	Path         string  `json:"path"`          // Relative path to the target in the repository
 	BeforeScore  float64 `json:"before_score"`  // Score from the original/base analysis
 	AfterScore   float64 `json:"after_score"`   // Score from the comparison/new analysis

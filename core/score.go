@@ -15,7 +15,7 @@ import (
 // - risk: Knowledge risk/bus factor (few contributors, high inequality)
 // - complexity: Technical debt candidates (large, old, high total churn)
 // - stale: Maintenance debt (important but untouched)
-func computeScore(m *schema.FileMetrics, mode string) float64 {
+func computeScore(m *schema.FileResult, mode string) float64 {
 	// DEFENSIVE CHECK: If the file has no content, its score should be 0.
 	if m.SizeBytes == 0 {
 		return 0.0
@@ -201,7 +201,7 @@ func gini(values []float64) float64 {
 
 // computeFolderScore computes the final score for a folder as a weighted average.
 // The weight for the average is Lines of Code (LOC).
-func computeFolderScore(folderResult *schema.FolderResults) float64 {
+func computeFolderScore(folderResult *schema.FolderResult) float64 {
 	// Calculate Weighted Average Score
 	if folderResult.TotalLOC == 0 {
 		return 0.0

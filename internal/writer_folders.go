@@ -11,7 +11,7 @@ import (
 )
 
 // writeJSONResultsForFolders marshals the schema.FolderResults slice to JSON and writes it.
-func writeJSONResultsForFolders(w io.Writer, results []schema.FolderResults) error {
+func writeJSONResultsForFolders(w io.Writer, results []schema.FolderResult) error {
 	// For JSON, we can write the raw structure directly, avoiding unnecessary formatting.
 	encoder := json.NewEncoder(w)
 	// Use indenting for cleaner output, especially when writing to a file
@@ -20,7 +20,7 @@ func writeJSONResultsForFolders(w io.Writer, results []schema.FolderResults) err
 }
 
 // writeCSVResultsForFolders writes the schema.FolderResults data to a CSV writer.
-func writeCSVResultsForFolders(w *csv.Writer, results []schema.FolderResults, fmtFloat func(float64) string, intFmt string) error {
+func writeCSVResultsForFolders(w *csv.Writer, results []schema.FolderResult, fmtFloat func(float64) string, intFmt string) error {
 	// 1. Write Header Row
 	header := []string{
 		"rank",

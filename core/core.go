@@ -73,10 +73,10 @@ func ExecuteHotspotFolders(cfg *internal.Config) {
 	logAnalysisHeader(cfg)
 
 	// We analyze the *files* to get metrics,
-	fileMetrics := analyzeRepo(cfg, client, output, files)
+	fileResults := analyzeRepo(cfg, client, output, files)
 
 	// Aggregate and score the folders
-	folderResults := aggregateAndScoreFolders(cfg, fileMetrics)
+	folderResults := aggregateAndScoreFolders(cfg, fileResults)
 	ranked := rankFolders(folderResults, cfg.ResultLimit)
 
 	internal.PrintFolderResults(ranked, cfg)
@@ -135,7 +135,7 @@ func ExecuteHotspotCompare(cfg *internal.Config) {
 	sort.Slice(targetMetrics, func(i, j int) bool {
 		return targetMetrics[i].Path < targetMetrics[j].Path
 	})
-	comparisonResults := compareFileMetrics(baseMetrics, targetMetrics, cfg.ResultLimit)
+	comparisonResults := compareFileResults(baseMetrics, targetMetrics, cfg.ResultLimit)
 
 	// Output the final comparison table
 	internal.PrintComparisonResults(comparisonResults, cfg)
