@@ -26,18 +26,16 @@ var DateTimeFormat = time.RFC3339
 var DateFormat = time.DateOnly
 
 // Config holds the runtime configuration for the analysis.
-// Fields that are set directly by simple flags remain the same (e.g., ResultLimit).
-// Fields that require complex parsing (like dates and excludes) are set by the
-// ProcessAndValidate function after flags are read.
+// This struct remains the "final, validated" config.
 type Config struct {
-	RepoPath    string    // Absolute path to the Git repository (set by positional arg)
-	StartTime   time.Time // Start of time range for commit analysis
-	EndTime     time.Time // End of time range for commit analysis
-	PathFilter  string    // Optional path prefix filter for files
-	ResultLimit int       // Maximum number of files to show in results
-	Workers     int       // Number of concurrent workers for analysis
-	Mode        string    // Scoring mode: "hot" or "risk"
-	Excludes    []string  // Path prefixes/suffixes to ignore (FINAL processed list)
+	RepoPath    string
+	StartTime   time.Time
+	EndTime     time.Time
+	PathFilter  string
+	ResultLimit int
+	Workers     int
+	Mode        string
+	Excludes    []string
 	Detail      bool
 	Explain     bool
 	Precision   int
@@ -52,54 +50,62 @@ type Config struct {
 	Lookback    time.Duration
 }
 
-// ConfigRawInput holds the raw string inputs from flags that require parsing/validation.
-// These fields are bound directly to Cobra's flags in main.go.
+// ConfigRawInput holds the raw inputs from all sources (flags, env, config file).
+// Viper unmarshals into this struct.
 type ConfigRawInput struct {
-	RepoPathStr  string
-	StartTimeStr string
-	EndTimeStr   string
-	ExcludeStr   string
-	Mode         string
-	Output       string
-	Precision    int
-	ResultLimit  int
-	Workers      int
+	// This is set manually from positional args, so no tag
+	RepoPathStr string
 
-	BaseRefStr   string
-	TargetRefStr string
-	LookbackStr  string
+	// --- Fields from rootCmd.PersistentFlags() ---
+	Filter     string `mapstructure:"filter"`
+	OutputFile string `mapstructure:"output-file"`
+	Limit      int    `mapstructure:"limit"`
+	Start      string `mapstructure:"start"`
+	End        string `mapstructure:"end"`
+	Workers    int    `mapstructure:"workers"`
+	Mode       string `mapstructure:"mode"`
+	Exclude    string `mapstructure:"exclude"`
+	Precision  int    `mapstructure:"precision"`
+	Output     string `mapstructure:"output"`
+
+	// --- Fields from filesCmd.Flags() ---
+	Detail  bool `mapstructure:"detail"`
+	Explain bool `mapstructure:"explain"`
+	Owner   bool `mapstructure:"owner"`
+	Follow  bool `mapstructure:"follow"`
+	// Note: 'owner' and 'detail' are also on other commands.
+	// Viper/Cobra will correctly populate them based on the command run.
+
+	// --- Fields from compareCmd.PersistentFlags() ---
+	BaseRef   string `mapstructure:"base-ref"`
+	TargetRef string `mapstructure:"target-ref"`
+	Lookback  string `mapstructure:"lookback"`
 }
 
 // Clone returns a deep copy of the Config struct.
 func (c *Config) Clone() *Config {
-	// Perform a shallow copy of the Config struct (efficient for most fields)
+	// (Implementation unchanged)
 	clone := *c
-
-	// Deep copy slices (only Excludes is a slice here)
 	if c.Excludes != nil {
 		clone.Excludes = make([]string, len(c.Excludes))
 		copy(clone.Excludes, c.Excludes)
 	}
-
-	// Return a pointer to the cloned struct
 	return &clone
 }
 
 // CloneWithTimeWindow creates a copy of the Config and sets the new StartTime and EndTime.
 func (c *Config) CloneWithTimeWindow(start time.Time, end time.Time) *Config {
-	// 1. Clone the base configuration first
+	// (Implementation unchanged)
 	clone := c.Clone()
-
-	// 2. Mutate the clone with the specific time window for this run
 	clone.StartTime = start
 	clone.EndTime = end
-
 	return clone
 }
 
 // ProcessAndValidate performs all complex parsing and validation on the raw inputs
 // and updates the final Config struct.
 func ProcessAndValidate(cfg *Config, client GitClient, input *ConfigRawInput) error {
+	// All validation functions now read from 'input' and populate 'cfg'.
 	if err := validateSimpleInputs(cfg, input); err != nil {
 		return err
 	}
@@ -117,11 +123,19 @@ func ProcessAndValidate(cfg *Config, client GitClient, input *ConfigRawInput) er
 
 // validateSimpleInputs processes and validates all non-path related fields.
 func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
+	// --- 0. Transfer simple non-validated fields from input -> cfg ---
+	cfg.PathFilter = input.Filter
+	cfg.OutputFile = input.OutputFile
+	cfg.Detail = input.Detail
+	cfg.Explain = input.Explain
+	cfg.Owner = input.Owner
+	cfg.Follow = input.Follow
+
 	// --- 1. ResultLimit Validation ---
-	if input.ResultLimit <= 0 || input.ResultLimit > MaxResultLimit {
-		return fmt.Errorf("limit must be greater than 0 and cannot exceed %d (received %d)", MaxResultLimit, input.ResultLimit)
+	if input.Limit <= 0 || input.Limit > MaxResultLimit {
+		return fmt.Errorf("limit must be greater than 0 and cannot exceed %d (received %d)", MaxResultLimit, input.Limit)
 	}
-	cfg.ResultLimit = input.ResultLimit
+	cfg.ResultLimit = input.Limit
 
 	// --- 2. Workers Validation ---
 	if input.Workers <= 0 {
@@ -149,43 +163,21 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	}
 
 	// --- 6. Excludes Processing ---
-	// (This logic remains here as it's a non-external string/list manipulation)
 	defaults := []string{
-		// Dependency Lock File
-		"Cargo.lock",        // Rust
-		"go.sum",            // Go
-		"package-lock.json", // JS/NPM
-		"yarn.lock",         // JS/Yarn
-		"pnpm-lock.yaml",    // JS/PNPM
-		"composer.lock",     // PHP
-		"uv.lock",           // Python
-
-		// Generated Assets
-		".min.js", ".min.css", // Minified JavaScript and CSS
-
-		// Media assets
-		".jpg", ".jpeg", ".png", ".gif", ".svg", ".ico",
-		".mp4", ".mov", ".webm",
-		".mp3", ".ogg",
-		".pdf", ".webp",
-
-		// Data assets
+		// (List of defaults unchanged)
+		"Cargo.lock", "go.sum", "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "composer.lock", "uv.lock",
+		".min.js", ".min.css",
+		".jpg", ".jpeg", ".png", ".gif", ".svg", ".ico", ".mp4", ".mov", ".webm", ".mp3", ".ogg", ".pdf", ".webp",
 		".json", ".csv",
-
-		// Documentation
 		".md", "LICENSE",
-
-		// Other assets
 		".DS_Store", ".gitignore",
-
-		// Build Output Directories
 		"dist/", "build/", "out/", "target/", "bin/",
 	}
 	cfg.Excludes = defaults // Set defaults first
 
-	if input.ExcludeStr != "" {
-		parts := strings.SplitSeq(input.ExcludeStr, ",")
-		for p := range parts {
+	if input.Exclude != "" {
+		parts := strings.Split(input.Exclude, ",") // Use simple Split
+		for _, p := range parts {
 			trimmedP := strings.TrimSpace(p)
 			if trimmedP != "" {
 				cfg.Excludes = append(cfg.Excludes, trimmedP)
@@ -198,48 +190,39 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 
 // processTimeRange handles the complex date parsing and time range validation.
 func processTimeRange(cfg *Config, input *ConfigRawInput) error {
-	// Get the current time once to use as the consistent reference for 'now'.
 	now := time.Now()
-
-	// 1. Set EndTime default
 	cfg.EndTime = now
-	// Set StartTime default using the existing constant.
 	cfg.StartTime = cfg.EndTime.Add(-DefaultLookbackDays * 24 * time.Hour)
 
-	// Helper function to try absolute ISO8601 parsing
 	parseAbsolute := func(s string) (time.Time, error) {
 		return time.Parse(DateTimeFormat, s)
 	}
 
 	// --- Process Start Time ---
-	if input.StartTimeStr != "" {
-		t, err := parseAbsolute(input.StartTimeStr)
+	if input.Start != "" {
+		t, err := parseAbsolute(input.Start)
 		if err == nil {
-			cfg.StartTime = t // Absolute parse successful
+			cfg.StartTime = t
 		} else {
-			// If absolute parse fails, try relative parse
-			t, relErr := parseRelativeTime(input.StartTimeStr, now) // Use 'now' as reference
+			t, relErr := parseRelativeTime(input.Start, now)
 			if relErr != nil {
-				// Failed both absolute and relative parsing
-				return fmt.Errorf("invalid start date format for '%s'. Expected absolute ISO8601 or 'N [units] ago': %v", input.StartTimeStr, err)
+				return fmt.Errorf("invalid start date format for '%s'. Expected absolute ISO8601 or 'N [units] ago': %v", input.Start, err)
 			}
-			cfg.StartTime = t // Relative parse successful
+			cfg.StartTime = t
 		}
 	}
 
 	// --- Process End Time ---
-	if input.EndTimeStr != "" {
-		t, err := parseAbsolute(input.EndTimeStr)
+	if input.End != "" {
+		t, err := parseAbsolute(input.End)
 		if err == nil {
-			cfg.EndTime = t // Absolute parse successful
+			cfg.EndTime = t
 		} else {
-			// If absolute parse fails, try relative parse
-			t, relErr := parseRelativeTime(input.EndTimeStr, now) // Use 'now' as reference
+			t, relErr := parseRelativeTime(input.End, now)
 			if relErr != nil {
-				// Failed both absolute and relative parsing
-				return fmt.Errorf("invalid end date format for '%s'. Expected absolute ISO8601 or 'N [units] ago': %v", input.EndTimeStr, err)
+				return fmt.Errorf("invalid end date format for '%s'. Expected absolute ISO8601 or 'N [units] ago': %v", input.End, err)
 			}
-			cfg.EndTime = t // Relative parse successful
+			cfg.EndTime = t
 		}
 	}
 
@@ -253,17 +236,15 @@ func processTimeRange(cfg *Config, input *ConfigRawInput) error {
 
 // processCompareMode handles the comparison references and lookback.
 func processCompareMode(cfg *Config, input *ConfigRawInput) error {
-	cfg.BaseRef = strings.TrimSpace(input.BaseRefStr)
-	cfg.TargetRef = strings.TrimSpace(input.TargetRefStr)
+	cfg.BaseRef = strings.TrimSpace(input.BaseRef)
+	cfg.TargetRef = strings.TrimSpace(input.TargetRef)
 
-	// Check if we are in comparison mode
 	if cfg.BaseRef == "" && cfg.TargetRef == "" {
 		cfg.CompareMode = false
 		return nil
 	}
 	cfg.CompareMode = true
 
-	// Validation and defaulting
 	if cfg.BaseRef == "" {
 		return fmt.Errorf("must specify --base-ref when running the compare command")
 	}
@@ -271,18 +252,7 @@ func processCompareMode(cfg *Config, input *ConfigRawInput) error {
 		cfg.TargetRef = "HEAD"
 	}
 
-	// NOTE: We don't override cfg.StartTime/EndTime here.
-	// We simply confirm the BaseRef is resolvable. The time window for the
-	// second run (TargetRef) will use the existing cfg.StartTime/EndTime,
-	// which will be resolved to the TargetRef's time window in the core analysis logic.
-
-	// The key here is that if BaseRef/TargetRef are set,
-	// the core logic (ExecuteHotspotCompare) will be responsible for:
-	// a) Getting the time window for the TargetRef
-	// b) Cloning the config and setting the BaseRef's time window.
-
-	// Set the lookback duration here
-	lookback, err := parseLookbackDuration(input.LookbackStr)
+	lookback, err := parseLookbackDuration(input.Lookback)
 	if err != nil {
 		return err
 	}
@@ -293,7 +263,7 @@ func processCompareMode(cfg *Config, input *ConfigRawInput) error {
 
 // resolveGitPathAndFilter resolves the Git repository path and set the implicit path filter.
 func resolveGitPathAndFilter(cfg *Config, client GitClient, input *ConfigRawInput) error {
-	// 1. Determine the absolute path of the user's input
+	// (Implementation unchanged, as it already reads from input.RepoPathStr)
 	searchPath := input.RepoPathStr
 	absSearchPath, err := filepath.Abs(searchPath)
 	if err != nil {
@@ -301,31 +271,24 @@ func resolveGitPathAndFilter(cfg *Config, client GitClient, input *ConfigRawInpu
 	}
 	absSearchPath = filepath.Clean(absSearchPath)
 
-	// 2. Determine the path to use for the 'git -C' command
 	info, statErr := os.Stat(absSearchPath)
 	gitContextPath := absSearchPath
 	if statErr == nil && !info.IsDir() {
 		gitContextPath = filepath.Dir(absSearchPath)
 	}
 
-	// 7a. Find the absolute Git repository root path using the explicit method.
 	gitRoot, err := client.GetRepoRoot(gitContextPath)
 	if err != nil {
-		// If git fails, the GetRepoRoot implementation should handle the error wrapping.
 		return err
 	}
 
-	// Set cfg.RepoPath to the absolute Git root
 	cfg.RepoPath = gitRoot
 
-	// 7b. Calculate and apply the Implicit PathFilter (Logic unchanged)
-	if cfg.PathFilter != "" {
+	if cfg.PathFilter != "" { // User-provided --filter flag takes precedence
 		return nil
 	}
 
-	// Only set an implicit filter if the execution path is NOT the repo root
 	if absSearchPath != gitRoot {
-		// Calculate the path relative to the Git root
 		relativePath, err := filepath.Rel(gitRoot, absSearchPath)
 		if err != nil {
 			return err
@@ -333,12 +296,9 @@ func resolveGitPathAndFilter(cfg *Config, client GitClient, input *ConfigRawInpu
 
 		if relativePath != "." {
 			filter := relativePath
-
 			if statErr == nil && info.IsDir() {
 				filter += "/"
 			}
-
-			// Normalize the filter to use Git-style forward slashes (/)
 			cfg.PathFilter = strings.ReplaceAll(filter, string(os.PathSeparator), "/")
 		}
 	}

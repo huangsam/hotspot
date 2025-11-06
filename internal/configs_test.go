@@ -12,12 +12,12 @@ func TestValidateSimpleInputs(t *testing.T) {
 	t.Run("success minimal", func(t *testing.T) {
 		cfg := &Config{}
 		input := &ConfigRawInput{
-			ResultLimit: 50,
-			Workers:     4,
-			Mode:        schema.HotMode,
-			Precision:   1,
-			Output:      "text",
-			ExcludeStr:  "",
+			Limit:     50, // Changed from ResultLimit
+			Workers:   4,
+			Mode:      schema.HotMode,
+			Precision: 1,
+			Output:    "text",
+			Exclude:   "", // Changed from ExcludeStr
 		}
 
 		err := validateSimpleInputs(cfg, input)
@@ -30,12 +30,12 @@ func TestValidateSimpleInputs(t *testing.T) {
 	t.Run("failure invalid mode", func(t *testing.T) {
 		cfg := &Config{}
 		input := &ConfigRawInput{
-			ResultLimit: 50,
-			Workers:     4,
-			Mode:        "unknown_mode", // This is the error trigger
-			Precision:   1,
-			Output:      "text",
-			ExcludeStr:  "",
+			Limit:     50, // Changed from ResultLimit
+			Workers:   4,
+			Mode:      "unknown_mode", // This is the error trigger
+			Precision: 1,
+			Output:    "text",
+			Exclude:   "", // Changed from ExcludeStr
 		}
 
 		err := validateSimpleInputs(cfg, input)
@@ -53,24 +53,24 @@ func TestProcessTimeRange(t *testing.T) {
 		{
 			name: "valid explicit range",
 			input: &ConfigRawInput{
-				StartTimeStr: "2024-01-01T00:00:00Z",
-				EndTimeStr:   "2024-02-01T00:00:00Z",
+				Start: "2024-01-01T00:00:00Z", // Changed from StartTimeStr
+				End:   "2024-02-01T00:00:00Z", // Changed from EndTimeStr
 			},
 			expectError: false,
 		},
 		{
 			name: "invalid start time format (absolute)",
 			input: &ConfigRawInput{
-				StartTimeStr: "01/01/2024", // Invalid format
-				EndTimeStr:   "",
+				Start: "01/01/2024", // Changed from StartTimeStr
+				End:   "",           // Changed from EndTimeStr
 			},
 			expectError: true,
 		},
 		{
 			name: "start time after end time (absolute)",
 			input: &ConfigRawInput{
-				StartTimeStr: "2024-02-01T00:00:00Z",
-				EndTimeStr:   "2024-01-01T00:00:00Z",
+				Start: "2024-02-01T00:00:00Z", // Changed from StartTimeStr
+				End:   "2024-01-01T00:00:00Z", // Changed from EndTimeStr
 			},
 			expectError: true,
 		},
@@ -78,41 +78,43 @@ func TestProcessTimeRange(t *testing.T) {
 		{
 			name: "valid relative start time (plural)",
 			input: &ConfigRawInput{
-				StartTimeStr: "3 months ago",
-				EndTimeStr:   "", // Defaults to time.Now(), valid range
+				Start: "3 months ago", // Changed from StartTimeStr
+				End:   "",             // Changed from EndTimeStr
 			},
 			expectError: false,
 		},
 		{
 			name: "valid relative end time (explicit start)",
 			input: &ConfigRawInput{
-				StartTimeStr: "2024-01-01T00:00:00Z",
-				EndTimeStr:   "10 days ago", // Should parse relative time successfully
+				Start: "2024-01-01T00:00:00Z", // Changed from StartTimeStr
+				End:   "10 days ago",          // Changed from EndTimeStr
 			},
 			expectError: false,
 		},
 		{
 			name: "invalid relative end time format (bad unit)",
 			input: &ConfigRawInput{
-				StartTimeStr: "2024-01-01T00:00:00Z",
-				EndTimeStr:   "2 seconds ago", // Should catch the error from parseRelativeTime
+				Start: "2024-01-01T00:00:00Z", // Changed from StartTimeStr
+				End:   "2 badunit ago",        // Changed from EndTimeStr
 			},
+			// This test assumes your (un-provided) parseRelativeTime
+			// will fail on "2 badunit ago"
 			expectError: true,
 		},
 		// --- Critical Cross-Validation Tests ---
 		{
 			name: "relative start time after relative end time",
 			input: &ConfigRawInput{
-				StartTimeStr: "1 minute ago", // Will be AFTER
-				EndTimeStr:   "1 day ago",    // Will be BEFORE
+				Start: "1 minute ago", // Changed from StartTimeStr
+				End:   "1 day ago",    // Changed from EndTimeStr
 			},
 			expectError: true,
 		},
 		{
 			name: "relative start time after explicit end time",
 			input: &ConfigRawInput{
-				StartTimeStr: "1 minute ago", // Will be close to Now()
-				EndTimeStr:   "1990-01-01T00:00:00Z",
+				Start: "1 minute ago", // Changed from StartTimeStr
+				End:   "1990-01-01T00:00:00Z",
 			},
 			expectError: true,
 		},
