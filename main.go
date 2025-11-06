@@ -10,7 +10,7 @@ import (
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper" // Import Viper
+	"github.com/spf13/viper"
 )
 
 // All linker flags will be set by goreleaser infra at build time
