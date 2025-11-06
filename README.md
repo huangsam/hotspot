@@ -9,7 +9,7 @@ Hotspot cuts through Git history to show you which files and folders are your gr
 
 <img src="./images/logo.png" alt="Hotspot" width="250px" />
 
-This tool operates as a **tactical, code-level risk finder**. While [DORA] metrics track team performance and [SCA] flags external security issues, Hotspot focuses entirely on diagnosing **technical debt** and **Bus Factor risk** within **your code** at the file and folder level.
+This tool operates as a **tactical, code-level risk finder**. While [DORA] metrics track team performance and [SCA] flags external security issues, Hotspot focuses entirely on diagnosing **technical debt** and **bus factor risk** within **your code** at the file and folder level.
 
 [DORA]: https://en.wikipedia.org/wiki/DevOps_Research_and_Assessment
 [SCA]: https://en.wikipedia.org/wiki/Static_program_analysis
