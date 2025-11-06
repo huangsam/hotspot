@@ -89,8 +89,9 @@ var foldersCmd = &cobra.Command{
 	},
 }
 
+// compareCmd focused on strategic per-file comparisons.
 var compareCmd = &cobra.Command{
-	Use:   "compare",
+	Use:   "compare [repo-path]",
 	Short: "Compare analysis results between two Git references.",
 	Long:  `The compare command provides insight into how risk metrics have changed for different units (files, folders, etc.).`,
 }
