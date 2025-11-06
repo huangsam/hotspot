@@ -4,8 +4,6 @@ package schema
 import "time"
 
 // FileResult represents the Git and file system metrics for a single file.
-// It includes contribution statistics, commit history, size, age, and derived metrics
-// used to determine the file's overall importance score.
 type FileResult struct {
 	Path               string             `json:"path"`                // Relative path to the file in the repository
 	UniqueContributors int                `json:"unique_contributors"` // Number of different authors who modified the file
@@ -64,4 +62,16 @@ type AggregateOutput struct {
 	CommitMap  map[string]int            // Maps file path to its commit count
 	ChurnMap   map[string]int            // Maps file path to its churn (lines added/deleted) count
 	ContribMap map[string]map[string]int // Maps file path to an inner map of AuthorName:CommitCount
+}
+
+// SingleAnalysisOutput is for one of the core algorithms.
+type SingleAnalysisOutput struct {
+	FileResults []FileResult
+	*AggregateOutput
+}
+
+// CompareAnalysisOutput is for one of the core algorithms.
+type CompareAnalysisOutput struct {
+	FileResults   []FileResult
+	FolderResults []FolderResult
 }

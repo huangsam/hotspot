@@ -10,6 +10,60 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
+// runSingleAnalysisCore performs the common Aggregation, Filtering, and Analysis steps.
+func runSingleAnalysisCore(cfg *internal.Config, client *internal.LocalGitClient) (*schema.SingleAnalysisOutput, error) {
+	// --- 1. Aggregation Phase ---
+	fmt.Printf("🔎 Aggregating activity since %s\n", cfg.StartTime.Format(internal.DateTimeFormat))
+	output, err := aggregateActivity(cfg, client)
+	if err != nil {
+		internal.LogWarning("Cannot aggregate activity")
+		return nil, err
+	}
+
+	// --- 2. File List Building and Filtering ---
+	files := buildFilteredFileList(cfg, output)
+	if len(files) == 0 {
+		internal.LogWarning("No files with activity found in the requested window")
+		return nil, fmt.Errorf("no files found")
+	}
+
+	// --- 3. Core Analysis ---
+	logAnalysisHeader(cfg)
+	fileResults := analyzeRepo(cfg, client, output, files)
+
+	return &schema.SingleAnalysisOutput{
+		FileResults:     fileResults,
+		AggregateOutput: output,
+	}, nil
+}
+
+// runCompareAnalysisCore runs the file analysis for a specific Git reference in compare mode.
+// This extracts the logic repeated between Base and Target in both compare functions.
+func runCompareAnalysisForRef(cfg *internal.Config, client *internal.LocalGitClient, ref string) (*schema.CompareAnalysisOutput, error) {
+	// 1. Resolve the time window for the reference
+	baseStartTime, baseEndTime, err := getAnalysisWindowForRef(client, cfg.RepoPath, ref, cfg.Lookback)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve time window for Ref '%s': %w", ref, err)
+	}
+
+	// 2. Create the isolated config for the run
+	cfgRef := cfg.CloneWithTimeWindow(baseStartTime, baseEndTime)
+
+	// 3. Run file analysis
+	fileResults, err := analyzeAllFiles(cfgRef, client)
+	if err != nil {
+		return nil, fmt.Errorf("analysis failed for ref %s", ref)
+	}
+
+	// 4. Aggregate folder metrics
+	folderReesults := aggregateAndScoreFolders(cfgRef, fileResults)
+
+	return &schema.CompareAnalysisOutput{
+		FileResults:   fileResults,
+		FolderResults: folderReesults,
+	}, nil
+}
+
 // analyzeAllFiles performs a full file-level hotspot analysis. This function is designed
 // to be used for comparison logic, as it does not rank files preemptively.
 func analyzeAllFiles(cfg *internal.Config, client internal.GitClient) ([]schema.FileResult, error) {
