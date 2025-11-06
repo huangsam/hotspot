@@ -45,42 +45,33 @@ func NewFileMetricsBuilder(cfg *internal.Config, client internal.GitClient, path
 func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 	const CommitDelimiter = "DELIMITER_COMMIT_START"
 
-	repo := b.cfg.RepoPath
-	historyArgs := []string{"log"}
-
-	// Follow files in case they have been renamed
-	if b.useFollow {
-		historyArgs = append(historyArgs, "--follow")
-	}
-
-	// Let Git handle the time filtering
-	if !b.cfg.StartTime.IsZero() {
-		historyArgs = append(historyArgs, "--since="+b.cfg.StartTime.Format(internal.DateTimeFormat))
-	}
-	if !b.cfg.EndTime.IsZero() {
-		historyArgs = append(historyArgs, "--until="+b.cfg.EndTime.Format(internal.DateTimeFormat))
-	}
-
-	// Use the combined format: custom delimiter, author/date, and numstat
-	historyArgs = append(historyArgs, "--pretty=format:"+CommitDelimiter+"%an,%ad", "--date=iso", "--numstat", "--", b.path)
-
-	out, err := b.git.Run(repo, historyArgs...)
+	// --- Data Collection: Use the new explicit method ---
+	// The GitClient is now b.git (since it's an embedded/member field)
+	out, err := b.git.GetFileActivityLog(
+		b.cfg.RepoPath,
+		b.path,
+		b.cfg.StartTime,
+		b.cfg.EndTime,
+		b.useFollow,
+	)
 	if err != nil {
 		internal.LogWarning(fmt.Sprintf("Failed to get metrics for %s. Error: %v", b.path, err))
 		return b
 	}
 
-	// Use bufio.Scanner for efficient line-by-line processing
+	// --- Parsing Logic (Remains identical) ---
 	scanner := bufio.NewScanner(bytes.NewReader(out))
 	var firstCommit time.Time
 	totalChanges := 0
 
+	// ... (rest of the detailed parsing loop for Commit Metadata and Churn Data remains the same) ...
 	for scanner.Scan() {
+		// ... (Parsing logic from original function) ...
 		line := scanner.Text()
 
 		// 1. Process Commit Metadata
 		if after, ok := strings.CutPrefix(line, CommitDelimiter); ok {
-			// Trim the delimiter prefix
+			// ... (Metadata parsing logic) ...
 			metadata := after
 			parts := strings.SplitN(metadata, ",", 2)
 			if len(parts) < 2 {
@@ -100,11 +91,10 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 			if firstCommit.IsZero() || date.Before(firstCommit) {
 				firstCommit = date
 			}
-			continue // Move to the next line (which should be numstat)
+			continue
 		}
 
 		// 2. Process Churn Data (Numstat Line)
-		// This part is unchanged and correctly processes lines added/deleted.
 		parts := strings.Split(line, "\t")
 		if len(parts) >= 3 {
 			addStr := strings.TrimSpace(parts[0])
@@ -113,7 +103,6 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 			add, errA := strconv.Atoi(addStr)
 			del, errD := strconv.Atoi(delStr)
 
-			// Ignore binary files ('-') or other non-numeric lines
 			if errA == nil && errD == nil {
 				totalChanges += add + del
 			}

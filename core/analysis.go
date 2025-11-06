@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -188,23 +187,15 @@ func analyzeFileCommon(cfg *internal.Config, client internal.GitClient, path str
 
 // getAnalysisWindowForRef queries Git for the exact commit time of the given reference
 // and sets the StartTime by looking back a fixed duration from that commit time.
-// It requires a GitClient implementation to function.
 func getAnalysisWindowForRef(client internal.GitClient, repoPath, ref string, lookback time.Duration) (startTime time.Time, endTime time.Time, err error) {
 	// 1. Find the exact timestamp of the reference (which will be the EndTime)
-	out, err := client.Run(repoPath, "log", "-1", "--pretty=format:%aI", ref)
+	// The GitClient implementation now handles running the command and parsing the output.
+	endTime, err = client.GetCommitTime(repoPath, ref)
 	if err != nil {
-		return time.Time{}, time.Time{}, fmt.Errorf("failed to get commit time for ref '%s': %w", ref, err)
-	}
-	dateStr := strings.TrimSpace(string(out))
-
-	// 2. Parse the EndTime
-	// We use time.RFC3339 which matches the %aI output (ISO 8601 strict).
-	endTime, err = time.Parse(time.RFC3339, dateStr)
-	if err != nil {
-		return time.Time{}, time.Time{}, fmt.Errorf("failed to parse Git timestamp '%s' for ref '%s': %w", dateStr, ref, err)
+		return time.Time{}, time.Time{}, fmt.Errorf("failed to get analysis window for ref '%s': %w", ref, err)
 	}
 
-	// 3. Calculate the StartTime (Look-Back Window)
+	// 2. Calculate the StartTime (Look-Back Window)
 	// StartTime is the commit time minus the look-back duration.
 	startTime = endTime.Add(-lookback)
 

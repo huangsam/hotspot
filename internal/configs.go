@@ -300,31 +300,23 @@ func resolveGitPathAndFilter(cfg *Config, client GitClient, input *ConfigRawInpu
 	absSearchPath = filepath.Clean(absSearchPath)
 
 	// 2. Determine the path to use for the 'git -C' command
-	// Check if the input is a file (or if stat fails, assume it might be a file)
 	info, statErr := os.Stat(absSearchPath)
-
-	// We use the directory containing the search path for the Git command's context.
 	gitContextPath := absSearchPath
 	if statErr == nil && !info.IsDir() {
-		// If the path is a file, the Git context must be its parent directory.
 		gitContextPath = filepath.Dir(absSearchPath)
 	}
-	// If it's a directory or the path doesn't exist yet, we use absSearchPath as is.
 
-	// 7a. Find the absolute Git repository root path
-	// We run the command using the safe gitContextPath
-	rootOut, err := client.Run(gitContextPath, "rev-parse", "--show-toplevel")
+	// 7a. Find the absolute Git repository root path using the explicit method.
+	gitRoot, err := client.GetRepoRoot(gitContextPath)
 	if err != nil {
-		// If git still fails (e.g., gitContextPath is not in a repo), return the error.
+		// If git fails, the GetRepoRoot implementation should handle the error wrapping.
 		return err
 	}
 
 	// Set cfg.RepoPath to the absolute Git root
-	gitRoot := strings.TrimSpace(string(rootOut))
 	cfg.RepoPath = gitRoot
 
-	// 7b. Calculate and apply the Implicit PathFilter
-	// The filter is still based on the *original* absSearchPath, not the context directory.
+	// 7b. Calculate and apply the Implicit PathFilter (Logic unchanged)
 	if cfg.PathFilter != "" {
 		return nil
 	}
@@ -338,10 +330,8 @@ func resolveGitPathAndFilter(cfg *Config, client GitClient, input *ConfigRawInpu
 		}
 
 		if relativePath != "." {
-			// Assume relativePath is the filter
 			filter := relativePath
 
-			// Check the original input path type to append the slash if it's a directory
 			if statErr == nil && info.IsDir() {
 				filter += "/"
 			}

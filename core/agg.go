@@ -4,7 +4,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/schema"
@@ -15,9 +14,9 @@ import (
 // cfg.StartTime is zero, or runs since cfg.StartTime otherwise.
 // It filters out files that no longer exist in a single pass.
 func aggregateActivity(cfg *internal.Config, client internal.GitClient) (*schema.AggregateOutput, error) {
-	// 1. Get the list of currently existing files FIRST.
-	// This git call is very fast.
-	currentFiles, err := listRepoFiles(cfg.RepoPath, client)
+	// 1. Get the list of currently existing files FIRST using the new explicit method.
+	// This git call is very fast and uses the abstract client method.
+	currentFiles, err := client.ListFilesAtRef(cfg.RepoPath, "HEAD")
 	if err != nil {
 		return nil, err
 	}
@@ -27,34 +26,19 @@ func aggregateActivity(cfg *internal.Config, client internal.GitClient) (*schema
 		fileExists[file] = true
 	}
 
-	// 2. Build the git command and select the correct maps
-	args := []string{"log", "--numstat", "--pretty=format:'--%H|%an'"}
-
+	// 2. Initialize aggregation maps. (No change here)
 	commitsMap := make(map[string]int)
 	churnMap := make(map[string]int)
 	contribMap := make(map[string]map[string]int)
 
-	if !cfg.StartTime.IsZero() {
-		// If we get to the place where we need global maps for "all" time, then
-		// we should refactor this function to return an "immutable" output
-		// instead of relying on globals
-		since := cfg.StartTime.Format(internal.DateTimeFormat)
-		args = append(args, "--since="+since)
-	}
-
-	if !cfg.EndTime.IsZero() && cfg.EndTime.Before(time.Now().UTC()) {
-		// Only apply if EndTime is explicitly set and is in the past/present
-		until := cfg.EndTime.Format(internal.DateTimeFormat)
-		args = append(args, "--until="+until)
-	}
-
-	// 3. Run the expensive git log command ONCE
-	out, err := client.Run(cfg.RepoPath, args...)
+	// 3. Run the expensive git log command ONCE using the new explicit method.
+	// The client now handles argument construction for zero-valued times.
+	out, err := client.GetActivityLog(cfg.RepoPath, cfg.StartTime, cfg.EndTime)
 	if err != nil {
 		return nil, err
 	}
 
-	// 4. Perform aggregation AND filtering in a single pass
+	// 4. Perform aggregation AND filtering in a single pass (Logic unchanged)
 	lines := strings.Split(string(out), "\n")
 	var currentAuthor string
 	for _, l := range lines {
@@ -116,15 +100,6 @@ func aggregateActivity(cfg *internal.Config, client internal.GitClient) (*schema
 
 	// 5. No filtering loops are needed. The maps are already clean.
 	return output, nil
-}
-
-// listRepoFiles returns a list of all tracked files in the Git repository.
-func listRepoFiles(repoPath string, client internal.GitClient) ([]string, error) {
-	out, err := client.Run(repoPath, "ls-files")
-	if err != nil {
-		return nil, err
-	}
-	return strings.Split(strings.TrimSpace(string(out)), "\n"), nil
 }
 
 // buildFilteredFileList creates a unified list of files from activity maps
