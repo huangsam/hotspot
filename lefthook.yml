@@ -5,11 +5,7 @@ output:
 
 # https://lefthook.dev/configuration/Hook.html
 pre-commit:
-  parallel: true
   commands:
     go-lint:
       glob: "*.go"
-      run: make build
-    go-test:
-      glob: "*.go"
-      run: make test
+      run: make clean build test
