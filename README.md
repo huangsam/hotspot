@@ -62,10 +62,10 @@ The core power of Hotspot is the `--mode` flag, which defines the ranking algori
 
 | Mode | Focus | Description |
 |------|-------|-------------|
-| **hot** | Activity hotspots | Where activity is most concentrated. |
-| **risk** | Knowledge risk | Targets with contribution inequality and few owners. |
-| **complexity** | Technical debt | Large targets with high churn and low recent activity. |
-| **stale** | Maintenance debt | Important targets that haven't been modified recently. |
+| **hot** | Activity hotspots | Identify files and subsystems with the most concentrated recent activity. |
+| **risk** | Knowledge risk | Find areas with unequal contribution and few owners. |
+| **complexity** | Technical debt | Triage files with high churn, large size, and high complexity. |
+| **stale** | Maintenance debt | Highlight critical files that are large, old, but rarely touched. |
 
 ## Risk comparison & delta tracking
 
@@ -79,7 +79,7 @@ The `compare` subcommand allows you to measure the change in metrics between two
 |-------|-------------|
 | `--base-ref` | The BEFORE Git reference (e.g., `main`, `v1.0.0`, a commit hash). |
 | `--target-ref` | The AFTER Git reference (defaults to `HEAD`). |
-| `--lookback` | Time window of activity (e.g. `6 months`) used for calculation. |
+| `--lookback` | Time window (e.g. `6 months`) used for base and target. |
 
 ## Common use cases
 
