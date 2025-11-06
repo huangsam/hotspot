@@ -87,7 +87,7 @@ func printTableResults(files []schema.FileResult, cfg *Config, fmtFloat func(flo
 	table := tablewriter.NewWriter(os.Stdout)
 
 	// 1. Define Headers
-	headers := []string{"Rank", "File", "Score", "Label"}
+	headers := []string{"Rank", "Path", "Score", "Label"}
 	if cfg.Detail {
 		headers = append(headers, "Contrib", "Commits", "LOC", "Churn")
 	}
