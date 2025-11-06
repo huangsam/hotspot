@@ -194,7 +194,9 @@ func init() {
 	rootCmd.PersistentFlags().String("output", schema.TextOut, "Output format: text or csv or json")
 
 	// Bind all persistent flags of rootCmd to Viper
-	viper.BindPFlags(rootCmd.PersistentFlags())
+	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
+		panic(err)
+	}
 
 	// --- Bind Flags Specific to `hotspot files` ---
 	filesCmd.Flags().Bool("detail", false, "Print per-file metadata (lines of code, size, age)")
@@ -203,13 +205,17 @@ func init() {
 	filesCmd.Flags().Bool("follow", false, "Re-run per-file analysis with --follow (slower)")
 
 	// Bind all flags of filesCmd to Viper
-	viper.BindPFlags(filesCmd.Flags())
+	if err := viper.BindPFlags(filesCmd.Flags()); err != nil {
+		panic(err)
+	}
 
 	// --- Bind Flags Specific to `hotspot folders` ---
 	foldersCmd.Flags().Bool("owner", false, "Print per-folder owner")
 
 	// Bind all flags of foldersCmd to Viper
-	viper.BindPFlags(foldersCmd.Flags())
+	if err := viper.BindPFlags(foldersCmd.Flags()); err != nil {
+		panic(err)
+	}
 
 	// --- Bind Complex Flags as PERSISTENT Flags to ALL compare subcommands ---
 	compareCmd.PersistentFlags().String("base-ref", "", "Base Git reference for the BEFORE state")
@@ -218,7 +224,9 @@ func init() {
 	compareCmd.PersistentFlags().Bool("detail", false, "Print additional per-target info")
 
 	// Bind all persistent flags of compareCmd to Viper
-	viper.BindPFlags(compareCmd.PersistentFlags())
+	if err := viper.BindPFlags(compareCmd.PersistentFlags()); err != nil {
+		panic(err)
+	}
 }
 
 // main starts the execution of the logic.
