@@ -76,9 +76,9 @@ The core power of Hotspot is the `--mode` flag, which defines the ranking algori
 
 The `compare` subcommand allows you to measure the change in metrics between two different points in your repository's history. This is the most effective way to audit the impact of a new change set across multiple dimensions.
 
-**Example:** Compare between releases, focusing only on files in the `pkg/auth` module, using a 3-month activity window:
+**Example:** Compare between releases, using the default 6-month lookback:
 
-`hotspot compare files --base-ref v0.2.0 --target-ref v0.3.0 --lookback "3 months" ./pkg/auth`
+`hotspot compare files --mode complexity --base-ref v0.15.0 --target-ref v0.16.0`
 
 | Flags | Description |
 |-------|-------------|
