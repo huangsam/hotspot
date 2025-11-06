@@ -125,7 +125,7 @@ func TestComputeScoreHotMode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			score := computeScore(&tt.metrics, "hot")
+			score := computeScore(&tt.metrics, schema.HotMode)
 			assert.True(t, score >= tt.minScore && score <= tt.maxScore, "%f is out of the valid %f-%f range", score, tt.minScore, tt.maxScore)
 			// Verify score is in valid range
 			assert.True(t, score >= 0 && score <= 100, "%f is out of the valid 0-100 range")
@@ -140,7 +140,7 @@ func TestComputeScoreHotMode_EmptyFile(t *testing.T) {
 		Path:      "active.go",
 		SizeBytes: 0,
 	}
-	score := computeScore(&metrics, "hot")
+	score := computeScore(&metrics, schema.HotMode)
 	assert.Equal(t, float64(0), score, "Score should be 0.0 for empty file")
 	assert.Empty(t, metrics.Breakdown, "Breakdown should be empty for empty file")
 }
@@ -216,7 +216,7 @@ func TestComputeScoreRiskMode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			score := computeScore(&tt.metrics, "risk")
+			score := computeScore(&tt.metrics, schema.RiskMode)
 			assert.True(t, score >= tt.minScore && score <= tt.maxScore)
 			assert.True(t, score >= 0 && score <= 100)
 		})
@@ -292,7 +292,7 @@ func TestComputeScoreStaleMode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			score := computeScore(&tt.metrics, "stale")
+			score := computeScore(&tt.metrics, schema.StaleMode)
 			assert.True(t, score >= tt.minScore && score <= tt.maxScore)
 			assert.True(t, score >= 0 && score <= 100)
 			assert.NotEmpty(t, tt.metrics.Breakdown)
@@ -354,7 +354,7 @@ func TestComputeScoreComplexityMode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			score := computeScore(&tt.metrics, "complexity")
+			score := computeScore(&tt.metrics, schema.ComplexityMode)
 			assert.True(t, score >= tt.minScore && score <= tt.maxScore)
 			assert.True(t, score >= 0 && score <= 100)
 			assert.NotEmpty(t, tt.metrics.Breakdown)
@@ -364,7 +364,7 @@ func TestComputeScoreComplexityMode(t *testing.T) {
 
 // TestComputeScoreAllModes ensures all modes produce valid scores
 func TestComputeScoreAllModes(t *testing.T) {
-	modes := []string{"hot", "risk", "complexity", "stale"}
+	modes := []string{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode}
 
 	metrics := schema.FileResult{
 		Path:               "test.go",
@@ -432,6 +432,6 @@ func BenchmarkComputeScore(b *testing.B) {
 	}
 
 	for b.Loop() {
-		computeScore(&metrics, "hot")
+		computeScore(&metrics, schema.HotMode)
 	}
 }

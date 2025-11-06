@@ -24,11 +24,11 @@ func PrintComparisonResults(metrics []schema.ComparisonResult, cfg *Config) {
 
 	// Dispatcher: Handle different output formats
 	switch strings.ToLower(cfg.Output) {
-	case schema.JSONMode:
+	case schema.JSONOut:
 		if err := printJSONResultsForComparison(metrics, cfg); err != nil {
 			LogFatal("Error writing JSON output", err)
 		}
-	case schema.CSVMode:
+	case schema.CSVOut:
 		if err := printCSVResultsForComparison(metrics, cfg, fmtFloat, intFmt); err != nil {
 			LogFatal("Error writing CSV output", err)
 		}

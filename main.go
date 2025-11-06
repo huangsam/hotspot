@@ -7,6 +7,7 @@ import (
 
 	"github.com/huangsam/hotspot/core"
 	"github.com/huangsam/hotspot/internal"
+	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
 )
 
@@ -24,9 +25,9 @@ var cfg = &internal.Config{}
 var input = &internal.ConfigRawInput{
 	ResultLimit: internal.DefaultResultLimit,
 	Workers:     internal.DefaultWorkers,
-	Mode:        "hot",
+	Mode:        schema.HotMode,
 	Precision:   internal.DefaultPrecision,
-	Output:      "text",
+	Output:      schema.TextOut,
 }
 
 // rootCmd is the command-line entrypoint for all other commands.

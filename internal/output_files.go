@@ -26,11 +26,11 @@ func PrintFileResults(files []schema.FileResult, cfg *Config) {
 
 	// Dispatcher: Handle different output formats
 	switch cfg.Output {
-	case schema.JSONMode:
+	case schema.JSONOut:
 		if err := printJSONResults(files, cfg); err != nil {
 			LogFatal("Error writing JSON output", err)
 		}
-	case schema.CSVMode:
+	case schema.CSVOut:
 		if err := printCSVResults(files, cfg, fmtFloat, intFmt); err != nil {
 			LogFatal("Error writing CSV output", err)
 		}

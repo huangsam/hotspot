@@ -3,6 +3,7 @@ package internal
 import (
 	"testing"
 
+	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -13,7 +14,7 @@ func TestValidateSimpleInputs(t *testing.T) {
 		input := &ConfigRawInput{
 			ResultLimit: 50,
 			Workers:     4,
-			Mode:        "hot",
+			Mode:        schema.HotMode,
 			Precision:   1,
 			Output:      "text",
 			ExcludeStr:  "",
@@ -22,7 +23,7 @@ func TestValidateSimpleInputs(t *testing.T) {
 		err := validateSimpleInputs(cfg, input)
 		require.NoError(t, err, "validateSimpleInputs() failed unexpectedly: %v", err)
 		assert.Equal(t, 50, cfg.ResultLimit, "ResultLimit was not set correctly, got %d, want 50", cfg.ResultLimit)
-		assert.Equal(t, "hot", cfg.Mode, "Mode was not set correctly, got %s, want hot", cfg.Mode)
+		assert.Equal(t, schema.HotMode, cfg.Mode, "Mode was not set correctly, got %s, want hot", cfg.Mode)
 		assert.NotEmpty(t, cfg.Excludes, "Excludes list was unexpectedly empty")
 	})
 

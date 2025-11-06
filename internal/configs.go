@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/huangsam/hotspot/schema"
 )
 
 // Default values for configuration.
@@ -128,7 +130,7 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	cfg.Workers = input.Workers
 
 	// --- 3. Mode Validation ---
-	validModes := map[string]bool{"hot": true, "risk": true, "complexity": true, "stale": true}
+	validModes := map[string]bool{schema.HotMode: true, schema.RiskMode: true, schema.ComplexityMode: true, schema.StaleMode: true}
 	cfg.Mode = strings.ToLower(input.Mode)
 	if _, ok := validModes[cfg.Mode]; !ok {
 		return fmt.Errorf("invalid mode '%s'. must be hot, risk, complexity, stale", input.Mode)

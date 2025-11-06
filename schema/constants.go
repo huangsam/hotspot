@@ -17,9 +17,9 @@ const (
 
 // All output modes supported.
 const (
-	CSVMode  = "csv"
-	TextMode = "text"
-	JSONMode = "json"
+	CSVOut  = "csv"
+	TextOut = "text"
+	JSONOut = "json"
 )
 
 // All status supported.
@@ -28,4 +28,12 @@ const (
 	ActiveStatus   = "active"
 	InactiveStatus = "inactive"
 	UnknownStatus  = "unknown"
+)
+
+// All scoring modes supported.
+const (
+	HotMode        = "hot"
+	RiskMode       = "risk"
+	ComplexityMode = "complexity"
+	StaleMode      = "stale"
 )
