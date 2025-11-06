@@ -1,0 +1,99 @@
+# examples/hotspot.docs.yaml
+#
+# THE CANONICAL CONFIGURATION TEMPLATE.
+# This file documents every configurable option available in Hotspot and maps
+# it to its corresponding CLI flag. Copy and modify this file to create your
+# specific configurations.
+#
+# Keys map to the --flag-name (or the flag's long name).
+# --------------------------------------------------------------------------------
+
+# --- Global Settings (Applicable to all commands: files, folders, compare) ---
+
+# limit: The maximum number of results to display (files or folders).
+# Corresponds to: --limit, -l
+# limit: 25
+
+# workers: The number of concurrent workers for Git analysis.
+# Corresponds to: --workers
+# Default: 8
+# workers: 8
+
+# precision: Decimal precision for numeric scores (1 or 2).
+# Corresponds to: --precision
+# Default: 1
+# precision: 1
+
+# mode: The scoring method to use.
+# Valid values: hot, risk, complexity, stale
+# Corresponds to: --mode
+# mode: hot
+
+# output: The format for the final result table.
+# Valid values: text, csv, json
+# Corresponds to: --output
+# output: text
+
+# output-file: Optional path to write the output to (instead of stdout).
+# Corresponds to: --output-file
+# output-file: report.csv
+
+# filter: Filter analysis to files whose path begins with this prefix (e.g., "src/api/").
+# Corresponds to: --filter, -f
+# filter: ""
+
+# exclude: Comma-separated list of path prefixes or patterns to ignore (added to defaults).
+# Corresponds to: --exclude
+# exclude: ""
+
+# start: The start date/time for commit analysis (ISO8601 or relative like "3 months ago").
+# Corresponds to: --start
+# start: ""
+
+# end: The end date/time for commit analysis (ISO8601 or relative like "2 days ago").
+# Corresponds to: --end
+# end: ""
+
+
+# --- Comparison Settings (Applicable only to 'hotspot compare' commands) ---
+
+# base-ref: The Git reference for the BEFORE state (e.g., 'main', 'v1.0.0').
+# Corresponds to: --base-ref
+# base-ref: ""
+
+# target-ref: The Git reference for the AFTER state.
+# Corresponds to: --target-ref
+# Default: HEAD
+# target-ref: ""
+
+# lookback: Time duration to look back from the base/target ref commit time.
+# Corresponds to: --lookback
+# Default: 6 months
+# lookback: 6 months
+
+
+# --- Command-Specific Flags ---
+
+# detail: Print additional metadata (lines of code, size, age).
+# Used by: 'hotspot files' and 'hotspot compare'
+# Corresponds to: --detail
+# detail: false
+
+# explain: Print per-file component score breakdown.
+# Used by: 'hotspot files'
+# Corresponds to: --explain
+# explain: false
+
+# owner: Print the primary owner (author) for each file or folder.
+# Used by: 'hotspot files' and 'hotspot folders'
+# Corresponds to: --owner
+# owner: false
+
+# follow: Rerun per-file analysis with Git's --follow option (Slower).
+# Used by: 'hotspot files'
+# Corresponds to: --follow
+# follow: false
+
+# debug: Enable verbose structured debug logging (for developers).
+# Corresponds to: --debug
+# debug: false

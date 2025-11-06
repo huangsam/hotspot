@@ -39,3 +39,8 @@ brainstorm/
 # Output assets
 /*.csv
 /*.json
+
+# Ignore the common local config file which users are expected to copy and modify
+# for their environment. This prevents accidental commits of local settings.
+.hotspot.yaml
+.hotspot.yml

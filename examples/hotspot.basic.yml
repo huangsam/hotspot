@@ -1,0 +1,20 @@
+# examples/hotspot.basic.yaml
+#
+# A quick-start configuration for typical local development analysis.
+# This file prioritizes speed and the default "hot" scoring mode.
+
+# --- Global Settings ---
+# limit: Show only the top 15 results for focus.
+limit: 15
+# workers: Use half the default workers for less impact on local machine performance.
+workers: 4
+# mode: Use the standard 'hot' scoring mode, prioritizing recent churn.
+mode: hot
+# precision: Keep precision low for readability.
+precision: 1
+
+# --- Command-Specific Settings ---
+# owner: Print the owner to quickly identify who is responsible for the file.
+owner: true
+# follow: Disable file rename tracking for faster execution.
+follow: false

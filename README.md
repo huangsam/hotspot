@@ -86,6 +86,20 @@ The `compare` subcommand allows you to measure the change in metrics between two
 | `--target-ref` | The AFTER Git reference (defaults to `HEAD`). |
 | `--lookback` | Time window (e.g. `6 months`) used for base and target. |
 
+## Configuration file
+
+For complex or repetitive commands, Hotspot can read all flags from a configuration file named **`.hotspot.yaml`** or **`.hotspot.yml`** placed in your repository root or home directory.
+
+This allows you to manage settings without long command-line strings. Flags always override file settings.
+
+### Examples
+
+We provide three documented examples in the `examples/` directory to cover common use cases:
+
+1.  [hotspot.basic.yaml](./examples/hotspot.basic.yml): Quick setup for local development.
+2.  [hotspot.ci.yaml](./examples/hotspot.ci.yml): Optimized settings for automated CI/CD runs (e.g., JSON output).
+3.  [hotspot.docs.yaml](./examples/hotspot.docs.yml): The canonical template listing every available setting.
+
 ## Common use cases
 
 ### Daily & Sprint Workflows

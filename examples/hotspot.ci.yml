@@ -1,0 +1,32 @@
+# examples/hotspot.ci.yaml
+#
+# Configuration optimized for CI/CD pipelines and automated reporting.
+# Prioritizes machine-readable output and targeted analysis.
+
+# --- Global Settings ---
+# limit: A standard result limit.
+limit: 25
+# workers: Max out workers for fastest possible analysis on a dedicated machine.
+workers: 16
+# mode: Use 'risk' mode for a more holistic assessment of change complexity.
+mode: risk
+# output: Always use JSON output for easy parsing and ingestion by other tools.
+output: json
+# output-file: Write the structured output to a specific path for artifact collection.
+output-file: hotspot-report.json
+
+# --- Comparison Settings ---
+# base-ref: Compare against the main branch (e.g., to see risk added by a PR).
+base-ref: main
+# target-ref: Compare against the current commit (the PR branch HEAD).
+target-ref: HEAD
+# lookback: Focus analysis only on files changed in the last 30 days of activity.
+lookback: 30 days
+
+# --- Command-Specific Settings ---
+# detail: Include metrics like LoC and file age for deeper risk analysis.
+detail: true
+# owner: Include the owner field for reports.
+owner: true
+# explain: Provide the score breakdown for diagnostics (useful in CI logs).
+explain: true
