@@ -23,11 +23,11 @@ func PrintFolderResults(results []schema.FolderResult, cfg *Config) {
 
 	// Dispatcher: Handle different output formats
 	switch strings.ToLower(cfg.Output) {
-	case "json":
+	case schema.JSONMode:
 		if err := printJSONResultsForFolders(results, cfg); err != nil {
 			LogFatal("Error writing JSON output", err)
 		}
-	case "csv":
+	case schema.CSVMode:
 		if err := printCSVResultsForFolders(results, cfg, fmtFloat, intFmt); err != nil {
 			LogFatal("Error writing CSV output", err)
 		}

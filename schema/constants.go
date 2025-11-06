@@ -14,3 +14,18 @@ const (
 	BreakdownInvRecent  = "inv_recent"  // nInvRecentCommits (used in stale)
 	BreakdownLowRecent  = "low_recent"  // nInvRecentCommits (used in complexity)
 )
+
+// All output modes supported.
+const (
+	CSVMode  = "csv"
+	TextMode = "text"
+	JSONMode = "json"
+)
+
+// All status supported.
+const (
+	NewStatus      = "new"
+	ActiveStatus   = "active"
+	InactiveStatus = "inactive"
+	UnknownStatus  = "unknown"
+)

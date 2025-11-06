@@ -51,13 +51,13 @@ func compareFileResults(baseResults, targetResults []schema.FileResult, limit in
 		var status string
 		switch {
 		case !baseExists && targetExists:
-			status = "new"
+			status = schema.NewStatus
 		case baseExists && targetExists:
-			status = "active"
+			status = schema.ActiveStatus
 		case baseExists && !targetExists:
-			status = "inactive"
+			status = schema.InactiveStatus
 		default:
-			status = "unknown"
+			status = schema.UnknownStatus
 		}
 
 		// Only track and report files where the score actually changed significantly
@@ -139,13 +139,13 @@ func compareFolderMetrics(baseResults, targetResults []schema.FolderResult, limi
 		var status string
 		switch {
 		case !baseExists && targetExists:
-			status = "new"
+			status = schema.NewStatus
 		case baseExists && targetExists:
-			status = "active"
+			status = schema.ActiveStatus
 		case baseExists && !targetExists:
-			status = "inactive"
+			status = schema.InactiveStatus
 		default:
-			status = "unknown"
+			status = schema.UnknownStatus
 		}
 
 		baseScore := 0.0
