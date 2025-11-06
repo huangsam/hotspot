@@ -105,9 +105,8 @@ func compareFileMetrics(baseMetrics, compareMetrics []schema.FileMetrics, limit 
 		return strings.Compare(a.Path, b.Path) < 0
 	})
 
-	if len(comparisonResults) > 0 && limit > 0 {
-		newLimit := min(len(comparisonResults), limit)
-		return comparisonResults[:newLimit]
+	if len(comparisonResults) > 0 && len(comparisonResults) > limit {
+		return comparisonResults[:limit]
 	}
 	return comparisonResults
 }
