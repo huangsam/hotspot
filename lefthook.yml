@@ -8,4 +8,4 @@ pre-commit:
   commands:
     go-check:
       glob: "*.go"
-      run: make lint clean build test
+      run: make clean check
