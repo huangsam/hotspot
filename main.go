@@ -182,6 +182,8 @@ func init() {
 	// Note: We no longer bind to a struct variable, just define the flag.
 	rootCmd.PersistentFlags().StringP("filter", "f", "", "Filter files by path prefix")
 	rootCmd.PersistentFlags().String("output-file", "", "Optional path to write output to")
+	rootCmd.PersistentFlags().Bool("detail", false, "Print per-file metadata (lines of code, size, age)")
+	rootCmd.PersistentFlags().Bool("owner", false, "Print per-file owner")
 
 	// --- Bind Complex Global Flags as PERSISTENT Flags ---
 	rootCmd.PersistentFlags().IntP("limit", "l", internal.DefaultResultLimit, "Number of results to display (files or folders)")
@@ -199,18 +201,13 @@ func init() {
 	}
 
 	// --- Bind Flags Specific to `hotspot files` ---
-	filesCmd.Flags().Bool("detail", false, "Print per-file metadata (lines of code, size, age)")
 	filesCmd.Flags().Bool("explain", false, "Print per-file component score breakdown")
-	filesCmd.Flags().Bool("owner", false, "Print per-file owner")
-	filesCmd.Flags().Bool("follow", false, "Re-run per-file analysis with --follow (slower)")
+	filesCmd.Flags().Bool("follow", false, "Re-run per-file analysis with --follow")
 
 	// Bind all flags of filesCmd to Viper
 	if err := viper.BindPFlags(filesCmd.Flags()); err != nil {
 		panic(err)
 	}
-
-	// --- Bind Flags Specific to `hotspot folders` ---
-	foldersCmd.Flags().Bool("owner", false, "Print per-folder owner")
 
 	// Bind all flags of foldersCmd to Viper
 	if err := viper.BindPFlags(foldersCmd.Flags()); err != nil {
@@ -221,7 +218,6 @@ func init() {
 	compareCmd.PersistentFlags().String("base-ref", "", "Base Git reference for the BEFORE state")
 	compareCmd.PersistentFlags().String("target-ref", "", "Target Git reference for the AFTER state")
 	compareCmd.PersistentFlags().String("lookback", "6 months", "Time duration to look back from Base/Target ref commit time")
-	compareCmd.PersistentFlags().Bool("detail", false, "Print additional per-target info")
 
 	// Bind all persistent flags of compareCmd to Viper
 	if err := viper.BindPFlags(compareCmd.PersistentFlags()); err != nil {

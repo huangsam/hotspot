@@ -67,14 +67,12 @@ type ConfigRawInput struct {
 	Exclude    string `mapstructure:"exclude"`
 	Precision  int    `mapstructure:"precision"`
 	Output     string `mapstructure:"output"`
+	Owner      bool   `mapstructure:"owner"`
+	Detail     bool   `mapstructure:"detail"`
 
 	// --- Fields from filesCmd.Flags() ---
-	Detail  bool `mapstructure:"detail"`
 	Explain bool `mapstructure:"explain"`
-	Owner   bool `mapstructure:"owner"`
 	Follow  bool `mapstructure:"follow"`
-	// Note: 'owner' and 'detail' are also on other commands.
-	// Viper/Cobra will correctly populate them based on the command run.
 
 	// --- Fields from compareCmd.PersistentFlags() ---
 	BaseRef   string `mapstructure:"base-ref"`
