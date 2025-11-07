@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestShouldIgnore tests path exclusion logic
+// TestShouldIgnore tests path exclusion logic.
 func TestShouldIgnore(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -73,7 +73,7 @@ func TestShouldIgnore(t *testing.T) {
 	}
 }
 
-// TestTruncatePath tests path truncation logic
+// TestTruncatePath tests path truncation logic.
 func TestTruncatePath(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -126,7 +126,7 @@ func TestTruncatePath(t *testing.T) {
 	}
 }
 
-// TestGetPlainTextLabel tests criticality label assignment
+// TestGetPlainTextLabel tests criticality label assignment.
 func TestGetPlainTextLabel(t *testing.T) {
 	tests := []struct {
 		score float64

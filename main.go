@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// All linker flags will be set by goreleaser infra at build time
+// All linker flags will be set by goreleaser infra at build time.
 var (
 	version = "dev"
 	commit  = "none"

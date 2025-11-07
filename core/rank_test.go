@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestRankFiles tests file ranking logic
+// TestRankFiles tests file ranking logic.
 func TestRankFiles(t *testing.T) {
 	files := []schema.FileResult{
 		{Path: "low.go", SizeBytes: 1, Score: 10},

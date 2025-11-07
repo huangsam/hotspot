@@ -18,16 +18,16 @@ const (
 )
 
 var (
-	// Critical Heat: Standard Danger
+	// criticalColor represents standard danger.
 	criticalColor = color.New(color.FgRed, color.Bold)
 
-	// High Heat: Strong, distinct warning
+	// highColor represents strong, distinct warning.
 	highColor = color.New(color.FgMagenta, color.Bold)
 
-	// Moderate Heat: Standard caution, not bold
+	// moderateColor represents standard caution, not bold.
 	moderateColor = color.New(color.FgYellow)
 
-	// Low Heat: Informational/Low-priority signal
+	// lowColor represents informational / low-priority signal.
 	lowColor = color.New(color.FgCyan)
 )
 

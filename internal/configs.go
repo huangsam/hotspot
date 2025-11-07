@@ -23,7 +23,7 @@ const (
 // DateTimeFormat is the default date time representation.
 var DateTimeFormat = time.RFC3339
 
-// DateFormat is the default date representation
+// DateFormat is the default date representation.
 var DateFormat = time.DateOnly
 
 // Config holds the runtime configuration for the analysis.

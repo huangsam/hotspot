@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestGini tests the Gini coefficient calculation
+// TestGini tests the Gini coefficient calculation.
 func TestGini(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -63,7 +63,7 @@ func TestGini(t *testing.T) {
 	}
 }
 
-// TestComputeScoreHotMode tests the default hot mode scoring
+// TestComputeScoreHotMode tests the default hot mode scoring.
 func TestComputeScoreHotMode(t *testing.T) {
 	// Hot Mode Weights: wCommits=0.40, wChurn=0.40, wAge=0.10, wContrib=0.05, wSize=0.05
 	tests := []struct {
@@ -145,7 +145,7 @@ func TestComputeScoreHotMode_EmptyFile(t *testing.T) {
 	assert.Empty(t, metrics.Breakdown, "Breakdown should be empty for empty file")
 }
 
-// TestComputeScoreRiskMode tests risk mode scoring
+// TestComputeScoreRiskMode tests risk mode scoring.
 func TestComputeScoreRiskMode(t *testing.T) {
 	// Risk Mode Weights: wInvContrib=0.30, wGini=0.26, wAgeRisk=0.16, wSizeRisk=0.12, wChurnRisk=0.06, wCommRisk=0.04, wLOCRisk=0.06
 	tests := []struct {
@@ -362,7 +362,7 @@ func TestComputeScoreComplexityMode(t *testing.T) {
 	}
 }
 
-// TestComputeScoreAllModes ensures all modes produce valid scores
+// TestComputeScoreAllModes ensures all modes produce valid scores.
 func TestComputeScoreAllModes(t *testing.T) {
 	modes := []string{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode}
 
@@ -387,7 +387,7 @@ func TestComputeScoreAllModes(t *testing.T) {
 	}
 }
 
-// TestComputeFolderScore validates folder computation
+// TestComputeFolderScore validates folder computation.
 func TestComputeFolderScore(t *testing.T) {
 	t.Run("divide by zero", func(t *testing.T) {
 		results := &schema.FolderResult{
@@ -410,7 +410,7 @@ func TestComputeFolderScore(t *testing.T) {
 	})
 }
 
-// BenchmarkGini benchmarks the Gini coefficient calculation
+// BenchmarkGini benchmarks the Gini coefficient calculation.
 func BenchmarkGini(b *testing.B) {
 	values := []float64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
@@ -419,7 +419,7 @@ func BenchmarkGini(b *testing.B) {
 	}
 }
 
-// BenchmarkComputeScore benchmarks score calculation
+// BenchmarkComputeScore benchmarks score calculation.
 func BenchmarkComputeScore(b *testing.B) {
 	metrics := schema.FileResult{
 		Path:               "test.go",

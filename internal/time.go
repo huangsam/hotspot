@@ -10,7 +10,7 @@ import (
 )
 
 // Define the regular expression to capture "N [units] ago"
-// e.g., "2 years ago", "3 months ago", "1 week ago"
+// e.g., "2 years ago", "3 months ago", "1 week ago".
 var relativeTimeRe = regexp.MustCompile(`^(\d+)\s+(year|month|week|day|hour|minute)s?\s+ago$`)
 
 // parseRelativeTime converts strings like "2 years ago" into a time.Time in the past.
@@ -47,7 +47,7 @@ func parseRelativeTime(s string, now time.Time) (time.Time, error) {
 	}
 }
 
-// Define the regular expression to capture "N [units]"
+// Define the regular expression to capture "N [units]".
 var lookbackDurationRe = regexp.MustCompile(`^(\d+)\s+(year|month|week|day|hour|minute)s?$`)
 
 // parseLookbackDuration converts strings like "3 months" into a single time.Duration.
