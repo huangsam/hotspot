@@ -191,7 +191,7 @@ func init() {
 	compareCmd.AddCommand(compareFilesCmd)
 	compareCmd.AddCommand(compareFoldersCmd)
 
-	// --- Bind Global Flags as PERSISTENT Flags ---
+	// Bind all persistent flags of rootCmd to Viper
 	rootCmd.PersistentFlags().Bool("detail", false, "Print per-file metadata (lines of code, size, age)")
 	rootCmd.PersistentFlags().String("end", "", "End date in ISO8601 or time ago")
 	rootCmd.PersistentFlags().String("exclude", "", "Comma-separated list of path prefixes or patterns to ignore")
@@ -204,32 +204,21 @@ func init() {
 	rootCmd.PersistentFlags().Int("precision", internal.DefaultPrecision, "Decimal precision for numeric columns")
 	rootCmd.PersistentFlags().String("start", "", "Start date in ISO8601 or time ago")
 	rootCmd.PersistentFlags().Int("workers", internal.DefaultWorkers, "Number of concurrent workers")
-
-	// Bind all persistent flags of rootCmd to Viper
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
 		panic(err)
 	}
 
-	// --- Bind Flags Specific to `hotspot files` ---
+	// Bind all flags of filesCmd to Viper
 	filesCmd.Flags().Bool("explain", false, "Print per-file component score breakdown")
 	filesCmd.Flags().Bool("follow", false, "Re-run per-file analysis with --follow")
-
-	// Bind all flags of filesCmd to Viper
 	if err := viper.BindPFlags(filesCmd.Flags()); err != nil {
 		panic(err)
 	}
 
-	// Bind all flags of foldersCmd to Viper
-	if err := viper.BindPFlags(foldersCmd.Flags()); err != nil {
-		panic(err)
-	}
-
-	// --- Bind Complex Flags as PERSISTENT Flags to ALL compare subcommands ---
+	// Bind all persistent flags of compareCmd to Viper
 	compareCmd.PersistentFlags().String("base-ref", "", "Base Git reference for the BEFORE state")
 	compareCmd.PersistentFlags().String("target-ref", "", "Target Git reference for the AFTER state")
 	compareCmd.PersistentFlags().String("lookback", "6 months", "Time duration to look back from Base/Target ref commit time")
-
-	// Bind all persistent flags of compareCmd to Viper
 	if err := viper.BindPFlags(compareCmd.PersistentFlags()); err != nil {
 		panic(err)
 	}
