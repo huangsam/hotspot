@@ -113,13 +113,14 @@ var foldersCmd = &cobra.Command{
 	},
 }
 
-// compareCmd focused on strategic per-file comparisons.
+// compareCmd focused on strategic per-target comparisons.
 var compareCmd = &cobra.Command{
 	Use:   "compare [repo-path]",
 	Short: "Compare analysis results between two Git references.",
 	Long:  `The compare command provides insight into how risk metrics have changed for different units (files, folders, etc.).`,
 }
 
+// compareFilesCmd looks at file deltas.
 var compareFilesCmd = &cobra.Command{
 	Use:     "files [repo-path]",
 	Short:   "Compare file-level risk metrics (the default unit of comparison).",
@@ -135,6 +136,7 @@ var compareFilesCmd = &cobra.Command{
 	},
 }
 
+// compareFoldersCmd looks at folder deltas.
 var compareFoldersCmd = &cobra.Command{
 	Use:     "folders [repo-path]",
 	Short:   "Compare folder-level risk metrics (the default unit of comparison).",
