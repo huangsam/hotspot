@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 // runSingleAnalysisCore performs the common Aggregation, Filtering, and Analysis steps.
 func runSingleAnalysisCore(cfg *internal.Config, client *internal.LocalGitClient) (*schema.SingleAnalysisOutput, error) {
 	// --- 1. Aggregation Phase ---
-	fmt.Printf("🔎 Aggregating activity since %s\n", cfg.StartTime.Format(internal.DateTimeFormat))
 	output, err := aggregateActivity(cfg, client)
 	if err != nil {
 		internal.LogWarning("Cannot aggregate activity")
@@ -67,7 +67,6 @@ func runCompareAnalysisForRef(cfg *internal.Config, client *internal.LocalGitCli
 // to be used for comparison logic, as it does not rank files preemptively.
 func analyzeAllFiles(cfg *internal.Config, client internal.GitClient) ([]schema.FileResult, error) {
 	// --- 1. Aggregation Phase ---
-	fmt.Printf("🔎 Aggregating activity since %s\n", cfg.StartTime.Format(internal.DateTimeFormat))
 	output, err := aggregateActivity(cfg, client)
 	if err != nil {
 		internal.LogWarning("Cannot aggregate activity")
@@ -89,9 +88,17 @@ func analyzeAllFiles(cfg *internal.Config, client internal.GitClient) ([]schema.
 	return results, nil
 }
 
-// logAnalysisHeader prints the standard analysis startup message.
+// logAnalysisHeader prints a concise, 2-line header for each analysis phase.
 func logAnalysisHeader(cfg *internal.Config) {
-	fmt.Printf("🧠 hotspot: Analyzing %s (Mode: %s)\n", cfg.RepoPath, cfg.Mode)
+	repoName := filepath.Base(cfg.RepoPath)
+	if repoName == "" || repoName == "." {
+		repoName = "current"
+	}
+
+	// Line 1: The analysis summary (Repo and Mode)
+	fmt.Printf("🔎 Repo: %s (Mode: %s)\n", repoName, cfg.Mode)
+
+	// Line 2: The actual date range being analyzed
 	fmt.Printf("📅 Range: %s → %s\n", cfg.StartTime.Format(internal.DateTimeFormat), cfg.EndTime.Format(internal.DateTimeFormat))
 }
 
