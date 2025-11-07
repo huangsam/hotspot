@@ -144,7 +144,7 @@ hotspot compare folders --mode hot --base-ref v0.15.0 --target-ref v0.16.0
 ## Performance
 
 |Size|Duration|
-|---|---|
+|----|--------|
 |**Typical repo (1k files)**|2-5 seconds|
 |**Large repo (10k+ files)**|15-30 seconds|
 
