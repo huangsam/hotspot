@@ -8,4 +8,8 @@ pre-commit:
   commands:
     go-check:
       glob: "*.go"
-      run: make clean check
+      run: make check
+    go-mod-tidy:
+      glob: "go.mod"
+      run: go mod tidy
+      stage_fixed: true
