@@ -6,6 +6,6 @@ output:
 # https://lefthook.dev/configuration/Hook.html
 pre-commit:
   commands:
-    make-build-test:
+    go-check:
       glob: "*.go"
-      run: make clean build test
+      run: make lint clean build test
