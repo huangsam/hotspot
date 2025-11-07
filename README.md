@@ -105,44 +105,40 @@ We provide three documented examples in the `examples/` directory to cover commo
 ### Daily & Sprint Workflows
 
 ```bash
-# Identify active subsystems for daily standup/priority setting
+# 1. Identify active subsystems for daily standup/priority setting
 hotspot folders --mode hot --start "2 weeks ago"
 
-# Check the high-level risk of the target subsystem
-hotspot folders --mode risk --start "1 month ago"
-
-# Drill down to the specific active files within the target path
+# 2. Drill down to the specific active files within a subsystem
 hotspot files --mode hot ./path/from/folder/hot --start "2 weeks ago"
 
-# Immediate Refactoring Targets (after finding a problem path)
+# 3. Immediate Refactoring Targets (Files with high recent complexity)
 hotspot files --mode complexity --start "3 months ago" ./path/from/file/hot
 ```
 
 ### Strategic Risk & Debt Management
 
 ```bash
-# Bus Factor/Knowledge Risk (Strategic Ownership Audit)
-# Identify the subsystems with the highest knowledge concentration
-
-# Option A (Precise Audit): Use ISO 8601 for a fixed, auditable period
-hotspot folders --mode risk --start 2024-01-01T00:00:00Z
-
-# Option B (Rolling Audit): Use natural language for a rolling window
+# 1. Bus Factor/Knowledge Risk Audit (Which subsystems lack owners?)
 hotspot folders --mode risk --start "1 year ago"
 
-# Option C (Historical Window Audit): Define a precise range using start and end
-hotspot folders --mode risk --start 2024-01-01T00:00:00Z --end "1 month ago"
-
-# Maintenance Debt Audit (Legacy Subsystem Triage)
-# Identify entire modules that have been neglected (old, large, little recent change)
+# 2. Maintenance Debt Audit (Which modules are old, large, and neglected?)
 hotspot folders --mode stale --start "5 years ago" --exclude "test/,vendor/"
 
-# Structural Bottleneck Audit (Core Complexity)
-# Identify the largest, most-churned, core subsystems
+# 3. Structural Bottleneck Audit (Identify the largest, most-churned, core subsystems)
 hotspot folders --mode complexity --start "18 months ago"
+```
 
-# Drill down: Find the high-risk files within the high-risk folders
-hotspot files --mode risk --start "1 year ago" --path ./path/from/folder/risk
+### Change & Release Auditing
+
+```bash
+# 1. Measure Release Risk (Did complexity increase in core folders between releases?)
+hotspot compare folders --mode complexity --base-ref v1.0.0 --target-ref HEAD
+
+# 2. Audit File-Level Risk Change (Identify individual files where risk score worsened)
+hotspot compare files --mode risk --base-ref main --target-ref feature/new-module
+
+# 3. Track Activity Shift (Which subsystems became 'hot' or 'stale' after the merge?)
+hotspot compare folders --mode hot --base-ref v0.15.0 --target-ref v0.16.0
 ```
 
 ## Performance
