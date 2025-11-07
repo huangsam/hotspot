@@ -191,21 +191,19 @@ func init() {
 	compareCmd.AddCommand(compareFilesCmd)
 	compareCmd.AddCommand(compareFoldersCmd)
 
-	// --- Bind Simple Global Flags as PERSISTENT Flags ---
-	rootCmd.PersistentFlags().StringP("filter", "f", "", "Filter files by path prefix")
-	rootCmd.PersistentFlags().String("output-file", "", "Optional path to write output to")
+	// --- Bind Global Flags as PERSISTENT Flags ---
 	rootCmd.PersistentFlags().Bool("detail", false, "Print per-file metadata (lines of code, size, age)")
-	rootCmd.PersistentFlags().Bool("owner", false, "Print per-file owner")
-
-	// --- Bind Complex Global Flags as PERSISTENT Flags ---
-	rootCmd.PersistentFlags().IntP("limit", "l", internal.DefaultResultLimit, "Number of results to display (files or folders)")
-	rootCmd.PersistentFlags().String("start", "", "Start date in ISO8601 or time ago")
 	rootCmd.PersistentFlags().String("end", "", "End date in ISO8601 or time ago")
-	rootCmd.PersistentFlags().Int("workers", internal.DefaultWorkers, "Number of concurrent workers")
-	rootCmd.PersistentFlags().String("mode", schema.HotMode, "Scoring mode: hot or risk or complexity or stale")
 	rootCmd.PersistentFlags().String("exclude", "", "Comma-separated list of path prefixes or patterns to ignore")
-	rootCmd.PersistentFlags().Int("precision", internal.DefaultPrecision, "Decimal precision for numeric columns")
+	rootCmd.PersistentFlags().StringP("filter", "f", "", "Filter files by path prefix")
+	rootCmd.PersistentFlags().IntP("limit", "l", internal.DefaultResultLimit, "Number of results to display (files or folders)")
+	rootCmd.PersistentFlags().String("mode", schema.HotMode, "Scoring mode: hot or risk or complexity or stale")
 	rootCmd.PersistentFlags().String("output", schema.TextOut, "Output format: text or csv or json")
+	rootCmd.PersistentFlags().String("output-file", "", "Optional path to write output to")
+	rootCmd.PersistentFlags().Bool("owner", false, "Print per-file owner")
+	rootCmd.PersistentFlags().Int("precision", internal.DefaultPrecision, "Decimal precision for numeric columns")
+	rootCmd.PersistentFlags().String("start", "", "Start date in ISO8601 or time ago")
+	rootCmd.PersistentFlags().Int("workers", internal.DefaultWorkers, "Number of concurrent workers")
 
 	// Bind all persistent flags of rootCmd to Viper
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
