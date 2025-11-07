@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"strconv"
@@ -19,29 +20,29 @@ type GitClient interface {
 
 	// Run executes a git command and returns the combined output.
 	// Its use should be minimized in favor of the explicit methods below.
-	Run(repoPath string, args ...string) ([]byte, error)
+	Run(ctx context.Context, repoPath string, args ...string) ([]byte, error)
 
 	// --- Time / Reference Resolution ---
 
 	// GetCommitTime returns the time of the specified Git reference (e.g., commit hash, tag, branch name).
-	GetCommitTime(repoPath string, ref string) (time.Time, error)
+	GetCommitTime(ctx context.Context, repoPath string, ref string) (time.Time, error)
 
 	// GetRepoRoot returns the absolute path to the root of the Git repository
 	// containing the given context path.
-	GetRepoRoot(contextPath string) (string, error)
+	GetRepoRoot(ctx context.Context, contextPath string) (string, error)
 
 	// --- Activity / Churn Logs ---
 
 	// GetActivityLog returns the raw commit log output needed for repository-wide aggregation.
-	GetActivityLog(repoPath string, startTime, endTime time.Time) ([]byte, error)
+	GetActivityLog(ctx context.Context, repoPath string, startTime, endTime time.Time) ([]byte, error)
 
 	// GetFileActivityLog returns the raw commit log output for a specific file path (supports --follow).
-	GetFileActivityLog(repoPath string, path string, startTime, endTime time.Time, follow bool) ([]byte, error)
+	GetFileActivityLog(ctx context.Context, repoPath string, path string, startTime, endTime time.Time, follow bool) ([]byte, error)
 
 	// --- File State / Content ---
 
 	// ListFilesAtRef returns a list of all trackable files in the repository at a specific reference.
-	ListFilesAtRef(repoPath string, ref string) ([]string, error)
+	ListFilesAtRef(ctx context.Context, repoPath string, ref string) ([]string, error)
 }
 
 // --- LocalGitClient Implementation ---
@@ -58,8 +59,7 @@ func NewLocalGitClient() *LocalGitClient {
 }
 
 // Run executes a git command and returns its combined stdout/stderr output.
-// (Generic method, kept first for context)
-func (c *LocalGitClient) Run(repoPath string, args ...string) ([]byte, error) {
+func (c *LocalGitClient) Run(_ context.Context, repoPath string, args ...string) ([]byte, error) {
 	fullArgs := append([]string{"-C", repoPath}, args...)
 	cmd := exec.Command("git", fullArgs...)
 	out, err := cmd.Output()
@@ -74,7 +74,7 @@ func (c *LocalGitClient) Run(repoPath string, args ...string) ([]byte, error) {
 }
 
 // GetActivityLog implements the GitClient interface.
-func (c *LocalGitClient) GetActivityLog(repoPath string, startTime, endTime time.Time) ([]byte, error) {
+func (c *LocalGitClient) GetActivityLog(ctx context.Context, repoPath string, startTime, endTime time.Time) ([]byte, error) {
 	args := []string{
 		"log",
 		"--numstat",
@@ -86,17 +86,17 @@ func (c *LocalGitClient) GetActivityLog(repoPath string, startTime, endTime time
 	if !endTime.IsZero() {
 		args = append(args, fmt.Sprintf("--until=%s", endTime.Format(DateTimeFormat)))
 	}
-	return c.Run(repoPath, args...)
+	return c.Run(ctx, repoPath, args...)
 }
 
 // GetCommitTime implements the GitClient interface.
-func (c *LocalGitClient) GetCommitTime(repoPath string, ref string) (time.Time, error) {
+func (c *LocalGitClient) GetCommitTime(ctx context.Context, repoPath string, ref string) (time.Time, error) {
 	args := []string{
 		"log", "-n", "1",
 		"--pretty=format:%ct",
 		ref,
 	}
-	out, err := c.Run(repoPath, args...)
+	out, err := c.Run(ctx, repoPath, args...)
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -109,7 +109,7 @@ func (c *LocalGitClient) GetCommitTime(repoPath string, ref string) (time.Time, 
 }
 
 // GetFileActivityLog implements the GitClient interface for fetching single-file metrics.
-func (c *LocalGitClient) GetFileActivityLog(repoPath string, path string, startTime, endTime time.Time, follow bool) ([]byte, error) {
+func (c *LocalGitClient) GetFileActivityLog(ctx context.Context, repoPath string, path string, startTime, endTime time.Time, follow bool) ([]byte, error) {
 	args := []string{
 		"log",
 		"--pretty=format:DELIMITER_COMMIT_START%an,%ad",
@@ -126,12 +126,12 @@ func (c *LocalGitClient) GetFileActivityLog(repoPath string, path string, startT
 		args = append(args, "--until="+endTime.Format(DateTimeFormat))
 	}
 	args = append(args, "--", path)
-	return c.Run(repoPath, args...)
+	return c.Run(ctx, repoPath, args...)
 }
 
 // GetRepoRoot implements the GitClient interface by executing 'git rev-parse --show-toplevel'.
-func (c *LocalGitClient) GetRepoRoot(contextPath string) (string, error) {
-	out, err := c.Run(contextPath, "rev-parse", "--show-toplevel")
+func (c *LocalGitClient) GetRepoRoot(ctx context.Context, contextPath string) (string, error) {
+	out, err := c.Run(ctx, contextPath, "rev-parse", "--show-toplevel")
 	if err != nil {
 		return "", fmt.Errorf("failed to find git repository root from '%s': %w", contextPath, err)
 	}
@@ -139,12 +139,12 @@ func (c *LocalGitClient) GetRepoRoot(contextPath string) (string, error) {
 }
 
 // ListFilesAtRef implements the GitClient interface.
-func (c *LocalGitClient) ListFilesAtRef(repoPath string, ref string) ([]string, error) {
+func (c *LocalGitClient) ListFilesAtRef(ctx context.Context, repoPath string, ref string) ([]string, error) {
 	args := []string{
 		"ls-tree", "-r", "--name-only",
 		ref,
 	}
-	out, err := c.Run(repoPath, args...)
+	out, err := c.Run(ctx, repoPath, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -165,9 +165,9 @@ type MockGitClient struct {
 var _ GitClient = &MockGitClient{} // Compile-time check
 
 // Run implements the core.GitClient interface.
-func (m *MockGitClient) Run(repoPath string, args ...string) ([]byte, error) {
+func (m *MockGitClient) Run(ctx context.Context, repoPath string, args ...string) ([]byte, error) {
 	var mockArgs []interface{}
-	mockArgs = append(mockArgs, repoPath)
+	mockArgs = append(mockArgs, ctx, repoPath)
 	for _, arg := range args {
 		mockArgs = append(mockArgs, arg)
 	}
@@ -177,36 +177,36 @@ func (m *MockGitClient) Run(repoPath string, args ...string) ([]byte, error) {
 }
 
 // GetActivityLog implements the core.GitClient interface.
-func (m *MockGitClient) GetActivityLog(repoPath string, startTime, endTime time.Time) ([]byte, error) {
-	ret := m.Called(repoPath, startTime, endTime)
+func (m *MockGitClient) GetActivityLog(ctx context.Context, repoPath string, startTime, endTime time.Time) ([]byte, error) {
+	ret := m.Called(ctx, repoPath, startTime, endTime)
 	output, _ := ret.Get(0).([]byte)
 	return output, ret.Error(1)
 }
 
 // GetCommitTime implements the core.GitClient interface.
-func (m *MockGitClient) GetCommitTime(repoPath string, ref string) (time.Time, error) {
-	ret := m.Called(repoPath, ref)
+func (m *MockGitClient) GetCommitTime(ctx context.Context, repoPath string, ref string) (time.Time, error) {
+	ret := m.Called(ctx, repoPath, ref)
 	t, _ := ret.Get(0).(time.Time)
 	return t, ret.Error(1)
 }
 
 // GetFileActivityLog implements the core.GitClient interface.
-func (m *MockGitClient) GetFileActivityLog(repoPath string, path string, startTime, endTime time.Time, follow bool) ([]byte, error) {
-	ret := m.Called(repoPath, path, startTime, endTime, follow)
+func (m *MockGitClient) GetFileActivityLog(ctx context.Context, repoPath string, path string, startTime, endTime time.Time, follow bool) ([]byte, error) {
+	ret := m.Called(ctx, repoPath, path, startTime, endTime, follow)
 	content, _ := ret.Get(0).([]byte)
 	return content, ret.Error(1)
 }
 
 // GetRepoRoot implements the core.GitClient interface.
-func (m *MockGitClient) GetRepoRoot(contextPath string) (string, error) {
-	ret := m.Called(contextPath)
+func (m *MockGitClient) GetRepoRoot(ctx context.Context, contextPath string) (string, error) {
+	ret := m.Called(ctx, contextPath)
 	root, _ := ret.Get(0).(string)
 	return root, ret.Error(1)
 }
 
 // ListFilesAtRef implements the core.GitClient interface.
-func (m *MockGitClient) ListFilesAtRef(repoPath string, ref string) ([]string, error) {
-	ret := m.Called(repoPath, ref)
+func (m *MockGitClient) ListFilesAtRef(ctx context.Context, repoPath string, ref string) ([]string, error) {
+	ret := m.Called(ctx, repoPath, ref)
 	files, _ := ret.Get(0).([]string)
 	return files, ret.Error(1)
 }

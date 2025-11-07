@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"runtime"
@@ -61,7 +62,7 @@ func initConfig() {
 }
 
 // sharedSetup unmarshals config and runs validation.
-func sharedSetup(_ *cobra.Command, args []string) error {
+func sharedSetup(ctx context.Context, _ *cobra.Command, args []string) error {
 	// 1. Read config file. This merges defaults, file, env, and flags.
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
@@ -86,7 +87,13 @@ func sharedSetup(_ *cobra.Command, args []string) error {
 	// 4. Run all validation and complex parsing.
 	// This function now populates the global 'cfg' from 'input'.
 	client := internal.NewLocalGitClient()
-	return internal.ProcessAndValidate(cfg, client, input)
+	return internal.ProcessAndValidate(ctx, cfg, client, input)
+}
+
+// sharedSetupWrapper wraps sharedSetup to provide context for Cobra's PreRunE.
+func sharedSetupWrapper(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
+	return sharedSetup(ctx, cmd, args)
 }
 
 // filesCmd focuses on tactical, file-level analysis.
@@ -95,9 +102,10 @@ var filesCmd = &cobra.Command{
 	Short:   "Show the top files ranked by risk score.",
 	Long:    `The files command performs deep Git analysis and ranks individual files.`,
 	Args:    cobra.MaximumNArgs(1),
-	PreRunE: sharedSetup,
+	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		core.ExecuteHotspotFiles(cfg)
+		ctx := context.Background()
+		core.ExecuteHotspotFiles(ctx, cfg)
 	},
 }
 
@@ -107,9 +115,10 @@ var foldersCmd = &cobra.Command{
 	Short:   "Show the top folders ranked by risk score.",
 	Long:    `The folders command performs deep Git analysis and ranks individual folders.`,
 	Args:    cobra.MaximumNArgs(1),
-	PreRunE: sharedSetup,
+	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		core.ExecuteHotspotFolders(cfg)
+		ctx := context.Background()
+		core.ExecuteHotspotFolders(ctx, cfg)
 	},
 }
 
@@ -126,10 +135,11 @@ var compareFilesCmd = &cobra.Command{
 	Short:   "Compare file-level risk metrics (the default unit of comparison).",
 	Long:    `The files subcommand runs two separate file analyses (Base vs. Target) and reports change in risk scores.`,
 	Args:    cobra.MaximumNArgs(1),
-	PreRunE: sharedSetup,
+	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if cfg.CompareMode {
-			core.ExecuteHotspotCompare(cfg)
+			ctx := context.Background()
+			core.ExecuteHotspotCompare(ctx, cfg)
 		} else {
 			internal.LogFatal("Cannot run compare analysis", errors.New("compare mode is off"))
 		}
@@ -142,10 +152,11 @@ var compareFoldersCmd = &cobra.Command{
 	Short:   "Compare folder-level risk metrics (the default unit of comparison).",
 	Long:    `The files subcommand runs two separate folder analyses (Base vs. Target) and reports change in risk scores.`,
 	Args:    cobra.MaximumNArgs(1),
-	PreRunE: sharedSetup,
+	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if cfg.CompareMode {
-			core.ExecuteHotspotCompareFolders(cfg)
+			ctx := context.Background()
+			core.ExecuteHotspotCompareFolders(ctx, cfg)
 		} else {
 			internal.LogFatal("Cannot run compare analysis", errors.New("compare mode is off"))
 		}

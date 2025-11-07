@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -102,7 +103,7 @@ func (c *Config) CloneWithTimeWindow(start time.Time, end time.Time) *Config {
 
 // ProcessAndValidate performs all complex parsing and validation on the raw inputs
 // and updates the final Config struct.
-func ProcessAndValidate(cfg *Config, client GitClient, input *ConfigRawInput) error {
+func ProcessAndValidate(ctx context.Context, cfg *Config, client GitClient, input *ConfigRawInput) error {
 	// All validation functions now read from 'input' and populate 'cfg'.
 	if err := validateSimpleInputs(cfg, input); err != nil {
 		return err
@@ -113,7 +114,7 @@ func ProcessAndValidate(cfg *Config, client GitClient, input *ConfigRawInput) er
 	if err := processCompareMode(cfg, input); err != nil {
 		return err
 	}
-	if err := resolveGitPathAndFilter(cfg, client, input); err != nil {
+	if err := resolveGitPathAndFilter(ctx, cfg, client, input); err != nil {
 		return err
 	}
 	return nil
@@ -260,7 +261,7 @@ func processCompareMode(cfg *Config, input *ConfigRawInput) error {
 }
 
 // resolveGitPathAndFilter resolves the Git repository path and set the implicit path filter.
-func resolveGitPathAndFilter(cfg *Config, client GitClient, input *ConfigRawInput) error {
+func resolveGitPathAndFilter(ctx context.Context, cfg *Config, client GitClient, input *ConfigRawInput) error {
 	// (Implementation unchanged, as it already reads from input.RepoPathStr)
 	searchPath := input.RepoPathStr
 	absSearchPath, err := filepath.Abs(searchPath)
@@ -275,7 +276,7 @@ func resolveGitPathAndFilter(cfg *Config, client GitClient, input *ConfigRawInpu
 		gitContextPath = filepath.Dir(absSearchPath)
 	}
 
-	gitRoot, err := client.GetRepoRoot(gitContextPath)
+	gitRoot, err := client.GetRepoRoot(ctx, gitContextPath)
 	if err != nil {
 		return err
 	}

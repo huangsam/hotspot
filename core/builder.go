@@ -3,6 +3,7 @@ package core
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -22,6 +23,7 @@ type FileResultBuilder struct {
 	output    *schema.AggregateOutput
 	path      string
 	useFollow bool
+	ctx       context.Context
 
 	// Internal data collected during the build process
 	contribCount map[string]int
@@ -29,7 +31,7 @@ type FileResultBuilder struct {
 }
 
 // NewFileMetricsBuilder is the starting point for building file metrics.
-func NewFileMetricsBuilder(cfg *internal.Config, client internal.GitClient, path string, output *schema.AggregateOutput, useFollow bool) *FileResultBuilder {
+func NewFileMetricsBuilder(ctx context.Context, cfg *internal.Config, client internal.GitClient, path string, output *schema.AggregateOutput, useFollow bool) *FileResultBuilder {
 	return &FileResultBuilder{
 		cfg:          cfg,
 		git:          client,
@@ -37,6 +39,7 @@ func NewFileMetricsBuilder(cfg *internal.Config, client internal.GitClient, path
 		output:       output,
 		path:         path,
 		useFollow:    useFollow,
+		ctx:          ctx,
 		contribCount: make(map[string]int),
 	}
 }
@@ -48,6 +51,7 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 	// --- Data Collection: Use the new explicit method ---
 	// The GitClient is now b.git (since it's an embedded/member field)
 	out, err := b.git.GetFileActivityLog(
+		b.ctx,
 		b.cfg.RepoPath,
 		b.path,
 		b.cfg.StartTime,

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"sync"
@@ -11,9 +12,9 @@ import (
 )
 
 // runSingleAnalysisCore performs the common Aggregation, Filtering, and Analysis steps.
-func runSingleAnalysisCore(cfg *internal.Config, client *internal.LocalGitClient) (*schema.SingleAnalysisOutput, error) {
+func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client *internal.LocalGitClient) (*schema.SingleAnalysisOutput, error) {
 	// --- 1. Aggregation Phase ---
-	output, err := aggregateActivity(cfg, client)
+	output, err := aggregateActivity(ctx, cfg, client)
 	if err != nil {
 		internal.LogWarning("Cannot aggregate activity")
 		return nil, err
@@ -28,7 +29,7 @@ func runSingleAnalysisCore(cfg *internal.Config, client *internal.LocalGitClient
 
 	// --- 3. Core Analysis ---
 	logAnalysisHeader(cfg)
-	fileResults := analyzeRepo(cfg, client, output, files)
+	fileResults := analyzeRepo(ctx, cfg, client, output, files)
 
 	return &schema.SingleAnalysisOutput{
 		FileResults:     fileResults,
@@ -38,9 +39,9 @@ func runSingleAnalysisCore(cfg *internal.Config, client *internal.LocalGitClient
 
 // runCompareAnalysisCore runs the file analysis for a specific Git reference in compare mode.
 // This extracts the logic repeated between Base and Target in both compare functions.
-func runCompareAnalysisForRef(cfg *internal.Config, client *internal.LocalGitClient, ref string) (*schema.CompareAnalysisOutput, error) {
+func runCompareAnalysisForRef(ctx context.Context, cfg *internal.Config, client *internal.LocalGitClient, ref string) (*schema.CompareAnalysisOutput, error) {
 	// 1. Resolve the time window for the reference
-	baseStartTime, baseEndTime, err := getAnalysisWindowForRef(client, cfg.RepoPath, ref, cfg.Lookback)
+	baseStartTime, baseEndTime, err := getAnalysisWindowForRef(ctx, client, cfg.RepoPath, ref, cfg.Lookback)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve time window for Ref '%s': %w", ref, err)
 	}
@@ -49,25 +50,25 @@ func runCompareAnalysisForRef(cfg *internal.Config, client *internal.LocalGitCli
 	cfgRef := cfg.CloneWithTimeWindow(baseStartTime, baseEndTime)
 
 	// 3. Run file analysis
-	fileResults, err := analyzeAllFiles(cfgRef, client)
+	fileResults, err := analyzeAllFiles(ctx, cfgRef, client)
 	if err != nil {
 		return nil, fmt.Errorf("analysis failed for ref %s", ref)
 	}
 
 	// 4. Aggregate folder metrics
-	folderReesults := aggregateAndScoreFolders(cfgRef, fileResults)
+	folderResults := aggregateAndScoreFolders(cfgRef, fileResults)
 
 	return &schema.CompareAnalysisOutput{
 		FileResults:   fileResults,
-		FolderResults: folderReesults,
+		FolderResults: folderResults,
 	}, nil
 }
 
 // analyzeAllFiles performs a full file-level hotspot analysis. This function is designed
 // to be used for comparison logic, as it does not rank files preemptively.
-func analyzeAllFiles(cfg *internal.Config, client internal.GitClient) ([]schema.FileResult, error) {
+func analyzeAllFiles(ctx context.Context, cfg *internal.Config, client internal.GitClient) ([]schema.FileResult, error) {
 	// --- 1. Aggregation Phase ---
-	output, err := aggregateActivity(cfg, client)
+	output, err := aggregateActivity(ctx, cfg, client)
 	if err != nil {
 		internal.LogWarning("Cannot aggregate activity")
 		return nil, err
@@ -82,7 +83,7 @@ func analyzeAllFiles(cfg *internal.Config, client internal.GitClient) ([]schema.
 
 	// --- 3. Core Analysis and Initial Ranking ---
 	logAnalysisHeader(cfg)
-	results := analyzeRepo(cfg, client, output, files)
+	results := analyzeRepo(ctx, cfg, client, output, files)
 
 	// --- 4. Return Data ---
 	return results, nil
@@ -104,7 +105,7 @@ func logAnalysisHeader(cfg *internal.Config) {
 
 // runFollowPass re-analyzes the top N ranked files using 'git --follow'
 // to account for renames, and then returns a new, re-ranked list.
-func runFollowPass(cfg *internal.Config, client internal.GitClient, ranked []schema.FileResult, output *schema.AggregateOutput) []schema.FileResult {
+func runFollowPass(ctx context.Context, cfg *internal.Config, client internal.GitClient, ranked []schema.FileResult, output *schema.AggregateOutput) []schema.FileResult {
 	// Determine the number of files to re-analyze
 	n := min(cfg.ResultLimit, len(ranked))
 	if n == 0 {
@@ -120,7 +121,7 @@ func runFollowPass(cfg *internal.Config, client internal.GitClient, ranked []sch
 			// Note: This modifies the 'ranked' slice concurrently,
 			// but each goroutine writes to a *unique* index (ranked[idx]), which is safe.
 			rankedFile := ranked[idx]
-			rean := analyzeFileCommon(cfg, client, rankedFile.Path, output, true)
+			rean := analyzeFileCommon(ctx, cfg, client, rankedFile.Path, output, true)
 			ranked[idx] = rean
 		})
 	}
@@ -133,7 +134,7 @@ func runFollowPass(cfg *internal.Config, client internal.GitClient, ranked []sch
 // analyzeRepo processes all files in parallel using a worker pool.
 // It spawns cfg.Workers number of goroutines to analyze files concurrently
 // and aggregates their results into a single slice of schema.FileMetrics.
-func analyzeRepo(cfg *internal.Config, client internal.GitClient, output *schema.AggregateOutput, files []string) []schema.FileResult {
+func analyzeRepo(ctx context.Context, cfg *internal.Config, client internal.GitClient, output *schema.AggregateOutput, files []string) []schema.FileResult {
 	// Initialize channels based on the final number of files to be processed.
 	fileCh := make(chan string, len(files))
 	fileResultCh := make(chan schema.FileResult, len(files))
@@ -145,7 +146,7 @@ func analyzeRepo(cfg *internal.Config, client internal.GitClient, output *schema
 		wg.Go(func() {
 			for f := range fileCh {
 				// Analysis with useFollow=false for initial run
-				result := analyzeFileCommon(cfg, client, f, output, false)
+				result := analyzeFileCommon(ctx, cfg, client, f, output, false)
 				fileResultCh <- result
 			}
 		})
@@ -175,9 +176,9 @@ func analyzeRepo(cfg *internal.Config, client internal.GitClient, output *schema
 // derived metrics like churn and the Gini coefficient of author contributions.
 // The analysis is constrained by the time range in cfg if specified.
 // If useFollow is true, git --follow is used to track file renames.
-func analyzeFileCommon(cfg *internal.Config, client internal.GitClient, path string, output *schema.AggregateOutput, useFollow bool) schema.FileResult {
+func analyzeFileCommon(ctx context.Context, cfg *internal.Config, client internal.GitClient, path string, output *schema.AggregateOutput, useFollow bool) schema.FileResult {
 	// 1. Initialize the builder
-	builder := NewFileMetricsBuilder(cfg, client, path, output, useFollow)
+	builder := NewFileMetricsBuilder(ctx, cfg, client, path, output, useFollow)
 
 	// 2. Execute the required steps in order (Method Chaining)
 	builder.
@@ -194,10 +195,10 @@ func analyzeFileCommon(cfg *internal.Config, client internal.GitClient, path str
 
 // getAnalysisWindowForRef queries Git for the exact commit time of the given reference
 // and sets the StartTime by looking back a fixed duration from that commit time.
-func getAnalysisWindowForRef(client internal.GitClient, repoPath, ref string, lookback time.Duration) (startTime time.Time, endTime time.Time, err error) {
+func getAnalysisWindowForRef(ctx context.Context, client internal.GitClient, repoPath, ref string, lookback time.Duration) (startTime time.Time, endTime time.Time, err error) {
 	// 1. Find the exact timestamp of the reference (which will be the EndTime)
 	// The GitClient implementation now handles running the command and parsing the output.
-	endTime, err = client.GetCommitTime(repoPath, ref)
+	endTime, err = client.GetCommitTime(ctx, repoPath, ref)
 	if err != nil {
 		return time.Time{}, time.Time{}, fmt.Errorf("failed to get analysis window for ref '%s': %w", ref, err)
 	}

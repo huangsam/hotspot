@@ -83,7 +83,10 @@ func printFolderTable(results []schema.FolderResult, cfg *Config, fmtFloat func(
 	table := tablewriter.NewWriter(os.Stdout)
 
 	// 1. Define Headers (Folder Mode - Custom)
-	headers := []string{"Rank", "Path", "Score", "Label", "Commits", "Churn", "LOC"}
+	headers := []string{"Rank", "Path", "Score", "Label"}
+	if cfg.Detail {
+		headers = append(headers, "Commits", "Churn", "LOC")
+	}
 	if cfg.Owner {
 		headers = append(headers, "Owner")
 	}
@@ -103,9 +106,13 @@ func printFolderTable(results []schema.FolderResult, cfg *Config, fmtFloat func(
 			truncatePath(r.Path, maxTablePathWidth), // Folder Path
 			fmtFloat(r.Score),                       // Score
 			getColorLabel(r.Score),                  // Label
-			fmt.Sprintf(intFmt, r.Commits),          // Total Commits
-			fmt.Sprintf(intFmt, r.Churn),            // Total Churn
-			fmt.Sprintf(intFmt, r.TotalLOC),         // Total LOC
+		}
+		if cfg.Detail {
+			row = append(row,
+				fmt.Sprintf(intFmt, r.Commits),  // Total Commits
+				fmt.Sprintf(intFmt, r.Churn),    // Total Churn
+				fmt.Sprintf(intFmt, r.TotalLOC), // Total LOC
+			)
 		}
 		if cfg.Owner {
 			row = append(row, r.Owner) // Owner

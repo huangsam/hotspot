@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -13,10 +14,10 @@ import (
 // commits, churn and contributors. It runs over the entire history if
 // cfg.StartTime is zero, or runs since cfg.StartTime otherwise.
 // It filters out files that no longer exist in a single pass.
-func aggregateActivity(cfg *internal.Config, client internal.GitClient) (*schema.AggregateOutput, error) {
+func aggregateActivity(ctx context.Context, cfg *internal.Config, client internal.GitClient) (*schema.AggregateOutput, error) {
 	// 1. Get the list of currently existing files FIRST using the new explicit method.
 	// This git call is very fast and uses the abstract client method.
-	currentFiles, err := client.ListFilesAtRef(cfg.RepoPath, "HEAD")
+	currentFiles, err := client.ListFilesAtRef(ctx, cfg.RepoPath, "HEAD")
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +34,7 @@ func aggregateActivity(cfg *internal.Config, client internal.GitClient) (*schema
 
 	// 3. Run the expensive git log command ONCE using the new explicit method.
 	// The client now handles argument construction for zero-valued times.
-	out, err := client.GetActivityLog(cfg.RepoPath, cfg.StartTime, cfg.EndTime)
+	out, err := client.GetActivityLog(ctx, cfg.RepoPath, cfg.StartTime, cfg.EndTime)
 	if err != nil {
 		return nil, err
 	}

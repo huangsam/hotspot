@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -27,7 +28,8 @@ func TestMockGitClient_Run(t *testing.T) {
 
 	// Prepare the exact arguments that will be passed to m.Called() inside MockGitClient.Run()
 	var calledArgs []any
-	calledArgs = append(calledArgs, expectedRepoPath)
+	ctx := context.Background()
+	calledArgs = append(calledArgs, ctx, expectedRepoPath)
 	for _, arg := range expectedArgs {
 		calledArgs = append(calledArgs, arg)
 	}
@@ -39,7 +41,7 @@ func TestMockGitClient_Run(t *testing.T) {
 		Once()                                 // Expect the call to happen exactly once.
 
 	// 3. Execute the Code Under Test (i.e., call the mock method)
-	actualOutput, actualError := mockClient.Run(expectedRepoPath, expectedArgs...)
+	actualOutput, actualError := mockClient.Run(ctx, expectedRepoPath, expectedArgs...)
 
 	// 4. Assertions
 
