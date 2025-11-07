@@ -84,7 +84,7 @@ func analyzeAllFiles(cfg *internal.Config, client internal.GitClient) ([]schema.
 	logAnalysisHeader(cfg)
 	results := analyzeRepo(cfg, client, output, files)
 
-	// --- 5. Return Data ---
+	// --- 4. Return Data ---
 	return results, nil
 }
 
