@@ -179,7 +179,6 @@ func init() {
 	compareCmd.AddCommand(compareFoldersCmd)
 
 	// --- Bind Simple Global Flags as PERSISTENT Flags ---
-	// Note: We no longer bind to a struct variable, just define the flag.
 	rootCmd.PersistentFlags().StringP("filter", "f", "", "Filter files by path prefix")
 	rootCmd.PersistentFlags().String("output-file", "", "Optional path to write output to")
 	rootCmd.PersistentFlags().Bool("detail", false, "Print per-file metadata (lines of code, size, age)")
