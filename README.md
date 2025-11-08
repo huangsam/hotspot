@@ -86,6 +86,21 @@ The `compare` subcommand allows you to measure the change in metrics between two
 | `--target-ref` | The AFTER Git reference (defaults to `HEAD`). |
 | `--lookback` | Time window (e.g. `6 months`) used for base and target. |
 
+## Timeseries analysis
+
+The `timeseries` subcommand tracks how hotspot scores change over time for a specific file or folder path. This helps you understand trends and identify when risk started increasing or decreasing.
+
+**Example:** Track complexity score for a specific file over the last month:
+
+`hotspot timeseries --path main.go --mode complexity --interval "30 days" --points 3`
+
+| Flags | Description |
+|-------|-------------|
+| `--path` | The file or folder path to analyze (required). |
+| `--mode` | Scoring mode (hot, risk, complexity, stale). |
+| `--interval` | Total time window (e.g., `6 months`, `1 year`). |
+| `--points` | Number of data points to generate. |
+
 ## Configuration file
 
 For complex or repetitive commands, Hotspot can read all flags from a configuration file named **`.hotspot.yaml`** or **`.hotspot.yml`** placed in your repository root or home directory.
