@@ -55,6 +55,39 @@
 # end: ""
 
 
+# --- Custom Scoring Weights (Advanced) ---
+# Override default scoring algorithm weights for fine-tuned analysis.
+# Each mode's weights must sum to 1.0. See examples/hotspot.weights.yml for details.
+# weights:
+#   hot:
+#     age: 0.10
+#     churn: 0.40
+#     commits: 0.40
+#     contrib: 0.05
+#     size: 0.05
+#   risk:
+#     age: 0.16
+#     churn: 0.06
+#     commits: 0.04
+#     gini: 0.26
+#     inv_contrib: 0.30
+#     loc: 0.06
+#     size: 0.12
+#   complexity:
+#     age: 0.30
+#     churn: 0.30
+#     commits: 0.10
+#     loc: 0.20
+#     low_recent: 0.05
+#     size: 0.05
+#   stale:
+#     age: 0.20
+#     commits: 0.15
+#     contrib: 0.05
+#     inv_recent: 0.35
+#     size: 0.25
+
+
 # --- Comparison Settings (Applicable only to 'hotspot compare' commands) ---
 
 # base-ref: The Git reference for the BEFORE state (e.g., 'main', 'v1.0.0').
