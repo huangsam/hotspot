@@ -18,6 +18,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// buildHotspot builds the hotspot binary in the given directory and returns its absolute path
+func buildHotspot(t *testing.T, dir string) string {
+	hotspotPath := filepath.Join(dir, "hotspot")
+	buildCmd := exec.Command("go", "build", "-o", hotspotPath, ".")
+	buildCmd.Dir = dir
+	err := buildCmd.Run()
+	require.NoError(t, err)
+	absPath, err := filepath.Abs(hotspotPath)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = exec.Command("rm", "-f", absPath).Run() })
+	return absPath
+}
+
 // HotspotFile represents a file entry in hotspot JSON output
 type HotspotFile struct {
 	Path    string `json:"path"`
@@ -36,8 +49,11 @@ func TestHotspotFilesVerification(t *testing.T) {
 	require.NoError(t, err)
 	repoDir := strings.TrimSpace(string(repoPath))
 
+	// Build hotspot binary
+	hotspotPath := buildHotspot(t, repoDir)
+
 	// Run hotspot files --output json
-	cmd := exec.Command("./hotspot", "files", "--output", "json")
+	cmd := exec.Command(hotspotPath, "files", "--output", "json")
 	cmd.Dir = repoDir
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
@@ -104,13 +120,7 @@ func TestExternalRepoVerification(t *testing.T) {
 	}
 
 	// Build hotspot binary once
-	hotspotPath, err := filepath.Abs("test-repos/hotspot")
-	require.NoError(t, err)
-	buildCmd := exec.Command("go", "build", "-o", hotspotPath, ".")
-	buildCmd.Dir = ".." // Project root
-	err = buildCmd.Run()
-	require.NoError(t, err)
-	defer func() { _ = exec.Command("rm", "-f", hotspotPath).Run() }()
+	hotspotPath := buildHotspot(t, "..")
 
 	for _, repo := range testRepos {
 		t.Run(repo.name, func(t *testing.T) {
