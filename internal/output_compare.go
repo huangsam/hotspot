@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/huangsam/hotspot/schema"
@@ -14,7 +15,7 @@ import (
 )
 
 // PrintComparisonResults outputs the analysis results, dispatching based on the output format configured.
-func PrintComparisonResults(metrics []schema.ComparisonResult, cfg *Config) error {
+func PrintComparisonResults(metrics []schema.ComparisonResult, cfg *Config, duration time.Duration) error {
 	// Helper format strings and closure for number formatting
 	numFmt := "%.*f"
 	intFmt := "%d"
@@ -34,7 +35,7 @@ func PrintComparisonResults(metrics []schema.ComparisonResult, cfg *Config) erro
 		}
 	default:
 		// Default to human-readable table
-		if err := printComparisonTable(metrics, cfg, fmtFloat, intFmt); err != nil {
+		if err := printComparisonTable(metrics, cfg, fmtFloat, intFmt, duration); err != nil {
 			return fmt.Errorf("error writing comparison table output: %w", err)
 		}
 	}
@@ -80,7 +81,7 @@ func printCSVResultsForComparison(metrics []schema.ComparisonResult, cfg *Config
 }
 
 // printComparisonTable prints the metrics in a custom comparison format.
-func printComparisonTable(metrics []schema.ComparisonResult, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
+func printComparisonTable(metrics []schema.ComparisonResult, cfg *Config, fmtFloat func(float64) string, intFmt string, duration time.Duration) error {
 	// Use os.Stdout, consistent with existing table printing
 	table := tablewriter.NewWriter(os.Stdout)
 
@@ -143,5 +144,16 @@ func printComparisonTable(metrics []schema.ComparisonResult, cfg *Config, fmtFlo
 	if err := table.Bulk(data); err != nil {
 		return err
 	}
-	return table.Render()
+	if err := table.Render(); err != nil {
+		return err
+	}
+	// Compute summary stats
+	numItems := len(metrics)
+	totalDeltaChurn := 0
+	for _, r := range metrics {
+		totalDeltaChurn += r.DeltaChurn
+	}
+	fmt.Printf("Showing top %d changes (total delta churn: %d)\n", numItems, totalDeltaChurn)
+	fmt.Printf("Analysis completed in %v using %d workers.\n", duration, cfg.Workers)
+	return nil
 }

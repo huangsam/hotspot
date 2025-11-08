@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/huangsam/hotspot/schema"
 	"github.com/olekukonko/tablewriter"
@@ -13,7 +14,7 @@ import (
 )
 
 // PrintFolderResults outputs the analysis results, dispatching based on the output format configured.
-func PrintFolderResults(results []schema.FolderResult, cfg *Config) error {
+func PrintFolderResults(results []schema.FolderResult, cfg *Config, duration time.Duration) error {
 	// helper format strings and closure for number formatting
 	numFmt := "%.*f"
 	intFmt := "%d"
@@ -33,7 +34,7 @@ func PrintFolderResults(results []schema.FolderResult, cfg *Config) error {
 		}
 	default:
 		// Default to human-readable table
-		if err := printFolderTable(results, cfg, fmtFloat, intFmt); err != nil {
+		if err := printFolderTable(results, cfg, fmtFloat, intFmt, duration); err != nil {
 			return fmt.Errorf("error writing table output: %w", err)
 		}
 	}
@@ -80,7 +81,7 @@ func printCSVResultsForFolders(results []schema.FolderResult, cfg *Config, fmtFl
 
 // printFolderTable prints the results in the custom folder-centric format,
 // using the tablewriter API.
-func printFolderTable(results []schema.FolderResult, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
+func printFolderTable(results []schema.FolderResult, cfg *Config, fmtFloat func(float64) string, intFmt string, duration time.Duration) error {
 	table := tablewriter.NewWriter(os.Stdout)
 
 	// 1. Define Headers (Folder Mode - Custom)
@@ -125,5 +126,20 @@ func printFolderTable(results []schema.FolderResult, cfg *Config, fmtFloat func(
 	if err := table.Bulk(data); err != nil {
 		return err
 	}
-	return table.Render()
+	if err := table.Render(); err != nil {
+		return err
+	}
+	// Compute summary stats
+	numFolders := len(results)
+	totalCommits := 0
+	totalChurn := 0
+	totalLOC := 0
+	for _, r := range results {
+		totalCommits += r.Commits
+		totalChurn += r.Churn
+		totalLOC += r.TotalLOC
+	}
+	fmt.Printf("Showing top %d folders (total commits: %d, total churn: %d, total LOC: %d)\n", numFolders, totalCommits, totalChurn, totalLOC)
+	fmt.Printf("Analysis completed in %v using %d workers.\n", duration, cfg.Workers)
+	return nil
 }

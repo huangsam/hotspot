@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/huangsam/hotspot/schema"
 
@@ -16,7 +17,7 @@ import (
 )
 
 // PrintFileResults outputs the analysis results in a formatted table or exports them as CSV/JSON.
-func PrintFileResults(files []schema.FileResult, cfg *Config) error {
+func PrintFileResults(files []schema.FileResult, cfg *Config, duration time.Duration) error {
 	// helper format strings and closure for number formatting
 	numFmt := "%.*f"
 	intFmt := "%d"
@@ -36,7 +37,7 @@ func PrintFileResults(files []schema.FileResult, cfg *Config) error {
 		}
 	default:
 		// Default to human-readable table
-		if err := printTableResults(files, cfg, fmtFloat, intFmt); err != nil {
+		if err := printTableResults(files, cfg, fmtFloat, intFmt, duration); err != nil {
 			return fmt.Errorf("error writing table output: %w", err)
 		}
 	}
@@ -84,7 +85,7 @@ func printCSVResults(files []schema.FileResult, cfg *Config, fmtFloat func(float
 }
 
 // printTableResults generates and prints the human-readable table.
-func printTableResults(files []schema.FileResult, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
+func printTableResults(files []schema.FileResult, cfg *Config, fmtFloat func(float64) string, intFmt string, duration time.Duration) error {
 	table := tablewriter.NewWriter(os.Stdout)
 
 	// 1. Define Headers
@@ -139,7 +140,20 @@ func printTableResults(files []schema.FileResult, cfg *Config, fmtFloat func(flo
 	if err := table.Bulk(data); err != nil {
 		return err
 	}
-	return table.Render()
+	if err := table.Render(); err != nil {
+		return err
+	}
+	// Compute summary stats
+	numFiles := len(files)
+	totalCommits := 0
+	totalChurn := 0
+	for _, f := range files {
+		totalCommits += f.Commits
+		totalChurn += f.Churn
+	}
+	fmt.Printf("Showing top %d files (total commits: %d, total churn: %d)\n", numFiles, totalCommits, totalChurn)
+	fmt.Printf("Analysis completed in %v using %d workers.\n", duration, cfg.Workers)
+	return nil
 }
 
 // metricBreakdown holds a key-value pair from the Breakdown map representing a metric's contribution.

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -16,9 +17,11 @@ const (
 	DefaultLookbackDays = 180
 	DefaultResultLimit  = 25
 	MaxResultLimit      = 1000
-	DefaultWorkers      = 8
 	DefaultPrecision    = 1
 )
+
+// DefaultWorkers is the default number of concurrent workers to use.
+var DefaultWorkers = runtime.GOMAXPROCS(0)
 
 // DateTimeFormat is the default date time representation.
 var DateTimeFormat = time.RFC3339

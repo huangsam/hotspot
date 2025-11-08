@@ -3,7 +3,7 @@ package core
 
 import (
 	"context"
-	"sort"
+	"time"
 
 	"github.com/huangsam/hotspot/internal"
 )
@@ -14,6 +14,7 @@ type ExecutorFunc func(ctx context.Context, cfg *internal.Config) error
 // ExecuteHotspotFiles runs the file-level analysis and prints results to stdout.
 // It serves as the main entry point for the 'files' mode.
 func ExecuteHotspotFiles(ctx context.Context, cfg *internal.Config) error {
+	start := time.Now()
 	client := internal.NewLocalGitClient()
 	output, err := runSingleAnalysisCore(ctx, cfg, client)
 	if err != nil {
@@ -25,12 +26,14 @@ func ExecuteHotspotFiles(ctx context.Context, cfg *internal.Config) error {
 		resultsToRank = runFollowPass(ctx, cfg, client, rankedForFollow, output.AggregateOutput)
 	}
 	ranked := rankFiles(resultsToRank, cfg.ResultLimit)
-	return internal.PrintFileResults(ranked, cfg)
+	duration := time.Since(start)
+	return internal.PrintFileResults(ranked, cfg, duration)
 }
 
 // ExecuteHotspotFolders runs the folder-level analysis and prints results to stdout.
 // It serves as the main entry point for the 'folders' mode.
 func ExecuteHotspotFolders(ctx context.Context, cfg *internal.Config) error {
+	start := time.Now()
 	client := internal.NewLocalGitClient()
 	output, err := runSingleAnalysisCore(ctx, cfg, client)
 	if err != nil {
@@ -38,12 +41,14 @@ func ExecuteHotspotFolders(ctx context.Context, cfg *internal.Config) error {
 	}
 	folderResults := aggregateAndScoreFolders(cfg, output.FileResults)
 	ranked := rankFolders(folderResults, cfg.ResultLimit)
-	return internal.PrintFolderResults(ranked, cfg)
+	duration := time.Since(start)
+	return internal.PrintFolderResults(ranked, cfg, duration)
 }
 
 // ExecuteHotspotCompare runs two file-level analyses (Base and Target)
 // based on Git references and computes the delta results.
 func ExecuteHotspotCompare(ctx context.Context, cfg *internal.Config) error {
+	start := time.Now()
 	client := internal.NewLocalGitClient()
 	baseOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.BaseRef)
 	if err != nil {
@@ -53,10 +58,9 @@ func ExecuteHotspotCompare(ctx context.Context, cfg *internal.Config) error {
 	if err != nil {
 		return err
 	}
-	sort.Slice(baseOutput.FileResults, func(i, j int) bool { return baseOutput.FileResults[i].Path < baseOutput.FileResults[j].Path })
-	sort.Slice(targetOutput.FileResults, func(i, j int) bool { return targetOutput.FileResults[i].Path < targetOutput.FileResults[j].Path })
 	comparisonResults := compareFileResults(baseOutput.FileResults, targetOutput.FileResults, cfg.ResultLimit)
-	return internal.PrintComparisonResults(comparisonResults, cfg)
+	duration := time.Since(start)
+	return internal.PrintComparisonResults(comparisonResults, cfg, duration)
 }
 
 // ExecuteHotspotCompareFolders runs two folder-level analyses (Base and Target)
@@ -64,6 +68,7 @@ func ExecuteHotspotCompare(ctx context.Context, cfg *internal.Config) error {
 // It follows the same pattern as ExecuteHotspotCompare but aggregates to folders
 // before performing the comparison.
 func ExecuteHotspotCompareFolders(ctx context.Context, cfg *internal.Config) error {
+	start := time.Now()
 	client := internal.NewLocalGitClient()
 	baseOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.BaseRef)
 	if err != nil {
@@ -73,8 +78,7 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *internal.Config) err
 	if err != nil {
 		return err
 	}
-	sort.Slice(baseOutput.FolderResults, func(i, j int) bool { return baseOutput.FolderResults[i].Path < baseOutput.FolderResults[j].Path })
-	sort.Slice(targetOutput.FolderResults, func(i, j int) bool { return targetOutput.FolderResults[i].Path < targetOutput.FolderResults[j].Path })
 	comparisonResults := compareFolderMetrics(baseOutput.FolderResults, targetOutput.FolderResults, cfg.ResultLimit)
-	return internal.PrintComparisonResults(comparisonResults, cfg)
+	duration := time.Since(start)
+	return internal.PrintComparisonResults(comparisonResults, cfg, duration)
 }
