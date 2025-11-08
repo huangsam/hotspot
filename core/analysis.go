@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -50,7 +51,7 @@ func runCompareAnalysisForRef(ctx context.Context, cfg *internal.Config, client 
 	cfgRef := cfg.CloneWithTimeWindow(baseStartTime, baseEndTime)
 
 	// 3. Run file analysis
-	fileResults, err := analyzeAllFiles(ctx, cfgRef, client)
+	fileResults, err := analyzeAllFilesAtRef(ctx, cfgRef, client, ref)
 	if err != nil {
 		return nil, fmt.Errorf("analysis failed for ref %s", ref)
 	}
@@ -64,25 +65,47 @@ func runCompareAnalysisForRef(ctx context.Context, cfg *internal.Config, client 
 	}, nil
 }
 
-// analyzeAllFiles performs a full file-level hotspot analysis. This function is designed
-// to be used for comparison logic, as it does not rank files preemptively.
-func analyzeAllFiles(ctx context.Context, cfg *internal.Config, client internal.GitClient) ([]schema.FileResult, error) {
+// analyzeAllFilesAtRef performs file analysis for all files that exist at a specific Git reference.
+// This is used for comparison analysis to ensure we analyze all files at each reference point,
+// not just files that had activity in the time window.
+func analyzeAllFilesAtRef(ctx context.Context, cfg *internal.Config, client internal.GitClient, ref string) ([]schema.FileResult, error) {
 	logAnalysisHeader(cfg)
 
-	// --- 1. Aggregation Phase ---
+	// --- 1. Get all files at the reference ---
+	files, err := client.ListFilesAtRef(ctx, cfg.RepoPath, ref)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list files at ref %s: %w", ref, err)
+	}
+
+	// Apply path filter and excludes
+	filteredFiles := make([]string, 0, len(files))
+	pathFilterSet := cfg.PathFilter != ""
+	for _, f := range files {
+		// Apply path filter check only if the filter is set
+		if pathFilterSet && !strings.HasPrefix(f, cfg.PathFilter) {
+			continue
+		}
+
+		// Apply excludes filter
+		if internal.ShouldIgnore(f, cfg.Excludes) {
+			continue
+		}
+
+		filteredFiles = append(filteredFiles, f)
+	}
+
+	if len(filteredFiles) == 0 {
+		return []schema.FileResult{}, nil // Return empty, not an error
+	}
+
+	// --- 2. Aggregation Phase ---
 	output, err := aggregateActivity(ctx, cfg, client)
 	if err != nil {
 		return nil, err
 	}
 
-	// --- 2. File List Building and Filtering ---
-	files := buildFilteredFileList(cfg, output)
-	if len(files) == 0 {
-		return []schema.FileResult{}, nil // Return empty, not an error
-	}
-
-	// --- 3. Core Analysis and Initial Ranking ---
-	results := analyzeRepo(ctx, cfg, client, output, files)
+	// --- 3. Core Analysis ---
+	results := analyzeRepo(ctx, cfg, client, output, filteredFiles)
 
 	// --- 4. Return Data ---
 	return results, nil

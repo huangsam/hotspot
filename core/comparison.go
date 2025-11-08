@@ -8,21 +8,31 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// compareFileResults matches metrics from the base run against the comparison run
-// and computes the difference (delta) for key metrics like Score.
-func compareFileResults(baseResults, targetResults []schema.FileResult, limit int) schema.ComparisonResult {
-	baseMap := make(map[string]schema.FileResult, len(baseResults))
-	targetMap := make(map[string]schema.FileResult, len(targetResults))
-	allPaths := make(map[string]struct{}) // Set to hold all unique paths
+// ComparableResult represents a comparable result with path, score, commits, and churn.
+type ComparableResult interface {
+	GetPath() string
+	GetScore() float64
+	GetCommits() int
+	GetChurn() int
+}
 
-	// 1. Populate maps and the set of ALL paths
-	for _, m := range baseResults {
-		baseMap[m.Path] = m
-		allPaths[m.Path] = struct{}{}
+// DeltaExtractor extracts additional deltas for comparison details
+type DeltaExtractor[T ComparableResult] func(base, target T) (deltaLOC, deltaContrib int)
+
+// compareResults is a generic function that compares two sets of results
+func compareResults[T ComparableResult](baseResults, targetResults []T, limit int, extractDeltas DeltaExtractor[T]) schema.ComparisonResult {
+	baseMap := make(map[string]T, len(baseResults))
+	targetMap := make(map[string]T, len(targetResults))
+	allPaths := make(map[string]struct{})
+
+	// 1. Populate maps and collect all paths
+	for _, r := range baseResults {
+		baseMap[r.GetPath()] = r
+		allPaths[r.GetPath()] = struct{}{}
 	}
-	for _, m := range targetResults {
-		targetMap[m.Path] = m
-		allPaths[m.Path] = struct{}{}
+	for _, r := range targetResults {
+		targetMap[r.GetPath()] = r
+		allPaths[r.GetPath()] = struct{}{}
 	}
 
 	comparisonResults := make([]schema.ComparisonDetails, 0, len(allPaths))
@@ -32,62 +42,72 @@ func compareFileResults(baseResults, targetResults []schema.FileResult, limit in
 	var netChurnDelta int
 	var totalNewFiles, totalInactiveFiles, totalModifiedFiles int
 
-	// 2. Iterate over ALL unique paths (Full Outer Join)
+	// 2. Compare all paths
 	for path := range allPaths {
-		baseM, baseExists := baseMap[path]
-		targetM, targetExists := targetMap[path]
+		baseR, baseExists := baseMap[path]
+		targetR, targetExists := targetMap[path]
 
-		// Initialize default/zero metrics for non-existent files
-		if !baseExists {
-			baseM = schema.FileResult{} // Zero values (Score=0, Commits=0, Churn=0)
+		// Get scores (default to 0 if not exists)
+		baseScore := 0.0
+		if baseExists {
+			baseScore = baseR.GetScore()
 		}
-		if !targetExists {
-			targetM = schema.FileResult{} // Zero values
+		targetScore := 0.0
+		if targetExists {
+			targetScore = targetR.GetScore()
 		}
 
-		// 3. Calculate Delta and assemble the result
-		deltaScore := targetM.Score - baseM.Score
-		deltaCommits := targetM.Commits - baseM.Commits
-		deltaChurn := targetM.Churn - baseM.Churn
-		deltaLOC := targetM.LinesOfCode - baseM.LinesOfCode
-		deltaContrib := targetM.UniqueContributors - baseM.UniqueContributors
+		// Calculate deltas
+		deltaScore := targetScore - baseScore
+		deltaCommits := 0
+		deltaChurn := 0
+		if baseExists && targetExists {
+			deltaCommits = targetR.GetCommits() - baseR.GetCommits()
+			deltaChurn = targetR.GetChurn() - baseR.GetChurn()
+		}
+
+		// Extract additional deltas
+		deltaLOC, deltaContrib := 0, 0
+		if extractDeltas != nil && baseExists && targetExists {
+			deltaLOC, deltaContrib = extractDeltas(baseR, targetR)
+		}
 
 		// Accumulate summary
 		netScoreDelta += deltaScore
 		netChurnDelta += deltaChurn
 
-		// Determine status based on existence in each analysis
-		var status string
-		switch {
-		case !baseExists && targetExists:
-			status = schema.NewStatus
+		// Determine status
+		status := determineStatus(baseExists, targetExists)
+		switch status {
+		case schema.NewStatus:
 			totalNewFiles++
-		case baseExists && targetExists:
-			status = schema.ActiveStatus
+		case schema.ActiveStatus:
 			totalModifiedFiles++
-		case baseExists && !targetExists:
-			status = schema.InactiveStatus
+		case schema.InactiveStatus:
 			totalInactiveFiles++
-		default:
-			status = schema.UnknownStatus
 		}
 
-		// Only track and report files where the score actually changed significantly
+		// Only include results with significant score changes
 		if math.Abs(deltaScore) > 0.01 {
-			// Crucially, use the *actual* path for files that only exist in one set
-			// For DELETED files: BaseScore > 0, CompScore = 0, Delta < 0
-			// For NEW files: BaseScore = 0, CompScore > 0, Delta > 0
-			file := &schema.FileComparison{DeltaLOC: deltaLOC, DeltaContrib: deltaContrib}
-			comparisonResults = append(comparisonResults, schema.ComparisonDetails{
-				Path:           path,
-				BeforeScore:    baseM.Score,
-				AfterScore:     targetM.Score,
-				Delta:          deltaScore,
-				DeltaCommits:   deltaCommits,
-				DeltaChurn:     deltaChurn,
-				FileComparison: file,
-				Status:         status,
-			})
+			details := schema.ComparisonDetails{
+				Path:         path,
+				BeforeScore:  baseScore,
+				AfterScore:   targetScore,
+				Delta:        deltaScore,
+				DeltaCommits: deltaCommits,
+				DeltaChurn:   deltaChurn,
+				Status:       status,
+			}
+
+			// Add file-specific deltas if applicable
+			if deltaLOC != 0 || deltaContrib != 0 {
+				details.FileComparison = &schema.FileComparison{
+					DeltaLOC:     deltaLOC,
+					DeltaContrib: deltaContrib,
+				}
+			}
+
+			comparisonResults = append(comparisonResults, details)
 		}
 	}
 
@@ -100,153 +120,66 @@ func compareFileResults(baseResults, targetResults []schema.FileResult, limit in
 		TotalModifiedFiles: totalModifiedFiles,
 	}
 
-	// 4. Implement a deterministic three-level sort on the filtered list.
-	// This stabilizes the output when multiple files have the same absolute delta.
-	sort.Slice(comparisonResults, func(i, j int) bool {
-		a := comparisonResults[i]
-		b := comparisonResults[j]
+	// Sort results
+	sortComparisonResults(comparisonResults)
 
-		// --- 1. Primary Key: Absolute Delta (Descending) ---
+	// Apply limit
+	if limit > 0 && len(comparisonResults) > limit {
+		comparisonResults = comparisonResults[:limit]
+	}
+
+	return schema.ComparisonResult{Results: comparisonResults, Summary: summary}
+}
+
+// determineStatus returns the status based on existence in base and target
+func determineStatus(baseExists, targetExists bool) string {
+	switch {
+	case !baseExists && targetExists:
+		return schema.NewStatus
+	case baseExists && targetExists:
+		return schema.ActiveStatus
+	case baseExists && !targetExists:
+		return schema.InactiveStatus
+	default:
+		return schema.UnknownStatus
+	}
+}
+
+// sortComparisonResults sorts comparison results by absolute delta, then delta sign, then path
+func sortComparisonResults(results []schema.ComparisonDetails) {
+	sort.Slice(results, func(i, j int) bool {
+		a := results[i]
+		b := results[j]
+
+		// Primary: Absolute delta (descending)
 		absA := math.Abs(a.Delta)
 		absB := math.Abs(b.Delta)
-
 		if absA != absB {
-			// Sort by the one with the largest absolute change first (Descending)
 			return absA > absB
 		}
 
-		// --- 2. Secondary Key (Tie-breaker): Delta Sign (Positive over Negative) ---
-		// This ensures increasing risk (+0.25) ranks higher than decreasing risk (-0.25).
+		// Secondary: Delta sign (positive before negative)
 		if a.Delta != b.Delta {
-			return a.Delta > b.Delta // Sorts positive deltas before negative deltas
+			return a.Delta > b.Delta
 		}
 
-		// --- 3. Tertiary Key (Final Tie-breaker): File Path (Ascending) ---
-		// Guarantees an identical sort order for identical deltas and signs (e.g., two +0.25 deltas).
+		// Tertiary: Path (ascending)
 		return strings.Compare(a.Path, b.Path) < 0
 	})
+}
 
-	if len(comparisonResults) > 0 && len(comparisonResults) > limit {
-		comparisonResults = comparisonResults[:limit]
-	}
-	return schema.ComparisonResult{Results: comparisonResults, Summary: summary}
+// compareFileResults matches metrics from the base run against the comparison run
+// and computes the difference (delta) for key metrics like Score.
+func compareFileResults(baseResults, targetResults []schema.FileResult, limit int) schema.ComparisonResult {
+	return compareResults(baseResults, targetResults, limit, func(base, target schema.FileResult) (int, int) {
+		deltaLOC := target.LinesOfCode - base.LinesOfCode
+		deltaContrib := target.UniqueContributors - base.UniqueContributors
+		return deltaLOC, deltaContrib
+	})
 }
 
 // compareFolderMetrics matches metrics from the base run against the target run
 // and computes the difference (delta) for the Score metric.
 func compareFolderMetrics(baseResults, targetResults []schema.FolderResult, limit int) schema.ComparisonResult {
-	baseMap := make(map[string]schema.FolderResult, len(baseResults))
-	targetMap := make(map[string]schema.FolderResult, len(targetResults))
-	allPaths := make(map[string]struct{}) // Set to hold all unique folder paths
-
-	// 1. Populate maps and the set of ALL paths
-	for _, m := range baseResults {
-		baseMap[m.Path] = m
-		allPaths[m.Path] = struct{}{}
-	}
-	for _, m := range targetResults {
-		targetMap[m.Path] = m
-		allPaths[m.Path] = struct{}{}
-	}
-
-	comparisonResults := make([]schema.ComparisonDetails, 0, len(allPaths))
-
-	// Initialize summary accumulators
-	var netScoreDelta float64
-	var netChurnDelta int
-	var totalNewFiles, totalInactiveFiles, totalModifiedFiles int
-
-	// 2. Iterate over ALL unique paths (Full Outer Join)
-	for path := range allPaths {
-		baseM, baseExists := baseMap[path]
-		targetM, targetExists := targetMap[path]
-
-		// Determine status based on existence in each analysis
-		var status string
-		switch {
-		case !baseExists && targetExists:
-			status = schema.NewStatus
-			totalNewFiles++
-		case baseExists && targetExists:
-			status = schema.ActiveStatus
-			totalModifiedFiles++
-		case baseExists && !targetExists:
-			status = schema.InactiveStatus
-			totalInactiveFiles++
-		default:
-			status = schema.UnknownStatus
-		}
-
-		baseScore := 0.0
-		if baseExists {
-			baseScore = baseM.Score
-		}
-
-		targetScore := 0.0
-		if targetExists {
-			targetScore = targetM.Score
-		}
-
-		// 3. Calculate Delta and assemble the result
-		deltaScore := targetScore - baseScore
-		deltaCommits := targetM.Commits - baseM.Commits
-		deltaChurn := targetM.Churn - baseM.Churn
-
-		// Accumulate summary
-		netScoreDelta += deltaScore
-		netChurnDelta += deltaChurn
-
-		// Only track and report folders where the score actually changed significantly.
-		// Using a tolerance of 0.01 to match the file comparison logic.
-		if math.Abs(deltaScore) > 0.01 {
-			comparisonResults = append(comparisonResults, schema.ComparisonDetails{
-				Path:         path,
-				BeforeScore:  baseScore,
-				AfterScore:   targetScore,
-				Delta:        deltaScore,
-				Status:       status,
-				DeltaCommits: deltaCommits,
-				DeltaChurn:   deltaChurn,
-			})
-		}
-	}
-
-	// Create summary
-	summary := schema.ComparisonSummary{
-		NetScoreDelta:      netScoreDelta,
-		NetChurnDelta:      netChurnDelta,
-		TotalNewFiles:      totalNewFiles,
-		TotalInactiveFiles: totalInactiveFiles,
-		TotalModifiedFiles: totalModifiedFiles,
-	}
-
-	// 4. Implement a deterministic three-level sort on the filtered list.
-	sort.Slice(comparisonResults, func(i, j int) bool {
-		a := comparisonResults[i]
-		b := comparisonResults[j]
-
-		// --- 1. Primary Key: Absolute Delta (Descending) ---
-		absA := math.Abs(a.Delta)
-		absB := math.Abs(b.Delta)
-
-		if absA != absB {
-			// Sort by the one with the largest absolute change first (Descending)
-			return absA > absB
-		}
-
-		// --- 2. Secondary Key (Tie-breaker): Delta Sign (Positive over Negative) ---
-		// Increasing risk (+DeltaScore) ranks higher than decreasing risk (-DeltaScore).
-		if a.Delta != b.Delta {
-			return a.Delta > b.Delta // Sorts positive deltas before negative deltas
-		}
-
-		// --- 3. Tertiary Key (Final Tie-breaker): Folder Path (Ascending) ---
-		// Guarantees an identical sort order for identical deltas and signs.
-		return a.Path < b.Path
-	})
-
-	if limit > 0 && len(comparisonResults) > limit {
-		comparisonResults = comparisonResults[:limit]
-	}
-	return schema.ComparisonResult{Results: comparisonResults, Summary: summary}
+	return compareResults(baseResults, targetResults, limit, nil) // Folders don't have LOC/contrib deltas
 }

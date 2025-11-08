@@ -22,6 +22,26 @@ type FileResult struct {
 	Owners             []string           `json:"owners"`              // Top 2 owners by commit count
 }
 
+// GetPath returns the file path.
+func (f FileResult) GetPath() string {
+	return f.Path
+}
+
+// GetScore returns the computed score.
+func (f FileResult) GetScore() float64 {
+	return f.Score
+}
+
+// GetCommits returns the total commit count.
+func (f FileResult) GetCommits() int {
+	return f.Commits
+}
+
+// GetChurn returns the total churn.
+func (f FileResult) GetChurn() int {
+	return f.Churn
+}
+
 // FolderResult holds the final computed scores and aggregated metrics for a folder.
 type FolderResult struct {
 	Path    string   `json:"path"`    // Relative path to the folder in the repository
@@ -32,6 +52,26 @@ type FolderResult struct {
 
 	TotalLOC         int     `json:"total_loc"`          // Sum of LOC of all contained files (used for weighted average)
 	WeightedScoreSum float64 `json:"weighted_score_sum"` // Sum of (FileScore * FileLOC)
+}
+
+// GetPath returns the folder path.
+func (f FolderResult) GetPath() string {
+	return f.Path
+}
+
+// GetScore returns the computed score.
+func (f FolderResult) GetScore() float64 {
+	return f.Score
+}
+
+// GetCommits returns the total commit count.
+func (f FolderResult) GetCommits() int {
+	return f.Commits
+}
+
+// GetChurn returns the total churn.
+func (f FolderResult) GetChurn() int {
+	return f.Churn
 }
 
 // ComparisonDetails holds the base info, target info, and their associated deltas.
