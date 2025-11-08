@@ -96,3 +96,16 @@ type CompareAnalysisOutput struct {
 	FileResults   []FileResult
 	FolderResults []FolderResult
 }
+
+// TimeseriesPoint represents a single data point in the timeseries.
+type TimeseriesPoint struct {
+	Period string  `json:"period"`
+	Score  float64 `json:"score"`
+	Mode   string  `json:"mode"`
+	Path   string  `json:"path"`
+}
+
+// TimeseriesResult holds the timeseries data points.
+type TimeseriesResult struct {
+	Points []TimeseriesPoint `json:"points"`
+}

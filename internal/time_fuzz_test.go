@@ -47,7 +47,7 @@ func FuzzParseLookbackDuration(f *testing.F) {
 	}
 
 	f.Fuzz(func(_ *testing.T, input string) {
-		_, err := parseLookbackDuration(input)
+		_, err := ParseLookbackDuration(input)
 		_ = err
 	})
 }

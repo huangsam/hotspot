@@ -260,7 +260,7 @@ func processCompareMode(cfg *Config, input *ConfigRawInput) error {
 		cfg.TargetRef = "HEAD"
 	}
 
-	lookback, err := parseLookbackDuration(input.Lookback)
+	lookback, err := ParseLookbackDuration(input.Lookback)
 	if err != nil {
 		return err
 	}

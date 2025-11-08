@@ -241,6 +241,20 @@ var versionCmd = &cobra.Command{
 	},
 }
 
+// timeseriesCmd analyzes the timeseries of hotspot scores for a specific path.
+var timeseriesCmd = &cobra.Command{
+	Use:     "timeseries [repo-path]",
+	Short:   "Show timeseries of hotspot scores for a specific path.",
+	Long:    `The timeseries command analyzes the hotspot score over time for a single file or folder.`,
+	Args:    cobra.MaximumNArgs(1),
+	PreRunE: sharedSetupWrapper,
+	Run: func(_ *cobra.Command, _ []string) {
+		if err := core.ExecuteHotspotTimeseries(rootCtx, cfg); err != nil {
+			internal.LogFatal("Cannot run timeseries analysis", err)
+		}
+	},
+}
+
 // init defines and binds all flags.
 func init() {
 	// Call initConfig on Cobra's initialization
@@ -250,6 +264,7 @@ func init() {
 	rootCmd.AddCommand(filesCmd)
 	rootCmd.AddCommand(foldersCmd)
 	rootCmd.AddCommand(compareCmd)
+	rootCmd.AddCommand(timeseriesCmd)
 	rootCmd.AddCommand(versionCmd)
 
 	// Add the file comparison subcommand to the parent compare command
@@ -282,11 +297,19 @@ func init() {
 	}
 
 	// Bind all persistent flags of compareCmd to Viper
-	compareCmd.PersistentFlags().String("base-ref", "", "Base Git reference for the BEFORE state")
-	compareCmd.PersistentFlags().String("target-ref", "", "Target Git reference for the AFTER state")
+	compareCmd.PersistentFlags().String("base-ref", "", "Base Git reference for the BEFORE state (required)")
+	compareCmd.PersistentFlags().String("target-ref", "", "Target Git reference for the AFTER state (required)")
 	compareCmd.PersistentFlags().String("lookback", "6 months", "Time duration to look back from Base/Target ref commit time")
 	if err := viper.BindPFlags(compareCmd.PersistentFlags()); err != nil {
 		internal.LogFatal("Error binding compare flags", err)
+	}
+
+	// Bind all flags of timeseriesCmd to Viper
+	timeseriesCmd.Flags().String("path", "", "Path to the file or folder to analyze (required)")
+	timeseriesCmd.Flags().String("interval", "", "Total time interval (e.g., 180d) (required)")
+	timeseriesCmd.Flags().Int("points", 0, "Number of lookback points (required)")
+	if err := viper.BindPFlags(timeseriesCmd.Flags()); err != nil {
+		internal.LogFatal("Error binding timeseries flags", err)
 	}
 }
 

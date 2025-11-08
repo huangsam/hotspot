@@ -50,8 +50,8 @@ func parseRelativeTime(s string, now time.Time) (time.Time, error) {
 // Define the regular expression to capture "N [units]".
 var lookbackDurationRe = regexp.MustCompile(`^(\d+)\s+(year|month|week|day|hour|minute)s?$`)
 
-// parseLookbackDuration converts strings like "3 months" into a single time.Duration.
-func parseLookbackDuration(s string) (time.Duration, error) {
+// ParseLookbackDuration converts strings like "3 months" into a single time.Duration.
+func ParseLookbackDuration(s string) (time.Duration, error) {
 	s = strings.TrimSpace(strings.ToLower(s))
 	matches := lookbackDurationRe.FindStringSubmatch(s)
 

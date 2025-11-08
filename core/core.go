@@ -3,9 +3,15 @@ package core
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/huangsam/hotspot/internal"
+	"github.com/huangsam/hotspot/schema"
+	"github.com/spf13/viper"
 )
 
 // ExecutorFunc defines the function signature for executing different analysis modes.
@@ -81,4 +87,102 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *internal.Config) err
 	comparisonResult := compareFolderMetrics(baseOutput.FolderResults, targetOutput.FolderResults, cfg.ResultLimit)
 	duration := time.Since(start)
 	return internal.PrintComparisonResults(comparisonResult, cfg, duration)
+}
+
+// ExecuteHotspotTimeseries runs multiple analyses over disjoint time windows for a specific path.
+func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config) error {
+	start := time.Now()
+
+	// Get timeseries-specific parameters from Viper
+	path := viper.GetString("path")
+	intervalStr := viper.GetString("interval")
+	numPoints := viper.GetInt("points")
+
+	if path == "" {
+		return errors.New("--path is required")
+	}
+	if intervalStr == "" {
+		return errors.New("--interval is required")
+	}
+	if numPoints < 2 {
+		return errors.New("--points must be at least 2")
+	}
+
+	interval, err := internal.ParseLookbackDuration(intervalStr)
+	if err != nil {
+		return fmt.Errorf("invalid interval: %w", err)
+	}
+
+	numWindows := numPoints
+	windowSize := interval / time.Duration(numWindows)
+	now := time.Now()
+	client := internal.NewLocalGitClient()
+
+	// Check if path exists and determine if it's a file or folder
+	fullPath := filepath.Join(cfg.RepoPath, path)
+	info, err := os.Stat(fullPath)
+	if err != nil {
+		return fmt.Errorf("path does not exist: %s", path)
+	}
+	isFolder := info.IsDir()
+
+	var timeseriesPoints []schema.TimeseriesPoint
+
+	for i := range numWindows {
+		end := now.Add(-time.Duration(i) * windowSize)
+		startTime := end.Add(-windowSize)
+		cfgWindow := cfg.CloneWithTimeWindow(startTime, end)
+
+		var score float64
+		if isFolder {
+			output, err := runSingleAnalysisCore(ctx, cfgWindow, client)
+			if err != nil {
+				// If no data in this window, score is 0
+				score = 0
+			} else {
+				folderResults := aggregateAndScoreFolders(cfgWindow, output.FileResults)
+				for _, fr := range folderResults {
+					if fr.Path == path {
+						score = fr.Score
+						break
+					}
+				}
+			}
+		} else {
+			output, err := runSingleAnalysisCore(ctx, cfgWindow, client)
+			if err != nil {
+				// If no data in this window, score is 0
+				score = 0
+			} else {
+				for _, fr := range output.FileResults {
+					if fr.Path == path {
+						score = fr.Score
+						break
+					}
+				}
+			}
+		}
+
+		// Generate period label
+		windowDays := int(windowSize.Hours() / 24)
+		var period string
+		if i == 0 {
+			period = fmt.Sprintf("Current (%dd)", windowDays)
+		} else {
+			startAgo := i * windowDays
+			endAgo := (i + 1) * windowDays
+			period = fmt.Sprintf("%dd to %dd Ago", startAgo, endAgo)
+		}
+
+		timeseriesPoints = append(timeseriesPoints, schema.TimeseriesPoint{
+			Period: period,
+			Score:  score,
+			Mode:   cfg.Mode,
+			Path:   path,
+		})
+	}
+
+	result := schema.TimeseriesResult{Points: timeseriesPoints}
+	duration := time.Since(start)
+	return internal.PrintTimeseriesResults(result, cfg, duration)
 }

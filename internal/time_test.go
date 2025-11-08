@@ -115,7 +115,7 @@ func TestParseLookbackDuration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseLookbackDuration(tt.input)
+			got, err := ParseLookbackDuration(tt.input)
 
 			if tt.expectErr {
 				// Assert that an error occurred
