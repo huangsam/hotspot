@@ -17,7 +17,7 @@ GORELEASER    ?= goreleaser
 
 # --- Phony Targets ---
 # .PHONY: explicitly declares targets that do not represent files
-.PHONY: all build clean install test bench format lint check snapshot release fuzz fuzz-quick fuzz-long help
+.PHONY: all build clean install test bench format lint check snapshot release fuzz fuzz-quick fuzz-long profile help
 
 # --- Targets ---
 
@@ -114,6 +114,22 @@ fuzz:
 	fi
 	@echo "✅ Fuzz tests complete"
 
+# Run full profiling workflow: build, profile, and show top functions
+# PROFILE_PREFIX: Prefix for profile output files (default: hotspot-profile)
+# PROFILE_ARGS: Arguments to pass to hotspot for profiling (default: files --limit 10)
+PROFILE_PREFIX ?= hotspot-profile
+PROFILE_ARGS ?= files --limit 10
+profile: $(BIN_DIR)/$(BINARY_NAME)
+	@echo "🔬 Running full profiling workflow..."
+	@echo "Running: ./$(BIN_DIR)/$(BINARY_NAME) --profile $(PROFILE_PREFIX) $(PROFILE_ARGS)"
+	@./$(BIN_DIR)/$(BINARY_NAME) --profile $(PROFILE_PREFIX) $(PROFILE_ARGS)
+	@echo ""
+	@echo "🔍 Top CPU functions:"
+	@go tool pprof -top $(PROFILE_PREFIX).cpu.prof | head -20
+	@echo ""
+	@echo "🔍 Top memory allocations:"
+	@go tool pprof -top $(PROFILE_PREFIX).mem.prof | head -20
+
 # Convenience aliases for fuzz testing
 fuzz-quick: FUZZTIME=5s
 fuzz-quick: fuzz
@@ -164,6 +180,7 @@ help:
 	@echo "  make fuzz                - Runs fuzz tests (default 10s, use FUZZTIME=30s)."
 	@echo "  make fuzz-quick          - Runs fuzz tests for 5 seconds."
 	@echo "  make fuzz-long           - Runs fuzz tests for 60 seconds."
+	@echo "  make profile             - Run full profiling workflow and show top functions."
 	@echo "  make format              - Runs code formatting."
 	@echo "  make lint                - Runs static analysis and checks."
 	@echo "  make check               - Executes format, lint, and test sequentially."

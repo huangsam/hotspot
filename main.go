@@ -5,7 +5,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"runtime"
+	"runtime/pprof"
 
 	"github.com/huangsam/hotspot/core"
 	"github.com/huangsam/hotspot/internal"
@@ -30,6 +32,52 @@ var cfg = &internal.Config{}
 // input holds the raw, unvalidated configuration from all sources (file, env, flags).
 // Viper will unmarshal into this struct.
 var input = &internal.ConfigRawInput{}
+
+// profile holds profiling configuration
+var profile = &internal.ProfileConfig{}
+
+// startProfiling starts CPU and memory profiling if enabled
+func startProfiling() error {
+	if !profile.Enabled {
+		return nil
+	}
+
+	// Start CPU profiling
+	cpuFile, err := os.Create(profile.Prefix + ".cpu.prof")
+	if err != nil {
+		return fmt.Errorf("could not create CPU profile: %w", err)
+	}
+	if err := pprof.StartCPUProfile(cpuFile); err != nil {
+		return fmt.Errorf("could not start CPU profiling: %w", err)
+	}
+
+	// Memory profiling will be captured at the end
+	fmt.Fprintf(os.Stderr, "Profiling enabled. CPU profile: %s.cpu.prof, Memory profile: %s.mem.prof\n", profile.Prefix, profile.Prefix)
+	return nil
+}
+
+// stopProfiling stops profiling and writes memory profile
+func stopProfiling() error {
+	if !profile.Enabled {
+		return nil
+	}
+
+	pprof.StopCPUProfile()
+
+	// Write memory profile
+	memFile, err := os.Create(profile.Prefix + ".mem.prof")
+	if err != nil {
+		return fmt.Errorf("could not create memory profile: %w", err)
+	}
+	defer func() { _ = memFile.Close() }()
+
+	if err := pprof.WriteHeapProfile(memFile); err != nil {
+		return fmt.Errorf("could not write memory profile: %w", err)
+	}
+
+	fmt.Fprintf(os.Stderr, "Profiling complete. Use 'go tool pprof %s.cpu.prof' to analyze.\n", profile.Prefix)
+	return nil
+}
 
 // rootCmd is the command-line entrypoint for all other commands.
 var rootCmd = &cobra.Command{
@@ -68,6 +116,17 @@ func initConfig() {
 
 // sharedSetup unmarshals config and runs validation.
 func sharedSetup(ctx context.Context, _ *cobra.Command, args []string) error {
+	// Handle profiling flag
+	profilePrefix := viper.GetString("profile")
+	if err := internal.ProcessProfilingConfig(profile, profilePrefix); err != nil {
+		return fmt.Errorf("failed to process profiling config: %w", err)
+	}
+	if profile.Enabled {
+		if err := startProfiling(); err != nil {
+			return fmt.Errorf("failed to start profiling: %w", err)
+		}
+	}
+
 	// 1. Read config file. This merges defaults, file, env, and flags.
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
@@ -208,6 +267,7 @@ func init() {
 	rootCmd.PersistentFlags().String("output-file", "", "Optional path to write output to")
 	rootCmd.PersistentFlags().Bool("owner", false, "Print per-target owner")
 	rootCmd.PersistentFlags().Int("precision", internal.DefaultPrecision, "Decimal precision for numeric columns")
+	rootCmd.PersistentFlags().String("profile", "", "Enable profiling and write profiles to files with this prefix")
 	rootCmd.PersistentFlags().String("start", "", "Start date in ISO8601 or time ago")
 	rootCmd.PersistentFlags().Int("workers", internal.DefaultWorkers, "Number of concurrent workers")
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
@@ -232,6 +292,12 @@ func init() {
 
 // main starts the execution of the logic.
 func main() {
+	defer func() {
+		if err := stopProfiling(); err != nil {
+			internal.LogFatal("Error stopping profiling", err)
+		}
+	}()
+
 	if err := rootCmd.Execute(); err != nil {
 		internal.LogFatal("Error starting CLI", err)
 	}

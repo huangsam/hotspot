@@ -43,6 +43,10 @@ brainstorm/
 # Integration test repos
 test-repos/
 
+# Profile output files
+*.pprof
+*.prof
+
 # Ignore the common local config file which users are expected to copy and modify
 # for their environment. This prevents accidental commits of local settings.
 .hotspot.yaml

@@ -29,6 +29,12 @@ var DateTimeFormat = time.RFC3339
 // DateFormat is the default date representation.
 var DateFormat = time.DateOnly
 
+// ProfileConfig holds profiling settings
+type ProfileConfig struct {
+	Enabled bool
+	Prefix  string
+}
+
 // Config holds the runtime configuration for the analysis.
 // This struct remains the "final, validated" config.
 type Config struct {
@@ -260,6 +266,15 @@ func processCompareMode(cfg *Config, input *ConfigRawInput) error {
 	}
 	cfg.Lookback = lookback
 
+	return nil
+}
+
+// ProcessProfilingConfig handles the profiling flag and sets up profiling configuration.
+func ProcessProfilingConfig(profile *ProfileConfig, profilePrefix string) error {
+	if profilePrefix != "" {
+		profile.Enabled = true
+		profile.Prefix = profilePrefix
+	}
 	return nil
 }
 
