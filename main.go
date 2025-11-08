@@ -241,6 +241,18 @@ var versionCmd = &cobra.Command{
 	},
 }
 
+// metricsCmd displays the formal definitions of all scoring modes.
+var metricsCmd = &cobra.Command{
+	Use:   "metrics",
+	Short: "Display formal definitions of all scoring modes",
+	Long:  `The metrics command shows the purpose, factors, and mathematical formulas for all four core scoring modes without performing Git analysis.`,
+	Run: func(_ *cobra.Command, _ []string) {
+		if err := core.ExecuteHotspotMetrics(); err != nil {
+			internal.LogFatal("Cannot display metrics", err)
+		}
+	},
+}
+
 // timeseriesCmd analyzes the timeseries of hotspot scores for a specific path.
 var timeseriesCmd = &cobra.Command{
 	Use:     "timeseries [repo-path]",
@@ -266,6 +278,7 @@ func init() {
 	rootCmd.AddCommand(compareCmd)
 	rootCmd.AddCommand(timeseriesCmd)
 	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(metricsCmd)
 
 	// Add the file comparison subcommand to the parent compare command
 	compareCmd.AddCommand(compareFilesCmd)

@@ -192,3 +192,9 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config) error {
 	duration := time.Since(start)
 	return internal.PrintTimeseriesResults(result, cfg, duration)
 }
+
+// ExecuteHotspotMetrics displays the formal definitions of all scoring modes.
+// This is a static command that does not perform Git analysis.
+func ExecuteHotspotMetrics() error {
+	return internal.PrintMetricsDefinitions()
+}
