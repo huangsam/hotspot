@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 
 	"github.com/huangsam/hotspot/schema"
 )
@@ -46,7 +47,7 @@ func writeCSVResultsForFolders(w *csv.Writer, results []schema.FolderResult, fmt
 			fmt.Sprintf(intFmt, r.Commits),  // Total Commits
 			fmt.Sprintf(intFmt, r.Churn),    // Total Churn
 			fmt.Sprintf(intFmt, r.TotalLOC), // Total LOC
-			r.Owner,                         // Owner
+			strings.Join(r.Owners, ", "),    // Owners
 		}
 		if err := w.Write(row); err != nil {
 			return err

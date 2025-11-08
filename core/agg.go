@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -238,15 +239,15 @@ func aggregateAndScoreFolders(cfg *internal.Config, fileResults []schema.FileRes
 		folderResults[folderPath].WeightedScoreSum += fr.Score * float64(fr.LinesOfCode)
 
 		// 3. Aggregate author contributions for owner calculation
-		if fr.Owner != "" {
+		if len(fr.Owners) > 0 {
 			if folderAuthorContributions[folderPath] == nil {
 				folderAuthorContributions[folderPath] = make(map[string]int)
 			}
 
-			// Use the file's total commits as the weight for its primary author's contribution
+			// Use the file's primary owner's total commits as the weight for its author's contribution
 			// to the folder. This finds the author who has done the most work (measured by commits)
 			// across all files in the folder.
-			folderAuthorContributions[folderPath][fr.Owner] += fr.Commits
+			folderAuthorContributions[folderPath][fr.Owners[0]] += fr.Commits
 		}
 	}
 
@@ -258,15 +259,26 @@ func aggregateAndScoreFolders(cfg *internal.Config, fileResults []schema.FileRes
 
 		// Determine the Most Frequent Author (Owner)
 		if authorMap := folderAuthorContributions[res.Path]; len(authorMap) > 0 {
-			var owner string
-			var maxCommits int
+			// Sort authors by commit count descending
+			type authorCommits struct {
+				author  string
+				commits int
+			}
+			var authors []authorCommits
 			for author, commits := range authorMap {
-				if maxCommits < commits {
-					maxCommits = commits
-					owner = author
+				authors = append(authors, authorCommits{author: author, commits: commits})
+			}
+			sort.Slice(authors, func(i, j int) bool {
+				return authors[i].commits > authors[j].commits
+			})
+
+			// Set top owner and top 2 owners
+			if len(authors) > 0 {
+				res.Owners = make([]string, 0, 2)
+				for i := 0; i < len(authors) && i < 2; i++ {
+					res.Owners = append(res.Owners, authors[i].author)
 				}
 			}
-			res.Owner = owner
 		}
 
 		finalResults = append(finalResults, *res)

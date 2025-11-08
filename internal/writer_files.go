@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 
 	"github.com/huangsam/hotspot/schema"
 )
@@ -45,7 +46,7 @@ func writeCSVResults(w *csv.Writer, files []schema.FileResult, cfg *Config, fmtF
 			fmtFloat(f.Gini),
 			f.FirstCommit.Format(DateTimeFormat),
 			cfg.Mode,
-			f.Owner,
+			strings.Join(f.Owners, ", "),
 		}
 		if err := w.Write(rec); err != nil {
 			return err

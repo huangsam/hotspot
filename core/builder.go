@@ -6,6 +6,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -185,17 +186,26 @@ func (b *FileResultBuilder) CalculateOwner() *FileResultBuilder {
 		return b
 	}
 
-	var owner string
-	var maxCommits int
-
+	// Sort authors by commit count descending
+	type authorCommits struct {
+		author  string
+		commits int
+	}
+	var authors []authorCommits
 	for author, commits := range authorMap {
-		if maxCommits < commits {
-			maxCommits = commits
-			owner = author
+		authors = append(authors, authorCommits{author: author, commits: commits})
+	}
+	sort.Slice(authors, func(i, j int) bool {
+		return authors[i].commits > authors[j].commits
+	})
+
+	// Set top owner and top 2 owners
+	if len(authors) > 0 {
+		b.result.Owners = make([]string, 0, 2)
+		for i := 0; i < len(authors) && i < 2; i++ {
+			b.result.Owners = append(b.result.Owners, authors[i].author)
 		}
 	}
-
-	b.result.Owner = owner
 	return b
 }
 

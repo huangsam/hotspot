@@ -19,16 +19,16 @@ type FileResult struct {
 	FirstCommit        time.Time          `json:"first_commit"`        // Timestamp of the file's first commit
 	Score              float64            `json:"score"`               // Computed importance score (0-100)
 	Breakdown          map[string]float64 `json:"breakdown"`           // Normalized contribution of each metric for debugging/tuning
-	Owner              string             `json:"owner"`               // Owner is the individual who has committed the most to this file
+	Owners             []string           `json:"owners"`              // Top 2 owners by commit count
 }
 
 // FolderResult holds the final computed scores and aggregated metrics for a folder.
 type FolderResult struct {
-	Path    string  `json:"path"`    // Relative path to the folder in the repository
-	Commits int     `json:"commits"` // Total number of commits across all contained files
-	Churn   int     `json:"churn"`   // Total number of lines added/deleted across all contained files
-	Score   float64 `json:"score"`   // Computed importance score for the folder
-	Owner   string  `json:"owner"`   // Owner is the individual who has committed the most to the files in this folder
+	Path    string   `json:"path"`    // Relative path to the folder in the repository
+	Commits int      `json:"commits"` // Total number of commits across all contained files
+	Churn   int      `json:"churn"`   // Total number of lines added/deleted across all contained files
+	Score   float64  `json:"score"`   // Computed importance score for the folder
+	Owners  []string `json:"owners"`  // Top 2 owners by commit count
 
 	TotalLOC         int     `json:"total_loc"`          // Sum of LOC of all contained files (used for weighted average)
 	WeightedScoreSum float64 `json:"weighted_score_sum"` // Sum of (FileScore * FileLOC)
