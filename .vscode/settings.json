@@ -1,0 +1,5 @@
+{
+    "go.buildTags": "integration",
+    "go.testFlags": ["-v"],
+    "go.testTimeout": "30s"
+}

@@ -53,9 +53,35 @@ install: $(BIN_DIR)/$(BINARY_NAME)
 reinstall: clean install
 
 # Run tests
+# FORCE=1: Bypass test cache
+# INTEGRATION=1: Include integration tests
 test:
 	@echo "🧪 Running tests..."
-	@$(GO) test ./...
+	@if [ "$(INTEGRATION)" = "1" ]; then \
+		echo "Including integration tests..."; \
+		if [ "$(FORCE)" = "1" ]; then \
+			$(GO) test -count=1 ./...; \
+			$(GO) test -tags integration -count=1 ./integration; \
+		else \
+			$(GO) test ./...; \
+			$(GO) test -tags integration ./integration; \
+		fi; \
+	else \
+		if [ "$(FORCE)" = "1" ]; then \
+			$(GO) test -count=1 ./...; \
+		else \
+			$(GO) test ./...; \
+		fi; \
+	fi
+
+# Convenience aliases for common test scenarios
+test-force: export FORCE=1
+test-force: test
+test-all: export INTEGRATION=1
+test-all: test
+test-all-force: export FORCE=1
+test-all-force: export INTEGRATION=1
+test-all-force: test
 
 # Run benchmarks
 bench:
@@ -94,16 +120,19 @@ help:
 	@echo
 	@echo "✨ $(BINARY_NAME) Development Makefile Targets ✨"
 	@echo
-	@echo "  make build (default) - Builds the binary into $(BIN_DIR)/$(BINARY_NAME)."
-	@echo "  make clean           - Removes build artifacts ($(BIN_DIR)) and release files (dist)."
-	@echo "  make install         - Installs the built binary to $$(go env GOPATH)/bin."
-	@echo "  make reinstall.      - Reinstalls the built binary."
-	@echo "  make test            - Runs all Go tests."
-	@echo "  make bench           - Runs Go benchmarks."
-	@echo "  make format          - Runs code formatting."
-	@echo "  make lint            - Runs static analysis and checks."
-	@echo "  make check           - Executes format, lint, and test sequentially."
-	@echo "  make snapshot        - Runs a snapshot release via $(GORELEASER)."
-	@echo "  make release         - Runs a full release via $(GORELEASER)."
-	@echo "  make help            - Shows this help message."
+	@echo "  make build (default)     - Builds the binary into $(BIN_DIR)/$(BINARY_NAME)."
+	@echo "  make clean               - Removes build artifacts ($(BIN_DIR)) and release files (dist)."
+	@echo "  make install             - Installs the built binary to $$(go env GOPATH)/bin."
+	@echo "  make reinstall           - Reinstalls the built binary."
+	@echo "  make test                - Runs unit tests."
+	@echo "  make test-force          - Force runs unit tests (bypasses cache)."
+	@echo "  make test-all            - Runs unit + integration tests."
+	@echo "  make test-all-force      - Force runs all tests (bypasses cache)."
+	@echo "  make bench               - Runs Go benchmarks."
+	@echo "  make format              - Runs code formatting."
+	@echo "  make lint                - Runs static analysis and checks."
+	@echo "  make check               - Executes format, lint, and test sequentially."
+	@echo "  make snapshot            - Runs a snapshot release via $(GORELEASER)."
+	@echo "  make release             - Runs a full release via $(GORELEASER)."
+	@echo "  make help                - Shows this help message."
 	@echo
