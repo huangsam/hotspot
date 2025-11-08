@@ -14,7 +14,7 @@ import (
 )
 
 // PrintComparisonResults outputs the analysis results, dispatching based on the output format configured.
-func PrintComparisonResults(metrics []schema.ComparisonResult, cfg *Config) {
+func PrintComparisonResults(metrics []schema.ComparisonResult, cfg *Config) error {
 	// Helper format strings and closure for number formatting
 	numFmt := "%.*f"
 	intFmt := "%d"
@@ -26,18 +26,19 @@ func PrintComparisonResults(metrics []schema.ComparisonResult, cfg *Config) {
 	switch strings.ToLower(cfg.Output) {
 	case schema.JSONOut:
 		if err := printJSONResultsForComparison(metrics, cfg); err != nil {
-			LogFatal("Error writing JSON output", err)
+			return fmt.Errorf("error writing JSON output: %w", err)
 		}
 	case schema.CSVOut:
 		if err := printCSVResultsForComparison(metrics, cfg, fmtFloat, intFmt); err != nil {
-			LogFatal("Error writing CSV output", err)
+			return fmt.Errorf("error writing CSV output: %w", err)
 		}
 	default:
 		// Default to human-readable table
 		if err := printComparisonTable(metrics, cfg, fmtFloat, intFmt); err != nil {
-			LogFatal("Error writing comparison table output", err)
+			return fmt.Errorf("error writing comparison table output: %w", err)
 		}
 	}
+	return nil
 }
 
 // printJSONResultsForComparison handles opening the file and calling the JSON writer.

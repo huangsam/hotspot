@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -59,7 +58,6 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 		b.useFollow,
 	)
 	if err != nil {
-		internal.LogWarning(fmt.Sprintf("Failed to get metrics for %s. Error: %v", b.path, err))
 		return b
 	}
 

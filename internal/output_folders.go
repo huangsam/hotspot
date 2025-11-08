@@ -13,7 +13,7 @@ import (
 )
 
 // PrintFolderResults outputs the analysis results, dispatching based on the output format configured.
-func PrintFolderResults(results []schema.FolderResult, cfg *Config) {
+func PrintFolderResults(results []schema.FolderResult, cfg *Config) error {
 	// helper format strings and closure for number formatting
 	numFmt := "%.*f"
 	intFmt := "%d"
@@ -25,18 +25,19 @@ func PrintFolderResults(results []schema.FolderResult, cfg *Config) {
 	switch strings.ToLower(cfg.Output) {
 	case schema.JSONOut:
 		if err := printJSONResultsForFolders(results, cfg); err != nil {
-			LogFatal("Error writing JSON output", err)
+			return fmt.Errorf("error writing JSON output: %w", err)
 		}
 	case schema.CSVOut:
 		if err := printCSVResultsForFolders(results, cfg, fmtFloat, intFmt); err != nil {
-			LogFatal("Error writing CSV output", err)
+			return fmt.Errorf("error writing CSV output: %w", err)
 		}
 	default:
 		// Default to human-readable table
 		if err := printFolderTable(results, cfg, fmtFloat, intFmt); err != nil {
-			LogFatal("Error writing table output", err)
+			return fmt.Errorf("error writing table output: %w", err)
 		}
 	}
+	return nil
 }
 
 // printJSONResultsForFolders handles opening the file and calling the JSON writer.

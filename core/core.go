@@ -22,8 +22,7 @@ func ExecuteHotspotFiles(ctx context.Context, cfg *internal.Config) error {
 		resultsToRank = runFollowPass(ctx, cfg, client, rankedForFollow, output.AggregateOutput)
 	}
 	ranked := rankFiles(resultsToRank, cfg.ResultLimit)
-	internal.PrintFileResults(ranked, cfg)
-	return nil
+	return internal.PrintFileResults(ranked, cfg)
 }
 
 // ExecuteHotspotFolders runs the folder-level analysis and prints results to stdout.
@@ -36,8 +35,7 @@ func ExecuteHotspotFolders(ctx context.Context, cfg *internal.Config) error {
 	}
 	folderResults := aggregateAndScoreFolders(cfg, output.FileResults)
 	ranked := rankFolders(folderResults, cfg.ResultLimit)
-	internal.PrintFolderResults(ranked, cfg)
-	return nil
+	return internal.PrintFolderResults(ranked, cfg)
 }
 
 // ExecuteHotspotCompare runs two file-level analyses (Base and Target)
@@ -55,8 +53,7 @@ func ExecuteHotspotCompare(ctx context.Context, cfg *internal.Config) error {
 	sort.Slice(baseOutput.FileResults, func(i, j int) bool { return baseOutput.FileResults[i].Path < baseOutput.FileResults[j].Path })
 	sort.Slice(targetOutput.FileResults, func(i, j int) bool { return targetOutput.FileResults[i].Path < targetOutput.FileResults[j].Path })
 	comparisonResults := compareFileResults(baseOutput.FileResults, targetOutput.FileResults, cfg.ResultLimit)
-	internal.PrintComparisonResults(comparisonResults, cfg)
-	return nil
+	return internal.PrintComparisonResults(comparisonResults, cfg)
 }
 
 // ExecuteHotspotCompareFolders runs two folder-level analyses (Base and Target)
@@ -76,6 +73,5 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *internal.Config) err
 	sort.Slice(baseOutput.FolderResults, func(i, j int) bool { return baseOutput.FolderResults[i].Path < baseOutput.FolderResults[j].Path })
 	sort.Slice(targetOutput.FolderResults, func(i, j int) bool { return targetOutput.FolderResults[i].Path < targetOutput.FolderResults[j].Path })
 	comparisonResults := compareFolderMetrics(baseOutput.FolderResults, targetOutput.FolderResults, cfg.ResultLimit)
-	internal.PrintComparisonResults(comparisonResults, cfg)
-	return nil
+	return internal.PrintComparisonResults(comparisonResults, cfg)
 }

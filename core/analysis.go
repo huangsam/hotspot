@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"sync"
@@ -16,15 +17,13 @@ func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client *in
 	// --- 1. Aggregation Phase ---
 	output, err := aggregateActivity(ctx, cfg, client)
 	if err != nil {
-		internal.LogWarning("Cannot aggregate activity")
 		return nil, err
 	}
 
 	// --- 2. File List Building and Filtering ---
 	files := buildFilteredFileList(cfg, output)
 	if len(files) == 0 {
-		internal.LogWarning("No files with activity found in the requested window")
-		return nil, fmt.Errorf("no files found")
+		return nil, errors.New("no files found")
 	}
 
 	// --- 3. Core Analysis ---
@@ -70,14 +69,12 @@ func analyzeAllFiles(ctx context.Context, cfg *internal.Config, client internal.
 	// --- 1. Aggregation Phase ---
 	output, err := aggregateActivity(ctx, cfg, client)
 	if err != nil {
-		internal.LogWarning("Cannot aggregate activity")
 		return nil, err
 	}
 
 	// --- 2. File List Building and Filtering ---
 	files := buildFilteredFileList(cfg, output)
 	if len(files) == 0 {
-		internal.LogWarning("No files with activity found in the requested window")
 		return []schema.FileResult{}, nil // Return empty, not an error
 	}
 

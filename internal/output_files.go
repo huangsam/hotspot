@@ -16,7 +16,7 @@ import (
 )
 
 // PrintFileResults outputs the analysis results in a formatted table or exports them as CSV/JSON.
-func PrintFileResults(files []schema.FileResult, cfg *Config) {
+func PrintFileResults(files []schema.FileResult, cfg *Config) error {
 	// helper format strings and closure for number formatting
 	numFmt := "%.*f"
 	intFmt := "%d"
@@ -28,18 +28,19 @@ func PrintFileResults(files []schema.FileResult, cfg *Config) {
 	switch cfg.Output {
 	case schema.JSONOut:
 		if err := printJSONResults(files, cfg); err != nil {
-			LogFatal("Error writing JSON output", err)
+			return fmt.Errorf("error writing JSON output: %w", err)
 		}
 	case schema.CSVOut:
 		if err := printCSVResults(files, cfg, fmtFloat, intFmt); err != nil {
-			LogFatal("Error writing CSV output", err)
+			return fmt.Errorf("error writing CSV output: %w", err)
 		}
 	default:
 		// Default to human-readable table
 		if err := printTableResults(files, cfg, fmtFloat, intFmt); err != nil {
-			LogFatal("Error writing table output", err)
+			return fmt.Errorf("error writing table output: %w", err)
 		}
 	}
+	return nil
 }
 
 // printJSONResults handles opening the file and calling the JSON writer.

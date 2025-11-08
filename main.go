@@ -143,6 +143,9 @@ var compareFilesCmd = &cobra.Command{
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
+		if !cfg.CompareMode {
+			internal.LogFatal("Cannot run compare analysis", errors.New("needs base and target refs"))
+		}
 		if err := core.ExecuteHotspotCompare(rootCtx, cfg); err != nil {
 			internal.LogFatal("Cannot run compare analysis", err)
 		}
@@ -157,8 +160,11 @@ var compareFoldersCmd = &cobra.Command{
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
+		if !cfg.CompareMode {
+			internal.LogFatal("Cannot run compare analysis", errors.New("needs base and target refs"))
+		}
 		if err := core.ExecuteHotspotCompareFolders(rootCtx, cfg); err != nil {
-			internal.LogFatal("Cannot run compare analysis", errors.New("compare mode is off"))
+			internal.LogFatal("Cannot run compare analysis", err)
 		}
 	},
 }
@@ -227,6 +233,6 @@ func init() {
 // main starts the execution of the logic.
 func main() {
 	if err := rootCmd.Execute(); err != nil {
-		internal.LogFatal("Error", err)
+		internal.LogFatal("Error starting CLI", err)
 	}
 }
