@@ -61,7 +61,9 @@ This ranking displays the **complexity score** and a colored label based on:
 
 `hotspot files --mode complexity --start 2024-01-01T00:00:00Z --end 2025-01-01T00:00:00Z --workers 16`
 
-## Scoring modes
+## Analysis features
+
+### Scoring modes
 
 The core power of Hotspot lies in its `--mode` flag, which selects the ranking algorithm used to identify different types of risk.
 
@@ -76,7 +78,7 @@ The core power of Hotspot lies in its `--mode` flag, which selects the ranking a
 | **complexity** | Technical debt | Triage files with high churn, large size, and high complexity. |
 | **stale** | Maintenance debt | Highlight critical files that are large, old, but rarely touched. |
 
-## Risk comparison & delta tracking
+### Risk comparison & delta tracking
 
 The `compare` subcommand allows you to measure the change in metrics between two different points in your repository's history. This is the most effective way to audit the impact of a new change set across multiple dimensions.
 
@@ -90,7 +92,7 @@ The `compare` subcommand allows you to measure the change in metrics between two
 | `--target-ref` | The AFTER Git reference (defaults to `HEAD`). |
 | `--lookback` | Time window (e.g. `6 months`) used for base and target. |
 
-## Timeseries analysis
+### Timeseries analysis
 
 The `timeseries` subcommand tracks how hotspot scores change over time for a specific file or folder path. This helps you understand trends and identify when risk started increasing or decreasing.
 
