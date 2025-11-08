@@ -32,22 +32,13 @@ dist/
 .idea/
 bin/
 brainstorm/
-*.cast
-/hotspot
-/coverage.txt
-
-# Output assets
-/*.csv
-/*.json
-
-# Integration test repos
+fuzz/
 test-repos/
-
-# Profile output files
-*.pprof
+*.cast
 *.prof
-
-# Ignore the common local config file which users are expected to copy and modify
-# for their environment. This prevents accidental commits of local settings.
 .hotspot.yaml
 .hotspot.yml
+/hotspot
+/coverage.txt
+/*.csv
+/*.json
