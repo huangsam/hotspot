@@ -12,6 +12,9 @@ GO            ?= go
 GOLANGCI_LINT ?= golangci-lint
 GORELEASER    ?= goreleaser
 
+# Integration tests/linting included by default (set to 0 to disable)
+INTEGRATION   ?= 1
+
 # Default target for 'make'
 .DEFAULT_GOAL := build
 
@@ -141,12 +144,20 @@ format:
 	@echo "📐 Formatting code..."
 	@$(GOLANGCI_LINT) run --fix
 	@$(GOLANGCI_LINT) fmt
+	@if [ "$(INTEGRATION)" = "1" ]; then \
+		echo "📐 Including integration format..."; \
+		$(GOLANGCI_LINT) run --build-tags integration --fix ./integration; \
+	fi
 	@echo "✅ Format complete"
 
 # Lint code
 lint:
 	@echo "🔍 Linting code..."
 	@$(GOLANGCI_LINT) run
+	@if [ "$(INTEGRATION)" = "1" ]; then \
+		echo "🔍 Including integration lint..."; \
+		$(GOLANGCI_LINT) run --build-tags integration ./integration; \
+	fi
 	@echo "✅ Lint complete"
 
 # Run all checks (Format, Lint, Test)
