@@ -161,7 +161,7 @@ var compareFilesCmd = &cobra.Command{
 var compareFoldersCmd = &cobra.Command{
 	Use:     "folders [repo-path]",
 	Short:   "Compare folder-level risk metrics (the default unit of comparison).",
-	Long:    `The files subcommand runs two separate folder analyses (Base vs. Target) and reports change in risk scores.`,
+	Long:    `The folders subcommand runs two separate folder analyses (Base vs. Target) and reports change in risk scores.`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
