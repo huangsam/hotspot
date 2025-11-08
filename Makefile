@@ -17,7 +17,7 @@ GORELEASER    ?= goreleaser
 
 # --- Phony Targets ---
 # .PHONY: explicitly declares targets that do not represent files
-.PHONY: all build clean install test bench format lint check snapshot release help
+.PHONY: all build clean install test bench format lint check snapshot release fuzz fuzz-quick fuzz-long help
 
 # --- Targets ---
 
@@ -88,6 +88,38 @@ bench:
 	@echo "⏱ Running benchmarks..."
 	@$(GO) test -bench=. ./...
 
+# Run fuzz tests
+# FUZZTIME: Duration to run fuzz tests (default: 10s)
+# FUZZFUNC: Specific fuzz function to run (optional)
+FUZZTIME ?= 10s
+fuzz:
+	@echo "🔬 Running fuzz tests..."
+	@if [ -n "$(FUZZFUNC)" ]; then \
+		echo "Running specific fuzz function: $(FUZZFUNC)"; \
+		for pkg in ./internal ./core; do \
+			$(GO) test -fuzz=$(FUZZFUNC) -fuzztime=$(FUZZTIME) $$pkg || exit 1; \
+		done; \
+		$(GO) test -tags integration -fuzz=$(FUZZFUNC) -fuzztime=$(FUZZTIME) ./integration || exit 1; \
+	else \
+		for pkg in ./internal ./core; do \
+			for fuzzfunc in $$($(GO) test -list=Fuzz $$pkg | grep ^Fuzz); do \
+				echo "Running $$fuzzfunc in $$pkg"; \
+				$(GO) test -fuzz=$$fuzzfunc -fuzztime=$(FUZZTIME) $$pkg || exit 1; \
+			done; \
+		done; \
+		for fuzzfunc in $$($(GO) test -tags integration -list=Fuzz ./integration | grep ^Fuzz); do \
+			echo "Running $$fuzzfunc in ./integration"; \
+			$(GO) test -tags integration -fuzz=$$fuzzfunc -fuzztime=$(FUZZTIME) ./integration || exit 1; \
+		done; \
+	fi
+	@echo "✅ Fuzz tests complete"
+
+# Convenience aliases for fuzz testing
+fuzz-quick: FUZZTIME=5s
+fuzz-quick: fuzz
+fuzz-long: FUZZTIME=60s
+fuzz-long: fuzz
+
 # Format code
 format:
 	@echo "📐 Formatting code..."
@@ -129,6 +161,9 @@ help:
 	@echo "  make test-all            - Runs unit + integration tests."
 	@echo "  make test-all-force      - Force runs all tests (bypasses cache)."
 	@echo "  make bench               - Runs Go benchmarks."
+	@echo "  make fuzz                - Runs fuzz tests (default 10s, use FUZZTIME=30s)."
+	@echo "  make fuzz-quick          - Runs fuzz tests for 5 seconds."
+	@echo "  make fuzz-long           - Runs fuzz tests for 60 seconds."
 	@echo "  make format              - Runs code formatting."
 	@echo "  make lint                - Runs static analysis and checks."
 	@echo "  make check               - Executes format, lint, and test sequentially."

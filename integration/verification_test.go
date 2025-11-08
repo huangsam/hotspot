@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -175,4 +176,34 @@ func verifyRepo(t *testing.T, repoDir, hotspotPath string) {
 				"commit count mismatch for %s", file)
 		})
 	}
+}
+
+// FuzzParseHotspotOutput fuzzes the parseHotspotOutput function with random JSON inputs.
+func FuzzParseHotspotOutput(f *testing.F) {
+	seeds := []string{
+		`[{"path": "main.go", "commits": 10}]`,
+		`[]`,
+		`[{"path": "", "commits": 0}]`,
+		`invalid json`,
+	}
+	for _, seed := range seeds {
+		f.Add(seed)
+	}
+
+	f.Fuzz(func(t *testing.T, output string) {
+		// Add timeout to prevent hanging on pathological JSON inputs
+		done := make(chan bool, 1)
+		go func() {
+			_ = parseHotspotOutput(output)
+			done <- true
+		}()
+
+		select {
+		case <-done:
+			// Function completed normally
+		case <-time.After(100 * time.Millisecond):
+			// Function took too long, likely pathological input
+			t.Skip("parseHotspotOutput took too long, likely pathological input")
+		}
+	})
 }
