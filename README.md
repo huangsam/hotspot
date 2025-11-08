@@ -80,7 +80,7 @@ The core power of Hotspot lies in its `--mode` flag, which selects the ranking a
 
 The `compare` subcommand allows you to measure the change in metrics between two different points in your repository's history. This is the most effective way to audit the impact of a new change set across multiple dimensions.
 
-**Example:** Compare between releases, using the default 6-month lookback:
+**Example:** Compare between releases, using the default 6-month lookback.
 
 `hotspot compare files --mode complexity --base-ref v0.15.0 --target-ref v0.16.0`
 
@@ -94,7 +94,7 @@ The `compare` subcommand allows you to measure the change in metrics between two
 
 The `timeseries` subcommand tracks how hotspot scores change over time for a specific file or folder path. This helps you understand trends and identify when risk started increasing or decreasing.
 
-**Example:** Track complexity score for a specific file over the last month:
+**Example:** Track complexity score for a specific file over the last month.
 
 `hotspot timeseries --path main.go --mode complexity --interval "30 days" --points 3`
 
