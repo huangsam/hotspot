@@ -435,3 +435,126 @@ func BenchmarkComputeScore(b *testing.B) {
 		computeScore(&metrics, schema.HotMode, nil)
 	}
 }
+
+// TestComputeScoreWithCustomWeights tests that custom weights produce different results than defaults
+func TestComputeScoreWithCustomWeights(t *testing.T) {
+	metrics := schema.FileResult{
+		Path:               "test.go",
+		UniqueContributors: 5,
+		Commits:            50,
+		SizeBytes:          50 * 1024,
+		AgeDays:            365,
+		Churn:              250,
+		Gini:               0.3,
+	}
+
+	// Get default score
+	defaultScore := computeScore(&metrics, schema.HotMode, nil)
+
+	// Test with custom weights that heavily weight commits
+	customWeights := map[string]map[string]float64{
+		schema.HotMode: {
+			schema.BreakdownCommits: 0.8, // Much higher weight on commits
+			schema.BreakdownChurn:   0.1,
+			schema.BreakdownAge:     0.05,
+			schema.BreakdownContrib: 0.03,
+			schema.BreakdownSize:    0.02,
+		},
+	}
+	customScore := computeScore(&metrics, schema.HotMode, customWeights)
+
+	// Scores should be different
+	assert.NotEqual(t, defaultScore, customScore, "Custom weights should produce different score than defaults")
+
+	// Both should be valid scores
+	assert.True(t, defaultScore >= 0 && defaultScore <= 100, "Default score should be valid")
+	assert.True(t, customScore >= 0 && customScore <= 100, "Custom score should be valid")
+}
+
+// TestComputeScoreCustomWeightsAllModes tests custom weights for all scoring modes
+func TestComputeScoreCustomWeightsAllModes(t *testing.T) {
+	modes := []string{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode}
+
+	metrics := schema.FileResult{
+		Path:               "test.go",
+		UniqueContributors: 5,
+		Commits:            50,
+		RecentCommits:      10,
+		SizeBytes:          50 * 1024,
+		AgeDays:            365,
+		Churn:              250,
+		Gini:               0.3,
+		LinesOfCode:        500,
+	}
+
+	for _, mode := range modes {
+		t.Run(mode, func(t *testing.T) {
+			// Get default score
+			defaultScore := computeScore(&metrics, mode, nil)
+
+			// Create custom weights that emphasize different aspects
+			customWeights := map[string]map[string]float64{
+				mode: {},
+			}
+
+			// Add some custom weights based on mode
+			switch mode {
+			case schema.HotMode:
+				customWeights[mode][schema.BreakdownCommits] = 0.6
+				customWeights[mode][schema.BreakdownChurn] = 0.4
+			case schema.RiskMode:
+				customWeights[mode][schema.BreakdownInvContrib] = 0.5
+				customWeights[mode][schema.BreakdownGini] = 0.5
+			case schema.StaleMode:
+				customWeights[mode][schema.BreakdownInvRecent] = 0.5
+				customWeights[mode][schema.BreakdownAge] = 0.5
+			case schema.ComplexityMode:
+				customWeights[mode][schema.BreakdownSize] = 0.4
+				customWeights[mode][schema.BreakdownLOC] = 0.4
+				customWeights[mode][schema.BreakdownAge] = 0.2
+			}
+
+			customScore := computeScore(&metrics, mode, customWeights)
+
+			// Both should be valid scores
+			assert.True(t, defaultScore >= 0 && defaultScore <= 100, "Default score should be valid")
+			assert.True(t, customScore >= 0 && customScore <= 100, "Custom score should be valid")
+
+			// For modes where we changed weights significantly, scores should differ
+			if mode == schema.HotMode {
+				assert.NotEqual(t, defaultScore, customScore, "Hot mode custom weights should produce different score")
+			}
+		})
+	}
+}
+
+// TestComputeScoreInvalidCustomWeights tests behavior with invalid custom weights
+func TestComputeScoreInvalidCustomWeights(t *testing.T) {
+	metrics := schema.FileResult{
+		Path:               "test.go",
+		UniqueContributors: 5,
+		Commits:            50,
+		SizeBytes:          50 * 1024,
+		AgeDays:            365,
+		Churn:              250,
+		Gini:               0.3,
+	}
+
+	// Test with nil custom weights (should use defaults)
+	score := computeScore(&metrics, schema.HotMode, nil)
+	assert.True(t, score >= 0 && score <= 100, "Score with nil custom weights should be valid")
+
+	// Test with empty custom weights map (should use defaults)
+	emptyWeights := map[string]map[string]float64{}
+	score = computeScore(&metrics, schema.HotMode, emptyWeights)
+	assert.True(t, score >= 0 && score <= 100, "Score with empty custom weights should be valid")
+
+	// Test with custom weights for wrong mode (should use defaults for the requested mode)
+	wrongModeWeights := map[string]map[string]float64{
+		"nonexistent_mode": {
+			"some_key": 1.0,
+		},
+	}
+	score = computeScore(&metrics, schema.HotMode, wrongModeWeights)
+	assert.True(t, score >= 0 && score <= 100, "Score with wrong mode custom weights should be valid")
+}

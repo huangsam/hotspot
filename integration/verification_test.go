@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -292,7 +293,8 @@ func TestTimeseriesVerification(t *testing.T) {
 func extractJSONFromOutput(output string) string {
 	lines := strings.Split(output, "\n")
 	for i, line := range lines {
-		if strings.TrimSpace(line) == "{" { // Start of JSON object
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "{") || strings.HasPrefix(trimmed, "[") { // Start of JSON object or array
 			return strings.Join(lines[i:], "\n")
 		}
 	}
@@ -327,4 +329,125 @@ func FuzzParseHotspotOutput(f *testing.F) {
 			t.Skip("parseHotspotOutput took too long, likely pathological input")
 		}
 	})
+}
+
+// TestCustomWeightsIntegration tests the full CLI with custom weights configuration
+func TestCustomWeightsIntegration(t *testing.T) {
+	// Skip if not in a git repo
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not available")
+	}
+
+	// Get current repo path
+	repoPath, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	require.NoError(t, err)
+	repoDir := strings.TrimSpace(string(repoPath))
+
+	// Build hotspot binary
+	hotspotPath := buildHotspot(t, repoDir)
+
+	// Create a temporary config file with custom weights
+	configContent := `
+mode: hot
+limit: 5
+weights:
+  hot:
+    commits: 0.8
+    churn: 0.1
+    age: 0.05
+    contrib: 0.04
+    size: 0.01
+`
+	configFile := filepath.Join(repoDir, ".hotspot.yml")
+	err = os.WriteFile(configFile, []byte(configContent), 0o644)
+	require.NoError(t, err)
+	defer os.Remove(configFile) // Clean up
+
+	// Run hotspot files with custom config
+	cmd := exec.Command(hotspotPath, "files", "--output", "json")
+	cmd.Dir = repoDir
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+	err = cmd.Run()
+	require.NoError(t, err)
+
+	// Parse output
+	var files []HotspotFile
+	jsonPart := extractJSONFromOutput(stdout.String())
+	err = json.Unmarshal([]byte(jsonPart), &files)
+	require.NoError(t, err)
+
+	// Should have some results
+	assert.NotEmpty(t, files, "Should have file results")
+
+	// Test with different custom weights for comparison
+	configContent2 := `
+mode: hot
+limit: 5
+weights:
+  hot:
+    commits: 0.1
+    churn: 0.8
+    age: 0.05
+    contrib: 0.04
+    size: 0.01
+`
+	err = os.WriteFile(configFile, []byte(configContent2), 0o644)
+	require.NoError(t, err)
+
+	// Run hotspot files with different custom config
+	cmd2 := exec.Command(hotspotPath, "files", "--output", "json")
+	cmd2.Dir = repoDir
+	var stdout2 bytes.Buffer
+	cmd2.Stdout = &stdout2
+	err = cmd2.Run()
+	require.NoError(t, err)
+
+	// Parse second output
+	var files2 []HotspotFile
+	jsonPart2 := extractJSONFromOutput(stdout2.String())
+	err = json.Unmarshal([]byte(jsonPart2), &files2)
+	require.NoError(t, err)
+
+	// Results should be different due to different weights
+	// (Note: we can't guarantee the scores will be different for all files,
+	// but the configuration should be accepted and processed)
+	assert.NotEmpty(t, files2, "Should have file results with different weights")
+}
+
+// TestCustomWeightsValidationIntegration tests that invalid weights are rejected
+func TestCustomWeightsValidationIntegration(t *testing.T) {
+	// Skip if not in a git repo
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not available")
+	}
+
+	// Get current repo path
+	repoPath, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	require.NoError(t, err)
+	repoDir := strings.TrimSpace(string(repoPath))
+
+	// Build hotspot binary
+	hotspotPath := buildHotspot(t, repoDir)
+
+	// Create a temporary config file with invalid weights (don't sum to 1.0)
+	configContent := `
+mode: hot
+limit: 5
+weights:
+  hot:
+    commits: 0.5
+    churn: 0.3
+    age: 0.3  # 0.5 + 0.3 + 0.3 = 1.1
+`
+	configFile := filepath.Join(repoDir, ".hotspot.yml")
+	err = os.WriteFile(configFile, []byte(configContent), 0o644)
+	require.NoError(t, err)
+	defer os.Remove(configFile) // Clean up
+
+	// Run hotspot files - should fail due to invalid weights
+	cmd := exec.Command(hotspotPath, "files")
+	cmd.Dir = repoDir
+	err = cmd.Run()
+	assert.Error(t, err, "Should fail with invalid weights that don't sum to 1.0")
 }

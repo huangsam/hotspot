@@ -134,3 +134,192 @@ func TestProcessTimeRange(t *testing.T) {
 		})
 	}
 }
+
+func TestProcessCustomWeights(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       *ConfigRawInput
+		expectError bool
+		expected    map[string]map[string]float64
+	}{
+		{
+			name: "valid custom weights for hot mode",
+			input: &ConfigRawInput{
+				Weights: WeightsRawInput{
+					Hot: &ModeWeightsRaw{
+						Commits: &[]float64{0.5}[0],
+						Churn:   &[]float64{0.3}[0],
+						Age:     &[]float64{0.2}[0],
+					},
+				},
+			},
+			expectError: false,
+			expected: map[string]map[string]float64{
+				"hot": {
+					"commits": 0.5,
+					"churn":   0.3,
+					"age":     0.2,
+				},
+			},
+		},
+		{
+			name: "valid custom weights for all modes",
+			input: &ConfigRawInput{
+				Weights: WeightsRawInput{
+					Hot: &ModeWeightsRaw{
+						Commits:      &[]float64{0.4}[0],
+						Churn:        &[]float64{0.4}[0],
+						Age:          &[]float64{0.1}[0],
+						Contributors: &[]float64{0.05}[0],
+						Size:         &[]float64{0.05}[0],
+					},
+					Risk: &ModeWeightsRaw{
+						InvContributors: &[]float64{0.3}[0],
+						Gini:            &[]float64{0.26}[0],
+						Age:             &[]float64{0.16}[0],
+						Size:            &[]float64{0.12}[0],
+						Churn:           &[]float64{0.06}[0],
+						Commits:         &[]float64{0.04}[0],
+						LOC:             &[]float64{0.06}[0],
+					},
+					Stale: &ModeWeightsRaw{
+						InvRecent:    &[]float64{0.35}[0],
+						Size:         &[]float64{0.25}[0],
+						Age:          &[]float64{0.20}[0],
+						Commits:      &[]float64{0.15}[0],
+						Contributors: &[]float64{0.05}[0],
+					},
+					Complexity: &ModeWeightsRaw{
+						Age:             &[]float64{0.30}[0],
+						Churn:           &[]float64{0.30}[0],
+						LOC:             &[]float64{0.20}[0],
+						Commits:         &[]float64{0.10}[0],
+						Size:            &[]float64{0.05}[0],
+						InvContributors: &[]float64{0.05}[0],
+					},
+				},
+			},
+			expectError: false,
+			expected: map[string]map[string]float64{
+				"hot": {
+					"commits": 0.4,
+					"churn":   0.4,
+					"age":     0.1,
+					"contrib": 0.05,
+					"size":    0.05,
+				},
+				"risk": {
+					"inv_contrib": 0.3,
+					"gini":        0.26,
+					"age":         0.16,
+					"size":        0.12,
+					"churn":       0.06,
+					"commits":     0.04,
+					"loc":         0.06,
+				},
+				"stale": {
+					"inv_recent": 0.35,
+					"size":       0.25,
+					"age":        0.20,
+					"commits":    0.15,
+					"contrib":    0.05,
+				},
+				"complexity": {
+					"age":         0.30,
+					"churn":       0.30,
+					"loc":         0.20,
+					"commits":     0.10,
+					"size":        0.05,
+					"inv_contrib": 0.05,
+				},
+			},
+		},
+		{
+			name: "partial custom weights",
+			input: &ConfigRawInput{
+				Weights: WeightsRawInput{
+					Hot: &ModeWeightsRaw{
+						Commits: &[]float64{0.7}[0],
+						Churn:   &[]float64{0.3}[0],
+					},
+				},
+			},
+			expectError: false,
+			expected: map[string]map[string]float64{
+				"hot": {
+					"commits": 0.7,
+					"churn":   0.3,
+				},
+			},
+		},
+		{
+			name: "empty weights should not set anything",
+			input: &ConfigRawInput{
+				Weights: WeightsRawInput{},
+			},
+			expectError: false,
+			expected:    map[string]map[string]float64{},
+		},
+		{
+			name: "weights that don't sum to 1.0 should fail",
+			input: &ConfigRawInput{
+				Weights: WeightsRawInput{
+					Hot: &ModeWeightsRaw{
+						Commits: &[]float64{0.5}[0],
+						Churn:   &[]float64{0.3}[0],
+						Age:     &[]float64{0.3}[0], // 0.5 + 0.3 + 0.3 = 1.1
+					},
+				},
+			},
+			expectError: true,
+			expected:    nil,
+		},
+		{
+			name: "weights that sum to less than 1.0 should fail",
+			input: &ConfigRawInput{
+				Weights: WeightsRawInput{
+					Hot: &ModeWeightsRaw{
+						Commits: &[]float64{0.3}[0],
+						Churn:   &[]float64{0.3}[0],
+					},
+				},
+			},
+			expectError: true,
+			expected:    nil,
+		},
+		{
+			name: "negative weights should still be validated for sum",
+			input: &ConfigRawInput{
+				Weights: WeightsRawInput{
+					Hot: &ModeWeightsRaw{
+						Commits: &[]float64{0.5}[0],
+						Churn:   &[]float64{-0.2}[0],
+						Age:     &[]float64{0.7}[0], // 0.5 - 0.2 + 0.7 = 1.0
+					},
+				},
+			},
+			expectError: false,
+			expected: map[string]map[string]float64{
+				"hot": {
+					"commits": 0.5,
+					"churn":   -0.2,
+					"age":     0.7,
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &Config{}
+			err := processCustomWeights(cfg, tt.input)
+
+			if tt.expectError {
+				require.Error(t, err, "processCustomWeights() expected an error, but got nil")
+			} else {
+				require.NoError(t, err, "processCustomWeights() unexpected error: %v", err)
+				assert.Equal(t, tt.expected, cfg.CustomWeights, "CustomWeights mismatch")
+			}
+		})
+	}
+}

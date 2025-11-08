@@ -43,8 +43,8 @@ type ModeWeightsRaw struct {
 	Size            *float64 `mapstructure:"size"`
 	Age             *float64 `mapstructure:"age"`
 	Commits         *float64 `mapstructure:"commits"`
-	Contributors    *float64 `mapstructure:"contributors"`
-	InvContributors *float64 `mapstructure:"inv_contributors"`
+	Contributors    *float64 `mapstructure:"contrib"`
+	InvContributors *float64 `mapstructure:"inv_contrib"`
 	Churn           *float64 `mapstructure:"churn"`
 	Gini            *float64 `mapstructure:"gini"`
 	LOC             *float64 `mapstructure:"loc"`
