@@ -1,0 +1,11 @@
+AGENTS.md
+integration/verification_test.go
+core/core.go
+internal/configs.go
+internal/output_timeseries.go
+internal/time.go
+internal/time_fuzz_test.go
+internal/time_test.go
+internal/writer_timeseries.go
+main.go
+schema/schema.go

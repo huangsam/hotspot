@@ -1,0 +1,21 @@
+--6adabdf2568c3a7fccd19e2c48ee60255b19903d|Samuel Huang|2025-11-08T11:06:28-08:00
+272	0	AGENTS.md
+
+--483227bdcf8f26a62149b379dea1fce7e8fcfc0c|Samuel Huang|2025-11-08T10:59:00-08:00
+2	2	integration/verification_test.go
+
+--aa2572ca6f0d0e7f6c79426dec23b4a5f4ef07ef|Samuel Huang|2025-11-08T10:30:20-08:00
+11	5	core/core.go
+121	0	integration/verification_test.go
+29	0	internal/configs.go
+
+--1cf8e4f85fdd27596f14a82d3fd2a0bc0b30790a|Samuel Huang|2025-11-08T10:22:59-08:00
+104	0	core/core.go
+1	1	internal/configs.go
+116	0	internal/output_timeseries.go
+2	2	internal/time.go
+1	1	internal/time_fuzz_test.go
+1	1	internal/time_test.go
+44	0	internal/writer_timeseries.go
+25	2	main.go
+13	0	schema/schema.go
