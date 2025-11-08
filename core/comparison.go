@@ -10,7 +10,7 @@ import (
 
 // compareFileResults matches metrics from the base run against the comparison run
 // and computes the difference (delta) for key metrics like Score.
-func compareFileResults(baseResults, targetResults []schema.FileResult, limit int) []schema.ComparisonResult {
+func compareFileResults(baseResults, targetResults []schema.FileResult, limit int) schema.ComparisonOutput {
 	baseMap := make(map[string]schema.FileResult, len(baseResults))
 	targetMap := make(map[string]schema.FileResult, len(targetResults))
 	allPaths := make(map[string]struct{}) // Set to hold all unique paths
@@ -26,6 +26,11 @@ func compareFileResults(baseResults, targetResults []schema.FileResult, limit in
 	}
 
 	comparisonResults := make([]schema.ComparisonResult, 0, len(allPaths))
+
+	// Initialize summary accumulators
+	var netScoreDelta float64
+	var netChurnDelta int
+	var totalNewFiles, totalInactiveFiles, totalModifiedFiles int
 
 	// 2. Iterate over ALL unique paths (Full Outer Join)
 	for path := range allPaths {
@@ -47,15 +52,22 @@ func compareFileResults(baseResults, targetResults []schema.FileResult, limit in
 		deltaLOC := targetM.LinesOfCode - baseM.LinesOfCode
 		deltaContrib := targetM.UniqueContributors - baseM.UniqueContributors
 
+		// Accumulate summary
+		netScoreDelta += deltaScore
+		netChurnDelta += deltaChurn
+
 		// Determine status based on existence in each analysis
 		var status string
 		switch {
 		case !baseExists && targetExists:
 			status = schema.NewStatus
+			totalNewFiles++
 		case baseExists && targetExists:
 			status = schema.ActiveStatus
+			totalModifiedFiles++
 		case baseExists && !targetExists:
 			status = schema.InactiveStatus
+			totalInactiveFiles++
 		default:
 			status = schema.UnknownStatus
 		}
@@ -77,6 +89,15 @@ func compareFileResults(baseResults, targetResults []schema.FileResult, limit in
 				Status:         status,
 			})
 		}
+	}
+
+	// Create summary
+	summary := schema.ComparisonSummary{
+		NetScoreDelta:      netScoreDelta,
+		NetChurnDelta:      netChurnDelta,
+		TotalNewFiles:      totalNewFiles,
+		TotalInactiveFiles: totalInactiveFiles,
+		TotalModifiedFiles: totalModifiedFiles,
 	}
 
 	// 4. Implement a deterministic three-level sort on the filtered list.
@@ -106,14 +127,14 @@ func compareFileResults(baseResults, targetResults []schema.FileResult, limit in
 	})
 
 	if len(comparisonResults) > 0 && len(comparisonResults) > limit {
-		return comparisonResults[:limit]
+		comparisonResults = comparisonResults[:limit]
 	}
-	return comparisonResults
+	return schema.ComparisonOutput{Results: comparisonResults, Summary: summary}
 }
 
 // compareFolderMetrics matches metrics from the base run against the target run
 // and computes the difference (delta) for the Score metric.
-func compareFolderMetrics(baseResults, targetResults []schema.FolderResult, limit int) []schema.ComparisonResult {
+func compareFolderMetrics(baseResults, targetResults []schema.FolderResult, limit int) schema.ComparisonOutput {
 	baseMap := make(map[string]schema.FolderResult, len(baseResults))
 	targetMap := make(map[string]schema.FolderResult, len(targetResults))
 	allPaths := make(map[string]struct{}) // Set to hold all unique folder paths
@@ -130,6 +151,11 @@ func compareFolderMetrics(baseResults, targetResults []schema.FolderResult, limi
 
 	comparisonResults := make([]schema.ComparisonResult, 0, len(allPaths))
 
+	// Initialize summary accumulators
+	var netScoreDelta float64
+	var netChurnDelta int
+	var totalNewFiles, totalInactiveFiles, totalModifiedFiles int
+
 	// 2. Iterate over ALL unique paths (Full Outer Join)
 	for path := range allPaths {
 		baseM, baseExists := baseMap[path]
@@ -140,10 +166,13 @@ func compareFolderMetrics(baseResults, targetResults []schema.FolderResult, limi
 		switch {
 		case !baseExists && targetExists:
 			status = schema.NewStatus
+			totalNewFiles++
 		case baseExists && targetExists:
 			status = schema.ActiveStatus
+			totalModifiedFiles++
 		case baseExists && !targetExists:
 			status = schema.InactiveStatus
+			totalInactiveFiles++
 		default:
 			status = schema.UnknownStatus
 		}
@@ -163,6 +192,10 @@ func compareFolderMetrics(baseResults, targetResults []schema.FolderResult, limi
 		deltaCommits := targetM.Commits - baseM.Commits
 		deltaChurn := targetM.Churn - baseM.Churn
 
+		// Accumulate summary
+		netScoreDelta += deltaScore
+		netChurnDelta += deltaChurn
+
 		// Only track and report folders where the score actually changed significantly.
 		// Using a tolerance of 0.01 to match the file comparison logic.
 		if math.Abs(deltaScore) > 0.01 {
@@ -176,6 +209,15 @@ func compareFolderMetrics(baseResults, targetResults []schema.FolderResult, limi
 				DeltaChurn:   deltaChurn,
 			})
 		}
+	}
+
+	// Create summary
+	summary := schema.ComparisonSummary{
+		NetScoreDelta:      netScoreDelta,
+		NetChurnDelta:      netChurnDelta,
+		TotalNewFiles:      totalNewFiles,
+		TotalInactiveFiles: totalInactiveFiles,
+		TotalModifiedFiles: totalModifiedFiles,
 	}
 
 	// 4. Implement a deterministic three-level sort on the filtered list.
@@ -204,7 +246,7 @@ func compareFolderMetrics(baseResults, targetResults []schema.FolderResult, limi
 	})
 
 	if limit > 0 && len(comparisonResults) > limit {
-		return comparisonResults[:limit]
+		comparisonResults = comparisonResults[:limit]
 	}
-	return comparisonResults
+	return schema.ComparisonOutput{Results: comparisonResults, Summary: summary}
 }

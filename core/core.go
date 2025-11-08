@@ -58,9 +58,9 @@ func ExecuteHotspotCompare(ctx context.Context, cfg *internal.Config) error {
 	if err != nil {
 		return err
 	}
-	comparisonResults := compareFileResults(baseOutput.FileResults, targetOutput.FileResults, cfg.ResultLimit)
+	comparisonOutput := compareFileResults(baseOutput.FileResults, targetOutput.FileResults, cfg.ResultLimit)
 	duration := time.Since(start)
-	return internal.PrintComparisonResults(comparisonResults, cfg, duration)
+	return internal.PrintComparisonResults(comparisonOutput, cfg, duration)
 }
 
 // ExecuteHotspotCompareFolders runs two folder-level analyses (Base and Target)
@@ -78,7 +78,7 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *internal.Config) err
 	if err != nil {
 		return err
 	}
-	comparisonResults := compareFolderMetrics(baseOutput.FolderResults, targetOutput.FolderResults, cfg.ResultLimit)
+	comparisonOutput := compareFolderMetrics(baseOutput.FolderResults, targetOutput.FolderResults, cfg.ResultLimit)
 	duration := time.Since(start)
-	return internal.PrintComparisonResults(comparisonResults, cfg, duration)
+	return internal.PrintComparisonResults(comparisonOutput, cfg, duration)
 }

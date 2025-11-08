@@ -48,6 +48,26 @@ type ComparisonResult struct {
 	*FolderComparison `json:"folder_compare,omitempty"`
 }
 
+// ComparisonSummary has high-level deltas and counts.
+type ComparisonSummary struct {
+	// 1. Net Score Delta
+	NetScoreDelta float64 `json:"net_score_delta"`
+
+	// 2. Net Churn Delta
+	NetChurnDelta int `json:"net_churn_delta"`
+
+	// 3. File Status Counts
+	TotalNewFiles      int `json:"total_new_files"`
+	TotalInactiveFiles int `json:"total_inactive_files"`
+	TotalModifiedFiles int `json:"total_modified_files"`
+}
+
+// ComparisonOutput holds the comparison results and summary.
+type ComparisonOutput struct {
+	Results []ComparisonResult `json:"results"`
+	Summary ComparisonSummary  `json:"summary"`
+}
+
 // FileComparison has file deltas.
 type FileComparison struct {
 	DeltaLOC     int `json:"delta_loc"`     // Change in LOC (Positive means file growth)

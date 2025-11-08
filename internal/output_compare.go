@@ -15,7 +15,7 @@ import (
 )
 
 // PrintComparisonResults outputs the analysis results, dispatching based on the output format configured.
-func PrintComparisonResults(metrics []schema.ComparisonResult, cfg *Config, duration time.Duration) error {
+func PrintComparisonResults(comparisonOutput schema.ComparisonOutput, cfg *Config, duration time.Duration) error {
 	// Helper format strings and closure for number formatting
 	numFmt := "%.*f"
 	intFmt := "%d"
@@ -26,16 +26,16 @@ func PrintComparisonResults(metrics []schema.ComparisonResult, cfg *Config, dura
 	// Dispatcher: Handle different output formats
 	switch strings.ToLower(cfg.Output) {
 	case schema.JSONOut:
-		if err := printJSONResultsForComparison(metrics, cfg); err != nil {
+		if err := printJSONResultsForComparison(comparisonOutput, cfg); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
 		}
 	case schema.CSVOut:
-		if err := printCSVResultsForComparison(metrics, cfg, fmtFloat, intFmt); err != nil {
+		if err := printCSVResultsForComparison(comparisonOutput, cfg, fmtFloat, intFmt); err != nil {
 			return fmt.Errorf("error writing CSV output: %w", err)
 		}
 	default:
 		// Default to human-readable table
-		if err := printComparisonTable(metrics, cfg, fmtFloat, intFmt, duration); err != nil {
+		if err := printComparisonTable(comparisonOutput, cfg, fmtFloat, intFmt, duration); err != nil {
 			return fmt.Errorf("error writing comparison table output: %w", err)
 		}
 	}
@@ -43,14 +43,14 @@ func PrintComparisonResults(metrics []schema.ComparisonResult, cfg *Config, dura
 }
 
 // printJSONResultsForComparison handles opening the file and calling the JSON writer.
-func printJSONResultsForComparison(metrics []schema.ComparisonResult, cfg *Config) error {
+func printJSONResultsForComparison(comparisonOutput schema.ComparisonOutput, cfg *Config) error {
 	file, err := selectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = file.Close() }()
 
-	if err := writeJSONResultsForComparison(file, metrics); err != nil {
+	if err := writeJSONResultsForComparison(file, comparisonOutput); err != nil {
 		return err
 	}
 
@@ -61,7 +61,7 @@ func printJSONResultsForComparison(metrics []schema.ComparisonResult, cfg *Confi
 }
 
 // printCSVResultsForComparison handles opening the file and calling the CSV writer.
-func printCSVResultsForComparison(metrics []schema.ComparisonResult, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
+func printCSVResultsForComparison(comparisonOutput schema.ComparisonOutput, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
 	file, err := selectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
@@ -69,7 +69,7 @@ func printCSVResultsForComparison(metrics []schema.ComparisonResult, cfg *Config
 	defer func() { _ = file.Close() }()
 
 	w := csv.NewWriter(file)
-	if err := writeCSVResultsForComparison(w, metrics, cfg, fmtFloat, intFmt); err != nil {
+	if err := writeCSVResultsForComparison(w, comparisonOutput, cfg, fmtFloat, intFmt); err != nil {
 		return err
 	}
 	w.Flush()
@@ -81,7 +81,7 @@ func printCSVResultsForComparison(metrics []schema.ComparisonResult, cfg *Config
 }
 
 // printComparisonTable prints the metrics in a custom comparison format.
-func printComparisonTable(metrics []schema.ComparisonResult, cfg *Config, fmtFloat func(float64) string, intFmt string, duration time.Duration) error {
+func printComparisonTable(comparisonOutput schema.ComparisonOutput, cfg *Config, fmtFloat func(float64) string, intFmt string, duration time.Duration) error {
 	// Use os.Stdout, consistent with existing table printing
 	table := tablewriter.NewWriter(os.Stdout)
 
@@ -110,7 +110,7 @@ func printComparisonTable(metrics []schema.ComparisonResult, cfg *Config, fmtFlo
 	red := color.New(color.FgRed).SprintFunc()
 	green := color.New(color.FgGreen).SprintFunc()
 	yellow := color.New(color.FgYellow).SprintFunc()
-	for i, r := range metrics {
+	for i, r := range comparisonOutput.Results {
 		var deltaStr string
 		deltaValue := r.Delta
 		switch {
@@ -148,12 +148,10 @@ func printComparisonTable(metrics []schema.ComparisonResult, cfg *Config, fmtFlo
 		return err
 	}
 	// Compute summary stats
-	numItems := len(metrics)
-	totalDeltaChurn := 0
-	for _, r := range metrics {
-		totalDeltaChurn += r.DeltaChurn
-	}
-	fmt.Printf("Showing top %d changes (total delta churn: %d)\n", numItems, totalDeltaChurn)
+	numItems := len(comparisonOutput.Results)
+	fmt.Printf("Showing top %d changes\n", numItems)
+	fmt.Printf("Net score delta: %.*f, Net churn delta: %d\n", cfg.Precision, comparisonOutput.Summary.NetScoreDelta, comparisonOutput.Summary.NetChurnDelta)
+	fmt.Printf("New files: %d, Inactive files: %d, Modified files: %d\n", comparisonOutput.Summary.TotalNewFiles, comparisonOutput.Summary.TotalInactiveFiles, comparisonOutput.Summary.TotalModifiedFiles)
 	fmt.Printf("Analysis completed in %v using %d workers.\n", duration, cfg.Workers)
 	return nil
 }
