@@ -63,7 +63,11 @@ This ranking displays the **complexity score** and a colored label based on:
 
 ## Scoring modes
 
-The core power of Hotspot is the `--mode` flag, which defines the ranking algorithm:
+The core power of Hotspot lies in its `--mode` flag, which selects the ranking algorithm used to identify different types of risk.
+
+**Example:** Identify owners of high-risk files.
+
+`hotspot files --mode risk --owner`
 
 | Mode | Focus | Description |
 |------|-------|-------------|
