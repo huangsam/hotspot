@@ -3,7 +3,6 @@ package core
 
 import (
 	"context"
-	"fmt"
 	"sort"
 
 	"github.com/huangsam/hotspot/internal"
@@ -11,11 +10,11 @@ import (
 
 // ExecuteHotspotFiles runs the file-level analysis and prints results to stdout.
 // It serves as the main entry point for the 'files' mode.
-func ExecuteHotspotFiles(ctx context.Context, cfg *internal.Config) {
+func ExecuteHotspotFiles(ctx context.Context, cfg *internal.Config) error {
 	client := internal.NewLocalGitClient()
 	output, err := runSingleAnalysisCore(ctx, cfg, client)
 	if err != nil {
-		return
+		return err
 	}
 	resultsToRank := output.FileResults
 	if cfg.Follow && len(resultsToRank) > 0 {
@@ -24,59 +23,59 @@ func ExecuteHotspotFiles(ctx context.Context, cfg *internal.Config) {
 	}
 	ranked := rankFiles(resultsToRank, cfg.ResultLimit)
 	internal.PrintFileResults(ranked, cfg)
+	return nil
 }
 
 // ExecuteHotspotFolders runs the folder-level analysis and prints results to stdout.
 // It serves as the main entry point for the 'folders' mode.
-func ExecuteHotspotFolders(ctx context.Context, cfg *internal.Config) {
+func ExecuteHotspotFolders(ctx context.Context, cfg *internal.Config) error {
 	client := internal.NewLocalGitClient()
 	output, err := runSingleAnalysisCore(ctx, cfg, client)
 	if err != nil {
-		return
+		return err
 	}
 	folderResults := aggregateAndScoreFolders(cfg, output.FileResults)
 	ranked := rankFolders(folderResults, cfg.ResultLimit)
 	internal.PrintFolderResults(ranked, cfg)
+	return nil
 }
 
 // ExecuteHotspotCompare runs two file-level analyses (Base and Target)
 // based on Git references and computes the delta results.
-func ExecuteHotspotCompare(ctx context.Context, cfg *internal.Config) {
+func ExecuteHotspotCompare(ctx context.Context, cfg *internal.Config) error {
 	client := internal.NewLocalGitClient()
 	baseOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.BaseRef)
 	if err != nil {
-		internal.LogFatal(fmt.Sprintf("Base Analysis failed: %v", err), nil)
-		return
+		return err
 	}
 	targetOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.TargetRef)
 	if err != nil {
-		internal.LogFatal(fmt.Sprintf("Target Analysis failed: %v", err), nil)
-		return
+		return err
 	}
 	sort.Slice(baseOutput.FileResults, func(i, j int) bool { return baseOutput.FileResults[i].Path < baseOutput.FileResults[j].Path })
 	sort.Slice(targetOutput.FileResults, func(i, j int) bool { return targetOutput.FileResults[i].Path < targetOutput.FileResults[j].Path })
 	comparisonResults := compareFileResults(baseOutput.FileResults, targetOutput.FileResults, cfg.ResultLimit)
 	internal.PrintComparisonResults(comparisonResults, cfg)
+	return nil
 }
 
 // ExecuteHotspotCompareFolders runs two folder-level analyses (Base and Target)
 // based on Git references and computes the delta results.
 // It follows the same pattern as ExecuteHotspotCompare but aggregates to folders
 // before performing the comparison.
-func ExecuteHotspotCompareFolders(ctx context.Context, cfg *internal.Config) {
+func ExecuteHotspotCompareFolders(ctx context.Context, cfg *internal.Config) error {
 	client := internal.NewLocalGitClient()
 	baseOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.BaseRef)
 	if err != nil {
-		internal.LogFatal(fmt.Sprintf("Base Analysis failed: %v", err), nil)
-		return
+		return err
 	}
 	targetOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.TargetRef)
 	if err != nil {
-		internal.LogFatal(fmt.Sprintf("Target Analysis failed: %v", err), nil)
-		return
+		return err
 	}
 	sort.Slice(baseOutput.FolderResults, func(i, j int) bool { return baseOutput.FolderResults[i].Path < baseOutput.FolderResults[j].Path })
 	sort.Slice(targetOutput.FolderResults, func(i, j int) bool { return targetOutput.FolderResults[i].Path < targetOutput.FolderResults[j].Path })
 	comparisonResults := compareFolderMetrics(baseOutput.FolderResults, targetOutput.FolderResults, cfg.ResultLimit)
 	internal.PrintComparisonResults(comparisonResults, cfg)
+	return nil
 }

@@ -21,6 +21,9 @@ var (
 	date    = "unknown"
 )
 
+// rootCtx is the root context for all operations.
+var rootCtx = context.Background()
+
 // cfg will hold the validated, final configuration.
 var cfg = &internal.Config{}
 
@@ -30,11 +33,13 @@ var input = &internal.ConfigRawInput{}
 
 // rootCmd is the command-line entrypoint for all other commands.
 var rootCmd = &cobra.Command{
-	Use:           "hotspot",
-	Short:         "Analyze Git repository activity to find code hotspots.",
-	Long:          `Hotspot cuts through Git history to show you which files and folders are your greatest risk.`,
-	Version:       version,
-	SilenceErrors: true,
+	Use:                "hotspot",
+	Short:              "Analyze Git repository activity to find code hotspots.",
+	Long:               `Hotspot cuts through Git history to show you which files and folders are your greatest risk.`,
+	Version:            version,
+	SilenceErrors:      true,
+	SilenceUsage:       true,
+	DisableSuggestions: true,
 	Run: func(cmd *cobra.Command, _ []string) {
 		_ = cmd.Help()
 	},
@@ -92,8 +97,7 @@ func sharedSetup(ctx context.Context, _ *cobra.Command, args []string) error {
 
 // sharedSetupWrapper wraps sharedSetup to provide context for Cobra's PreRunE.
 func sharedSetupWrapper(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
-	return sharedSetup(ctx, cmd, args)
+	return sharedSetup(rootCtx, cmd, args)
 }
 
 // filesCmd focuses on tactical, file-level analysis.
@@ -104,8 +108,9 @@ var filesCmd = &cobra.Command{
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		ctx := context.Background()
-		core.ExecuteHotspotFiles(ctx, cfg)
+		if err := core.ExecuteHotspotFiles(rootCtx, cfg); err != nil {
+			internal.LogFatal("Cannot run files analysis", err)
+		}
 	},
 }
 
@@ -117,8 +122,9 @@ var foldersCmd = &cobra.Command{
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		ctx := context.Background()
-		core.ExecuteHotspotFolders(ctx, cfg)
+		if err := core.ExecuteHotspotFolders(rootCtx, cfg); err != nil {
+			internal.LogFatal("Cannot run folders analysis", err)
+		}
 	},
 }
 
@@ -137,11 +143,8 @@ var compareFilesCmd = &cobra.Command{
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if cfg.CompareMode {
-			ctx := context.Background()
-			core.ExecuteHotspotCompare(ctx, cfg)
-		} else {
-			internal.LogFatal("Cannot run compare analysis", errors.New("compare mode is off"))
+		if err := core.ExecuteHotspotCompare(rootCtx, cfg); err != nil {
+			internal.LogFatal("Cannot run compare analysis", err)
 		}
 	},
 }
@@ -154,10 +157,7 @@ var compareFoldersCmd = &cobra.Command{
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if cfg.CompareMode {
-			ctx := context.Background()
-			core.ExecuteHotspotCompareFolders(ctx, cfg)
-		} else {
+		if err := core.ExecuteHotspotCompareFolders(rootCtx, cfg); err != nil {
 			internal.LogFatal("Cannot run compare analysis", errors.New("compare mode is off"))
 		}
 	},
@@ -205,14 +205,14 @@ func init() {
 	rootCmd.PersistentFlags().String("start", "", "Start date in ISO8601 or time ago")
 	rootCmd.PersistentFlags().Int("workers", internal.DefaultWorkers, "Number of concurrent workers")
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
-		panic(err)
+		internal.LogFatal("Error binding root flags", err)
 	}
 
 	// Bind all flags of filesCmd to Viper
 	filesCmd.Flags().Bool("explain", false, "Print per-file component score breakdown")
 	filesCmd.Flags().Bool("follow", false, "Re-run per-file analysis with --follow")
 	if err := viper.BindPFlags(filesCmd.Flags()); err != nil {
-		panic(err)
+		internal.LogFatal("Error binding files flags", err)
 	}
 
 	// Bind all persistent flags of compareCmd to Viper
@@ -220,7 +220,7 @@ func init() {
 	compareCmd.PersistentFlags().String("target-ref", "", "Target Git reference for the AFTER state")
 	compareCmd.PersistentFlags().String("lookback", "6 months", "Time duration to look back from Base/Target ref commit time")
 	if err := viper.BindPFlags(compareCmd.PersistentFlags()); err != nil {
-		panic(err)
+		internal.LogFatal("Error binding compare flags", err)
 	}
 }
 
