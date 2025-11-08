@@ -116,6 +116,7 @@ This allows you to manage settings without long command-line strings. Flags alwa
 1.  [hotspot.basic.yml](./examples/hotspot.basic.yml): Quick setup for local development
 2.  [hotspot.ci.yml](./examples/hotspot.ci.yml): Optimized settings for automated CI/CD runs (e.g., JSON output)
 3.  [hotspot.docs.yml](./examples/hotspot.docs.yml): The canonical template listing every available setting
+4.  [hotspot.weights.yml](./examples/hotspot.weights.yml): Advanced customization of scoring algorithm weights
 
 ## Common use cases
 
