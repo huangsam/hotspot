@@ -14,7 +14,7 @@ type MockGitClient struct {
 
 var _ GitClient = &MockGitClient{} // Compile-time check
 
-// Run implements the core.GitClient interface.
+// Run implements the GitClient interface.
 func (m *MockGitClient) Run(ctx context.Context, repoPath string, args ...string) ([]byte, error) {
 	var mockArgs []interface{}
 	mockArgs = append(mockArgs, ctx, repoPath)
@@ -26,35 +26,42 @@ func (m *MockGitClient) Run(ctx context.Context, repoPath string, args ...string
 	return output, ret.Error(1)
 }
 
-// GetActivityLog implements the core.GitClient interface.
+// GetActivityLog implements the GitClient interface.
 func (m *MockGitClient) GetActivityLog(ctx context.Context, repoPath string, startTime, endTime time.Time) ([]byte, error) {
 	ret := m.Called(ctx, repoPath, startTime, endTime)
 	output, _ := ret.Get(0).([]byte)
 	return output, ret.Error(1)
 }
 
-// GetCommitTime implements the core.GitClient interface.
+// GetCommitTime implements the GitClient interface.
 func (m *MockGitClient) GetCommitTime(ctx context.Context, repoPath string, ref string) (time.Time, error) {
 	ret := m.Called(ctx, repoPath, ref)
 	t, _ := ret.Get(0).(time.Time)
 	return t, ret.Error(1)
 }
 
-// GetFileActivityLog implements the core.GitClient interface.
+// GetFileFirstCommitTime implements the GitClient interface.
+func (m *MockGitClient) GetFileFirstCommitTime(ctx context.Context, repoPath string, path string, follow bool) (time.Time, error) {
+	ret := m.Called(ctx, repoPath, path, follow)
+	t, _ := ret.Get(0).(time.Time)
+	return t, ret.Error(1)
+}
+
+// GetFileActivityLog implements the GitClient interface.
 func (m *MockGitClient) GetFileActivityLog(ctx context.Context, repoPath string, path string, startTime, endTime time.Time, follow bool) ([]byte, error) {
 	ret := m.Called(ctx, repoPath, path, startTime, endTime, follow)
 	content, _ := ret.Get(0).([]byte)
 	return content, ret.Error(1)
 }
 
-// GetRepoRoot implements the core.GitClient interface.
+// GetRepoRoot implements the GitClient interface.
 func (m *MockGitClient) GetRepoRoot(ctx context.Context, contextPath string) (string, error) {
 	ret := m.Called(ctx, contextPath)
 	root, _ := ret.Get(0).(string)
 	return root, ret.Error(1)
 }
 
-// ListFilesAtRef implements the core.GitClient interface.
+// ListFilesAtRef implements the GitClient interface.
 func (m *MockGitClient) ListFilesAtRef(ctx context.Context, repoPath string, ref string) ([]string, error) {
 	ret := m.Called(ctx, repoPath, ref)
 	files, _ := ret.Get(0).([]string)

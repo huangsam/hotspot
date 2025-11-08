@@ -70,7 +70,33 @@ func (c *LocalGitClient) GetCommitTime(ctx context.Context, repoPath string, ref
 	return time.Unix(timestamp, 0), nil
 }
 
-// GetFileActivityLog implements the GitClient interface for fetching single-file metrics.
+// GetFileFirstCommitTime implements the GitClient interface.
+func (c *LocalGitClient) GetFileFirstCommitTime(ctx context.Context, repoPath string, path string, follow bool) (time.Time, error) {
+	args := []string{
+		"log", "-n", "1",
+		"--pretty=format:%ct",
+		"--reverse",
+	}
+	if follow {
+		args = append(args, "--follow")
+	}
+	args = append(args, "--", path)
+	out, err := c.Run(ctx, repoPath, args...)
+	if err != nil {
+		return time.Time{}, err
+	}
+	timestampStr := strings.TrimSpace(string(out))
+	if timestampStr == "" {
+		return time.Time{}, fmt.Errorf("no commits found for file '%s'", path)
+	}
+	timestamp, err := strconv.ParseInt(timestampStr, 10, 64)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("failed to parse commit time '%s': %w", timestampStr, err)
+	}
+	return time.Unix(timestamp, 0), nil
+}
+
+// GetFileActivityLog implements the GitClient interface.
 func (c *LocalGitClient) GetFileActivityLog(ctx context.Context, repoPath string, path string, startTime, endTime time.Time, follow bool) ([]byte, error) {
 	args := []string{
 		"log",
@@ -91,7 +117,7 @@ func (c *LocalGitClient) GetFileActivityLog(ctx context.Context, repoPath string
 	return c.Run(ctx, repoPath, args...)
 }
 
-// GetRepoRoot implements the GitClient interface by executing 'git rev-parse --show-toplevel'.
+// GetRepoRoot implements the GitClient interface.
 func (c *LocalGitClient) GetRepoRoot(ctx context.Context, contextPath string) (string, error) {
 	out, err := c.Run(ctx, contextPath, "rev-parse", "--show-toplevel")
 	if err != nil {

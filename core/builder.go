@@ -117,6 +117,12 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 	b.result.FirstCommit = firstCommit
 	b.result.Churn = totalChanges
 
+	// Get the absolute first commit date for accurate age calculation
+	absFirst, absErr := b.git.GetFileFirstCommitTime(b.ctx, b.cfg.RepoPath, b.path, true)
+	if absErr == nil {
+		b.result.FirstCommit = absFirst
+	}
+
 	return b
 }
 

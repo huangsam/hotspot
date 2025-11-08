@@ -19,6 +19,9 @@ type GitClient interface {
 	// GetCommitTime returns the time of the specified Git reference (e.g., commit hash, tag, branch name).
 	GetCommitTime(ctx context.Context, repoPath string, ref string) (time.Time, error)
 
+	// GetFileFirstCommitTime returns the time of the first commit for the specified file path (supports --follow).
+	GetFileFirstCommitTime(ctx context.Context, repoPath string, path string, follow bool) (time.Time, error)
+
 	// GetRepoRoot returns the absolute path to the root of the Git repository
 	// containing the given context path.
 	GetRepoRoot(ctx context.Context, contextPath string) (string, error)
