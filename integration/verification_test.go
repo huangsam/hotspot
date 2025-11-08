@@ -207,7 +207,7 @@ func TestTimeseriesVerification(t *testing.T) {
 		jsonOutput := extractJSONFromOutput(stdout.String())
 
 		// Parse JSON output
-		var result map[string][]map[string]interface{}
+		var result map[string][]map[string]any
 		err = json.Unmarshal([]byte(jsonOutput), &result)
 		require.NoError(t, err)
 
@@ -250,7 +250,7 @@ func TestTimeseriesVerification(t *testing.T) {
 		jsonOutput := extractJSONFromOutput(stdout.String())
 
 		// Parse JSON output
-		var result map[string][]map[string]interface{}
+		var result map[string][]map[string]any
 		err = json.Unmarshal([]byte(jsonOutput), &result)
 		require.NoError(t, err)
 
