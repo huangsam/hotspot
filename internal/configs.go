@@ -322,3 +322,32 @@ func resolveGitPathAndFilter(ctx context.Context, cfg *Config, client GitClient,
 
 	return nil
 }
+
+// NormalizeTimeseriesPath normalizes a user-provided path relative to the repo root
+// and ensures it's within the repository boundaries.
+func NormalizeTimeseriesPath(repoPath, userPath string) (string, error) {
+	// Handle absolute paths by making them relative to repo
+	if filepath.IsAbs(userPath) {
+		relPath, err := filepath.Rel(repoPath, userPath)
+		if err != nil {
+			return "", fmt.Errorf("path is outside repository: %s", userPath)
+		}
+		userPath = relPath
+	}
+
+	// Clean the path to resolve any .. or . components
+	cleanPath := filepath.Clean(userPath)
+
+	// Ensure the path doesn't go outside the repo (no leading .. after cleaning)
+	if strings.HasPrefix(cleanPath, "..") {
+		return "", fmt.Errorf("path is outside repository: %s", userPath)
+	}
+
+	// Convert to forward slashes for consistency with Git paths
+	normalized := strings.ReplaceAll(cleanPath, string(filepath.Separator), "/")
+
+	// Remove leading ./ if present
+	normalized = strings.TrimPrefix(normalized, "./")
+
+	return normalized, nil
+}

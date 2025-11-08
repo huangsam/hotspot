@@ -118,11 +118,17 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config) error {
 	now := time.Now()
 	client := internal.NewLocalGitClient()
 
+	// Normalize and validate the path relative to repo root
+	normalizedPath, err := internal.NormalizeTimeseriesPath(cfg.RepoPath, path)
+	if err != nil {
+		return fmt.Errorf("invalid path: %w", err)
+	}
+
 	// Check if path exists and determine if it's a file or folder
-	fullPath := filepath.Join(cfg.RepoPath, path)
+	fullPath := filepath.Join(cfg.RepoPath, normalizedPath)
 	info, err := os.Stat(fullPath)
 	if err != nil {
-		return fmt.Errorf("path does not exist: %s", path)
+		return fmt.Errorf("path does not exist: %s", normalizedPath)
 	}
 	isFolder := info.IsDir()
 
@@ -142,7 +148,7 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config) error {
 			} else {
 				folderResults := aggregateAndScoreFolders(cfgWindow, output.FileResults)
 				for _, fr := range folderResults {
-					if fr.Path == path {
+					if fr.Path == normalizedPath {
 						score = fr.Score
 						break
 					}
@@ -155,7 +161,7 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config) error {
 				score = 0
 			} else {
 				for _, fr := range output.FileResults {
-					if fr.Path == path {
+					if fr.Path == normalizedPath {
 						score = fr.Score
 						break
 					}
@@ -178,7 +184,7 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config) error {
 			Period: period,
 			Score:  score,
 			Mode:   cfg.Mode,
-			Path:   path,
+			Path:   normalizedPath,
 		})
 	}
 

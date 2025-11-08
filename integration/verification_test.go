@@ -9,6 +9,7 @@ package integration
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -176,6 +177,126 @@ func verifyRepo(t *testing.T, repoDir, hotspotPath string) {
 				"commit count mismatch for %s", file)
 		})
 	}
+}
+
+// TestTimeseriesVerification tests the timeseries command functionality
+func TestTimeseriesVerification(t *testing.T) {
+	// Skip if not in a git repo
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not available")
+	}
+
+	// Get current repo path
+	repoPath, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	require.NoError(t, err)
+	repoDir := strings.TrimSpace(string(repoPath))
+
+	// Build hotspot binary
+	hotspotPath := buildHotspot(t, repoDir)
+
+	// Test timeseries on main.go
+	t.Run("main.go", func(t *testing.T) {
+		cmd := exec.Command(hotspotPath, "timeseries", "--path", "main.go", "--interval", "30 days", "--points", "3", "--output", "json")
+		cmd.Dir = repoDir
+		var stdout bytes.Buffer
+		cmd.Stdout = &stdout
+		err := cmd.Run()
+		require.NoError(t, err)
+
+		// Extract JSON from output (skip log lines)
+		jsonOutput := extractJSONFromOutput(stdout.String())
+
+		// Parse JSON output
+		var result map[string][]map[string]interface{}
+		err = json.Unmarshal([]byte(jsonOutput), &result)
+		require.NoError(t, err)
+
+		points, ok := result["points"]
+		require.True(t, ok, "output should contain 'points' array")
+		require.Len(t, points, 3, "should have 3 data points")
+
+		// Verify each point has required fields
+		for i, point := range points {
+			t.Run(fmt.Sprintf("point_%d", i), func(t *testing.T) {
+				path, ok := point["path"].(string)
+				require.True(t, ok, "point should have 'path' field")
+				assert.Equal(t, "main.go", path, "path should be main.go")
+
+				period, ok := point["period"].(string)
+				require.True(t, ok, "point should have 'period' field")
+				assert.NotEmpty(t, period, "period should not be empty")
+
+				score, ok := point["score"].(float64)
+				require.True(t, ok, "point should have 'score' field")
+				assert.GreaterOrEqual(t, score, 0.0, "score should be non-negative")
+
+				mode, ok := point["mode"].(string)
+				require.True(t, ok, "point should have 'mode' field")
+				assert.Equal(t, "hot", mode, "default mode should be 'hot'")
+			})
+		}
+	})
+
+	// Test timeseries on core folder
+	t.Run("core_folder", func(t *testing.T) {
+		cmd := exec.Command(hotspotPath, "timeseries", "--path", "core", "--interval", "30 days", "--points", "3", "--output", "json", "--mode", "stale")
+		cmd.Dir = repoDir
+		var stdout bytes.Buffer
+		cmd.Stdout = &stdout
+		err := cmd.Run()
+		require.NoError(t, err)
+
+		// Extract JSON from output
+		jsonOutput := extractJSONFromOutput(stdout.String())
+
+		// Parse JSON output
+		var result map[string][]map[string]interface{}
+		err = json.Unmarshal([]byte(jsonOutput), &result)
+		require.NoError(t, err)
+
+		points, ok := result["points"]
+		require.True(t, ok, "output should contain 'points' array")
+		require.Len(t, points, 3, "should have 3 data points")
+
+		// Verify each point
+		for i, point := range points {
+			t.Run(fmt.Sprintf("point_%d", i), func(t *testing.T) {
+				path, ok := point["path"].(string)
+				require.True(t, ok, "point should have 'path' field")
+				assert.Equal(t, "core", path, "path should be core")
+
+				mode, ok := point["mode"].(string)
+				require.True(t, ok, "point should have 'mode' field")
+				assert.Equal(t, "stale", mode, "mode should be 'stale'")
+			})
+		}
+	})
+
+	// Test error cases
+	t.Run("invalid_path", func(t *testing.T) {
+		cmd := exec.Command(hotspotPath, "timeseries", "--path", "nonexistent.go", "--interval", "30 days", "--points", "3")
+		cmd.Dir = repoDir
+		err := cmd.Run()
+		assert.Error(t, err, "should error on nonexistent path")
+	})
+
+	t.Run("missing_required_flags", func(t *testing.T) {
+		cmd := exec.Command(hotspotPath, "timeseries", "--path", "main.go", "--interval", "30 days")
+		cmd.Dir = repoDir
+		err := cmd.Run()
+		assert.Error(t, err, "should error when --points is missing")
+	})
+}
+
+// extractJSONFromOutput extracts the JSON part from hotspot output that includes log lines
+func extractJSONFromOutput(output string) string {
+	lines := strings.Split(output, "\n")
+	for i, line := range lines {
+		if strings.TrimSpace(line) == "{" { // Start of JSON object
+			return strings.Join(lines[i:], "\n")
+		}
+	}
+	return output // Fallback to original output
 }
 
 // FuzzParseHotspotOutput fuzzes the parseHotspotOutput function with random JSON inputs.
