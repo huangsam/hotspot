@@ -90,24 +90,20 @@ func parseHotspotOutput(output string) map[string]int {
 	return fileCommits
 }
 
-// TestExternalRepoVerification clones a small public repo and runs verification
+// TestExternalRepoVerification clones multiple small public repos and runs verification
 func TestExternalRepoVerification(t *testing.T) {
-	// Use a small public repo for testing
-	testRepoURL := "https://github.com/mitchellh/go-homedir"
-	testRepoDir := "test-repos/go-homedir"
-
-	// Clean up any existing dir
-	_ = exec.Command("rm", "-rf", testRepoDir).Run()
-
-	// Clone the repo
-	cloneCmd := exec.Command("git", "clone", "--depth=1", testRepoURL, testRepoDir)
-	err := cloneCmd.Run()
-	if err != nil {
-		t.Skipf("failed to clone test repo: %v", err)
+	// Test repos with different characteristics for better coverage
+	testRepos := []struct {
+		url  string
+		name string
+	}{
+		{"https://github.com/mitchellh/go-homedir", "go-homedir"},          // Small Go library
+		{"https://github.com/go-yaml/yaml", "go-yaml"},                     // Medium Go library with CGO
+		{"https://github.com/urfave/cli", "urfave-cli"},                    // Popular Go CLI library
+		{"https://github.com/huangsam/ultimate-python", "ultimate-python"}, // Medium Python repo
 	}
-	defer func() { _ = exec.Command("rm", "-rf", testRepoDir).Run() }() // Clean up
 
-	// Build hotspot binary
+	// Build hotspot binary once
 	hotspotPath, err := filepath.Abs("test-repos/hotspot")
 	require.NoError(t, err)
 	buildCmd := exec.Command("go", "build", "-o", hotspotPath, ".")
@@ -116,8 +112,25 @@ func TestExternalRepoVerification(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = exec.Command("rm", "-f", hotspotPath).Run() }()
 
-	// Run verification in the test repo
-	verifyRepo(t, testRepoDir, hotspotPath)
+	for _, repo := range testRepos {
+		t.Run(repo.name, func(t *testing.T) {
+			testRepoDir := "test-repos/" + repo.name
+
+			// Clean up any existing dir
+			_ = exec.Command("rm", "-rf", testRepoDir).Run()
+
+			// Clone the repo
+			cloneCmd := exec.Command("git", "clone", "--depth=1", repo.url, testRepoDir)
+			err := cloneCmd.Run()
+			if err != nil {
+				t.Skipf("failed to clone test repo %s: %v", repo.name, err)
+			}
+			defer func() { _ = exec.Command("rm", "-rf", testRepoDir).Run() }() // Clean up
+
+			// Run verification in the test repo
+			verifyRepo(t, testRepoDir, hotspotPath)
+		})
+	}
 }
 
 // verifyRepo runs hotspot and verifies against git for a given repo
