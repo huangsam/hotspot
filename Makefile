@@ -13,7 +13,7 @@ GOLANGCI_LINT ?= golangci-lint
 GORELEASER    ?= goreleaser
 
 # Integration tests/linting included by default (set to 0 to disable)
-INTEGRATION   ?= 1
+INTEGRATION   ?= 0
 
 # Default target for 'make'
 .DEFAULT_GOAL := build

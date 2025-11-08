@@ -17,137 +17,24 @@ import (
 // cfg.StartTime is zero, or runs since cfg.StartTime otherwise.
 // It filters out files that no longer exist in a single pass.
 func aggregateActivity(ctx context.Context, cfg *internal.Config, client internal.GitClient) (*schema.AggregateOutput, error) {
-	// 1. Get the list of currently existing files FIRST using the new explicit method.
-	// This git call is very fast and uses the abstract client method.
+	// 1. Get the list of currently existing files
 	currentFiles, err := client.ListFilesAtRef(ctx, cfg.RepoPath, "HEAD")
 	if err != nil {
 		return nil, err
 	}
-	// Build a lookup map for O(1) existence checks.
-	fileExists := make(map[string]bool)
-	for _, file := range currentFiles {
-		fileExists[file] = true
-	}
+	fileExists := buildFileExistenceMap(currentFiles)
 
-	// 2. Initialize aggregation maps. (No change here)
-	commitsMap := make(map[string]int)
-	churnMap := make(map[string]int)
-	contribMap := make(map[string]map[string]int)
-	firstCommitMap := make(map[string]time.Time)
+	// 2. Initialize aggregation maps
+	commitsMap, churnMap, contribMap, firstCommitMap := initializeAggregationMaps()
 
-	// 3. Run the expensive git log command ONCE using the new explicit method.
-	// The client now handles argument construction for zero-valued times.
+	// 3. Run the git log command
 	out, err := client.GetActivityLog(ctx, cfg.RepoPath, cfg.StartTime, cfg.EndTime)
 	if err != nil {
 		return nil, err
 	}
 
-	// 4. Perform aggregation AND filtering in a single pass (Logic unchanged)
-	lines := strings.Split(string(out), "\n")
-	var currentAuthor string
-	var currentDate time.Time
-	for _, l := range lines {
-		// Strip the surrounding single quotes, whitespace, and carriage returns
-		l = strings.Trim(l, " \t\r\n'")
-
-		if strings.HasPrefix(l, "--") {
-			// Commit header line
-			parts := strings.SplitN(l[2:], "|", 3) // commit|author|date
-			if len(parts) == 3 {
-				currentAuthor = parts[1]
-				dateStr := parts[2]
-				if date, err := time.Parse(time.RFC3339, dateStr); err == nil {
-					currentDate = date
-				} else {
-					currentDate = time.Time{}
-				}
-			} else {
-				currentAuthor = ""
-				currentDate = time.Time{}
-			}
-			continue
-		}
-		if l == "" {
-			continue // Skip blank lines after trimming
-		}
-
-		// This is a file stats line
-		parts := strings.SplitN(l, "\t", 3)
-		if len(parts) < 3 {
-			continue // Skip unexpected lines (like merge info without stats)
-		}
-		addStr := parts[0]
-		delStr := parts[1]
-		path := parts[2]
-
-		add := 0
-		del := 0
-		if addStr != "-" {
-			add, _ = strconv.Atoi(addStr)
-		}
-		if delStr != "-" {
-			del, _ = strconv.Atoi(delStr)
-		}
-
-		// Handle renames: git --numstat can output renames in various formats.
-		// Examples:
-		// - Simple: "old/path => new/path"
-		// - With braces and suffix: "{old => new}/file" (e.g., "{schema => internal}/configs.go")
-		// - With braces and prefix: "dir/{old => new}" (e.g., "internal/{output.go => output_files.go}")
-		// We parse these to extract oldPath and newPath, then aggregate for existing files.
-		var pathsToAggregate []string
-		if strings.Contains(path, " => ") {
-			var oldPath, newPath string
-			if strings.Contains(path, "{") && strings.Contains(path, "}") {
-				// Handle braced formats: split into prefix{old => new}suffix
-				braceStart := strings.Index(path, "{")
-				braceEnd := strings.Index(path, "}")
-				if braceStart != -1 && braceEnd != -1 && braceStart < braceEnd {
-					prefix := path[:braceStart]
-					renamePart := path[braceStart+1 : braceEnd] // "old => new"
-					suffix := path[braceEnd+1:]
-					if strings.Contains(renamePart, " => ") {
-						renameParts := strings.SplitN(renamePart, " => ", 2)
-						oldPath = prefix + renameParts[0] + suffix
-						newPath = prefix + renameParts[1] + suffix
-					}
-				}
-			} else {
-				// Handle simple format: "old => new"
-				renameParts := strings.SplitN(path, " => ", 2)
-				oldPath = renameParts[0]
-				newPath = renameParts[1]
-			}
-			if fileExists[oldPath] {
-				pathsToAggregate = append(pathsToAggregate, oldPath)
-			}
-			if fileExists[newPath] {
-				pathsToAggregate = append(pathsToAggregate, newPath)
-			}
-		} else if fileExists[path] {
-			pathsToAggregate = []string{path}
-		}
-
-		// Aggregate for each relevant path
-		for _, p := range pathsToAggregate {
-			// Aggregate using the dynamically selected maps
-			churnMap[p] += add + del
-			commitsMap[p]++
-			if currentAuthor != "" {
-				if contribMap[p] == nil {
-					contribMap[p] = make(map[string]int)
-				}
-				contribMap[p][currentAuthor]++
-			}
-
-			// Track first commit time
-			if !currentDate.IsZero() {
-				if existing, ok := firstCommitMap[p]; !ok || currentDate.Before(existing) {
-					firstCommitMap[p] = currentDate
-				}
-			}
-		}
-	}
+	// 4. Parse and aggregate the git log output
+	parseAndAggregateGitLog(out, fileExists, commitsMap, churnMap, contribMap, firstCommitMap)
 
 	output := &schema.AggregateOutput{
 		ChurnMap:       churnMap,
@@ -156,8 +43,165 @@ func aggregateActivity(ctx context.Context, cfg *internal.Config, client interna
 		FirstCommitMap: firstCommitMap,
 	}
 
-	// 5. No filtering loops are needed. The maps are already clean.
 	return output, nil
+}
+
+// buildFileExistenceMap creates a lookup map for O(1) file existence checks.
+func buildFileExistenceMap(currentFiles []string) map[string]bool {
+	fileExists := make(map[string]bool, len(currentFiles))
+	for _, file := range currentFiles {
+		fileExists[file] = true
+	}
+	return fileExists
+}
+
+// initializeAggregationMaps creates the maps used for aggregating git data.
+func initializeAggregationMaps() (map[string]int, map[string]int, map[string]map[string]int, map[string]time.Time) {
+	commitsMap := make(map[string]int)
+	churnMap := make(map[string]int)
+	contribMap := make(map[string]map[string]int)
+	firstCommitMap := make(map[string]time.Time)
+	return commitsMap, churnMap, contribMap, firstCommitMap
+}
+
+// parseAndAggregateGitLog processes the git log output and aggregates data into the maps.
+func parseAndAggregateGitLog(out []byte, fileExists map[string]bool, commitsMap, churnMap map[string]int, contribMap map[string]map[string]int, firstCommitMap map[string]time.Time) {
+	lines := strings.Split(string(out), "\n")
+	var currentAuthor string
+	var currentDate time.Time
+
+	for _, l := range lines {
+		l = strings.Trim(l, " \t\r\n'")
+
+		if strings.HasPrefix(l, "--") {
+			// Commit header line
+			currentAuthor, currentDate = parseCommitHeader(l)
+			continue
+		}
+		if l == "" {
+			continue // Skip blank lines
+		}
+
+		// File stats line
+		pathsToAggregate, add, del := parseFileStatsLine(l, fileExists)
+		if len(pathsToAggregate) == 0 {
+			continue
+		}
+
+		// Aggregate for each relevant path
+		for _, p := range pathsToAggregate {
+			aggregateForPath(p, add+del, currentAuthor, currentDate, commitsMap, churnMap, contribMap, firstCommitMap)
+		}
+	}
+}
+
+// parseCommitHeader extracts author and date from a commit header line.
+func parseCommitHeader(line string) (string, time.Time) {
+	parts := strings.SplitN(line[2:], "|", 3) // commit|author|date
+	if len(parts) == 3 {
+		author := parts[1]
+		dateStr := parts[2]
+		if date, err := time.Parse(time.RFC3339, dateStr); err == nil {
+			return author, date
+		}
+	}
+	return "", time.Time{}
+}
+
+// parseFileStatsLine parses a file stats line and returns paths to aggregate and churn values.
+func parseFileStatsLine(line string, fileExists map[string]bool) ([]string, int, int) {
+	parts := strings.SplitN(line, "\t", 3)
+	if len(parts) < 3 {
+		return nil, 0, 0
+	}
+
+	addStr, delStr, path := parts[0], parts[1], parts[2]
+
+	add := parseChurnValue(addStr)
+	del := parseChurnValue(delStr)
+
+	pathsToAggregate := determinePathsToAggregate(path, fileExists)
+	return pathsToAggregate, add, del
+}
+
+// parseChurnValue converts a churn string to int, handling "-" as 0.
+func parseChurnValue(s string) int {
+	if s == "-" {
+		return 0
+	}
+	if val, err := strconv.Atoi(s); err == nil {
+		return val
+	}
+	return 0
+}
+
+// determinePathsToAggregate handles renames and determines which paths should be aggregated.
+func determinePathsToAggregate(path string, fileExists map[string]bool) []string {
+	if !strings.Contains(path, " => ") {
+		if fileExists[path] {
+			return []string{path}
+		}
+		return nil
+	}
+
+	// Handle renames
+	oldPath, newPath := parseRenamePath(path)
+	var paths []string
+	if fileExists[oldPath] {
+		paths = append(paths, oldPath)
+	}
+	if fileExists[newPath] {
+		paths = append(paths, newPath)
+	}
+	return paths
+}
+
+// parseRenamePath extracts old and new paths from a rename string.
+func parseRenamePath(path string) (string, string) {
+	if !strings.Contains(path, "{") || !strings.Contains(path, "}") {
+		// Simple format: "old => new"
+		parts := strings.SplitN(path, " => ", 2)
+		return parts[0], parts[1]
+	}
+
+	// Braced format: prefix{old => new}suffix
+	braceStart := strings.Index(path, "{")
+	braceEnd := strings.Index(path, "}")
+	if braceStart == -1 || braceEnd == -1 || braceStart >= braceEnd {
+		return "", ""
+	}
+
+	prefix := path[:braceStart]
+	renamePart := path[braceStart+1 : braceEnd]
+	suffix := path[braceEnd+1:]
+
+	if !strings.Contains(renamePart, " => ") {
+		return "", ""
+	}
+
+	renameParts := strings.SplitN(renamePart, " => ", 2)
+	oldPath := prefix + renameParts[0] + suffix
+	newPath := prefix + renameParts[1] + suffix
+	return oldPath, newPath
+}
+
+// aggregateForPath updates the aggregation maps for a single path.
+func aggregateForPath(path string, churn int, author string, date time.Time, commitsMap, churnMap map[string]int, contribMap map[string]map[string]int, firstCommitMap map[string]time.Time) {
+	churnMap[path] += churn
+	commitsMap[path]++
+
+	if author != "" {
+		if contribMap[path] == nil {
+			contribMap[path] = make(map[string]int)
+		}
+		contribMap[path][author]++
+	}
+
+	if !date.IsZero() {
+		if existing, ok := firstCommitMap[path]; !ok || date.Before(existing) {
+			firstCommitMap[path] = date
+		}
+	}
 }
 
 // buildFilteredFileList creates a unified list of files from activity maps
