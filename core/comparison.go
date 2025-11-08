@@ -10,7 +10,7 @@ import (
 
 // compareFileResults matches metrics from the base run against the comparison run
 // and computes the difference (delta) for key metrics like Score.
-func compareFileResults(baseResults, targetResults []schema.FileResult, limit int) schema.ComparisonOutput {
+func compareFileResults(baseResults, targetResults []schema.FileResult, limit int) schema.ComparisonResult {
 	baseMap := make(map[string]schema.FileResult, len(baseResults))
 	targetMap := make(map[string]schema.FileResult, len(targetResults))
 	allPaths := make(map[string]struct{}) // Set to hold all unique paths
@@ -25,7 +25,7 @@ func compareFileResults(baseResults, targetResults []schema.FileResult, limit in
 		allPaths[m.Path] = struct{}{}
 	}
 
-	comparisonResults := make([]schema.ComparisonResult, 0, len(allPaths))
+	comparisonResults := make([]schema.ComparisonDetails, 0, len(allPaths))
 
 	// Initialize summary accumulators
 	var netScoreDelta float64
@@ -78,7 +78,7 @@ func compareFileResults(baseResults, targetResults []schema.FileResult, limit in
 			// For DELETED files: BaseScore > 0, CompScore = 0, Delta < 0
 			// For NEW files: BaseScore = 0, CompScore > 0, Delta > 0
 			file := &schema.FileComparison{DeltaLOC: deltaLOC, DeltaContrib: deltaContrib}
-			comparisonResults = append(comparisonResults, schema.ComparisonResult{
+			comparisonResults = append(comparisonResults, schema.ComparisonDetails{
 				Path:           path,
 				BeforeScore:    baseM.Score,
 				AfterScore:     targetM.Score,
@@ -129,12 +129,12 @@ func compareFileResults(baseResults, targetResults []schema.FileResult, limit in
 	if len(comparisonResults) > 0 && len(comparisonResults) > limit {
 		comparisonResults = comparisonResults[:limit]
 	}
-	return schema.ComparisonOutput{Results: comparisonResults, Summary: summary}
+	return schema.ComparisonResult{Results: comparisonResults, Summary: summary}
 }
 
 // compareFolderMetrics matches metrics from the base run against the target run
 // and computes the difference (delta) for the Score metric.
-func compareFolderMetrics(baseResults, targetResults []schema.FolderResult, limit int) schema.ComparisonOutput {
+func compareFolderMetrics(baseResults, targetResults []schema.FolderResult, limit int) schema.ComparisonResult {
 	baseMap := make(map[string]schema.FolderResult, len(baseResults))
 	targetMap := make(map[string]schema.FolderResult, len(targetResults))
 	allPaths := make(map[string]struct{}) // Set to hold all unique folder paths
@@ -149,7 +149,7 @@ func compareFolderMetrics(baseResults, targetResults []schema.FolderResult, limi
 		allPaths[m.Path] = struct{}{}
 	}
 
-	comparisonResults := make([]schema.ComparisonResult, 0, len(allPaths))
+	comparisonResults := make([]schema.ComparisonDetails, 0, len(allPaths))
 
 	// Initialize summary accumulators
 	var netScoreDelta float64
@@ -199,7 +199,7 @@ func compareFolderMetrics(baseResults, targetResults []schema.FolderResult, limi
 		// Only track and report folders where the score actually changed significantly.
 		// Using a tolerance of 0.01 to match the file comparison logic.
 		if math.Abs(deltaScore) > 0.01 {
-			comparisonResults = append(comparisonResults, schema.ComparisonResult{
+			comparisonResults = append(comparisonResults, schema.ComparisonDetails{
 				Path:         path,
 				BeforeScore:  baseScore,
 				AfterScore:   targetScore,
@@ -248,5 +248,5 @@ func compareFolderMetrics(baseResults, targetResults []schema.FolderResult, limi
 	if limit > 0 && len(comparisonResults) > limit {
 		comparisonResults = comparisonResults[:limit]
 	}
-	return schema.ComparisonOutput{Results: comparisonResults, Summary: summary}
+	return schema.ComparisonResult{Results: comparisonResults, Summary: summary}
 }

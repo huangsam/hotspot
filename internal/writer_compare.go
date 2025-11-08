@@ -10,17 +10,17 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// writeJSONResultsForComparison marshals the schema.ComparisonOutput to JSON and writes it.
-func writeJSONResultsForComparison(w io.Writer, comparisonOutput schema.ComparisonOutput) error {
+// writeJSONResultsForComparison marshals the schema.ComparisonResult to JSON and writes it.
+func writeJSONResultsForComparison(w io.Writer, comparisonResult schema.ComparisonResult) error {
 	encoder := json.NewEncoder(w)
 	encoder.SetIndent("", "  ")
-	// NOTE: The ComparisonOutput struct fields are already public (uppercase),
+	// NOTE: The ComparisonResult struct fields are already public (uppercase),
 	// so they will be correctly marshaled to JSON.
-	return encoder.Encode(comparisonOutput)
+	return encoder.Encode(comparisonResult)
 }
 
-// writeCSVResultsForComparison writes the schema.ComparisonOutput data to a CSV writer.
-func writeCSVResultsForComparison(w *csv.Writer, comparisonOutput schema.ComparisonOutput, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
+// writeCSVResultsForComparison writes the schema.ComparisonResult data to a CSV writer.
+func writeCSVResultsForComparison(w *csv.Writer, comparisonResult schema.ComparisonResult, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
 	// 1. Write Header Row
 	header := []string{
 		"rank",
@@ -40,7 +40,7 @@ func writeCSVResultsForComparison(w *csv.Writer, comparisonOutput schema.Compari
 	}
 
 	// 2. Write Data Rows
-	for i, r := range comparisonOutput.Results {
+	for i, r := range comparisonResult.Results {
 		row := []string{
 			strconv.Itoa(i + 1), // Rank
 			r.Path,              // Path

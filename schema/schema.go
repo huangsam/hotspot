@@ -34,8 +34,8 @@ type FolderResult struct {
 	WeightedScoreSum float64 `json:"weighted_score_sum"` // Sum of (FileScore * FileLOC)
 }
 
-// ComparisonResult holds the base info, target info, and their associated deltas.
-type ComparisonResult struct {
+// ComparisonDetails holds the base info, target info, and their associated deltas.
+type ComparisonDetails struct {
 	Path         string  `json:"path"`          // Relative path to the target in the repository
 	BeforeScore  float64 `json:"before_score"`  // Score from the original/base analysis
 	AfterScore   float64 `json:"after_score"`   // Score from the comparison/new analysis
@@ -62,10 +62,10 @@ type ComparisonSummary struct {
 	TotalModifiedFiles int `json:"total_modified_files"`
 }
 
-// ComparisonOutput holds the comparison results and summary.
-type ComparisonOutput struct {
-	Results []ComparisonResult `json:"results"`
-	Summary ComparisonSummary  `json:"summary"`
+// ComparisonResult holds the comparison details and summary.
+type ComparisonResult struct {
+	Results []ComparisonDetails `json:"details"`
+	Summary ComparisonSummary   `json:"summary"`
 }
 
 // FileComparison has file deltas.
