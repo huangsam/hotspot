@@ -135,6 +135,16 @@ var compareCmd = &cobra.Command{
 	Long:  `The compare command provides insight into how risk metrics have changed for different units (files, folders, etc.).`,
 }
 
+// checkCompareAndExecute validates compare mode and executes the given function.
+func checkCompareAndExecute(executeFunc core.ExecutorFunc) {
+	if !cfg.CompareMode {
+		internal.LogFatal("Cannot run compare analysis", errors.New("base and target refs must be provided"))
+	}
+	if err := executeFunc(rootCtx, cfg); err != nil {
+		internal.LogFatal("Cannot run compare analysis", err)
+	}
+}
+
 // compareFilesCmd looks at file deltas.
 var compareFilesCmd = &cobra.Command{
 	Use:     "files [repo-path]",
@@ -143,12 +153,7 @@ var compareFilesCmd = &cobra.Command{
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if !cfg.CompareMode {
-			internal.LogFatal("Cannot run compare analysis", errors.New("needs base and target refs"))
-		}
-		if err := core.ExecuteHotspotCompare(rootCtx, cfg); err != nil {
-			internal.LogFatal("Cannot run compare analysis", err)
-		}
+		checkCompareAndExecute(core.ExecuteHotspotCompare)
 	},
 }
 
@@ -160,12 +165,7 @@ var compareFoldersCmd = &cobra.Command{
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if !cfg.CompareMode {
-			internal.LogFatal("Cannot run compare analysis", errors.New("needs base and target refs"))
-		}
-		if err := core.ExecuteHotspotCompareFolders(rootCtx, cfg); err != nil {
-			internal.LogFatal("Cannot run compare analysis", err)
-		}
+		checkCompareAndExecute(core.ExecuteHotspotCompareFolders)
 	},
 }
 

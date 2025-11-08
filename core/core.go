@@ -8,6 +8,9 @@ import (
 	"github.com/huangsam/hotspot/internal"
 )
 
+// ExecutorFunc defines the function signature for executing different analysis modes.
+type ExecutorFunc func(ctx context.Context, cfg *internal.Config) error
+
 // ExecuteHotspotFiles runs the file-level analysis and prints results to stdout.
 // It serves as the main entry point for the 'files' mode.
 func ExecuteHotspotFiles(ctx context.Context, cfg *internal.Config) error {
