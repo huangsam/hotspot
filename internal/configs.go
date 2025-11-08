@@ -39,16 +39,16 @@ type ProfileConfig struct {
 // ModeWeightsRaw holds the custom weights for a single scoring mode (e.g., 'stale').
 // Only fields that might be customized are included. Use float64 pointers for optional fields.
 type ModeWeightsRaw struct {
-	InvRecentCommits *float64 `mapstructure:"inv_recent_commits"`
-	Size             *float64 `mapstructure:"size"`
-	Age              *float64 `mapstructure:"age"`
-	Commits          *float64 `mapstructure:"commits"`
-	Contributors     *float64 `mapstructure:"contributors"`
-	InvContributors  *float64 `mapstructure:"inv_contributors"`
-	Churn            *float64 `mapstructure:"churn"`
-	Gini             *float64 `mapstructure:"gini"`
-	LOC              *float64 `mapstructure:"loc"`
-	LowRecent        *float64 `mapstructure:"low_recent"`
+	InvRecent       *float64 `mapstructure:"inv_recent"`
+	Size            *float64 `mapstructure:"size"`
+	Age             *float64 `mapstructure:"age"`
+	Commits         *float64 `mapstructure:"commits"`
+	Contributors    *float64 `mapstructure:"contributors"`
+	InvContributors *float64 `mapstructure:"inv_contributors"`
+	Churn           *float64 `mapstructure:"churn"`
+	Gini            *float64 `mapstructure:"gini"`
+	LOC             *float64 `mapstructure:"loc"`
+	LowRecent       *float64 `mapstructure:"low_recent"`
 }
 
 // WeightsRawInput holds all custom scoring definitions from the YAML config file.
@@ -331,9 +331,9 @@ func processCustomWeights(cfg *Config, input *ConfigRawInput) error {
 		modeMap := make(map[string]float64)
 		sum := 0.0
 
-		if rawMode.InvRecentCommits != nil {
-			modeMap[schema.BreakdownInvRecent] = *rawMode.InvRecentCommits
-			sum += *rawMode.InvRecentCommits
+		if rawMode.InvRecent != nil {
+			modeMap[schema.BreakdownInvRecent] = *rawMode.InvRecent
+			sum += *rawMode.InvRecent
 		}
 		if rawMode.Size != nil {
 			modeMap[schema.BreakdownSize] = *rawMode.Size
