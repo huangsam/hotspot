@@ -361,7 +361,7 @@ weights:
 	configFile := filepath.Join(repoDir, ".hotspot.yml")
 	err = os.WriteFile(configFile, []byte(configContent), 0o644)
 	require.NoError(t, err)
-	defer os.Remove(configFile) // Clean up
+	t.Cleanup(func() { _ = os.Remove(configFile) })
 
 	// Run hotspot files with custom config
 	cmd := exec.Command(hotspotPath, "files", "--output", "json")
@@ -443,7 +443,7 @@ weights:
 	configFile := filepath.Join(repoDir, ".hotspot.yml")
 	err = os.WriteFile(configFile, []byte(configContent), 0o644)
 	require.NoError(t, err)
-	defer os.Remove(configFile) // Clean up
+	t.Cleanup(func() { _ = os.Remove(configFile) })
 
 	// Run hotspot files - should fail due to invalid weights
 	cmd := exec.Command(hotspotPath, "files")
