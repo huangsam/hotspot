@@ -8,15 +8,21 @@ package integration
 
 import (
 	"bytes"
+	"encoding/json"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// HotspotFile represents a file entry in hotspot JSON output
+type HotspotFile struct {
+	Path    string `json:"path"`
+	Commits int    `json:"commits"`
+}
 
 // TestHotspotFilesVerification runs hotspot files --detail and verifies commit counts against git log
 func TestHotspotFilesVerification(t *testing.T) {
@@ -30,8 +36,8 @@ func TestHotspotFilesVerification(t *testing.T) {
 	require.NoError(t, err)
 	repoDir := strings.TrimSpace(string(repoPath))
 
-	// Run hotspot files --detail
-	cmd := exec.Command("./hotspot", "files", "--detail")
+	// Run hotspot files --output json
+	cmd := exec.Command("./hotspot", "files", "--output", "json")
 	cmd.Dir = repoDir
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
@@ -63,22 +69,22 @@ func TestHotspotFilesVerification(t *testing.T) {
 	}
 }
 
-// parseHotspotOutput extracts file paths and commit counts from hotspot output
+// parseHotspotOutput extracts file paths and commit counts from hotspot JSON output
 func parseHotspotOutput(output string) map[string]int {
+	var files []HotspotFile
 	lines := strings.Split(output, "\n")
-	fileCommits := make(map[string]int)
-
-	for _, line := range lines {
-		if strings.Contains(line, "│") && !strings.Contains(line, "PATH") && !strings.Contains(line, "───") {
-			parts := strings.Split(line, "│")
-			if len(parts) >= 7 {
-				file := strings.TrimSpace(parts[2])
-				commitsStr := strings.TrimSpace(parts[6])
-				if commits, err := strconv.Atoi(commitsStr); err == nil && file != "" {
-					fileCommits[file] = commits
-				}
+	for i, line := range lines {
+		if strings.TrimSpace(line) == "[" { // Start of JSON array
+			jsonPart := strings.Join(lines[i:], "\n")
+			if json.Unmarshal([]byte(jsonPart), &files) == nil {
+				break
 			}
 		}
+	}
+
+	fileCommits := make(map[string]int)
+	for _, file := range files {
+		fileCommits[file.Path] = file.Commits
 	}
 
 	return fileCommits
@@ -116,8 +122,8 @@ func TestExternalRepoVerification(t *testing.T) {
 
 // verifyRepo runs hotspot and verifies against git for a given repo
 func verifyRepo(t *testing.T, repoDir, hotspotPath string) {
-	// Run hotspot files --detail --start 2000-01-01T00:00:00Z
-	cmd := exec.Command(hotspotPath, "files", "--detail", "--start", "2000-01-01T00:00:00Z")
+	// Run hotspot files --output json --start 2000-01-01T00:00:00Z
+	cmd := exec.Command(hotspotPath, "files", "--output", "json", "--start", "2000-01-01T00:00:00Z")
 	cmd.Dir = repoDir
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
