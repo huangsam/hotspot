@@ -125,7 +125,7 @@ func TestComputeScoreHotMode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			score := computeScore(&tt.metrics, schema.HotMode)
+			score := computeScore(&tt.metrics, schema.HotMode, nil)
 			assert.True(t, score >= tt.minScore && score <= tt.maxScore, "%f is out of the valid %f-%f range", score, tt.minScore, tt.maxScore)
 			// Verify score is in valid range
 			assert.True(t, score >= 0 && score <= 100, "%f is out of the valid 0-100 range")
@@ -140,7 +140,7 @@ func TestComputeScoreHotMode_EmptyFile(t *testing.T) {
 		Path:      "active.go",
 		SizeBytes: 0,
 	}
-	score := computeScore(&metrics, schema.HotMode)
+	score := computeScore(&metrics, schema.HotMode, nil)
 	assert.Equal(t, float64(0), score, "Score should be 0.0 for empty file")
 	assert.Empty(t, metrics.Breakdown, "Breakdown should be empty for empty file")
 }
@@ -216,7 +216,7 @@ func TestComputeScoreRiskMode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			score := computeScore(&tt.metrics, schema.RiskMode)
+			score := computeScore(&tt.metrics, schema.RiskMode, nil)
 			assert.True(t, score >= tt.minScore && score <= tt.maxScore)
 			assert.True(t, score >= 0 && score <= 100)
 		})
@@ -292,7 +292,7 @@ func TestComputeScoreStaleMode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			score := computeScore(&tt.metrics, schema.StaleMode)
+			score := computeScore(&tt.metrics, schema.StaleMode, nil)
 			assert.True(t, score >= tt.minScore && score <= tt.maxScore)
 			assert.True(t, score >= 0 && score <= 100)
 			assert.NotEmpty(t, tt.metrics.Breakdown)
@@ -354,7 +354,7 @@ func TestComputeScoreComplexityMode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			score := computeScore(&tt.metrics, schema.ComplexityMode)
+			score := computeScore(&tt.metrics, schema.ComplexityMode, nil)
 			assert.True(t, score >= tt.minScore && score <= tt.maxScore)
 			assert.True(t, score >= 0 && score <= 100)
 			assert.NotEmpty(t, tt.metrics.Breakdown)
@@ -380,7 +380,7 @@ func TestComputeScoreAllModes(t *testing.T) {
 
 	for _, mode := range modes {
 		t.Run(mode, func(t *testing.T) {
-			score := computeScore(&metrics, mode)
+			score := computeScore(&metrics, mode, nil)
 			assert.True(t, score >= 0 && score <= 100)
 			assert.NotEmpty(t, metrics.Breakdown)
 		})
@@ -432,6 +432,6 @@ func BenchmarkComputeScore(b *testing.B) {
 	}
 
 	for b.Loop() {
-		computeScore(&metrics, schema.HotMode)
+		computeScore(&metrics, schema.HotMode, nil)
 	}
 }

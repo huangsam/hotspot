@@ -1,0 +1,54 @@
+# examples/hotspot.weights.yml
+#
+# Example configuration showing how to customize scoring weights.
+# This demonstrates overriding the default "hot" mode weights to emphasize
+# different aspects of code analysis.
+
+# --- Global Settings ---
+limit: 20
+mode: hot
+
+# --- Custom Scoring Weights ---
+# Each mode can have custom weights that override the defaults.
+# Weights must sum to 1.0 (or 100%) for each mode.
+# Available weight components vary by mode:
+# - hot: age, churn, commits, contrib, size
+# - risk: age, churn, commits, gini, inv_contrib, loc, size
+# - complexity: age, churn, commits, loc, low_recent, size
+# - stale: age, commits, contrib, inv_recent, size
+
+weights:
+  hot:
+    # Emphasize recent activity over file size
+    age: 0.05      # Reduced from default 0.10
+    churn: 0.50    # Increased from default 0.40
+    commits: 0.40  # Same as default
+    contrib: 0.03  # Reduced from default 0.05
+    size: 0.02     # Reduced from default 0.05
+
+  risk:
+    # Focus more on contributor concentration
+    age: 0.10
+    churn: 0.05
+    commits: 0.03
+    gini: 0.35      # Increased from default 0.26
+    inv_contrib: 0.35  # Increased from default 0.30
+    loc: 0.05
+    size: 0.07
+
+  complexity:
+    # Prioritize technical debt indicators
+    age: 0.40      # Increased from default 0.30
+    churn: 0.25    # Reduced from default 0.30
+    commits: 0.05
+    loc: 0.20
+    low_recent: 0.05
+    size: 0.05
+
+  stale:
+    # Emphasize lack of recent activity
+    age: 0.15
+    commits: 0.10
+    contrib: 0.03
+    inv_recent: 0.50  # Increased from default 0.35
+    size: 0.22

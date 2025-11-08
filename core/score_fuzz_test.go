@@ -73,7 +73,7 @@ func FuzzComputeScore(f *testing.F) {
 			Gini:               gini,
 			RecentCommits:      recentCommits,
 		}
-		_ = computeScore(&result, mode)
+		_ = computeScore(&result, mode, nil)
 	})
 }
 

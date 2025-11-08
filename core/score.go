@@ -1,6 +1,7 @@
 package core
 
 import (
+	"maps"
 	"math"
 	"path/filepath"
 	"slices"
@@ -9,13 +10,67 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
+// getWeightsForMode returns the weight map for a given scoring mode.
+// If custom weights are provided for the mode, they override the defaults.
+func getWeightsForMode(mode string, customWeights map[string]map[string]float64) map[string]float64 {
+	var weights map[string]float64
+
+	// Start with default weights
+	switch strings.ToLower(mode) {
+	case schema.RiskMode:
+		weights = map[string]float64{
+			schema.BreakdownAge:        0.16,
+			schema.BreakdownChurn:      0.06,
+			schema.BreakdownCommits:    0.04,
+			schema.BreakdownGini:       0.26,
+			schema.BreakdownInvContrib: 0.30,
+			schema.BreakdownLOC:        0.06,
+			schema.BreakdownSize:       0.12,
+		}
+	case schema.ComplexityMode:
+		weights = map[string]float64{
+			schema.BreakdownAge:       0.30,
+			schema.BreakdownChurn:     0.30,
+			schema.BreakdownCommits:   0.10,
+			schema.BreakdownLOC:       0.20,
+			schema.BreakdownLowRecent: 0.05,
+			schema.BreakdownSize:      0.05,
+		}
+	case schema.StaleMode:
+		weights = map[string]float64{
+			schema.BreakdownAge:       0.20,
+			schema.BreakdownCommits:   0.15,
+			schema.BreakdownContrib:   0.05,
+			schema.BreakdownInvRecent: 0.35,
+			schema.BreakdownSize:      0.25,
+		}
+	default: // "hot" mode
+		weights = map[string]float64{
+			schema.BreakdownAge:     0.10,
+			schema.BreakdownChurn:   0.40,
+			schema.BreakdownCommits: 0.40,
+			schema.BreakdownContrib: 0.05,
+			schema.BreakdownSize:    0.05,
+		}
+	}
+
+	// Override with custom weights if provided
+	if customWeights != nil {
+		if modeWeights, ok := customWeights[mode]; ok {
+			maps.Copy(weights, modeWeights)
+		}
+	}
+
+	return weights
+}
+
 // computeScore calculates a file's importance score (0-100) based on its metrics.
 // Supports four core scoring modes:
 // - hot: Activity hotspots (high commits, churn, contributors)
 // - risk: Knowledge risk/bus factor (few contributors, high inequality)
 // - complexity: Technical debt candidates (large, old, high total churn)
 // - stale: Maintenance debt (important but untouched)
-func computeScore(m *schema.FileResult, mode string) float64 {
+func computeScore(m *schema.FileResult, mode string, customWeights map[string]map[string]float64) float64 {
 	// DEFENSIVE CHECK: If the file has no content, its score should be 0.
 	if m.SizeBytes == 0 {
 		return 0.0
@@ -61,76 +116,27 @@ func computeScore(m *schema.FileResult, mode string) float64 {
 	breakdown := make(map[string]float64)
 	var raw float64
 
+	// Get weights for the mode
+	weights := getWeightsForMode(mode, customWeights)
+
+	// Build breakdown by applying weights to normalized metrics
+	breakdown[schema.BreakdownAge] = weights[schema.BreakdownAge] * nAge
+	breakdown[schema.BreakdownChurn] = weights[schema.BreakdownChurn] * nChurn
+	breakdown[schema.BreakdownCommits] = weights[schema.BreakdownCommits] * nCommits
+	breakdown[schema.BreakdownContrib] = weights[schema.BreakdownContrib] * nContrib
+	breakdown[schema.BreakdownSize] = weights[schema.BreakdownSize] * nSize
+
+	// Mode-specific metrics
 	switch strings.ToLower(mode) {
 	case schema.RiskMode:
-		// Knowledge-risk focused scoring: prioritize concentration and bus-factor
-		// LOC is added to account for the cognitive burden of highly-owned files.
-		const (
-			wInvContrib = 0.30 // Directly measures bus factor
-			wGini       = 0.26 // Measures contribution inequality
-			wAgeRisk    = 0.16
-			wSizeRisk   = 0.12
-			wChurnRisk  = 0.06
-			wCommRisk   = 0.04
-			wLOCRisk    = 0.06
-		)
-		breakdown[schema.BreakdownAge] = wAgeRisk * nAge
-		breakdown[schema.BreakdownChurn] = wChurnRisk * nChurn
-		breakdown[schema.BreakdownCommits] = wCommRisk * nCommits
-		breakdown[schema.BreakdownGini] = wGini * nGiniRaw
-		breakdown[schema.BreakdownInvContrib] = wInvContrib * nInvContrib
-		breakdown[schema.BreakdownLOC] = wLOCRisk * nLOC
-		breakdown[schema.BreakdownSize] = wSizeRisk * nSize
-
+		breakdown[schema.BreakdownGini] = weights[schema.BreakdownGini] * nGiniRaw
+		breakdown[schema.BreakdownInvContrib] = weights[schema.BreakdownInvContrib] * nInvContrib
+		breakdown[schema.BreakdownLOC] = weights[schema.BreakdownLOC] * nLOC
 	case schema.ComplexityMode:
-		// Technical debt focus: large, old files with high total churn.
-		// LOC is the primary proxy for cognitive complexity, while Size is retained
-		// for structural/data bloat risk.
-		const (
-			wAgeComplex   = 0.30 // Older code often contains legacy complexity
-			wChurnComplex = 0.30 // High churn suggests volatility and/or refactoring difficulty
-			wLOCComplex   = 0.20 // High measure of cognitive complexity
-			wCommComplex  = 0.10
-			wSizeComplex  = 0.05
-			wContribLow   = 0.05
-		)
-		// Complexity should favor files that aren't being actively fixed (low recent commits)
-		breakdown[schema.BreakdownAge] = wAgeComplex * nAge
-		breakdown[schema.BreakdownChurn] = wChurnComplex * nChurn
-		breakdown[schema.BreakdownCommits] = wCommComplex * nCommits
-		breakdown[schema.BreakdownLOC] = wLOCComplex * nLOC
-		breakdown[schema.BreakdownLowRecent] = wContribLow * nInvRecentCommits
-		breakdown[schema.BreakdownSize] = wSizeComplex * nSize
-
+		breakdown[schema.BreakdownLOC] = weights[schema.BreakdownLOC] * nLOC
+		breakdown[schema.BreakdownLowRecent] = weights[schema.BreakdownLowRecent] * nInvRecentCommits
 	case schema.StaleMode:
-		// Maintenance debt: important but haven't been touched recently
-		const (
-			wInvRecentStale = 0.35 // This is the definition of "stale" — a lack of recent commits
-			wSizeStale      = 0.25 // A large file that goes untouched is a bigger debt than a small one
-			wAgeStale       = 0.20 // Older files have a higher chance of accumulating maintenance debt
-			wCommitsStale   = 0.15
-			wContribStale   = 0.05
-		)
-		breakdown[schema.BreakdownAge] = wAgeStale * nAge
-		breakdown[schema.BreakdownCommits] = wCommitsStale * nCommits
-		breakdown[schema.BreakdownContrib] = wContribStale * nContrib
-		breakdown[schema.BreakdownInvRecent] = wInvRecentStale * nInvRecentCommits
-		breakdown[schema.BreakdownSize] = wSizeStale * nSize
-
-	default: // case "hot" (default)
-		// Hotspot scoring: where activity and volatility are concentrated
-		const (
-			wCommits = 0.40 // Raw commit count is a great measure of activity
-			wChurn   = 0.40 // Volatility (lines changed) is key to a "hotspot"
-			wAge     = 0.10
-			wContrib = 0.05
-			wSize    = 0.05
-		)
-		breakdown[schema.BreakdownAge] = wAge * nAge
-		breakdown[schema.BreakdownChurn] = wChurn * nChurn
-		breakdown[schema.BreakdownCommits] = wCommits * nCommits
-		breakdown[schema.BreakdownContrib] = wContrib * nContrib
-		breakdown[schema.BreakdownSize] = wSize * nSize
+		breakdown[schema.BreakdownInvRecent] = weights[schema.BreakdownInvRecent] * nInvRecentCommits
 	}
 
 	for _, value := range breakdown {

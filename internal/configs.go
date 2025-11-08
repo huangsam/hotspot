@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -35,6 +36,29 @@ type ProfileConfig struct {
 	Prefix  string
 }
 
+// ModeWeightsRaw holds the custom weights for a single scoring mode (e.g., 'stale').
+// Only fields that might be customized are included. Use float64 pointers for optional fields.
+type ModeWeightsRaw struct {
+	InvRecentCommits *float64 `mapstructure:"inv_recent_commits"`
+	Size             *float64 `mapstructure:"size"`
+	Age              *float64 `mapstructure:"age"`
+	Commits          *float64 `mapstructure:"commits"`
+	Contributors     *float64 `mapstructure:"contributors"`
+	InvContributors  *float64 `mapstructure:"inv_contributors"`
+	Churn            *float64 `mapstructure:"churn"`
+	Gini             *float64 `mapstructure:"gini"`
+	LOC              *float64 `mapstructure:"loc"`
+	LowRecent        *float64 `mapstructure:"low_recent"`
+}
+
+// WeightsRawInput holds all custom scoring definitions from the YAML config file.
+type WeightsRawInput struct {
+	Stale      *ModeWeightsRaw `mapstructure:"stale"`
+	Risk       *ModeWeightsRaw `mapstructure:"risk"`
+	Hot        *ModeWeightsRaw `mapstructure:"hot"`
+	Complexity *ModeWeightsRaw `mapstructure:"complexity"`
+}
+
 // Config holds the runtime configuration for the analysis.
 // This struct remains the "final, validated" config.
 type Config struct {
@@ -58,6 +82,9 @@ type Config struct {
 	BaseRef     string
 	TargetRef   string
 	Lookback    time.Duration
+
+	// Processed map of custom scoring weights [ModeName][BreakdownKey] = Weight
+	CustomWeights map[string]map[string]float64
 }
 
 // ConfigRawInput holds the raw inputs from all sources (flags, env, config file).
@@ -88,6 +115,9 @@ type ConfigRawInput struct {
 	BaseRef   string `mapstructure:"base-ref"`
 	TargetRef string `mapstructure:"target-ref"`
 	Lookback  string `mapstructure:"lookback"`
+
+	// --- Custom weights from config file ---
+	Weights WeightsRawInput `mapstructure:"weights"`
 }
 
 // Clone returns a deep copy of the Config struct.
@@ -97,6 +127,13 @@ func (c *Config) Clone() *Config {
 	if c.Excludes != nil {
 		clone.Excludes = make([]string, len(c.Excludes))
 		copy(clone.Excludes, c.Excludes)
+	}
+	if c.CustomWeights != nil {
+		clone.CustomWeights = make(map[string]map[string]float64)
+		for mode, modeMap := range c.CustomWeights {
+			clone.CustomWeights[mode] = make(map[string]float64)
+			maps.Copy(clone.CustomWeights[mode], modeMap)
+		}
 	}
 	return &clone
 }
@@ -121,6 +158,9 @@ func ProcessAndValidate(ctx context.Context, cfg *Config, client GitClient, inpu
 		return err
 	}
 	if err := processCompareMode(cfg, input); err != nil {
+		return err
+	}
+	if err := processCustomWeights(cfg, input); err != nil {
 		return err
 	}
 	if err := resolveGitPathAndFilter(ctx, cfg, client, input); err != nil {
@@ -265,6 +305,80 @@ func processCompareMode(cfg *Config, input *ConfigRawInput) error {
 		return err
 	}
 	cfg.Lookback = lookback
+
+	return nil
+}
+
+// processCustomWeights converts the raw input into the final cfg.CustomWeights map
+// and validates that the provided weights for any mode sum up to 1.0.
+func processCustomWeights(cfg *Config, input *ConfigRawInput) error {
+	cfg.CustomWeights = make(map[string]map[string]float64)
+
+	modes := []string{schema.StaleMode, schema.RiskMode, schema.HotMode, schema.ComplexityMode}
+	modeWeights := map[string]*ModeWeightsRaw{
+		schema.StaleMode:      input.Weights.Stale,
+		schema.RiskMode:       input.Weights.Risk,
+		schema.HotMode:        input.Weights.Hot,
+		schema.ComplexityMode: input.Weights.Complexity,
+	}
+
+	for _, mode := range modes {
+		rawMode := modeWeights[mode]
+		if rawMode == nil {
+			continue
+		}
+
+		modeMap := make(map[string]float64)
+		sum := 0.0
+
+		if rawMode.InvRecentCommits != nil {
+			modeMap[schema.BreakdownInvRecent] = *rawMode.InvRecentCommits
+			sum += *rawMode.InvRecentCommits
+		}
+		if rawMode.Size != nil {
+			modeMap[schema.BreakdownSize] = *rawMode.Size
+			sum += *rawMode.Size
+		}
+		if rawMode.Age != nil {
+			modeMap[schema.BreakdownAge] = *rawMode.Age
+			sum += *rawMode.Age
+		}
+		if rawMode.Commits != nil {
+			modeMap[schema.BreakdownCommits] = *rawMode.Commits
+			sum += *rawMode.Commits
+		}
+		if rawMode.Contributors != nil {
+			modeMap[schema.BreakdownContrib] = *rawMode.Contributors
+			sum += *rawMode.Contributors
+		}
+		if rawMode.InvContributors != nil {
+			modeMap[schema.BreakdownInvContrib] = *rawMode.InvContributors
+			sum += *rawMode.InvContributors
+		}
+		if rawMode.Churn != nil {
+			modeMap[schema.BreakdownChurn] = *rawMode.Churn
+			sum += *rawMode.Churn
+		}
+		if rawMode.Gini != nil {
+			modeMap[schema.BreakdownGini] = *rawMode.Gini
+			sum += *rawMode.Gini
+		}
+		if rawMode.LOC != nil {
+			modeMap[schema.BreakdownLOC] = *rawMode.LOC
+			sum += *rawMode.LOC
+		}
+		if rawMode.LowRecent != nil {
+			modeMap[schema.BreakdownLowRecent] = *rawMode.LowRecent
+			sum += *rawMode.LowRecent
+		}
+
+		if len(modeMap) > 0 {
+			if sum < 0.999 || sum > 1.001 {
+				return fmt.Errorf("custom weights for mode %s must sum to 1.0, got %.3f", mode, sum)
+			}
+			cfg.CustomWeights[mode] = modeMap
+		}
+	}
 
 	return nil
 }

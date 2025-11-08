@@ -211,7 +211,7 @@ func (b *FileResultBuilder) CalculateOwner() *FileResultBuilder {
 
 // CalculateScore computes the final composite score.
 func (b *FileResultBuilder) CalculateScore() *FileResultBuilder {
-	b.result.Score = computeScore(b.result, b.cfg.Mode) // Assuming computeScore() is a helper function
+	b.result.Score = computeScore(b.result, b.cfg.Mode, b.cfg.CustomWeights) // Assuming computeScore() is a helper function
 	return b
 }
 
