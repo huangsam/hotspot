@@ -16,7 +16,7 @@ var _ GitClient = &MockGitClient{} // Compile-time check
 
 // Run implements the GitClient interface.
 func (m *MockGitClient) Run(ctx context.Context, repoPath string, args ...string) ([]byte, error) {
-	var mockArgs []interface{}
+	var mockArgs []any
 	mockArgs = append(mockArgs, ctx, repoPath)
 	for _, arg := range args {
 		mockArgs = append(mockArgs, arg)
@@ -33,7 +33,7 @@ func (m *MockGitClient) GetActivityLog(ctx context.Context, repoPath string, sta
 	return output, ret.Error(1)
 }
 
-// GetCommitTime implements the GitClient interface.
+// GetCommitTime implements the core.GitClient interface.
 func (m *MockGitClient) GetCommitTime(ctx context.Context, repoPath string, ref string) (time.Time, error) {
 	ret := m.Called(ctx, repoPath, ref)
 	t, _ := ret.Get(0).(time.Time)

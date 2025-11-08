@@ -40,7 +40,8 @@ func (c *LocalGitClient) GetActivityLog(ctx context.Context, repoPath string, st
 	args := []string{
 		"log",
 		"--numstat",
-		"--pretty=format:'--%H|%an'",
+		"--pretty=format:'--%H|%an|%ad'",
+		"--date=iso-strict",
 	}
 	if !startTime.IsZero() {
 		args = append(args, fmt.Sprintf("--since=%s", startTime.Format(DateTimeFormat)))
@@ -100,18 +101,21 @@ func (c *LocalGitClient) GetFileFirstCommitTime(ctx context.Context, repoPath st
 func (c *LocalGitClient) GetFileActivityLog(ctx context.Context, repoPath string, path string, startTime, endTime time.Time, follow bool) ([]byte, error) {
 	args := []string{
 		"log",
-		"--pretty=format:DELIMITER_COMMIT_START%an,%ad",
-		"--date=iso",
+		"--pretty=format:DELIMITER_COMMIT_START%an|%ad",
+		"--date=iso-strict",
 		"--numstat",
 	}
 	if follow {
 		args = append(args, "--follow")
-	}
-	if !startTime.IsZero() {
-		args = append(args, "--since="+startTime.Format(DateTimeFormat))
-	}
-	if !endTime.IsZero() {
-		args = append(args, "--until="+endTime.Format(DateTimeFormat))
+		// When using --follow, we want complete history, not time-filtered
+	} else {
+		// Only apply time filters when not using --follow
+		if !startTime.IsZero() {
+			args = append(args, "--since="+startTime.Format(DateTimeFormat))
+		}
+		if !endTime.IsZero() {
+			args = append(args, "--until="+endTime.Format(DateTimeFormat))
+		}
 	}
 	args = append(args, "--", path)
 	return c.Run(ctx, repoPath, args...)

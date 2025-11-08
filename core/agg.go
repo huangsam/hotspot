@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/schema"
@@ -31,6 +32,7 @@ func aggregateActivity(ctx context.Context, cfg *internal.Config, client interna
 	commitsMap := make(map[string]int)
 	churnMap := make(map[string]int)
 	contribMap := make(map[string]map[string]int)
+	firstCommitMap := make(map[string]time.Time)
 
 	// 3. Run the expensive git log command ONCE using the new explicit method.
 	// The client now handles argument construction for zero-valued times.
@@ -42,17 +44,25 @@ func aggregateActivity(ctx context.Context, cfg *internal.Config, client interna
 	// 4. Perform aggregation AND filtering in a single pass (Logic unchanged)
 	lines := strings.Split(string(out), "\n")
 	var currentAuthor string
+	var currentDate time.Time
 	for _, l := range lines {
 		// Strip the surrounding single quotes, whitespace, and carriage returns
 		l = strings.Trim(l, " \t\r\n'")
 
 		if strings.HasPrefix(l, "--") {
 			// Commit header line
-			parts := strings.SplitN(l[2:], "|", 2) // Slice off the leading "--"
-			if len(parts) == 2 {
+			parts := strings.SplitN(l[2:], "|", 3) // commit|author|date
+			if len(parts) == 3 {
 				currentAuthor = parts[1]
+				dateStr := parts[2]
+				if date, err := time.Parse(time.RFC3339, dateStr); err == nil {
+					currentDate = date
+				} else {
+					currentDate = time.Time{}
+				}
 			} else {
-				currentAuthor = "" // Should not happen with this format
+				currentAuthor = ""
+				currentDate = time.Time{}
 			}
 			continue
 		}
@@ -69,10 +79,6 @@ func aggregateActivity(ctx context.Context, cfg *internal.Config, client interna
 		delStr := parts[1]
 		path := parts[2]
 
-		if !fileExists[path] {
-			continue // Skip this file; it no longer exists.
-		}
-
 		add := 0
 		del := 0
 		if addStr != "-" {
@@ -82,21 +88,71 @@ func aggregateActivity(ctx context.Context, cfg *internal.Config, client interna
 			del, _ = strconv.Atoi(delStr)
 		}
 
-		// Aggregate using the dynamically selected maps
-		churnMap[path] += add + del
-		commitsMap[path]++
-		if currentAuthor != "" {
-			if contribMap[path] == nil {
-				contribMap[path] = make(map[string]int)
+		// Handle renames: git --numstat can output renames in various formats.
+		// Examples:
+		// - Simple: "old/path => new/path"
+		// - With braces and suffix: "{old => new}/file" (e.g., "{schema => internal}/configs.go")
+		// - With braces and prefix: "dir/{old => new}" (e.g., "internal/{output.go => output_files.go}")
+		// We parse these to extract oldPath and newPath, then aggregate for existing files.
+		var pathsToAggregate []string
+		if strings.Contains(path, " => ") {
+			var oldPath, newPath string
+			if strings.Contains(path, "{") && strings.Contains(path, "}") {
+				// Handle braced formats: split into prefix{old => new}suffix
+				braceStart := strings.Index(path, "{")
+				braceEnd := strings.Index(path, "}")
+				if braceStart != -1 && braceEnd != -1 && braceStart < braceEnd {
+					prefix := path[:braceStart]
+					renamePart := path[braceStart+1 : braceEnd] // "old => new"
+					suffix := path[braceEnd+1:]
+					if strings.Contains(renamePart, " => ") {
+						renameParts := strings.SplitN(renamePart, " => ", 2)
+						oldPath = prefix + renameParts[0] + suffix
+						newPath = prefix + renameParts[1] + suffix
+					}
+				}
+			} else {
+				// Handle simple format: "old => new"
+				renameParts := strings.SplitN(path, " => ", 2)
+				oldPath = renameParts[0]
+				newPath = renameParts[1]
 			}
-			contribMap[path][currentAuthor]++
+			if fileExists[oldPath] {
+				pathsToAggregate = append(pathsToAggregate, oldPath)
+			}
+			if fileExists[newPath] {
+				pathsToAggregate = append(pathsToAggregate, newPath)
+			}
+		} else if fileExists[path] {
+			pathsToAggregate = []string{path}
+		}
+
+		// Aggregate for each relevant path
+		for _, p := range pathsToAggregate {
+			// Aggregate using the dynamically selected maps
+			churnMap[p] += add + del
+			commitsMap[p]++
+			if currentAuthor != "" {
+				if contribMap[p] == nil {
+					contribMap[p] = make(map[string]int)
+				}
+				contribMap[p][currentAuthor]++
+			}
+
+			// Track first commit time
+			if !currentDate.IsZero() {
+				if existing, ok := firstCommitMap[p]; !ok || currentDate.Before(existing) {
+					firstCommitMap[p] = currentDate
+				}
+			}
 		}
 	}
 
 	output := &schema.AggregateOutput{
-		ChurnMap:   churnMap,
-		CommitMap:  commitsMap,
-		ContribMap: contribMap,
+		ChurnMap:       churnMap,
+		CommitMap:      commitsMap,
+		ContribMap:     contribMap,
+		FirstCommitMap: firstCommitMap,
 	}
 
 	// 5. No filtering loops are needed. The maps are already clean.

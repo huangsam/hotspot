@@ -175,8 +175,8 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	cfg.Excludes = defaults // Set defaults first
 
 	if input.Exclude != "" {
-		parts := strings.Split(input.Exclude, ",") // Use simple Split
-		for _, p := range parts {
+		parts := strings.SplitSeq(input.Exclude, ",") // Use simple Split
+		for p := range parts {
 			trimmedP := strings.TrimSpace(p)
 			if trimmedP != "" {
 				cfg.Excludes = append(cfg.Excludes, trimmedP)

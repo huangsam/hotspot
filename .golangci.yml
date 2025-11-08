@@ -11,6 +11,8 @@ linters:
     - unconvert
     # https://github.com/mvdan/unparam
     - unparam
+    # https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize
+    - modernize
 formatters:
   enable:
     - gofmt

@@ -14,6 +14,8 @@ import (
 
 // runSingleAnalysisCore performs the common Aggregation, Filtering, and Analysis steps.
 func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client *internal.LocalGitClient) (*schema.SingleAnalysisOutput, error) {
+	logAnalysisHeader(cfg)
+
 	// --- 1. Aggregation Phase ---
 	output, err := aggregateActivity(ctx, cfg, client)
 	if err != nil {
@@ -27,7 +29,6 @@ func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client *in
 	}
 
 	// --- 3. Core Analysis ---
-	logAnalysisHeader(cfg)
 	fileResults := analyzeRepo(ctx, cfg, client, output, files)
 
 	return &schema.SingleAnalysisOutput{
@@ -66,6 +67,8 @@ func runCompareAnalysisForRef(ctx context.Context, cfg *internal.Config, client 
 // analyzeAllFiles performs a full file-level hotspot analysis. This function is designed
 // to be used for comparison logic, as it does not rank files preemptively.
 func analyzeAllFiles(ctx context.Context, cfg *internal.Config, client internal.GitClient) ([]schema.FileResult, error) {
+	logAnalysisHeader(cfg)
+
 	// --- 1. Aggregation Phase ---
 	output, err := aggregateActivity(ctx, cfg, client)
 	if err != nil {
@@ -79,7 +82,6 @@ func analyzeAllFiles(ctx context.Context, cfg *internal.Config, client internal.
 	}
 
 	// --- 3. Core Analysis and Initial Ranking ---
-	logAnalysisHeader(cfg)
 	results := analyzeRepo(ctx, cfg, client, output, files)
 
 	// --- 4. Return Data ---

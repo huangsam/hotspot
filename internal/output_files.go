@@ -90,7 +90,7 @@ func printTableResults(files []schema.FileResult, cfg *Config, fmtFloat func(flo
 	// 1. Define Headers
 	headers := []string{"Rank", "Path", "Score", "Label"}
 	if cfg.Detail {
-		headers = append(headers, "Contrib", "Commits", "LOC", "Churn")
+		headers = append(headers, "Contrib", "Commits", "LOC", "Churn", "Age")
 	}
 	if cfg.Explain {
 		headers = append(headers, "Explain")
@@ -122,6 +122,7 @@ func printTableResults(files []schema.FileResult, cfg *Config, fmtFloat func(flo
 				fmt.Sprintf(intFmt, f.Commits),            // Commits
 				fmt.Sprintf(intFmt, f.LinesOfCode),        // LOC
 				fmt.Sprintf(intFmt, f.Churn),              // Churn
+				fmt.Sprintf(intFmt, f.AgeDays),            // Age
 			)
 		}
 		if cfg.Explain {

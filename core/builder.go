@@ -1,9 +1,9 @@
 package core
 
 import (
-	"bufio"
 	"bytes"
 	"context"
+	"maps"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -43,81 +43,80 @@ func NewFileMetricsBuilder(ctx context.Context, cfg *internal.Config, client int
 	}
 }
 
-// FetchAllGitMetrics runs 'git log' once to populate basic metrics (commits, contributors) and churn.
+// FetchAllGitMetrics populates basic metrics (commits, contributors) and churn from aggregated data or git log if follow is needed.
 func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
-	const CommitDelimiter = "DELIMITER_COMMIT_START"
+	path := b.path
 
-	// --- Data Collection: Use the new explicit method ---
-	// The GitClient is now b.git (since it's an embedded/member field)
-	out, err := b.git.GetFileActivityLog(
-		b.ctx,
-		b.cfg.RepoPath,
-		b.path,
-		b.cfg.StartTime,
-		b.cfg.EndTime,
-		b.useFollow,
-	)
-	if err != nil {
-		return b
+	if !b.useFollow {
+		// Use aggregated data for initial analysis (no follow needed)
+		if commits, ok := b.output.CommitMap[path]; ok {
+			b.totalCommits = commits
+			b.result.Commits = commits
+		}
+		if churn, ok := b.output.ChurnMap[path]; ok {
+			b.result.Churn = churn
+		}
+		if contribMap, ok := b.output.ContribMap[path]; ok {
+			b.contribCount = make(map[string]int)
+			maps.Copy(b.contribCount, contribMap)
+			b.result.UniqueContributors = len(b.contribCount)
+		}
+		if firstCommit, ok := b.output.FirstCommitMap[path]; ok {
+			b.result.FirstCommit = firstCommit
+		}
+	} else {
+		// For follow analysis, run git log with --follow to get complete history
+		out, err := b.git.GetFileActivityLog(
+			b.ctx,
+			b.cfg.RepoPath,
+			b.path,
+			b.cfg.StartTime,
+			b.cfg.EndTime,
+			b.useFollow,
+		)
+		if err == nil {
+			// Parse the output to populate metrics
+			lines := strings.Split(string(out), "\n")
+			var firstCommit time.Time
+			totalChanges := 0
+			authorCommits := make(map[string]int)
+
+			for _, line := range lines {
+				line = strings.Trim(line, " \t\r\n'")
+				if strings.HasPrefix(line, "DELIMITER_COMMIT_START") {
+					// Commit line: DELIMITER_COMMIT_STARTauthor|date
+					metadata := line[len("DELIMITER_COMMIT_START"):]
+					parts := strings.SplitN(metadata, "|", 2)
+					if len(parts) == 2 {
+						author := strings.TrimSpace(parts[0])
+						dateStr := strings.TrimSpace(parts[1])
+						authorCommits[author]++
+						b.totalCommits++
+						if date, err := time.Parse(time.RFC3339, dateStr); err == nil {
+							if firstCommit.IsZero() || date.Before(firstCommit) {
+								firstCommit = date
+							}
+						}
+					}
+				} else if parts := strings.Split(line, "\t"); len(parts) >= 3 {
+					// Numstat line
+					if add, errA := strconv.Atoi(strings.TrimSpace(parts[0])); errA == nil {
+						if del, errD := strconv.Atoi(strings.TrimSpace(parts[1])); errD == nil {
+							totalChanges += add + del
+						}
+					}
+				}
+			}
+
+			b.contribCount = authorCommits
+			b.result.UniqueContributors = len(b.contribCount)
+			b.result.Commits = b.totalCommits
+			b.result.Churn = totalChanges
+			b.result.FirstCommit = firstCommit
+		}
 	}
 
-	// --- Parsing Logic (Remains identical) ---
-	scanner := bufio.NewScanner(bytes.NewReader(out))
-	var firstCommit time.Time
-	totalChanges := 0
-
-	// ... (rest of the detailed parsing loop for Commit Metadata and Churn Data remains the same) ...
-	for scanner.Scan() {
-		// ... (Parsing logic from original function) ...
-		line := scanner.Text()
-
-		// 1. Process Commit Metadata
-		if after, ok := strings.CutPrefix(line, CommitDelimiter); ok {
-			// ... (Metadata parsing logic) ...
-			metadata := after
-			parts := strings.SplitN(metadata, ",", 2)
-			if len(parts) < 2 {
-				continue
-			}
-			author := parts[0]
-			dateStr := parts[1]
-
-			date, err := time.Parse("2006-01-02 15:04:05 -0700", dateStr)
-			if err != nil {
-				continue
-			}
-
-			// Populate commit history metrics
-			b.contribCount[author]++
-			b.totalCommits++
-			if firstCommit.IsZero() || date.Before(firstCommit) {
-				firstCommit = date
-			}
-			continue
-		}
-
-		// 2. Process Churn Data (Numstat Line)
-		parts := strings.Split(line, "\t")
-		if len(parts) >= 3 {
-			addStr := strings.TrimSpace(parts[0])
-			delStr := strings.TrimSpace(parts[1])
-
-			add, errA := strconv.Atoi(addStr)
-			del, errD := strconv.Atoi(delStr)
-
-			if errA == nil && errD == nil {
-				totalChanges += add + del
-			}
-		}
-	}
-
-	// Finalize metrics after the loop
-	b.result.UniqueContributors = len(b.contribCount)
-	b.result.Commits = b.totalCommits
-	b.result.FirstCommit = firstCommit
-	b.result.Churn = totalChanges
-
-	// Get the absolute first commit date for accurate age calculation
+	// Always get the absolute first commit date for accurate age calculation
 	absFirst, absErr := b.git.GetFileFirstCommitTime(b.ctx, b.cfg.RepoPath, b.path, true)
 	if absErr == nil {
 		b.result.FirstCommit = absFirst
