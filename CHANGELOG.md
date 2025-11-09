@@ -1,5 +1,14 @@
 # 🚀 Changelog
 
+## v1.1.3
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.1.2...v1.1.3)
+
+### Improvements
+
+- **Code Consolidation**: Extract duplicated weight processing logic into shared `ProcessWeightsRawInput` helper, eliminating ~50 lines of duplicated code
+- **Function Merging**: Combine `loadActiveWeights` and `ExecuteHotspotMetrics` functions to reduce unnecessary abstraction
+
 ## v1.1.2
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.1.1...v1.1.2)
