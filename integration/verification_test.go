@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -24,17 +25,55 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// buildHotspot builds the hotspot binary in the given directory and returns its absolute path
-func buildHotspot(t *testing.T, dir string) string {
-	hotspotPath := filepath.Join(dir, "hotspot")
-	buildCmd := exec.Command("go", "build", "-o", hotspotPath, ".")
-	buildCmd.Dir = dir
-	err := buildCmd.Run()
-	require.NoError(t, err)
-	absPath, err := filepath.Abs(hotspotPath)
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = exec.Command("rm", "-f", absPath).Run() })
-	return absPath
+var (
+	// sharedHotspotPath holds the path to a shared hotspot binary built once for all tests
+	sharedHotspotPath string
+	// buildOnce ensures we only build the binary once
+	buildOnce sync.Once
+	// buildMutex protects the shared binary path
+	buildMutex sync.Mutex
+	// tempDir holds the temp directory for cleanup
+	tempDir string
+)
+
+// TestMain handles setup and cleanup for all integration tests
+func TestMain(m *testing.M) {
+	// Run all tests
+	code := m.Run()
+
+	// Cleanup the shared binary after all tests
+	if tempDir != "" {
+		_ = os.RemoveAll(tempDir)
+	}
+
+	os.Exit(code)
+}
+
+// getHotspotBinary returns the path to the hotspot binary, building it once if needed
+func getHotspotBinary() string {
+	buildMutex.Lock()
+	defer buildMutex.Unlock()
+
+	buildOnce.Do(func() {
+		// Create a temp directory for the binary
+		var err error
+		tempDir, err = os.MkdirTemp("", "hotspot-integration-*")
+		if err != nil {
+			panic(fmt.Sprintf("failed to create temp dir: %v", err))
+		}
+
+		hotspotPath := filepath.Join(tempDir, "hotspot")
+		buildCmd := exec.Command("go", "build", "-o", hotspotPath, ".")
+		buildCmd.Dir = ".." // Build from parent directory (project root)
+		err = buildCmd.Run()
+		if err != nil {
+			panic(fmt.Sprintf("failed to build hotspot: %v", err))
+		}
+
+		sharedHotspotPath = hotspotPath
+	})
+
+	return sharedHotspotPath
 }
 
 // HotspotFileDetail represents a file entry with detailed metadata from hotspot JSON output
@@ -61,8 +100,8 @@ func TestHotspotFilesVerification(t *testing.T) {
 	require.NoError(t, err)
 	repoDir := strings.TrimSpace(string(repoPath))
 
-	// Build hotspot binary
-	hotspotPath := buildHotspot(t, repoDir)
+	// Get hotspot binary (built once and shared)
+	hotspotPath := getHotspotBinary()
 
 	// Run hotspot files --output json
 	cmd := exec.Command(hotspotPath, "files", "--output", "json")
@@ -114,8 +153,8 @@ func TestHotspotFilesAgeVerification(t *testing.T) {
 	require.NoError(t, err)
 	repoDir := strings.TrimSpace(string(repoPath))
 
-	// Build hotspot binary
-	hotspotPath := buildHotspot(t, repoDir)
+	// Get hotspot binary (built once and shared)
+	hotspotPath := getHotspotBinary()
 
 	// Use a fixed time range for consistent testing (last 365 days)
 	startTime := time.Now().AddDate(0, 0, -365).Format(internal.DateTimeFormat)
@@ -200,8 +239,8 @@ func TestExternalRepoVerification(t *testing.T) {
 		{"https://github.com/huangsam/ultimate-python", "ultimate-python"}, // Medium Python repo
 	}
 
-	// Build hotspot binary once
-	hotspotPath := buildHotspot(t, "..")
+	// Get hotspot binary (built once and shared)
+	hotspotPath := getHotspotBinary()
 
 	for _, repo := range testRepos {
 		t.Run(repo.name, func(t *testing.T) {
@@ -274,8 +313,8 @@ func TestTimeseriesVerification(t *testing.T) {
 	require.NoError(t, err)
 	repoDir := strings.TrimSpace(string(repoPath))
 
-	// Build hotspot binary
-	hotspotPath := buildHotspot(t, repoDir)
+	// Get hotspot binary (built once and shared)
+	hotspotPath := getHotspotBinary()
 
 	// Test timeseries on main.go
 	t.Run("main.go", func(t *testing.T) {
@@ -395,8 +434,8 @@ func TestCustomWeightsIntegration(t *testing.T) {
 	require.NoError(t, err)
 	repoDir := strings.TrimSpace(string(repoPath))
 
-	// Build hotspot binary
-	hotspotPath := buildHotspot(t, repoDir)
+	// Get hotspot binary (built once and shared)
+	hotspotPath := getHotspotBinary()
 
 	// Create a temporary config file with custom weights
 	configContent := `
@@ -479,8 +518,8 @@ func TestCustomWeightsValidationIntegration(t *testing.T) {
 	require.NoError(t, err)
 	repoDir := strings.TrimSpace(string(repoPath))
 
-	// Build hotspot binary
-	hotspotPath := buildHotspot(t, repoDir)
+	// Get hotspot binary (built once and shared)
+	hotspotPath := getHotspotBinary()
 
 	// Create a temporary config file with invalid weights (don't sum to 1.0)
 	configContent := `
