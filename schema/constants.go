@@ -1,48 +1,78 @@
 package schema
 
+// Custom string types for type safety
+type (
+	// BreakdownKey represents keys used in scoring breakdowns.
+	BreakdownKey string
+
+	// OutputMode represents the format of the output.
+	OutputMode string
+
+	// Status represents the status of a file.
+	Status string
+
+	// ScoringMode represents the scoring mode used.
+	ScoringMode string
+)
+
 // Breakdown keys used in the scoring logic.
 const (
-	BreakdownContrib = "contrib" // nContrib
-	BreakdownCommits = "commits" // nCommits
-	BreakdownLOC     = "loc"     // nLOC
-	BreakdownSize    = "size"    // nSize
-	BreakdownAge     = "age"     // nAge
-	BreakdownChurn   = "churn"   // nChurn
+	BreakdownContrib BreakdownKey = "contrib" // nContrib
+	BreakdownCommits BreakdownKey = "commits" // nCommits
+	BreakdownLOC     BreakdownKey = "loc"     // nLOC
+	BreakdownSize    BreakdownKey = "size"    // nSize
+	BreakdownAge     BreakdownKey = "age"     // nAge
+	BreakdownChurn   BreakdownKey = "churn"   // nChurn
 
-	BreakdownGini       = "gini"        // nGiniRaw
-	BreakdownInvContrib = "inv_contrib" // nInvContrib
-	BreakdownInvRecent  = "inv_recent"  // nInvRecentCommits (used in stale)
-	BreakdownLowRecent  = "low_recent"  // nInvRecentCommits (used in complexity)
+	BreakdownGini       BreakdownKey = "gini"        // nGiniRaw
+	BreakdownInvContrib BreakdownKey = "inv_contrib" // nInvContrib
+	BreakdownInvRecent  BreakdownKey = "inv_recent"  // nInvRecentCommits (used in stale)
+	BreakdownLowRecent  BreakdownKey = "low_recent"  // nInvRecentCommits (used in complexity)
 )
 
 // All output modes supported.
 const (
-	CSVOut  = "csv"
-	TextOut = "text"
-	JSONOut = "json"
+	CSVOut  OutputMode = "csv"
+	TextOut OutputMode = "text"
+	JSONOut OutputMode = "json"
 )
 
 // All status supported.
 const (
-	NewStatus      = "new"
-	ActiveStatus   = "active"
-	InactiveStatus = "inactive"
-	UnknownStatus  = "unknown"
+	NewStatus      Status = "new"
+	ActiveStatus   Status = "active"
+	InactiveStatus Status = "inactive"
+	UnknownStatus  Status = "unknown"
 )
 
 // All scoring modes supported.
 const (
-	HotMode        = "hot"
-	RiskMode       = "risk"
-	ComplexityMode = "complexity"
-	StaleMode      = "stale"
+	HotMode        ScoringMode = "hot"
+	RiskMode       ScoringMode = "risk"
+	ComplexityMode ScoringMode = "complexity"
+	StaleMode      ScoringMode = "stale"
 )
 
+// ValidOutputModes lists all valid output modes.
+var ValidOutputModes = map[OutputMode]struct{}{
+	CSVOut:  {},
+	TextOut: {},
+	JSONOut: {},
+}
+
+// ValidScoringModes lists all valid scoring modes.
+var ValidScoringModes = map[ScoringMode]struct{}{
+	HotMode:        {},
+	RiskMode:       {},
+	ComplexityMode: {},
+	StaleMode:      {},
+}
+
 // GetDefaultWeights returns the default weight map for a given scoring mode.
-func GetDefaultWeights(mode string) map[string]float64 {
+func GetDefaultWeights(mode ScoringMode) map[BreakdownKey]float64 {
 	switch mode {
 	case RiskMode:
-		return map[string]float64{
+		return map[BreakdownKey]float64{
 			BreakdownAge:        0.16,
 			BreakdownChurn:      0.06,
 			BreakdownCommits:    0.04,
@@ -52,7 +82,7 @@ func GetDefaultWeights(mode string) map[string]float64 {
 			BreakdownSize:       0.12,
 		}
 	case ComplexityMode:
-		return map[string]float64{
+		return map[BreakdownKey]float64{
 			BreakdownAge:       0.30,
 			BreakdownChurn:     0.30,
 			BreakdownCommits:   0.10,
@@ -61,7 +91,7 @@ func GetDefaultWeights(mode string) map[string]float64 {
 			BreakdownSize:      0.05,
 		}
 	case StaleMode:
-		return map[string]float64{
+		return map[BreakdownKey]float64{
 			BreakdownAge:       0.20,
 			BreakdownCommits:   0.15,
 			BreakdownContrib:   0.05,
@@ -69,7 +99,7 @@ func GetDefaultWeights(mode string) map[string]float64 {
 			BreakdownSize:      0.25,
 		}
 	default: // HotMode
-		return map[string]float64{
+		return map[BreakdownKey]float64{
 			BreakdownAge:     0.10,
 			BreakdownChurn:   0.40,
 			BreakdownCommits: 0.40,

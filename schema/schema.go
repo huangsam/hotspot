@@ -5,22 +5,22 @@ import "time"
 
 // FileResult represents the Git and file system metrics for a single file.
 type FileResult struct {
-	Path               string             `json:"path"`                // Relative path to the file in the repository
-	UniqueContributors int                `json:"unique_contributors"` // Number of different authors who modified the file
-	Commits            int                `json:"commits"`             // Total number of commits affecting this file
-	RecentContributors int                `json:"recent_contributors"` // Recent contributor count within a time window
-	RecentCommits      int                `json:"recent_commits"`      // Recent commit count within a time window
-	RecentChurn        int                `json:"recent_churn"`        // Recent churn within a time window
-	SizeBytes          int64              `json:"size_bytes"`          // Current size of the file in bytes
-	LinesOfCode        int                `json:"lines_of_code"`       // Current lines of code
-	AgeDays            int                `json:"age_days"`            // Age of the file in days since first commit
-	Churn              int                `json:"churn"`               // Total number of lines added/deleted plus number of commits
-	Gini               float64            `json:"gini"`                // Gini coefficient of commit distribution (0-1, lower is more even)
-	FirstCommit        time.Time          `json:"first_commit"`        // Timestamp of the file's first commit
-	Score              float64            `json:"score"`               // Computed importance score (0-100)
-	Breakdown          map[string]float64 `json:"breakdown"`           // Normalized contribution of each metric for debugging/tuning
-	Owners             []string           `json:"owners"`              // Top 2 owners by commit count
-	Mode               string             `json:"mode"`                // Scoring mode used (hot, risk, complexity, stale)
+	Path               string                   `json:"path"`                // Relative path to the file in the repository
+	UniqueContributors int                      `json:"unique_contributors"` // Number of different authors who modified the file
+	Commits            int                      `json:"commits"`             // Total number of commits affecting this file
+	RecentContributors int                      `json:"recent_contributors"` // Recent contributor count within a time window
+	RecentCommits      int                      `json:"recent_commits"`      // Recent commit count within a time window
+	RecentChurn        int                      `json:"recent_churn"`        // Recent churn within a time window
+	SizeBytes          int64                    `json:"size_bytes"`          // Current size of the file in bytes
+	LinesOfCode        int                      `json:"lines_of_code"`       // Current lines of code
+	AgeDays            int                      `json:"age_days"`            // Age of the file in days since first commit
+	Churn              int                      `json:"churn"`               // Total number of lines added/deleted plus number of commits
+	Gini               float64                  `json:"gini"`                // Gini coefficient of commit distribution (0-1, lower is more even)
+	FirstCommit        time.Time                `json:"first_commit"`        // Timestamp of the file's first commit
+	Score              float64                  `json:"score"`               // Computed importance score (0-100)
+	Breakdown          map[BreakdownKey]float64 `json:"breakdown"`           // Normalized contribution of each metric for debugging/tuning
+	Owners             []string                 `json:"owners"`              // Top 2 owners by commit count
+	Mode               ScoringMode              `json:"mode"`                // Scoring mode used (hot, risk, complexity, stale)
 }
 
 // GetPath returns the file path.
@@ -56,9 +56,9 @@ type FolderResult struct {
 	Score   float64  `json:"score"`   // Computed importance score for the folder
 	Owners  []string `json:"owners"`  // Top 2 owners by commit count
 
-	TotalLOC         int     `json:"total_loc"`          // Sum of LOC of all contained files (used for weighted average)
-	WeightedScoreSum float64 `json:"weighted_score_sum"` // Sum of (FileScore * FileLOC)
-	Mode             string  `json:"mode"`               // Scoring mode used (hot, risk, complexity, stale)
+	TotalLOC         int         `json:"total_loc"`          // Sum of LOC of all contained files (used for weighted average)
+	WeightedScoreSum float64     `json:"weighted_score_sum"` // Sum of (FileScore * FileLOC)
+	Mode             ScoringMode `json:"mode"`               // Scoring mode used (hot, risk, complexity, stale)
 }
 
 // GetPath returns the folder path.
@@ -88,16 +88,16 @@ func (f FolderResult) GetOwners() []string {
 
 // ComparisonDetails holds the base info, target info, and their associated deltas.
 type ComparisonDetails struct {
-	Path         string   `json:"path"`          // Relative path to the target in the repository
-	BeforeScore  float64  `json:"before_score"`  // Score from the original/base analysis
-	AfterScore   float64  `json:"after_score"`   // Score from the comparison/new analysis
-	Delta        float64  `json:"delta"`         // CompScore - BaseScore (Positive means worse/higher)
-	DeltaCommits int      `json:"delta_commits"` // Change in total commits (Positive means more activity)
-	DeltaChurn   int      `json:"delta_churn"`   // Change in total churn (Positive means more volatility)
-	Status       string   `json:"status"`        // Intrinsic status of the file as of now
-	BeforeOwners []string `json:"before_owners"` // Owners from the base analysis
-	AfterOwners  []string `json:"after_owners"`  // Owners from the target analysis
-	Mode         string   `json:"mode"`          // Scoring mode used (hot, risk, complexity, stale)
+	Path         string      `json:"path"`          // Relative path to the target in the repository
+	BeforeScore  float64     `json:"before_score"`  // Score from the original/base analysis
+	AfterScore   float64     `json:"after_score"`   // Score from the comparison/new analysis
+	Delta        float64     `json:"delta"`         // CompScore - BaseScore (Positive means worse/higher)
+	DeltaCommits int         `json:"delta_commits"` // Change in total commits (Positive means more activity)
+	DeltaChurn   int         `json:"delta_churn"`   // Change in total churn (Positive means more volatility)
+	Status       Status      `json:"status"`        // Intrinsic status of the file as of now
+	BeforeOwners []string    `json:"before_owners"` // Owners from the base analysis
+	AfterOwners  []string    `json:"after_owners"`  // Owners from the target analysis
+	Mode         ScoringMode `json:"mode"`          // Scoring mode used (hot, risk, complexity, stale)
 
 	*FileComparison   `json:"file_compare,omitempty"`
 	*FolderComparison `json:"folder_compare,omitempty"`
@@ -157,11 +157,11 @@ type CompareAnalysisOutput struct {
 
 // TimeseriesPoint represents a single data point in the timeseries.
 type TimeseriesPoint struct {
-	Period string   `json:"period"`
-	Score  float64  `json:"score"`
-	Path   string   `json:"path"`
-	Owners []string `json:"owners"` // Top owners for this time period
-	Mode   string   `json:"mode"`   // Scoring mode used (hot, risk, complexity, stale)
+	Period string      `json:"period"`
+	Score  float64     `json:"score"`
+	Path   string      `json:"path"`
+	Owners []string    `json:"owners"` // Top owners for this time period
+	Mode   ScoringMode `json:"mode"`   // Scoring mode used (hot, risk, complexity, stale)
 }
 
 // TimeseriesResult holds the timeseries data points.

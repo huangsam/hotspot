@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/huangsam/hotspot/schema"
@@ -23,7 +22,7 @@ func PrintFolderResults(results []schema.FolderResult, cfg *Config, duration tim
 	}
 
 	// Dispatcher: Handle different output formats
-	switch strings.ToLower(cfg.Output) {
+	switch cfg.Output {
 	case schema.JSONOut:
 		if err := printJSONResultsForFolders(results, cfg); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)

@@ -176,7 +176,7 @@ func formatTopMetricBreakdown(f *schema.FileResult) string {
 		// Only include meaningful metrics
 		if v >= metricContribMinimum {
 			metrics = append(metrics, metricBreakdown{
-				Name:  k,
+				Name:  string(k),
 				Value: v, // This is the percentage contribution
 			})
 		}

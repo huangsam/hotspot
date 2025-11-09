@@ -14,7 +14,7 @@ func TestValidateSimpleInputs(t *testing.T) {
 		input := &ConfigRawInput{
 			Limit:     50, // Changed from ResultLimit
 			Workers:   4,
-			Mode:      schema.HotMode,
+			Mode:      string(schema.HotMode),
 			Precision: 1,
 			Output:    "text",
 			Exclude:   "", // Changed from ExcludeStr
@@ -140,7 +140,7 @@ func TestProcessCustomWeights(t *testing.T) {
 		name        string
 		input       *ConfigRawInput
 		expectError bool
-		expected    map[string]map[string]float64
+		expected    map[schema.ScoringMode]map[schema.BreakdownKey]float64
 	}{
 		{
 			name: "valid custom weights for hot mode",
@@ -154,11 +154,11 @@ func TestProcessCustomWeights(t *testing.T) {
 				},
 			},
 			expectError: false,
-			expected: map[string]map[string]float64{
+			expected: map[schema.ScoringMode]map[schema.BreakdownKey]float64{
 				schema.HotMode: {
-					"commits": 0.5,
-					"churn":   0.3,
-					"age":     0.2,
+					schema.BreakdownCommits: 0.5,
+					schema.BreakdownChurn:   0.3,
+					schema.BreakdownAge:     0.2,
 				},
 			},
 		},
@@ -200,37 +200,37 @@ func TestProcessCustomWeights(t *testing.T) {
 				},
 			},
 			expectError: false,
-			expected: map[string]map[string]float64{
+			expected: map[schema.ScoringMode]map[schema.BreakdownKey]float64{
 				schema.HotMode: {
-					"commits": 0.4,
-					"churn":   0.4,
-					"age":     0.1,
-					"contrib": 0.05,
-					"size":    0.05,
+					schema.BreakdownCommits: 0.4,
+					schema.BreakdownChurn:   0.4,
+					schema.BreakdownAge:     0.1,
+					schema.BreakdownContrib: 0.05,
+					schema.BreakdownSize:    0.05,
 				},
 				schema.RiskMode: {
-					"inv_contrib": 0.3,
-					"gini":        0.26,
-					"age":         0.16,
-					"size":        0.12,
-					"churn":       0.06,
-					"commits":     0.04,
-					"loc":         0.06,
+					schema.BreakdownInvContrib: 0.3,
+					schema.BreakdownGini:       0.26,
+					schema.BreakdownAge:        0.16,
+					schema.BreakdownSize:       0.12,
+					schema.BreakdownChurn:      0.06,
+					schema.BreakdownCommits:    0.04,
+					schema.BreakdownLOC:        0.06,
 				},
 				schema.StaleMode: {
-					"inv_recent": 0.35,
-					"size":       0.25,
-					"age":        0.20,
-					"commits":    0.15,
-					"contrib":    0.05,
+					schema.BreakdownInvRecent: 0.35,
+					schema.BreakdownSize:      0.25,
+					schema.BreakdownAge:       0.20,
+					schema.BreakdownCommits:   0.15,
+					schema.BreakdownContrib:   0.05,
 				},
 				schema.ComplexityMode: {
-					"age":         0.30,
-					"churn":       0.30,
-					"loc":         0.20,
-					"commits":     0.10,
-					"size":        0.05,
-					"inv_contrib": 0.05,
+					schema.BreakdownAge:        0.30,
+					schema.BreakdownChurn:      0.30,
+					schema.BreakdownLOC:        0.20,
+					schema.BreakdownCommits:    0.10,
+					schema.BreakdownSize:       0.05,
+					schema.BreakdownInvContrib: 0.05,
 				},
 			},
 		},
@@ -245,10 +245,10 @@ func TestProcessCustomWeights(t *testing.T) {
 				},
 			},
 			expectError: false,
-			expected: map[string]map[string]float64{
+			expected: map[schema.ScoringMode]map[schema.BreakdownKey]float64{
 				schema.HotMode: {
-					"commits": 0.7,
-					"churn":   0.3,
+					schema.BreakdownCommits: 0.7,
+					schema.BreakdownChurn:   0.3,
 				},
 			},
 		},
@@ -258,7 +258,7 @@ func TestProcessCustomWeights(t *testing.T) {
 				Weights: WeightsRawInput{},
 			},
 			expectError: false,
-			expected:    map[string]map[string]float64{},
+			expected:    map[schema.ScoringMode]map[schema.BreakdownKey]float64{},
 		},
 		{
 			name: "weights that don't sum to 1.0 should fail",
@@ -299,11 +299,11 @@ func TestProcessCustomWeights(t *testing.T) {
 				},
 			},
 			expectError: false,
-			expected: map[string]map[string]float64{
+			expected: map[schema.ScoringMode]map[schema.BreakdownKey]float64{
 				schema.HotMode: {
-					"commits": 0.5,
-					"churn":   -0.2,
-					"age":     0.7,
+					schema.BreakdownCommits: 0.5,
+					schema.BreakdownChurn:   -0.2,
+					schema.BreakdownAge:     0.7,
 				},
 			},
 		},

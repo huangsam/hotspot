@@ -116,7 +116,7 @@ func compareResults[T ComparableResult](baseResults, targetResults []T, limit in
 				Status:       status,
 				BeforeOwners: beforeOwners,
 				AfterOwners:  afterOwners,
-				Mode:         mode,
+				Mode:         schema.ScoringMode(mode),
 			}
 
 			// Add file-specific deltas if applicable
@@ -153,7 +153,7 @@ func compareResults[T ComparableResult](baseResults, targetResults []T, limit in
 }
 
 // determineStatus returns the status based on existence in base and target
-func determineStatus(baseExists, targetExists bool) string {
+func determineStatus(baseExists, targetExists bool) schema.Status {
 	switch {
 	case !baseExists && targetExists:
 		return schema.NewStatus

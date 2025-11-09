@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/huangsam/hotspot/schema"
@@ -21,7 +20,7 @@ func PrintTimeseriesResults(result schema.TimeseriesResult, cfg *Config, duratio
 	}
 
 	// Dispatcher: Handle different output formats
-	switch strings.ToLower(cfg.Output) {
+	switch cfg.Output {
 	case schema.JSONOut:
 		if err := printJSONResultsForTimeseries(result, cfg); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
@@ -104,7 +103,7 @@ func printTimeseriesTable(result schema.TimeseriesResult, cfg *Config, fmtFloat 
 			truncatePath(p.Path, maxTablePathWidth),
 			p.Period,
 			fmtFloat(p.Score),
-			p.Mode,
+			string(p.Mode),
 			ownersStr,
 		}
 		data = append(data, row)

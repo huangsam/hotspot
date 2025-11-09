@@ -54,7 +54,7 @@ func TestCompareFileResults_StatusClassification(t *testing.T) {
 		},
 	}
 
-	result := compareFileResults(baseResults, targetResults, 10, schema.HotMode)
+	result := compareFileResults(baseResults, targetResults, 10, string(schema.HotMode))
 
 	// Verify we have results for all expected files
 	assert.Len(t, result.Results, 3)
@@ -130,7 +130,7 @@ func TestCompareFileResults_NoSignificantChanges(t *testing.T) {
 		},
 	}
 
-	result := compareFileResults(baseResults, targetResults, 10, schema.HotMode)
+	result := compareFileResults(baseResults, targetResults, 10, string(schema.HotMode))
 
 	// Should have no results since changes are insignificant
 	assert.Len(t, result.Results, 0)
@@ -145,7 +145,7 @@ func TestDetermineStatus(t *testing.T) {
 		name         string
 		baseExists   bool
 		targetExists bool
-		expected     string
+		expected     schema.Status
 	}{
 		{"new file", false, true, schema.NewStatus},
 		{"active file", true, true, schema.ActiveStatus},
@@ -210,7 +210,7 @@ func TestCompareFileResults_OwnershipChanges(t *testing.T) {
 		},
 	}
 
-	result := compareFileResults(baseResults, targetResults, 10, schema.HotMode)
+	result := compareFileResults(baseResults, targetResults, 10, string(schema.HotMode))
 
 	// Should have 3 results with significant score changes
 	assert.Len(t, result.Results, 3)

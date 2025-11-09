@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -24,7 +23,7 @@ func PrintComparisonResults(comparisonResult schema.ComparisonResult, cfg *Confi
 	}
 
 	// Dispatcher: Handle different output formats
-	switch strings.ToLower(cfg.Output) {
+	switch cfg.Output {
 	case schema.JSONOut:
 		if err := printJSONResultsForComparison(comparisonResult, cfg); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
@@ -135,7 +134,7 @@ func printComparisonTable(comparisonResult schema.ComparisonResult, cfg *Config,
 			fmtFloat(r.BeforeScore),                 // Base Score
 			fmtFloat(r.AfterScore),                  // Comparison Score
 			deltaStr,                                // Delta Score
-			r.Status,                                // Status
+			string(r.Status),                        // Status
 		}
 		if cfg.Detail {
 			row = append(row, fmt.Sprintf(intFmt, r.DeltaChurn))

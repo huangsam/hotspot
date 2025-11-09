@@ -71,7 +71,7 @@ func writeCSVResultsForFolders(w *csv.Writer, results []schema.FolderResult, fmt
 			fmt.Sprintf(intFmt, r.Churn),    // Total Churn
 			fmt.Sprintf(intFmt, r.TotalLOC), // Total LOC
 			strings.Join(r.Owners, ", "),    // Owners
-			r.Mode,                          // Mode
+			string(r.Mode),                  // Mode
 		}
 		if err := w.Write(row); err != nil {
 			return err

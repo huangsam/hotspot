@@ -42,7 +42,7 @@ func writeCSVResultsForTimeseries(w *csv.Writer, result schema.TimeseriesResult,
 			p.Period,
 			fmtFloat(p.Score),
 			ownersStr,
-			p.Mode,
+			string(p.Mode),
 		}
 		if err := w.Write(row); err != nil {
 			return err

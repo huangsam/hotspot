@@ -68,12 +68,12 @@ type Config struct {
 	PathFilter  string
 	ResultLimit int
 	Workers     int
-	Mode        string
+	Mode        schema.ScoringMode
 	Excludes    []string
 	Detail      bool
 	Explain     bool
 	Precision   int
-	Output      string
+	Output      schema.OutputMode
 	OutputFile  string
 	Follow      bool
 	Owner       bool
@@ -84,7 +84,7 @@ type Config struct {
 	Lookback    time.Duration
 
 	// Processed map of custom scoring weights [ModeName][BreakdownKey] = Weight
-	CustomWeights map[string]map[string]float64
+	CustomWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64
 }
 
 // ConfigRawInput holds the raw inputs from all sources (flags, env, config file).
@@ -129,9 +129,9 @@ func (c *Config) Clone() *Config {
 		copy(clone.Excludes, c.Excludes)
 	}
 	if c.CustomWeights != nil {
-		clone.CustomWeights = make(map[string]map[string]float64)
+		clone.CustomWeights = make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
 		for mode, modeMap := range c.CustomWeights {
-			clone.CustomWeights[mode] = make(map[string]float64)
+			clone.CustomWeights[mode] = make(map[schema.BreakdownKey]float64)
 			maps.Copy(clone.CustomWeights[mode], modeMap)
 		}
 	}
@@ -192,9 +192,8 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	cfg.Workers = input.Workers
 
 	// --- 3. Mode Validation ---
-	validModes := map[string]bool{schema.HotMode: true, schema.RiskMode: true, schema.ComplexityMode: true, schema.StaleMode: true}
-	cfg.Mode = strings.ToLower(input.Mode)
-	if _, ok := validModes[cfg.Mode]; !ok {
+	cfg.Mode = schema.ScoringMode(strings.ToLower(input.Mode))
+	if _, ok := schema.ValidScoringModes[cfg.Mode]; !ok {
 		return fmt.Errorf("invalid mode '%s'. must be hot, risk, complexity, stale", input.Mode)
 	}
 
@@ -204,15 +203,13 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	}
 	cfg.Precision = input.Precision
 
-	cfg.Output = strings.ToLower(input.Output)
-	validOutputs := map[string]bool{"text": true, "csv": true, "json": true}
-	if _, ok := validOutputs[cfg.Output]; !ok {
+	cfg.Output = schema.OutputMode(strings.ToLower(input.Output))
+	if _, ok := schema.ValidOutputModes[cfg.Output]; !ok {
 		return fmt.Errorf("invalid output format '%s'. must be text, csv, json", cfg.Output)
 	}
 
 	// --- 6. Excludes Processing ---
 	defaults := []string{
-		// (List of defaults unchanged)
 		"Cargo.lock", "go.sum", "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "composer.lock", "uv.lock",
 		".min.js", ".min.css",
 		".jpg", ".jpeg", ".png", ".gif", ".svg", ".ico", ".mp4", ".mov", ".webm", ".mp3", ".ogg", ".pdf", ".webp",
@@ -312,10 +309,10 @@ func processCompareMode(cfg *Config, input *ConfigRawInput) error {
 // processCustomWeights converts the raw input into the final cfg.CustomWeights map
 // and validates that the provided weights for any mode sum up to 1.0.
 func processCustomWeights(cfg *Config, input *ConfigRawInput) error {
-	cfg.CustomWeights = make(map[string]map[string]float64)
+	cfg.CustomWeights = make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
 
-	modes := []string{schema.StaleMode, schema.RiskMode, schema.HotMode, schema.ComplexityMode}
-	modeWeights := map[string]*ModeWeightsRaw{
+	modes := []schema.ScoringMode{schema.StaleMode, schema.RiskMode, schema.HotMode, schema.ComplexityMode}
+	modeWeights := map[schema.ScoringMode]*ModeWeightsRaw{
 		schema.StaleMode:      input.Weights.Stale,
 		schema.RiskMode:       input.Weights.Risk,
 		schema.HotMode:        input.Weights.Hot,
@@ -328,7 +325,7 @@ func processCustomWeights(cfg *Config, input *ConfigRawInput) error {
 			continue
 		}
 
-		modeMap := make(map[string]float64)
+		modeMap := make(map[schema.BreakdownKey]float64)
 		sum := 0.0
 
 		if rawMode.InvRecent != nil {

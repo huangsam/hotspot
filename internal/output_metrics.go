@@ -12,7 +12,14 @@ import (
 // Uses active weights if available, otherwise falls back to defaults.
 func getDisplayWeightsForMode(mode string, activeWeights map[string]map[string]float64) map[string]float64 {
 	// Start with default weights
-	weights := schema.GetDefaultWeights(mode)
+	scoringMode := schema.ScoringMode(mode)
+	defaultWeights := schema.GetDefaultWeights(scoringMode)
+
+	// Convert BreakdownKey map to string map for backward compatibility
+	weights := make(map[string]float64)
+	for k, v := range defaultWeights {
+		weights[string(k)] = v
+	}
 
 	// Override with active weights if provided
 	if activeWeights != nil {
@@ -61,25 +68,25 @@ func PrintMetricsDefinitions(activeWeights map[string]map[string]float64) error 
 			name:       "🔥 HOT",
 			purpose:    "Activity hotspots - high recent activity & volatility",
 			factors:    []string{"Commits", "Churn", "Contributors", "Age", "Size"},
-			factorKeys: []string{schema.BreakdownCommits, schema.BreakdownChurn, schema.BreakdownContrib, schema.BreakdownAge, schema.BreakdownSize},
+			factorKeys: []string{string(schema.BreakdownCommits), string(schema.BreakdownChurn), string(schema.BreakdownContrib), string(schema.BreakdownAge), string(schema.BreakdownSize)},
 		},
 		{
 			name:       "⚠️  RISK",
 			purpose:    "Knowledge risk/bus factor - concentrated ownership",
 			factors:    []string{"InvContributors", "Gini", "Age", "Churn", "Commits", "LOC", "Size"},
-			factorKeys: []string{schema.BreakdownInvContrib, schema.BreakdownGini, schema.BreakdownAge, schema.BreakdownChurn, schema.BreakdownCommits, schema.BreakdownLOC, schema.BreakdownSize},
+			factorKeys: []string{string(schema.BreakdownInvContrib), string(schema.BreakdownGini), string(schema.BreakdownAge), string(schema.BreakdownChurn), string(schema.BreakdownCommits), string(schema.BreakdownLOC), string(schema.BreakdownSize)},
 		},
 		{
 			name:       "🧩 COMPLEXITY",
 			purpose:    "Technical debt - large, old files with high maintenance burden",
 			factors:    []string{"Age", "Churn", "Commits", "LOC", "LowRecent", "Size"},
-			factorKeys: []string{schema.BreakdownAge, schema.BreakdownChurn, schema.BreakdownCommits, schema.BreakdownLOC, schema.BreakdownLowRecent, schema.BreakdownSize},
+			factorKeys: []string{string(schema.BreakdownAge), string(schema.BreakdownChurn), string(schema.BreakdownCommits), string(schema.BreakdownLOC), string(schema.BreakdownLowRecent), string(schema.BreakdownSize)},
 		},
 		{
 			name:       "🕰️  STALE",
 			purpose:    "Maintenance debt - important files untouched recently",
 			factors:    []string{"InvRecent", "Age", "Size", "Commits", "Contributors"},
-			factorKeys: []string{schema.BreakdownInvRecent, schema.BreakdownAge, schema.BreakdownSize, schema.BreakdownCommits, schema.BreakdownContrib},
+			factorKeys: []string{string(schema.BreakdownInvRecent), string(schema.BreakdownAge), string(schema.BreakdownSize), string(schema.BreakdownCommits), string(schema.BreakdownContrib)},
 		},
 	}
 

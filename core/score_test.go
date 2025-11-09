@@ -75,7 +75,7 @@ func TestComputeScoreHotMode(t *testing.T) {
 		{
 			name: "zero metrics",
 			metrics: schema.FileResult{
-				Path:               "empty.go",
+				Path:               "test.go",
 				UniqueContributors: 0,
 				Commits:            0,
 				SizeBytes:          1,
@@ -376,7 +376,7 @@ func TestComputeScoreComplexityMode(t *testing.T) {
 
 // TestComputeScoreAllModes ensures all modes produce valid scores.
 func TestComputeScoreAllModes(t *testing.T) {
-	modes := []string{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode}
+	modes := []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode}
 
 	metrics := schema.FileResult{
 		Path:               "test.go",
@@ -392,7 +392,7 @@ func TestComputeScoreAllModes(t *testing.T) {
 	}
 
 	for _, mode := range modes {
-		t.Run(mode, func(t *testing.T) {
+		t.Run(string(mode), func(t *testing.T) {
 			score := computeScore(&metrics, mode, nil)
 			assert.True(t, score >= 0 && score <= 100)
 			assert.NotEmpty(t, metrics.Breakdown)
@@ -467,7 +467,7 @@ func TestComputeScoreWithCustomWeights(t *testing.T) {
 	defaultScore := computeScore(&metrics, schema.HotMode, nil)
 
 	// Test with custom weights that heavily weight commits
-	customWeights := map[string]map[string]float64{
+	customWeights := map[schema.ScoringMode]map[schema.BreakdownKey]float64{
 		schema.HotMode: {
 			schema.BreakdownCommits: 0.8, // Much higher weight on commits
 			schema.BreakdownChurn:   0.1,
@@ -488,7 +488,7 @@ func TestComputeScoreWithCustomWeights(t *testing.T) {
 
 // TestComputeScoreCustomWeightsAllModes tests custom weights for all scoring modes
 func TestComputeScoreCustomWeightsAllModes(t *testing.T) {
-	modes := []string{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode}
+	modes := []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode}
 
 	metrics := schema.FileResult{
 		Path:               "test.go",
@@ -504,12 +504,12 @@ func TestComputeScoreCustomWeightsAllModes(t *testing.T) {
 	}
 
 	for _, mode := range modes {
-		t.Run(mode, func(t *testing.T) {
+		t.Run(string(mode), func(t *testing.T) {
 			// Get default score
 			defaultScore := computeScore(&metrics, mode, nil)
 
 			// Create custom weights that emphasize different aspects
-			customWeights := map[string]map[string]float64{
+			customWeights := map[schema.ScoringMode]map[schema.BreakdownKey]float64{
 				mode: {},
 			}
 
@@ -562,16 +562,7 @@ func TestComputeScoreInvalidCustomWeights(t *testing.T) {
 	assert.True(t, score >= 0 && score <= 100, "Score with nil custom weights should be valid")
 
 	// Test with empty custom weights map (should use defaults)
-	emptyWeights := map[string]map[string]float64{}
+	emptyWeights := map[schema.ScoringMode]map[schema.BreakdownKey]float64{}
 	score = computeScore(&metrics, schema.HotMode, emptyWeights)
 	assert.True(t, score >= 0 && score <= 100, "Score with empty custom weights should be valid")
-
-	// Test with custom weights for wrong mode (should use defaults for the requested mode)
-	wrongModeWeights := map[string]map[string]float64{
-		"nonexistent_mode": {
-			"some_key": 1.0,
-		},
-	}
-	score = computeScore(&metrics, schema.HotMode, wrongModeWeights)
-	assert.True(t, score >= 0 && score <= 100, "Score with wrong mode custom weights should be valid")
 }

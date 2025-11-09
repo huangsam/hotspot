@@ -48,7 +48,7 @@ func writeCSVResultsForComparison(w *csv.Writer, comparisonResult schema.Compari
 			fmt.Sprintf(intFmt, r.DeltaCommits), // Delta Commits
 			fmt.Sprintf(intFmt, r.DeltaChurn),   // Delta Churn
 			formatOwnershipDiff(r),              // Ownership Diff
-			r.Mode,                              // Mode
+			string(r.Mode),                      // Mode
 		}
 		if err := w.Write(row); err != nil {
 			return err

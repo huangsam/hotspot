@@ -12,7 +12,7 @@ import (
 func FuzzComputeScore(f *testing.F) {
 	seeds := []struct {
 		result schema.FileResult
-		mode   string
+		mode   schema.ScoringMode
 	}{
 		{
 			result: schema.FileResult{
@@ -21,6 +21,21 @@ func FuzzComputeScore(f *testing.F) {
 				LinesOfCode:        50,
 				Commits:            10,
 				Churn:              100,
+				AgeDays:            365,
+				UniqueContributors: 2,
+				Gini:               0.5,
+				RecentCommits:      5,
+				Mode:               schema.HotMode,
+			},
+			mode: schema.HotMode,
+		},
+		{
+			result: schema.FileResult{
+				Path:               "test.go",
+				SizeBytes:          1000,
+				LinesOfCode:        100,
+				Commits:            10,
+				Churn:              50,
 				AgeDays:            365,
 				UniqueContributors: 2,
 				Gini:               0.5,
@@ -49,7 +64,7 @@ func FuzzComputeScore(f *testing.F) {
 		f.Add(seed.result.Path, seed.result.SizeBytes, seed.result.LinesOfCode,
 			seed.result.Commits, seed.result.Churn, seed.result.AgeDays,
 			seed.result.UniqueContributors, seed.result.Gini, seed.result.RecentCommits,
-			seed.mode)
+			string(seed.mode))
 	}
 
 	f.Fuzz(func(_ *testing.T,
@@ -74,9 +89,9 @@ func FuzzComputeScore(f *testing.F) {
 			UniqueContributors: uniqueContributors,
 			Gini:               gini,
 			RecentCommits:      recentCommits,
-			Mode:               mode,
+			Mode:               schema.ScoringMode(mode),
 		}
-		_ = computeScore(&result, mode, nil)
+		_ = computeScore(&result, schema.ScoringMode(mode), nil)
 	})
 }
 

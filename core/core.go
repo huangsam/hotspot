@@ -68,7 +68,7 @@ func ExecuteHotspotCompare(ctx context.Context, cfg *internal.Config) error {
 	if err != nil {
 		return err
 	}
-	comparisonResult := compareFileResults(baseOutput.FileResults, targetOutput.FileResults, cfg.ResultLimit, cfg.Mode)
+	comparisonResult := compareFileResults(baseOutput.FileResults, targetOutput.FileResults, cfg.ResultLimit, string(cfg.Mode))
 	duration := time.Since(start)
 	return internal.PrintComparisonResults(comparisonResult, cfg, duration)
 }
@@ -92,7 +92,7 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *internal.Config) err
 	if err != nil {
 		return err
 	}
-	comparisonResult := compareFolderMetrics(baseOutput.FolderResults, targetOutput.FolderResults, cfg.ResultLimit, cfg.Mode)
+	comparisonResult := compareFolderMetrics(baseOutput.FolderResults, targetOutput.FolderResults, cfg.ResultLimit, string(cfg.Mode))
 	duration := time.Since(start)
 	return internal.PrintComparisonResults(comparisonResult, cfg, duration)
 }
@@ -216,7 +216,7 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config) error {
 
 // loadActiveWeights loads custom weights from the config file if available.
 // Returns nil if no custom weights are found or if config loading fails.
-func loadActiveWeights() (map[string]map[string]float64, error) {
+func loadActiveWeights() (map[schema.ScoringMode]map[schema.BreakdownKey]float64, error) {
 	// Set up Viper for config loading (similar to main.go initConfig)
 	viper.SetConfigName(".hotspot")
 	viper.SetConfigType("yaml")
@@ -244,9 +244,9 @@ func loadActiveWeights() (map[string]map[string]float64, error) {
 	}
 
 	// Process the weights similar to processCustomWeights
-	activeWeights := make(map[string]map[string]float64)
-	modes := []string{schema.StaleMode, schema.RiskMode, schema.HotMode, schema.ComplexityMode}
-	modeWeights := map[string]*internal.ModeWeightsRaw{
+	activeWeights := make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
+	modes := []schema.ScoringMode{schema.StaleMode, schema.RiskMode, schema.HotMode, schema.ComplexityMode}
+	modeWeights := map[schema.ScoringMode]*internal.ModeWeightsRaw{
 		schema.StaleMode:      config.Weights.Stale,
 		schema.RiskMode:       config.Weights.Risk,
 		schema.HotMode:        config.Weights.Hot,
@@ -259,7 +259,7 @@ func loadActiveWeights() (map[string]map[string]float64, error) {
 			continue
 		}
 
-		modeMap := make(map[string]float64)
+		modeMap := make(map[schema.BreakdownKey]float64)
 
 		if rawMode.InvRecent != nil {
 			modeMap[schema.BreakdownInvRecent] = *rawMode.InvRecent
@@ -309,5 +309,15 @@ func ExecuteHotspotMetrics() error {
 		// If we can't load config, just show defaults
 		activeWeights = nil
 	}
-	return internal.PrintMetricsDefinitions(activeWeights)
+
+	// Convert to string-based format for display
+	stringWeights := make(map[string]map[string]float64)
+	for mode, modeMap := range activeWeights {
+		stringWeights[string(mode)] = make(map[string]float64)
+		for key, value := range modeMap {
+			stringWeights[string(mode)][string(key)] = value
+		}
+	}
+
+	return internal.PrintMetricsDefinitions(stringWeights)
 }
