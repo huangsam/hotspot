@@ -20,7 +20,7 @@ func TestCompareFileResults_StatusClassification(t *testing.T) {
 			Churn:              15,
 			LinesOfCode:        100,
 			UniqueContributors: 2,
-			Mode:               "hot",
+			Mode:               schema.HotMode,
 		},
 		{
 			Path:               "only_in_base.go",
@@ -29,7 +29,7 @@ func TestCompareFileResults_StatusClassification(t *testing.T) {
 			Churn:              8,
 			LinesOfCode:        50,
 			UniqueContributors: 1,
-			Mode:               "hot",
+			Mode:               schema.HotMode,
 		},
 	}
 
@@ -41,7 +41,7 @@ func TestCompareFileResults_StatusClassification(t *testing.T) {
 			Churn:              20,
 			LinesOfCode:        110,
 			UniqueContributors: 3,
-			Mode:               "hot",
+			Mode:               schema.HotMode,
 		},
 		{
 			Path:               "only_in_target.go",
@@ -50,11 +50,11 @@ func TestCompareFileResults_StatusClassification(t *testing.T) {
 			Churn:              12,
 			LinesOfCode:        80,
 			UniqueContributors: 2,
-			Mode:               "hot",
+			Mode:               schema.HotMode,
 		},
 	}
 
-	result := compareFileResults(baseResults, targetResults, 10, "hot")
+	result := compareFileResults(baseResults, targetResults, 10, schema.HotMode)
 
 	// Verify we have results for all expected files
 	assert.Len(t, result.Results, 3)
@@ -130,7 +130,7 @@ func TestCompareFileResults_NoSignificantChanges(t *testing.T) {
 		},
 	}
 
-	result := compareFileResults(baseResults, targetResults, 10, "hot")
+	result := compareFileResults(baseResults, targetResults, 10, schema.HotMode)
 
 	// Should have no results since changes are insignificant
 	assert.Len(t, result.Results, 0)
@@ -210,7 +210,7 @@ func TestCompareFileResults_OwnershipChanges(t *testing.T) {
 		},
 	}
 
-	result := compareFileResults(baseResults, targetResults, 10, "hot")
+	result := compareFileResults(baseResults, targetResults, 10, schema.HotMode)
 
 	// Should have 3 results with significant score changes
 	assert.Len(t, result.Results, 3)

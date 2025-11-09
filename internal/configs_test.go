@@ -155,7 +155,7 @@ func TestProcessCustomWeights(t *testing.T) {
 			},
 			expectError: false,
 			expected: map[string]map[string]float64{
-				"hot": {
+				schema.HotMode: {
 					"commits": 0.5,
 					"churn":   0.3,
 					"age":     0.2,
@@ -201,14 +201,14 @@ func TestProcessCustomWeights(t *testing.T) {
 			},
 			expectError: false,
 			expected: map[string]map[string]float64{
-				"hot": {
+				schema.HotMode: {
 					"commits": 0.4,
 					"churn":   0.4,
 					"age":     0.1,
 					"contrib": 0.05,
 					"size":    0.05,
 				},
-				"risk": {
+				schema.RiskMode: {
 					"inv_contrib": 0.3,
 					"gini":        0.26,
 					"age":         0.16,
@@ -217,14 +217,14 @@ func TestProcessCustomWeights(t *testing.T) {
 					"commits":     0.04,
 					"loc":         0.06,
 				},
-				"stale": {
+				schema.StaleMode: {
 					"inv_recent": 0.35,
 					"size":       0.25,
 					"age":        0.20,
 					"commits":    0.15,
 					"contrib":    0.05,
 				},
-				"complexity": {
+				schema.ComplexityMode: {
 					"age":         0.30,
 					"churn":       0.30,
 					"loc":         0.20,
@@ -246,7 +246,7 @@ func TestProcessCustomWeights(t *testing.T) {
 			},
 			expectError: false,
 			expected: map[string]map[string]float64{
-				"hot": {
+				schema.HotMode: {
 					"commits": 0.7,
 					"churn":   0.3,
 				},
@@ -300,7 +300,7 @@ func TestProcessCustomWeights(t *testing.T) {
 			},
 			expectError: false,
 			expected: map[string]map[string]float64{
-				"hot": {
+				schema.HotMode: {
 					"commits": 0.5,
 					"churn":   -0.2,
 					"age":     0.7,

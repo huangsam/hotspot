@@ -17,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -233,14 +234,14 @@ func TestTimeseriesVerification(t *testing.T) {
 
 				mode, ok := point["mode"].(string)
 				require.True(t, ok, "point should have 'mode' field")
-				assert.Equal(t, "hot", mode, "default mode should be 'hot'")
+				assert.Equal(t, schema.HotMode, mode, "default mode should be 'hot'")
 			})
 		}
 	})
 
 	// Test timeseries on core folder
 	t.Run("core_folder", func(t *testing.T) {
-		cmd := exec.Command(hotspotPath, "timeseries", "--path", "core", "--interval", "30 days", "--points", "3", "--output", "json", "--mode", "stale")
+		cmd := exec.Command(hotspotPath, "timeseries", "--path", "core", "--interval", "30 days", "--points", "3", "--output", "json", "--mode", schema.StaleMode)
 		cmd.Dir = repoDir
 		var stdout bytes.Buffer
 		cmd.Stdout = &stdout
@@ -268,7 +269,7 @@ func TestTimeseriesVerification(t *testing.T) {
 
 				mode, ok := point["mode"].(string)
 				require.True(t, ok, "point should have 'mode' field")
-				assert.Equal(t, "stale", mode, "mode should be 'stale'")
+				assert.Equal(t, schema.StaleMode, mode, "mode should be 'stale'")
 			})
 		}
 	})

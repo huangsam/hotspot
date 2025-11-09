@@ -25,9 +25,9 @@ func FuzzComputeScore(f *testing.F) {
 				UniqueContributors: 2,
 				Gini:               0.5,
 				RecentCommits:      5,
-				Mode:               "hot",
+				Mode:               schema.HotMode,
 			},
-			mode: "hot",
+			mode: schema.HotMode,
 		},
 		{
 			result: schema.FileResult{
@@ -40,9 +40,9 @@ func FuzzComputeScore(f *testing.F) {
 				UniqueContributors: 0,
 				Gini:               0,
 				RecentCommits:      0,
-				Mode:               "risk",
+				Mode:               schema.RiskMode,
 			},
-			mode: "risk",
+			mode: schema.RiskMode,
 		},
 	}
 	for _, seed := range seeds {
