@@ -306,17 +306,17 @@ func processCompareMode(cfg *Config, input *ConfigRawInput) error {
 	return nil
 }
 
-// processCustomWeights converts the raw input into the final cfg.CustomWeights map
-// and validates that the provided weights for any mode sum up to 1.0.
-func processCustomWeights(cfg *Config, input *ConfigRawInput) error {
-	cfg.CustomWeights = make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
+// ProcessWeightsRawInput converts WeightsRawInput into the final weights map.
+// If validateSum is true, it validates that weights for each mode sum to 1.0.
+func ProcessWeightsRawInput(weights WeightsRawInput, validateSum bool) (map[schema.ScoringMode]map[schema.BreakdownKey]float64, error) {
+	result := make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
 
 	modes := []schema.ScoringMode{schema.StaleMode, schema.RiskMode, schema.HotMode, schema.ComplexityMode}
 	modeWeights := map[schema.ScoringMode]*ModeWeightsRaw{
-		schema.StaleMode:      input.Weights.Stale,
-		schema.RiskMode:       input.Weights.Risk,
-		schema.HotMode:        input.Weights.Hot,
-		schema.ComplexityMode: input.Weights.Complexity,
+		schema.StaleMode:      weights.Stale,
+		schema.RiskMode:       weights.Risk,
+		schema.HotMode:        weights.Hot,
+		schema.ComplexityMode: weights.Complexity,
 	}
 
 	for _, mode := range modes {
@@ -370,13 +370,24 @@ func processCustomWeights(cfg *Config, input *ConfigRawInput) error {
 		}
 
 		if len(modeMap) > 0 {
-			if sum < 0.999 || sum > 1.001 {
-				return fmt.Errorf("custom weights for mode %s must sum to 1.0, got %.3f", mode, sum)
+			if validateSum && (sum < 0.999 || sum > 1.001) {
+				return nil, fmt.Errorf("custom weights for mode %s must sum to 1.0, got %.3f", mode, sum)
 			}
-			cfg.CustomWeights[mode] = modeMap
+			result[mode] = modeMap
 		}
 	}
 
+	return result, nil
+}
+
+// processCustomWeights converts the raw input into the final cfg.CustomWeights map
+// and validates that the provided weights for any mode sum up to 1.0.
+func processCustomWeights(cfg *Config, input *ConfigRawInput) error {
+	weights, err := ProcessWeightsRawInput(input.Weights, true)
+	if err != nil {
+		return err
+	}
+	cfg.CustomWeights = weights
 	return nil
 }
 

@@ -51,11 +51,6 @@ func PrintMetricsDefinitions(activeWeights map[string]map[string]float64) error 
 	fmt.Println("========================")
 	fmt.Println()
 	fmt.Println("All scores = weighted sum of normalized factors")
-	if activeWeights != nil {
-		fmt.Println("Showing ACTIVE weights from your config file")
-	} else {
-		fmt.Println("Showing DEFAULT weights (no config file found)")
-	}
 	fmt.Println()
 
 	modes := []struct {

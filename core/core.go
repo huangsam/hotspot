@@ -214,9 +214,12 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config) error {
 	return internal.PrintTimeseriesResults(result, cfg, duration)
 }
 
-// loadActiveWeights loads custom weights from the config file if available.
-// Returns nil if no custom weights are found or if config loading fails.
-func loadActiveWeights() (map[schema.ScoringMode]map[schema.BreakdownKey]float64, error) {
+// ExecuteHotspotMetrics displays the formal definitions of all scoring modes.
+// This is a static display that does not require Git analysis.
+func ExecuteHotspotMetrics() error {
+	// Load active weights from config file if available
+	var activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64
+
 	// Set up Viper for config loading (similar to main.go initConfig)
 	viper.SetConfigName(".hotspot")
 	viper.SetConfigType("yaml")
@@ -226,89 +229,18 @@ func loadActiveWeights() (map[schema.ScoringMode]map[schema.BreakdownKey]float64
 	viper.AutomaticEnv()
 
 	// Try to read config file
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			// No config file found, return nil (use defaults)
-			return nil, nil
+	if err := viper.ReadInConfig(); err == nil {
+		// Config file found, try to unmarshal weights
+		var config struct {
+			Weights internal.WeightsRawInput `mapstructure:"weights"`
 		}
-		// Other error reading config, return the error
-		return nil, fmt.Errorf("error reading config file: %w", err)
-	}
-
-	// Unmarshal just the weights part
-	var config struct {
-		Weights internal.WeightsRawInput `mapstructure:"weights"`
-	}
-	if err := viper.Unmarshal(&config); err != nil {
-		return nil, fmt.Errorf("error unmarshaling config: %w", err)
-	}
-
-	// Process the weights similar to processCustomWeights
-	activeWeights := make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
-	modes := []schema.ScoringMode{schema.StaleMode, schema.RiskMode, schema.HotMode, schema.ComplexityMode}
-	modeWeights := map[schema.ScoringMode]*internal.ModeWeightsRaw{
-		schema.StaleMode:      config.Weights.Stale,
-		schema.RiskMode:       config.Weights.Risk,
-		schema.HotMode:        config.Weights.Hot,
-		schema.ComplexityMode: config.Weights.Complexity,
-	}
-
-	for _, mode := range modes {
-		rawMode := modeWeights[mode]
-		if rawMode == nil {
-			continue
-		}
-
-		modeMap := make(map[schema.BreakdownKey]float64)
-
-		if rawMode.InvRecent != nil {
-			modeMap[schema.BreakdownInvRecent] = *rawMode.InvRecent
-		}
-		if rawMode.Size != nil {
-			modeMap[schema.BreakdownSize] = *rawMode.Size
-		}
-		if rawMode.Age != nil {
-			modeMap[schema.BreakdownAge] = *rawMode.Age
-		}
-		if rawMode.Commits != nil {
-			modeMap[schema.BreakdownCommits] = *rawMode.Commits
-		}
-		if rawMode.Contributors != nil {
-			modeMap[schema.BreakdownContrib] = *rawMode.Contributors
-		}
-		if rawMode.InvContributors != nil {
-			modeMap[schema.BreakdownInvContrib] = *rawMode.InvContributors
-		}
-		if rawMode.Churn != nil {
-			modeMap[schema.BreakdownChurn] = *rawMode.Churn
-		}
-		if rawMode.Gini != nil {
-			modeMap[schema.BreakdownGini] = *rawMode.Gini
-		}
-		if rawMode.LOC != nil {
-			modeMap[schema.BreakdownLOC] = *rawMode.LOC
-		}
-		if rawMode.LowRecent != nil {
-			modeMap[schema.BreakdownLowRecent] = *rawMode.LowRecent
-		}
-
-		if len(modeMap) > 0 {
-			activeWeights[mode] = modeMap
+		if err := viper.Unmarshal(&config); err == nil {
+			// Successfully unmarshaled, process the weights
+			activeWeights, _ = internal.ProcessWeightsRawInput(config.Weights, false)
+			// Ignore errors here - if weights are invalid, just show defaults
 		}
 	}
-
-	return activeWeights, nil
-}
-
-// ExecuteHotspotMetrics displays the formal definitions of all scoring modes.
-// This is a static display that does not require Git analysis.
-func ExecuteHotspotMetrics() error {
-	// Load active weights from config file if available
-	activeWeights, err := loadActiveWeights()
-	if err != nil {
-		// If we can't load config, just show defaults
-		activeWeights = nil
-	}
+	// If config loading fails or weights are invalid, activeWeights remains nil (use defaults)
 
 	// Convert to string-based format for display
 	stringWeights := make(map[string]map[string]float64)
