@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 
 	"github.com/huangsam/hotspot/schema"
 )
@@ -30,7 +31,8 @@ func writeCSVResultsForComparison(w *csv.Writer, comparisonResult schema.Compari
 		"delta_score",
 		"delta_commits",
 		"delta_churn",
-		"ownership_diff",
+		"before_owners",
+		"after_owners",
 		"mode",
 	}
 	if err := w.Write(header); err != nil {
@@ -43,11 +45,12 @@ func writeCSVResultsForComparison(w *csv.Writer, comparisonResult schema.Compari
 			strconv.Itoa(i + 1),                 // Rank
 			r.Path,                              // Path
 			fmtFloat(r.BeforeScore),             // Base Score
-			fmtFloat(r.AfterScore),              // Comp Score
-			fmtFloat(r.Delta),                   // Delta Score (Comp - Base)
+			fmtFloat(r.AfterScore),              // Current Score
+			fmtFloat(r.Delta),                   // Delta Score (Current - Base)
 			fmt.Sprintf(intFmt, r.DeltaCommits), // Delta Commits
 			fmt.Sprintf(intFmt, r.DeltaChurn),   // Delta Churn
-			formatOwnershipDiff(r),              // Ownership Diff
+			strings.Join(r.BeforeOwners, "|"),   // Base Owners
+			strings.Join(r.AfterOwners, "|"),    // Current Owners
 			string(r.Mode),                      // Mode
 		}
 		if err := w.Write(row); err != nil {

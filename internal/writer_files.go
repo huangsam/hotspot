@@ -45,7 +45,7 @@ func writeCSVResults(w *csv.Writer, files []schema.FileResult, fmtFloat func(flo
 			fmt.Sprintf(intFmt, f.Churn),              // Churn
 			fmtFloat(f.Gini),                          // Gini Coefficient
 			f.FirstCommit.Format(DateTimeFormat),      // First Commit Date
-			strings.Join(f.Owners, ", "),              // Owners
+			strings.Join(f.Owners, "|"),               // Owners
 			string(f.Mode),                            // Mode
 		}
 		if err := w.Write(rec); err != nil {

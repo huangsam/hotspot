@@ -92,11 +92,11 @@ func compareResults[T ComparableResult](baseResults, targetResults []T, limit in
 		// Get owners (default to empty if not exists)
 		beforeOwners := []string{}
 		if baseExists {
-			beforeOwners = schema.AbbreviateOwners(baseR.GetOwners())
+			beforeOwners = baseR.GetOwners()
 		}
 		afterOwners := []string{}
 		if targetExists {
-			afterOwners = schema.AbbreviateOwners(targetR.GetOwners())
+			afterOwners = targetR.GetOwners()
 		}
 
 		// Check for ownership change (compare original unabbreviated owners)

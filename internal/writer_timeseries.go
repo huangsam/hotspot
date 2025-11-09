@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"io"
+	"strings"
 
 	"github.com/huangsam/hotspot/schema"
 )
@@ -33,9 +34,9 @@ func writeCSVResultsForTimeseries(w *csv.Writer, result schema.TimeseriesResult,
 	for _, p := range result.Points {
 		ownersStr := ""
 		if len(p.Owners) > 0 {
-			ownersStr = schema.FormatOwners(p.Owners)
+			ownersStr = strings.Join(p.Owners, "|")
 		} else {
-			ownersStr = "No owners"
+			ownersStr = ""
 		}
 		row := []string{
 			p.Path,
