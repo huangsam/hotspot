@@ -74,9 +74,8 @@ func (c *LocalGitClient) GetCommitTime(ctx context.Context, repoPath string, ref
 // GetFileFirstCommitTime implements the GitClient interface.
 func (c *LocalGitClient) GetFileFirstCommitTime(ctx context.Context, repoPath string, path string, follow bool) (time.Time, error) {
 	args := []string{
-		"log", "-n", "1",
+		"log",
 		"--pretty=format:%ct",
-		"--reverse",
 	}
 	if follow {
 		args = append(args, "--follow")
@@ -86,9 +85,14 @@ func (c *LocalGitClient) GetFileFirstCommitTime(ctx context.Context, repoPath st
 	if err != nil {
 		return time.Time{}, err
 	}
-	timestampStr := strings.TrimSpace(string(out))
-	if timestampStr == "" {
+	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+	if len(lines) == 0 || (len(lines) == 1 && lines[0] == "") {
 		return time.Time{}, fmt.Errorf("no commits found for file '%s'", path)
+	}
+	// The last line contains the timestamp of the oldest commit
+	timestampStr := strings.TrimSpace(lines[len(lines)-1])
+	if timestampStr == "" {
+		return time.Time{}, fmt.Errorf("no timestamp found for file '%s'", path)
 	}
 	timestamp, err := strconv.ParseInt(timestampStr, 10, 64)
 	if err != nil {

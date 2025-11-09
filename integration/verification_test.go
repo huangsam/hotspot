@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -39,6 +40,17 @@ func buildHotspot(t *testing.T, dir string) string {
 type HotspotFile struct {
 	Path    string `json:"path"`
 	Commits int    `json:"commits"`
+}
+
+// HotspotFileDetail represents a file entry with detailed metadata from hotspot JSON output
+type HotspotFileDetail struct {
+	Path               string  `json:"path"`
+	Score              float64 `json:"score"`
+	UniqueContributors int     `json:"unique_contributors"`
+	Commits            int     `json:"commits"`
+	LinesOfCode        int     `json:"lines_of_code"`
+	Churn              int     `json:"churn"`
+	AgeDays            int     `json:"age_days"`
 }
 
 // TestHotspotFilesVerification runs hotspot files --detail and verifies commit counts against git log
@@ -87,6 +99,94 @@ func TestHotspotFilesVerification(t *testing.T) {
 				"commit count mismatch for %s", file)
 		})
 	}
+}
+
+// TestHotspotFilesAgeVerification runs hotspot files --detail and verifies age calculations against git log
+func TestHotspotFilesAgeVerification(t *testing.T) {
+	// Skip if not in a git repo
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not available")
+	}
+
+	// Get current repo path
+	repoPath, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	require.NoError(t, err)
+	repoDir := strings.TrimSpace(string(repoPath))
+
+	// Build hotspot binary
+	hotspotPath := buildHotspot(t, repoDir)
+
+	// Run hotspot files --output json --detail
+	cmd := exec.Command(hotspotPath, "files", "--output", "json", "--detail")
+	cmd.Dir = repoDir
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+	err = cmd.Run()
+	require.NoError(t, err)
+
+	// Parse output to extract file details
+	fileDetails := parseHotspotDetailOutput(stdout.String())
+
+	// For each file, verify age calculation against git log
+	for file, details := range fileDetails {
+		t.Run(file, func(t *testing.T) {
+			// Get the first commit timestamp for this file
+			gitCmd := exec.Command("git", "log", "--pretty=format:%ct", "--follow", "--", file)
+			gitCmd.Dir = repoDir
+			gitOutput, err := gitCmd.Output()
+			if err != nil {
+				// File might not exist or have commits, skip
+				t.Skipf("git log failed for %s: %v", file, err)
+			}
+
+			lines := strings.Split(strings.TrimSpace(string(gitOutput)), "\n")
+			if len(lines) == 0 || (len(lines) == 1 && lines[0] == "") {
+				t.Skipf("no commits found for %s", file)
+			}
+
+			// Parse the oldest commit timestamp (last line)
+			oldestTimestampStr := strings.TrimSpace(lines[len(lines)-1])
+			oldestTimestamp, err := strconv.ParseInt(oldestTimestampStr, 10, 64)
+			require.NoError(t, err, "failed to parse git timestamp")
+
+			oldestCommitTime := time.Unix(oldestTimestamp, 0)
+			expectedAgeDays := int(time.Since(oldestCommitTime).Hours() / 24)
+
+			// Allow for small differences due to timing (test execution time)
+			ageDiff := abs(details.AgeDays - expectedAgeDays)
+			assert.LessOrEqual(t, ageDiff, 1, "age calculation should be within 1 day of expected for %s (got %d, expected %d)",
+				file, details.AgeDays, expectedAgeDays)
+		})
+	}
+}
+
+// parseHotspotDetailOutput extracts file details from hotspot JSON output with --detail
+func parseHotspotDetailOutput(output string) map[string]HotspotFileDetail {
+	var files []HotspotFileDetail
+	lines := strings.Split(output, "\n")
+	for i, line := range lines {
+		if strings.TrimSpace(line) == "[" { // Start of JSON array
+			jsonPart := strings.Join(lines[i:], "\n")
+			if json.Unmarshal([]byte(jsonPart), &files) == nil {
+				break
+			}
+		}
+	}
+
+	fileDetails := make(map[string]HotspotFileDetail)
+	for _, file := range files {
+		fileDetails[file.Path] = file
+	}
+
+	return fileDetails
+}
+
+// abs returns the absolute value of an integer
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
 }
 
 // parseHotspotOutput extracts file paths and commit counts from hotspot JSON output
