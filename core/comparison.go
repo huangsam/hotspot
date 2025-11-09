@@ -14,6 +14,7 @@ type ComparableResult interface {
 	GetScore() float64
 	GetCommits() int
 	GetChurn() int
+	GetOwners() []string
 }
 
 // DeltaExtractor extracts additional deltas for comparison details
@@ -41,6 +42,7 @@ func compareResults[T ComparableResult](baseResults, targetResults []T, limit in
 	var netScoreDelta float64
 	var netChurnDelta int
 	var totalNewFiles, totalInactiveFiles, totalModifiedFiles int
+	var totalOwnershipChanges int
 
 	// 2. Compare all paths
 	for path := range allPaths {
@@ -87,6 +89,21 @@ func compareResults[T ComparableResult](baseResults, targetResults []T, limit in
 			totalInactiveFiles++
 		}
 
+		// Get owners (default to empty if not exists)
+		beforeOwners := []string{}
+		if baseExists {
+			beforeOwners = schema.AbbreviateOwners(baseR.GetOwners())
+		}
+		afterOwners := []string{}
+		if targetExists {
+			afterOwners = schema.AbbreviateOwners(targetR.GetOwners())
+		}
+
+		// Check for ownership change (compare original unabbreviated owners)
+		if baseExists && targetExists && !schema.OwnersEqual(baseR.GetOwners(), targetR.GetOwners()) {
+			totalOwnershipChanges++
+		}
+
 		// Only include results with significant score changes
 		if math.Abs(deltaScore) > 0.01 {
 			details := schema.ComparisonDetails{
@@ -97,6 +114,8 @@ func compareResults[T ComparableResult](baseResults, targetResults []T, limit in
 				DeltaCommits: deltaCommits,
 				DeltaChurn:   deltaChurn,
 				Status:       status,
+				BeforeOwners: beforeOwners,
+				AfterOwners:  afterOwners,
 			}
 
 			// Add file-specific deltas if applicable
@@ -113,11 +132,12 @@ func compareResults[T ComparableResult](baseResults, targetResults []T, limit in
 
 	// Create summary
 	summary := schema.ComparisonSummary{
-		NetScoreDelta:      netScoreDelta,
-		NetChurnDelta:      netChurnDelta,
-		TotalNewFiles:      totalNewFiles,
-		TotalInactiveFiles: totalInactiveFiles,
-		TotalModifiedFiles: totalModifiedFiles,
+		NetScoreDelta:         netScoreDelta,
+		NetChurnDelta:         netChurnDelta,
+		TotalNewFiles:         totalNewFiles,
+		TotalInactiveFiles:    totalInactiveFiles,
+		TotalModifiedFiles:    totalModifiedFiles,
+		TotalOwnershipChanges: totalOwnershipChanges,
 	}
 
 	// Sort results

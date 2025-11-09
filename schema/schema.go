@@ -42,6 +42,11 @@ func (f FileResult) GetChurn() int {
 	return f.Churn
 }
 
+// GetOwners returns the top owners.
+func (f FileResult) GetOwners() []string {
+	return f.Owners
+}
+
 // FolderResult holds the final computed scores and aggregated metrics for a folder.
 type FolderResult struct {
 	Path    string   `json:"path"`    // Relative path to the folder in the repository
@@ -74,15 +79,22 @@ func (f FolderResult) GetChurn() int {
 	return f.Churn
 }
 
+// GetOwners returns the top owners.
+func (f FolderResult) GetOwners() []string {
+	return f.Owners
+}
+
 // ComparisonDetails holds the base info, target info, and their associated deltas.
 type ComparisonDetails struct {
-	Path         string  `json:"path"`          // Relative path to the target in the repository
-	BeforeScore  float64 `json:"before_score"`  // Score from the original/base analysis
-	AfterScore   float64 `json:"after_score"`   // Score from the comparison/new analysis
-	Delta        float64 `json:"delta"`         // CompScore - BaseScore (Positive means worse/higher)
-	DeltaCommits int     `json:"delta_commits"` // Change in total commits (Positive means more activity)
-	DeltaChurn   int     `json:"delta_churn"`   // Change in total churn (Positive means more volatility)
-	Status       string  `json:"status"`        // Intrinsic status of the file as of now
+	Path         string   `json:"path"`          // Relative path to the target in the repository
+	BeforeScore  float64  `json:"before_score"`  // Score from the original/base analysis
+	AfterScore   float64  `json:"after_score"`   // Score from the comparison/new analysis
+	Delta        float64  `json:"delta"`         // CompScore - BaseScore (Positive means worse/higher)
+	DeltaCommits int      `json:"delta_commits"` // Change in total commits (Positive means more activity)
+	DeltaChurn   int      `json:"delta_churn"`   // Change in total churn (Positive means more volatility)
+	Status       string   `json:"status"`        // Intrinsic status of the file as of now
+	BeforeOwners []string `json:"before_owners"` // Owners from the base analysis
+	AfterOwners  []string `json:"after_owners"`  // Owners from the target analysis
 
 	*FileComparison   `json:"file_compare,omitempty"`
 	*FolderComparison `json:"folder_compare,omitempty"`
@@ -100,6 +112,9 @@ type ComparisonSummary struct {
 	TotalNewFiles      int `json:"total_new_files"`
 	TotalInactiveFiles int `json:"total_inactive_files"`
 	TotalModifiedFiles int `json:"total_modified_files"`
+
+	// 4. Ownership Changes
+	TotalOwnershipChanges int `json:"total_ownership_changes"`
 }
 
 // ComparisonResult holds the comparison details and summary.

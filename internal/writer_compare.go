@@ -35,6 +35,9 @@ func writeCSVResultsForComparison(w *csv.Writer, comparisonResult schema.Compari
 			"delta_churn",
 		)
 	}
+	if cfg.Owner {
+		header = append(header, "ownership_diff")
+	}
 	if err := w.Write(header); err != nil {
 		return err
 	}
@@ -53,6 +56,9 @@ func writeCSVResultsForComparison(w *csv.Writer, comparisonResult schema.Compari
 				fmt.Sprintf(intFmt, r.DeltaCommits),
 				fmt.Sprintf(intFmt, r.DeltaChurn),
 			)
+		}
+		if cfg.Owner {
+			row = append(row, formatOwnershipDiff(r))
 		}
 		if err := w.Write(row); err != nil {
 			return err

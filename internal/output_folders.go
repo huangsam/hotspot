@@ -117,7 +117,7 @@ func printFolderTable(results []schema.FolderResult, cfg *Config, fmtFloat func(
 			)
 		}
 		if cfg.Owner {
-			row = append(row, formatOwners(r.Owners)) // Top 2 owners
+			row = append(row, schema.FormatOwners(r.Owners)) // Top 2 owners
 		}
 		data = append(data, row)
 	}

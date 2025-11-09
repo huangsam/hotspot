@@ -98,6 +98,9 @@ func printComparisonTable(comparisonResult schema.ComparisonResult, cfg *Config,
 	if cfg.Detail {
 		headers = append(headers, "Δ Churn")
 	}
+	if cfg.Owner {
+		headers = append(headers, "Ownership")
+	}
 	table.Header(headers)
 
 	// 2. Configure Alignment
@@ -137,6 +140,9 @@ func printComparisonTable(comparisonResult schema.ComparisonResult, cfg *Config,
 		if cfg.Detail {
 			row = append(row, fmt.Sprintf(intFmt, r.DeltaChurn))
 		}
+		if cfg.Owner {
+			row = append(row, formatOwnershipDiff(r))
+		}
 		data = append(data, row)
 	}
 
@@ -151,7 +157,7 @@ func printComparisonTable(comparisonResult schema.ComparisonResult, cfg *Config,
 	numItems := len(comparisonResult.Results)
 	fmt.Printf("Showing top %d changes\n", numItems)
 	fmt.Printf("Net score delta: %.*f, Net churn delta: %d\n", cfg.Precision, comparisonResult.Summary.NetScoreDelta, comparisonResult.Summary.NetChurnDelta)
-	fmt.Printf("New files: %d, Inactive files: %d, Modified files: %d\n", comparisonResult.Summary.TotalNewFiles, comparisonResult.Summary.TotalInactiveFiles, comparisonResult.Summary.TotalModifiedFiles)
+	fmt.Printf("New files: %d, Inactive files: %d, Modified files: %d, Ownership changes: %d\n", comparisonResult.Summary.TotalNewFiles, comparisonResult.Summary.TotalInactiveFiles, comparisonResult.Summary.TotalModifiedFiles, comparisonResult.Summary.TotalOwnershipChanges)
 	fmt.Printf("Analysis completed in %v using %d workers.\n", duration, cfg.Workers)
 	return nil
 }

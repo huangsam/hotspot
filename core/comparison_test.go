@@ -156,3 +156,75 @@ func TestDetermineStatus(t *testing.T) {
 		})
 	}
 }
+
+func TestCompareFileResults_OwnershipChanges(t *testing.T) {
+	// Test that ownership changes are correctly detected and counted
+
+	baseResults := []schema.FileResult{
+		{
+			Path:   "same_owner.go",
+			Score:  10.0,
+			Owners: []string{"Alice"},
+		},
+		{
+			Path:   "changed_owner.go",
+			Score:  10.0,
+			Owners: []string{"Alice"},
+		},
+		{
+			Path:   "multiple_owners_same.go",
+			Score:  10.0,
+			Owners: []string{"Alice", "Bob"},
+		},
+		{
+			Path:   "multiple_owners_changed.go",
+			Score:  10.0,
+			Owners: []string{"Alice", "Bob"},
+		},
+	}
+
+	targetResults := []schema.FileResult{
+		{
+			Path:   "same_owner.go",
+			Score:  10.0,              // No significant change
+			Owners: []string{"Alice"}, // Same owner
+		},
+		{
+			Path:   "changed_owner.go",
+			Score:  11.0,            // Significant change
+			Owners: []string{"Bob"}, // Different owner
+		},
+		{
+			Path:   "multiple_owners_same.go",
+			Score:  12.0,                     // Significant change
+			Owners: []string{"Bob", "Alice"}, // Same owners, different order
+		},
+		{
+			Path:   "multiple_owners_changed.go",
+			Score:  13.0,                         // Significant change
+			Owners: []string{"Alice", "Charlie"}, // One owner changed
+		},
+	}
+
+	result := compareFileResults(baseResults, targetResults, 10)
+
+	// Should have 3 results with significant score changes
+	assert.Len(t, result.Results, 3)
+
+	// Check ownership changes count
+	assert.Equal(t, 2, result.Summary.TotalOwnershipChanges) // changed_owner.go and multiple_owners_changed.go
+
+	// Check the owners are populated correctly
+	resultMap := make(map[string]schema.ComparisonDetails)
+	for _, r := range result.Results {
+		resultMap[r.Path] = r
+	}
+
+	changedOwner := resultMap["changed_owner.go"]
+	assert.Equal(t, []string{"Alice"}, changedOwner.BeforeOwners)
+	assert.Equal(t, []string{"Bob"}, changedOwner.AfterOwners)
+
+	multipleSame := resultMap["multiple_owners_same.go"]
+	assert.Equal(t, []string{"Alice", "Bob"}, multipleSame.BeforeOwners)
+	assert.Equal(t, []string{"Bob", "Alice"}, multipleSame.AfterOwners) // Order doesn't matter for equality check
+}

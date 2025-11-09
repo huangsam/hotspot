@@ -131,7 +131,7 @@ func printTableResults(files []schema.FileResult, cfg *Config, fmtFloat func(flo
 			row = append(row, topOnes) // Breakdown explanation
 		}
 		if cfg.Owner {
-			row = append(row, formatOwners(f.Owners)) // Top 2 owners
+			row = append(row, schema.FormatOwners(f.Owners)) // Top 2 owners
 		}
 		data = append(data, row)
 	}
@@ -154,24 +154,6 @@ func printTableResults(files []schema.FileResult, cfg *Config, fmtFloat func(flo
 	fmt.Printf("Showing top %d files (total commits: %d, total churn: %d)\n", numFiles, totalCommits, totalChurn)
 	fmt.Printf("Analysis completed in %v using %d workers.\n", duration, cfg.Workers)
 	return nil
-}
-
-// formatOwners formats the top owners as "S. Huang, J. Doe"
-func formatOwners(owners []string) string {
-	var abbreviated []string
-	for _, owner := range owners {
-		abbreviated = append(abbreviated, abbreviateName(owner))
-	}
-	return strings.Join(abbreviated, ", ")
-}
-
-// abbreviateName formats "Samuel Huang" to "Samuel H"
-func abbreviateName(name string) string {
-	parts := strings.Fields(name)
-	if len(parts) >= 2 {
-		return fmt.Sprintf("%s %s", parts[0], string(parts[1][0]))
-	}
-	return name
 }
 
 // metricBreakdown holds a key-value pair from the Breakdown map representing a metric's contribution.
