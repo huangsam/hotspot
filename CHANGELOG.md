@@ -1,5 +1,14 @@
 # 🚀 Changelog
 
+## v1.1.1
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.1.0...v1.1.1)
+
+### Improvements
+
+- **Context Integration**: Add context.Context throughout the codebase for better cancellability and request-scoped data flow
+- **Compact Headers**: Make command headers more compact and consistent across all subcommands
+
 ## v1.1.0
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.0.1...v1.1.0)
