@@ -13,6 +13,8 @@ linters:
     - unparam
     # https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize
     - modernize
+    # https://github.com/fzipp/gocyclo
+    - gocyclo
 formatters:
   enable:
     - gofmt
