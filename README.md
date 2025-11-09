@@ -14,7 +14,7 @@ This tool operates as a **tactical, code-level risk finder**. While [DORA] metri
 [DORA]: https://en.wikipedia.org/wiki/DevOps_Research_and_Assessment
 [SCA]: https://en.wikipedia.org/wiki/Static_program_analysis
 
-Offerred capabilities:
+Offered capabilities:
 
 - 🔍 **See what matters** - rank files and folders by activity, complexity, etc.
 - ⚡ **Fast results** - analyze thousands of files in seconds
@@ -77,6 +77,14 @@ The core power of Hotspot lies in its `--mode` flag, which selects the ranking a
 | **risk** | Knowledge risk | Find areas with unequal contribution and few owners. |
 | **complexity** | Technical debt | Triage files with high churn, large size, and high complexity. |
 | **stale** | Maintenance debt | Highlight critical files that are large, old, but rarely touched. |
+
+### Scoring transparency & customization
+
+The `metrics` command displays the formal mathematical formulas for all scoring modes, showing exactly how files are ranked. When using custom weights from a `.hotspot.yaml` config file, it shows your active configuration.
+
+**Example:** View scoring formulas in action.
+
+`hotspot metrics`
 
 ### Risk comparison & delta tracking
 
@@ -159,11 +167,28 @@ hotspot compare files --mode risk --base-ref main --target-ref feature/new-modul
 hotspot compare folders --mode hot --base-ref v0.15.0 --target-ref v0.16.0
 ```
 
+### Trend Analysis & Historical Tracking
+
+```bash
+# 1. Monitor Critical File Evolution (Track how a core file's complexity changes)
+hotspot timeseries --path src/main/java/App.java --mode complexity --interval "6 months" --points 6
+
+# 2. Identify When Risk Started (Find when a file became a maintenance burden)
+hotspot timeseries --path lib/legacy.js --mode stale --interval "2 years" --points 8
+
+# 3. Sprint Velocity Impact (See how active development affects file stability)
+hotspot timeseries --path pkg/api/v1.go --mode hot --interval "90 days" --points 4
+```
+
 ## Performance
 
-|Size|Duration|
-|----|--------|
-|**Typical repo (1k files)**|2-5 seconds|
-|**Large repo (10k+ files)**|15-30 seconds|
+| Command | Size | Duration | Notes |
+|---------|------|----------|-------|
+| `files`/`folders` | **Typical repo (1k files)** | 2-5 seconds | Single analysis pass |
+| `files`/`folders` | **Large repo (10k+ files)** | 15-30 seconds | Single analysis pass |
+| `compare` | **Typical repo** | 4-10 seconds | Two analysis passes |
+| `compare` | **Large repo** | 30-60 seconds | Two analysis passes |
+| `timeseries` | **Typical repo** | 10-30 seconds | Multiple analysis passes |
+| `timeseries` | **Large repo** | 2-5 minutes | Multiple analysis passes |
 
-These details were measured from running Hotspot over a 6-month window.
+All measurements use default lookback windows. Timeseries performance scales with `--points` (more points = more analysis passes). Use `--workers` to parallelize analysis on multi-core systems.
