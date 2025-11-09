@@ -2,54 +2,96 @@ package internal
 
 import (
 	"fmt"
+	"maps"
+	"strings"
+
+	"github.com/huangsam/hotspot/schema"
 )
+
+// getDisplayWeightsForMode returns the weights to display for a given scoring mode.
+// Uses active weights if available, otherwise falls back to defaults.
+func getDisplayWeightsForMode(mode string, activeWeights map[string]map[string]float64) map[string]float64 {
+	// Start with default weights
+	weights := schema.GetDefaultWeights(mode)
+
+	// Override with active weights if provided
+	if activeWeights != nil {
+		if modeWeights, ok := activeWeights[mode]; ok {
+			// Only override weights that are actually customized
+			maps.Copy(weights, modeWeights)
+		}
+	}
+
+	return weights
+}
+
+// formatWeights formats weights for display in formulas
+func formatWeights(weights map[string]float64, factorKeys []string) string {
+	var parts []string
+	for _, key := range factorKeys {
+		if weight, ok := weights[key]; ok && weight > 0 {
+			factorName := strings.ToLower(strings.TrimPrefix(key, "breakdown_"))
+			parts = append(parts, fmt.Sprintf("%.2f×%s", weight, factorName))
+		}
+	}
+	return strings.Join(parts, " + ")
+}
 
 // PrintMetricsDefinitions displays the formal definitions of all scoring modes.
 // This is a static display that does not require Git analysis.
-func PrintMetricsDefinitions() error {
+func PrintMetricsDefinitions(activeWeights map[string]map[string]float64) error {
 	fmt.Println("🔥 Hotspot Scoring Modes")
 	fmt.Println("========================")
 	fmt.Println()
 	fmt.Println("All scores = weighted sum of normalized factors")
-	fmt.Println("Weights loaded from hotspot.yaml config file")
+	if activeWeights != nil {
+		fmt.Println("Showing ACTIVE weights from your config file")
+	} else {
+		fmt.Println("Showing DEFAULT weights (no config file found)")
+	}
 	fmt.Println()
 
 	modes := []struct {
-		name    string
-		purpose string
-		factors string
-		formula string
+		name       string
+		purpose    string
+		factors    []string
+		factorKeys []string
 	}{
 		{
-			name:    "🔥 HOT",
-			purpose: "Activity hotspots - high recent activity & volatility",
-			factors: "Commits, Churn, Contributors, Age, Size",
-			formula: "0.40*Commits + 0.40*Churn + 0.05*Contributors + 0.05*Size + 0.10*Age",
+			name:       "🔥 HOT",
+			purpose:    "Activity hotspots - high recent activity & volatility",
+			factors:    []string{"Commits", "Churn", "Contributors", "Age", "Size"},
+			factorKeys: []string{schema.BreakdownCommits, schema.BreakdownChurn, schema.BreakdownContrib, schema.BreakdownAge, schema.BreakdownSize},
 		},
 		{
-			name:    "⚠️  RISK",
-			purpose: "Knowledge risk/bus factor - concentrated ownership",
-			factors: "InvContributors, Gini, Age, Churn, Commits, LOC, Size",
-			formula: "0.30*InvContributors + 0.26*Gini + 0.16*Age + 0.06*Churn + 0.04*Commits + 0.06*LOC + 0.12*Size",
+			name:       "⚠️  RISK",
+			purpose:    "Knowledge risk/bus factor - concentrated ownership",
+			factors:    []string{"InvContributors", "Gini", "Age", "Churn", "Commits", "LOC", "Size"},
+			factorKeys: []string{schema.BreakdownInvContrib, schema.BreakdownGini, schema.BreakdownAge, schema.BreakdownChurn, schema.BreakdownCommits, schema.BreakdownLOC, schema.BreakdownSize},
 		},
 		{
-			name:    "🧩 COMPLEXITY",
-			purpose: "Technical debt - large, old files with high maintenance burden",
-			factors: "Age, Churn, Commits, LOC, LowRecent, Size",
-			formula: "0.30*Age + 0.30*Churn + 0.10*Commits + 0.20*LOC + 0.05*LowRecent + 0.05*Size",
+			name:       "🧩 COMPLEXITY",
+			purpose:    "Technical debt - large, old files with high maintenance burden",
+			factors:    []string{"Age", "Churn", "Commits", "LOC", "LowRecent", "Size"},
+			factorKeys: []string{schema.BreakdownAge, schema.BreakdownChurn, schema.BreakdownCommits, schema.BreakdownLOC, schema.BreakdownLowRecent, schema.BreakdownSize},
 		},
 		{
-			name:    "🕰️  STALE",
-			purpose: "Maintenance debt - important files untouched recently",
-			factors: "InvRecent, Age, Size, Commits, Contributors",
-			formula: "0.35*InvRecent + 0.20*Age + 0.25*Size + 0.15*Commits + 0.05*Contributors",
+			name:       "🕰️  STALE",
+			purpose:    "Maintenance debt - important files untouched recently",
+			factors:    []string{"InvRecent", "Age", "Size", "Commits", "Contributors"},
+			factorKeys: []string{schema.BreakdownInvRecent, schema.BreakdownAge, schema.BreakdownSize, schema.BreakdownCommits, schema.BreakdownContrib},
 		},
 	}
 
 	for _, mode := range modes {
 		fmt.Printf("%s: %s\n", mode.name, mode.purpose)
-		fmt.Printf("   Factors: %s\n", mode.factors)
-		fmt.Printf("   Formula: Score = %s\n", mode.formula)
+		fmt.Printf("   Factors: %s\n", strings.Join(mode.factors, ", "))
+
+		// Extract mode name from emoji prefix
+		modeName := strings.ToLower(strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(mode.name, "🔥 "), "⚠️  "), "🧩 "), "🕰️  ")))
+		weights := getDisplayWeightsForMode(modeName, activeWeights)
+		formula := formatWeights(weights, mode.factorKeys)
+		fmt.Printf("   Formula: Score = %s\n", formula)
 		fmt.Println()
 	}
 

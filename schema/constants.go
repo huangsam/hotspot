@@ -37,3 +37,44 @@ const (
 	ComplexityMode = "complexity"
 	StaleMode      = "stale"
 )
+
+// GetDefaultWeights returns the default weight map for a given scoring mode.
+func GetDefaultWeights(mode string) map[string]float64 {
+	switch mode {
+	case RiskMode:
+		return map[string]float64{
+			BreakdownAge:        0.16,
+			BreakdownChurn:      0.06,
+			BreakdownCommits:    0.04,
+			BreakdownGini:       0.26,
+			BreakdownInvContrib: 0.30,
+			BreakdownLOC:        0.06,
+			BreakdownSize:       0.12,
+		}
+	case ComplexityMode:
+		return map[string]float64{
+			BreakdownAge:       0.30,
+			BreakdownChurn:     0.30,
+			BreakdownCommits:   0.10,
+			BreakdownLOC:       0.20,
+			BreakdownLowRecent: 0.05,
+			BreakdownSize:      0.05,
+		}
+	case StaleMode:
+		return map[string]float64{
+			BreakdownAge:       0.20,
+			BreakdownCommits:   0.15,
+			BreakdownContrib:   0.05,
+			BreakdownInvRecent: 0.35,
+			BreakdownSize:      0.25,
+		}
+	default: // HotMode
+		return map[string]float64{
+			BreakdownAge:     0.10,
+			BreakdownChurn:   0.40,
+			BreakdownCommits: 0.40,
+			BreakdownContrib: 0.05,
+			BreakdownSize:    0.05,
+		}
+	}
+}

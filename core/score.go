@@ -13,46 +13,8 @@ import (
 // getWeightsForMode returns the weight map for a given scoring mode.
 // If custom weights are provided for the mode, they override the defaults.
 func getWeightsForMode(mode string, customWeights map[string]map[string]float64) map[string]float64 {
-	var weights map[string]float64
-
 	// Start with default weights
-	switch strings.ToLower(mode) {
-	case schema.RiskMode:
-		weights = map[string]float64{
-			schema.BreakdownAge:        0.16,
-			schema.BreakdownChurn:      0.06,
-			schema.BreakdownCommits:    0.04,
-			schema.BreakdownGini:       0.26,
-			schema.BreakdownInvContrib: 0.30,
-			schema.BreakdownLOC:        0.06,
-			schema.BreakdownSize:       0.12,
-		}
-	case schema.ComplexityMode:
-		weights = map[string]float64{
-			schema.BreakdownAge:       0.30,
-			schema.BreakdownChurn:     0.30,
-			schema.BreakdownCommits:   0.10,
-			schema.BreakdownLOC:       0.20,
-			schema.BreakdownLowRecent: 0.05,
-			schema.BreakdownSize:      0.05,
-		}
-	case schema.StaleMode:
-		weights = map[string]float64{
-			schema.BreakdownAge:       0.20,
-			schema.BreakdownCommits:   0.15,
-			schema.BreakdownContrib:   0.05,
-			schema.BreakdownInvRecent: 0.35,
-			schema.BreakdownSize:      0.25,
-		}
-	default: // "hot" mode
-		weights = map[string]float64{
-			schema.BreakdownAge:     0.10,
-			schema.BreakdownChurn:   0.40,
-			schema.BreakdownCommits: 0.40,
-			schema.BreakdownContrib: 0.05,
-			schema.BreakdownSize:    0.05,
-		}
-	}
+	weights := schema.GetDefaultWeights(mode)
 
 	// Override with custom weights if provided
 	if customWeights != nil {
