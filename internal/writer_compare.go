@@ -20,7 +20,7 @@ func writeJSONResultsForComparison(w io.Writer, comparisonResult schema.Comparis
 }
 
 // writeCSVResultsForComparison writes the schema.ComparisonResult data to a CSV writer.
-func writeCSVResultsForComparison(w *csv.Writer, comparisonResult schema.ComparisonResult, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
+func writeCSVResultsForComparison(w *csv.Writer, comparisonResult schema.ComparisonResult, fmtFloat func(float64) string, intFmt string) error {
 	// 1. Write Header Row
 	header := []string{
 		"rank",
@@ -48,7 +48,7 @@ func writeCSVResultsForComparison(w *csv.Writer, comparisonResult schema.Compari
 			fmt.Sprintf(intFmt, r.DeltaCommits), // Delta Commits
 			fmt.Sprintf(intFmt, r.DeltaChurn),   // Delta Churn
 			formatOwnershipDiff(r),              // Ownership Diff
-			cfg.Mode,                            // Mode
+			r.Mode,                              // Mode
 		}
 		if err := w.Write(row); err != nil {
 			return err

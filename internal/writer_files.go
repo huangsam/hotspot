@@ -12,7 +12,7 @@ import (
 )
 
 // writeCSVResults writes the analysis results in CSV format.
-func writeCSVResults(w *csv.Writer, files []schema.FileResult, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
+func writeCSVResults(w *csv.Writer, files []schema.FileResult, fmtFloat func(float64) string, intFmt string) error {
 	// CSV header
 	header := []string{
 		"rank",
@@ -46,7 +46,7 @@ func writeCSVResults(w *csv.Writer, files []schema.FileResult, cfg *Config, fmtF
 			fmtFloat(f.Gini),                          // Gini Coefficient
 			f.FirstCommit.Format(DateTimeFormat),      // First Commit Date
 			strings.Join(f.Owners, ", "),              // Owners
-			cfg.Mode,                                  // Mode
+			f.Mode,                                    // Mode
 		}
 		if err := w.Write(rec); err != nil {
 			return err
@@ -55,23 +55,20 @@ func writeCSVResults(w *csv.Writer, files []schema.FileResult, cfg *Config, fmtF
 	return nil
 }
 
-// JSONOutput represents the structure of the JSON data to be printed.
-type JSONOutput struct {
-	Rank              int    `json:"rank"`
-	Label             string `json:"label"`
-	Mode              string `json:"mode"`
-	schema.FileResult        // Embeds Path, Score, etc.
-}
-
 // writeJSONResults writes the analysis results in JSON format.
-func writeJSONResults(w io.Writer, files []schema.FileResult, cfg *Config) error {
-	// 1. Prepare the data structure for JSON
-	output := make([]JSONOutput, len(files))
+func writeJSONResults(w io.Writer, files []schema.FileResult) error {
+	// 1. Prepare the data structure for JSON with rank and label added
+	type JSONFileResult struct {
+		Rank  int    `json:"rank"`
+		Label string `json:"label"`
+		schema.FileResult
+	}
+
+	output := make([]JSONFileResult, len(files))
 	for i, f := range files {
-		output[i] = JSONOutput{
+		output[i] = JSONFileResult{
 			Rank:       i + 1,
 			Label:      getPlainLabel(f.Score),
-			Mode:       cfg.Mode,
 			FileResult: f,
 		}
 	}

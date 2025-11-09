@@ -53,7 +53,7 @@ func printJSONResults(files []schema.FileResult, cfg *Config) error {
 	}
 	defer func() { _ = file.Close() }()
 
-	if err := writeJSONResults(file, files, cfg); err != nil {
+	if err := writeJSONResults(file, files); err != nil {
 		return err
 	}
 
@@ -73,7 +73,7 @@ func printCSVResults(files []schema.FileResult, cfg *Config, fmtFloat func(float
 	defer func() { _ = file.Close() }()
 
 	w := csv.NewWriter(file)
-	if err := writeCSVResults(w, files, cfg, fmtFloat, intFmt); err != nil {
+	if err := writeCSVResults(w, files, fmtFloat, intFmt); err != nil {
 		return err
 	}
 	w.Flush()

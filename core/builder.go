@@ -35,7 +35,7 @@ func NewFileMetricsBuilder(ctx context.Context, cfg *internal.Config, client int
 	return &FileResultBuilder{
 		cfg:          cfg,
 		git:          client,
-		result:       &schema.FileResult{Path: path},
+		result:       &schema.FileResult{Path: path, Mode: cfg.Mode},
 		output:       output,
 		path:         path,
 		useFollow:    useFollow,

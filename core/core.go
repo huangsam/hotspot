@@ -64,7 +64,7 @@ func ExecuteHotspotCompare(ctx context.Context, cfg *internal.Config) error {
 	if err != nil {
 		return err
 	}
-	comparisonResult := compareFileResults(baseOutput.FileResults, targetOutput.FileResults, cfg.ResultLimit)
+	comparisonResult := compareFileResults(baseOutput.FileResults, targetOutput.FileResults, cfg.ResultLimit, cfg.Mode)
 	duration := time.Since(start)
 	return internal.PrintComparisonResults(comparisonResult, cfg, duration)
 }
@@ -84,7 +84,7 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *internal.Config) err
 	if err != nil {
 		return err
 	}
-	comparisonResult := compareFolderMetrics(baseOutput.FolderResults, targetOutput.FolderResults, cfg.ResultLimit)
+	comparisonResult := compareFolderMetrics(baseOutput.FolderResults, targetOutput.FolderResults, cfg.ResultLimit, cfg.Mode)
 	duration := time.Since(start)
 	return internal.PrintComparisonResults(comparisonResult, cfg, duration)
 }
@@ -192,6 +192,7 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config) error {
 			Score:  score,
 			Path:   normalizedPath,
 			Owners: owners,
+			Mode:   cfg.Mode,
 		})
 	}
 

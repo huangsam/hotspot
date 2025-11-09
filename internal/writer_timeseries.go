@@ -16,7 +16,7 @@ func writeJSONResultsForTimeseries(w io.Writer, result schema.TimeseriesResult) 
 }
 
 // writeCSVResultsForTimeseries writes the schema.TimeseriesResult data to a CSV writer.
-func writeCSVResultsForTimeseries(w *csv.Writer, result schema.TimeseriesResult, cfg *Config, fmtFloat func(float64) string) error {
+func writeCSVResultsForTimeseries(w *csv.Writer, result schema.TimeseriesResult, fmtFloat func(float64) string) error {
 	// 1. Write Header Row
 	header := []string{
 		"path",
@@ -42,7 +42,7 @@ func writeCSVResultsForTimeseries(w *csv.Writer, result schema.TimeseriesResult,
 			p.Period,
 			fmtFloat(p.Score),
 			ownersStr,
-			cfg.Mode,
+			p.Mode,
 		}
 		if err := w.Write(row); err != nil {
 			return err

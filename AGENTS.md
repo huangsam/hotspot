@@ -173,7 +173,7 @@ Contains all metrics and computed scores for a single file.
 **Key Fields**:
 - **Git Metrics**: Commits, contributors, churn, Gini coefficient
 - **File Metrics**: Size, lines of code, age
-- **Computed Values**: Score, breakdown, owners
+- **Computed Values**: Score, breakdown, owners, mode
 
 #### FolderResult
 
@@ -195,6 +195,7 @@ Time-series data point representing a single measurement in the timeseries analy
 - **Score**: Computed hotspot score for this time period
 - **Path**: File or folder path being analyzed
 - **Owners**: Top owners for this time period (may be empty for periods with no activity)
+- **Mode**: Scoring mode used (hot, risk, complexity, stale)
 
 #### AggregateOutput
 

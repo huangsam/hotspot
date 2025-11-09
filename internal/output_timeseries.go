@@ -66,7 +66,7 @@ func printCSVResultsForTimeseries(result schema.TimeseriesResult, cfg *Config, f
 	defer func() { _ = file.Close() }()
 
 	w := csv.NewWriter(file)
-	if err := writeCSVResultsForTimeseries(w, result, cfg, fmtFloat); err != nil {
+	if err := writeCSVResultsForTimeseries(w, result, fmtFloat); err != nil {
 		return err
 	}
 	w.Flush()
@@ -104,7 +104,7 @@ func printTimeseriesTable(result schema.TimeseriesResult, cfg *Config, fmtFloat 
 			truncatePath(p.Path, maxTablePathWidth),
 			p.Period,
 			fmtFloat(p.Score),
-			cfg.Mode,
+			p.Mode,
 			ownersStr,
 		}
 		data = append(data, row)

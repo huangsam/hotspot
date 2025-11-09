@@ -25,6 +25,7 @@ func FuzzComputeScore(f *testing.F) {
 				UniqueContributors: 2,
 				Gini:               0.5,
 				RecentCommits:      5,
+				Mode:               "hot",
 			},
 			mode: "hot",
 		},
@@ -39,6 +40,7 @@ func FuzzComputeScore(f *testing.F) {
 				UniqueContributors: 0,
 				Gini:               0,
 				RecentCommits:      0,
+				Mode:               "risk",
 			},
 			mode: "risk",
 		},
@@ -72,6 +74,7 @@ func FuzzComputeScore(f *testing.F) {
 			UniqueContributors: uniqueContributors,
 			Gini:               gini,
 			RecentCommits:      recentCommits,
+			Mode:               mode,
 		}
 		_ = computeScore(&result, mode, nil)
 	})

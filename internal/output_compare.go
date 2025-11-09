@@ -69,7 +69,7 @@ func printCSVResultsForComparison(comparisonResult schema.ComparisonResult, cfg 
 	defer func() { _ = file.Close() }()
 
 	w := csv.NewWriter(file)
-	if err := writeCSVResultsForComparison(w, comparisonResult, cfg, fmtFloat, intFmt); err != nil {
+	if err := writeCSVResultsForComparison(w, comparisonResult, fmtFloat, intFmt); err != nil {
 		return err
 	}
 	w.Flush()

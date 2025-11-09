@@ -273,6 +273,7 @@ func aggregateAndScoreFolders(cfg *internal.Config, fileResults []schema.FileRes
 		if _, ok := folderResults[folderPath]; !ok {
 			folderResults[folderPath] = &schema.FolderResult{
 				Path: folderPath,
+				Mode: cfg.Mode,
 			}
 		}
 

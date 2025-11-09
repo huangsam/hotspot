@@ -10,10 +10,10 @@ import (
 // TestRankFiles tests file ranking logic.
 func TestRankFiles(t *testing.T) {
 	files := []schema.FileResult{
-		{Path: "low.go", SizeBytes: 1, Score: 10},
-		{Path: "high.go", SizeBytes: 1, Score: 90},
-		{Path: "medium.go", SizeBytes: 1, Score: 50},
-		{Path: "critical.go", SizeBytes: 1, Score: 95},
+		{Path: "low.go", SizeBytes: 1, Score: 10, Mode: "hot"},
+		{Path: "high.go", SizeBytes: 1, Score: 90, Mode: "hot"},
+		{Path: "medium.go", SizeBytes: 1, Score: 50, Mode: "hot"},
+		{Path: "critical.go", SizeBytes: 1, Score: 95, Mode: "hot"},
 	}
 
 	t.Run("rank and limit", func(t *testing.T) {

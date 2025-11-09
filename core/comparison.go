@@ -21,7 +21,7 @@ type ComparableResult interface {
 type DeltaExtractor[T ComparableResult] func(base, target T) (deltaLOC, deltaContrib int)
 
 // compareResults is a generic function that compares two sets of results
-func compareResults[T ComparableResult](baseResults, targetResults []T, limit int, extractDeltas DeltaExtractor[T]) schema.ComparisonResult {
+func compareResults[T ComparableResult](baseResults, targetResults []T, limit int, mode string, extractDeltas DeltaExtractor[T]) schema.ComparisonResult {
 	baseMap := make(map[string]T, len(baseResults))
 	targetMap := make(map[string]T, len(targetResults))
 	allPaths := make(map[string]struct{})
@@ -116,6 +116,7 @@ func compareResults[T ComparableResult](baseResults, targetResults []T, limit in
 				Status:       status,
 				BeforeOwners: beforeOwners,
 				AfterOwners:  afterOwners,
+				Mode:         mode,
 			}
 
 			// Add file-specific deltas if applicable
@@ -190,8 +191,8 @@ func sortComparisonResults(results []schema.ComparisonDetails) {
 
 // compareFileResults matches metrics from the base run against the comparison run
 // and computes the difference (delta) for key metrics like Score.
-func compareFileResults(baseResults, targetResults []schema.FileResult, limit int) schema.ComparisonResult {
-	return compareResults(baseResults, targetResults, limit, func(base, target schema.FileResult) (int, int) {
+func compareFileResults(baseResults, targetResults []schema.FileResult, limit int, mode string) schema.ComparisonResult {
+	return compareResults(baseResults, targetResults, limit, mode, func(base, target schema.FileResult) (int, int) {
 		deltaLOC := target.LinesOfCode - base.LinesOfCode
 		deltaContrib := target.UniqueContributors - base.UniqueContributors
 		return deltaLOC, deltaContrib
@@ -200,6 +201,6 @@ func compareFileResults(baseResults, targetResults []schema.FileResult, limit in
 
 // compareFolderMetrics matches metrics from the base run against the target run
 // and computes the difference (delta) for the Score metric.
-func compareFolderMetrics(baseResults, targetResults []schema.FolderResult, limit int) schema.ComparisonResult {
-	return compareResults(baseResults, targetResults, limit, nil) // Folders don't have LOC/contrib deltas
+func compareFolderMetrics(baseResults, targetResults []schema.FolderResult, limit int, mode string) schema.ComparisonResult {
+	return compareResults(baseResults, targetResults, limit, mode, nil) // Folders don't have LOC/contrib deltas
 }

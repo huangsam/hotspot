@@ -21,7 +21,7 @@ func writeJSONResultsForFolders(w io.Writer, results []schema.FolderResult) erro
 }
 
 // writeCSVResultsForFolders writes the schema.FolderResults data to a CSV writer.
-func writeCSVResultsForFolders(w *csv.Writer, results []schema.FolderResult, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
+func writeCSVResultsForFolders(w *csv.Writer, results []schema.FolderResult, fmtFloat func(float64) string, intFmt string) error {
 	// 1. Write Header Row
 	header := []string{
 		"rank",
@@ -49,7 +49,7 @@ func writeCSVResultsForFolders(w *csv.Writer, results []schema.FolderResult, cfg
 			fmt.Sprintf(intFmt, r.Churn),    // Total Churn
 			fmt.Sprintf(intFmt, r.TotalLOC), // Total LOC
 			strings.Join(r.Owners, ", "),    // Owners
-			cfg.Mode,                        // Mode
+			r.Mode,                          // Mode
 		}
 		if err := w.Write(row); err != nil {
 			return err

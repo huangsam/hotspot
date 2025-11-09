@@ -20,6 +20,7 @@ type FileResult struct {
 	Score              float64            `json:"score"`               // Computed importance score (0-100)
 	Breakdown          map[string]float64 `json:"breakdown"`           // Normalized contribution of each metric for debugging/tuning
 	Owners             []string           `json:"owners"`              // Top 2 owners by commit count
+	Mode               string             `json:"mode"`                // Scoring mode used (hot, risk, complexity, stale)
 }
 
 // GetPath returns the file path.
@@ -57,6 +58,7 @@ type FolderResult struct {
 
 	TotalLOC         int     `json:"total_loc"`          // Sum of LOC of all contained files (used for weighted average)
 	WeightedScoreSum float64 `json:"weighted_score_sum"` // Sum of (FileScore * FileLOC)
+	Mode             string  `json:"mode"`               // Scoring mode used (hot, risk, complexity, stale)
 }
 
 // GetPath returns the folder path.
@@ -95,6 +97,7 @@ type ComparisonDetails struct {
 	Status       string   `json:"status"`        // Intrinsic status of the file as of now
 	BeforeOwners []string `json:"before_owners"` // Owners from the base analysis
 	AfterOwners  []string `json:"after_owners"`  // Owners from the target analysis
+	Mode         string   `json:"mode"`          // Scoring mode used (hot, risk, complexity, stale)
 
 	*FileComparison   `json:"file_compare,omitempty"`
 	*FolderComparison `json:"folder_compare,omitempty"`
@@ -158,6 +161,7 @@ type TimeseriesPoint struct {
 	Score  float64  `json:"score"`
 	Path   string   `json:"path"`
 	Owners []string `json:"owners"` // Top owners for this time period
+	Mode   string   `json:"mode"`   // Scoring mode used (hot, risk, complexity, stale)
 }
 
 // TimeseriesResult holds the timeseries data points.

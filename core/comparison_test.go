@@ -20,6 +20,7 @@ func TestCompareFileResults_StatusClassification(t *testing.T) {
 			Churn:              15,
 			LinesOfCode:        100,
 			UniqueContributors: 2,
+			Mode:               "hot",
 		},
 		{
 			Path:               "only_in_base.go",
@@ -28,29 +29,32 @@ func TestCompareFileResults_StatusClassification(t *testing.T) {
 			Churn:              8,
 			LinesOfCode:        50,
 			UniqueContributors: 1,
+			Mode:               "hot",
 		},
 	}
 
 	targetResults := []schema.FileResult{
 		{
 			Path:               "existing_in_both.go",
-			Score:              15.0, // Score increased
-			Commits:            7,    // Commits increased
-			Churn:              20,   // Churn increased
-			LinesOfCode:        120,  // LOC increased
-			UniqueContributors: 3,    // Contributors increased
+			Score:              12.0,
+			Commits:            7,
+			Churn:              20,
+			LinesOfCode:        110,
+			UniqueContributors: 3,
+			Mode:               "hot",
 		},
 		{
 			Path:               "only_in_target.go",
 			Score:              8.0,
-			Commits:            3,
+			Commits:            4,
 			Churn:              12,
 			LinesOfCode:        80,
 			UniqueContributors: 2,
+			Mode:               "hot",
 		},
 	}
 
-	result := compareFileResults(baseResults, targetResults, 10)
+	result := compareFileResults(baseResults, targetResults, 10, "hot")
 
 	// Verify we have results for all expected files
 	assert.Len(t, result.Results, 3)
@@ -65,12 +69,12 @@ func TestCompareFileResults_StatusClassification(t *testing.T) {
 	bothFile := resultMap["existing_in_both.go"]
 	assert.Equal(t, schema.ActiveStatus, bothFile.Status)
 	assert.Equal(t, 10.0, bothFile.BeforeScore)
-	assert.Equal(t, 15.0, bothFile.AfterScore)
-	assert.Equal(t, 5.0, bothFile.Delta)      // 15.0 - 10.0
+	assert.Equal(t, 12.0, bothFile.AfterScore)
+	assert.Equal(t, 2.0, bothFile.Delta)      // 12.0 - 10.0
 	assert.Equal(t, 2, bothFile.DeltaCommits) // 7 - 5
 	assert.Equal(t, 5, bothFile.DeltaChurn)   // 20 - 15
 	assert.NotNil(t, bothFile.FileComparison)
-	assert.Equal(t, 20, bothFile.DeltaLOC)    // 120 - 100
+	assert.Equal(t, 10, bothFile.DeltaLOC)    // 110 - 100
 	assert.Equal(t, 1, bothFile.DeltaContrib) // 3 - 2
 
 	// Test file that only exists in base (should be "inactive")
@@ -97,7 +101,7 @@ func TestCompareFileResults_StatusClassification(t *testing.T) {
 	assert.Equal(t, 1, result.Summary.TotalNewFiles)
 	assert.Equal(t, 1, result.Summary.TotalInactiveFiles)
 	assert.Equal(t, 1, result.Summary.TotalModifiedFiles)
-	assert.Equal(t, 8.0, result.Summary.NetScoreDelta) // 5.0 + (-5.0) + 8.0
+	assert.Equal(t, 5.0, result.Summary.NetScoreDelta) // 2.0 + (-5.0) + 8.0
 	assert.Equal(t, 5, result.Summary.NetChurnDelta)   // 5 + 0 + 0
 }
 
@@ -126,7 +130,7 @@ func TestCompareFileResults_NoSignificantChanges(t *testing.T) {
 		},
 	}
 
-	result := compareFileResults(baseResults, targetResults, 10)
+	result := compareFileResults(baseResults, targetResults, 10, "hot")
 
 	// Should have no results since changes are insignificant
 	assert.Len(t, result.Results, 0)
@@ -206,7 +210,7 @@ func TestCompareFileResults_OwnershipChanges(t *testing.T) {
 		},
 	}
 
-	result := compareFileResults(baseResults, targetResults, 10)
+	result := compareFileResults(baseResults, targetResults, 10, "hot")
 
 	// Should have 3 results with significant score changes
 	assert.Len(t, result.Results, 3)

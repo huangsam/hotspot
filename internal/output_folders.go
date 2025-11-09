@@ -68,7 +68,7 @@ func printCSVResultsForFolders(results []schema.FolderResult, cfg *Config, fmtFl
 	defer func() { _ = file.Close() }()
 
 	w := csv.NewWriter(file)
-	if err := writeCSVResultsForFolders(w, results, cfg, fmtFloat, intFmt); err != nil {
+	if err := writeCSVResultsForFolders(w, results, fmtFloat, intFmt); err != nil {
 		return err
 	}
 	w.Flush()

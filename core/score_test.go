@@ -82,6 +82,7 @@ func TestComputeScoreHotMode(t *testing.T) {
 				AgeDays:            0,
 				Churn:              0,
 				Gini:               0,
+				Mode:               "hot",
 			},
 			// Expected Score: ~0 (Debuffed to 0 by path check)
 			minScore: 0,
@@ -98,6 +99,7 @@ func TestComputeScoreHotMode(t *testing.T) {
 				Churn:              500,       // 500/5000 = 0.1 nChurn
 				Gini:               0.3,
 				LinesOfCode:        100,
+				Mode:               "hot",
 			},
 			// Expected Score (Raw): 0.4*0.2 + 0.4*0.1 + 0.1*0.5 + 0.05*0.5 + 0.05*0.1 = 0.08 + 0.04 + 0.05 + 0.025 + 0.005 = 0.20
 			// Score: 20.0
@@ -115,6 +117,7 @@ func TestComputeScoreHotMode(t *testing.T) {
 				Churn:              2000, // 2000/5000 = 0.4 nChurn
 				Gini:               0.1,
 				LinesOfCode:        20000,
+				Mode:               "hot",
 			},
 			// Expected Score (Raw): 0.4*1.0 + 0.4*0.4 + 0.1*1.0 + 0.05*1.0 + 0.05*1.0 = 0.4 + 0.16 + 0.1 + 0.05 + 0.05 = 0.76
 			// Score: 76.0
@@ -139,6 +142,7 @@ func TestComputeScoreHotMode_EmptyFile(t *testing.T) {
 	metrics := schema.FileResult{
 		Path:      "active.go",
 		SizeBytes: 0,
+		Mode:      "hot",
 	}
 	score := computeScore(&metrics, schema.HotMode, nil)
 	assert.Equal(t, float64(0), score, "Score should be 0.0 for empty file")
@@ -165,6 +169,7 @@ func TestComputeScoreRiskMode(t *testing.T) {
 				Churn:              100, // 100/5000 = 0.02 nChurn
 				Gini:               0.1, // 0.1 nGiniRaw
 				LinesOfCode:        500, // 500/10000 = 0.05 nLOC
+				Mode:               "risk",
 			},
 			// Expected Score (Raw):
 			// 0.30*0.25 + 0.26*0.1 + 0.16*nAge + 0.12*0.04 + 0.06*0.02 + 0.04*0.1 + 0.06*0.05
@@ -185,6 +190,7 @@ func TestComputeScoreRiskMode(t *testing.T) {
 				Churn:              500,  // 0.1 nChurn
 				Gini:               0.8,  // 0.8 nGiniRaw
 				LinesOfCode:        3000, // 0.3 nLOC
+				Mode:               "risk",
 			},
 			// Expected Score (Raw):
 			// 0.30*0.9 + 0.26*0.8 + 0.16*nAge + 0.12*0.2 + 0.06*0.1 + 0.04*0.2 + 0.06*0.3
@@ -205,6 +211,7 @@ func TestComputeScoreRiskMode(t *testing.T) {
 				Churn:              200,
 				Gini:               0.9, // 0.9 nGiniRaw
 				LinesOfCode:        1000,
+				Mode:               "risk",
 			},
 			// Raw Score (similar to high risk, but smaller values): ~0.55
 			// Debuffed Score: 0.55 * 0.75 = ~0.4125
@@ -243,6 +250,7 @@ func TestComputeScoreStaleMode(t *testing.T) {
 				AgeDays:            1500,      // ~0.8 nAge
 				Churn:              10,
 				Gini:               0.9,
+				Mode:               "stale",
 			},
 			// Expected Score (Raw):
 			// 0.35*1.0 + 0.25*0.02 + 0.20*0.8 + 0.15*0.01 + 0.05*0.05
@@ -262,6 +270,7 @@ func TestComputeScoreStaleMode(t *testing.T) {
 				AgeDays:            30,        // Low nAge (~0.3)
 				Churn:              500,
 				Gini:               0.3,
+				Mode:               "stale",
 			},
 			// Expected Score (Raw):
 			// 0.35*0.5 + 0.25*0.1 + 0.20*nAge + 0.15*0.06 + 0.05*0.25
@@ -281,6 +290,7 @@ func TestComputeScoreStaleMode(t *testing.T) {
 				AgeDays:            1000, // ~0.7 nAge
 				Churn:              50,
 				Gini:               0.9,
+				Mode:               "stale",
 			},
 			// Raw Score (similar to high stale): ~0.45
 			// Debuffed Score: 0.45 * 0.50 = ~0.225
@@ -322,6 +332,7 @@ func TestComputeScoreComplexityMode(t *testing.T) {
 				AgeDays:            2000,       // ~0.85 nAge
 				Churn:              7000,       // > max -> 1.0 nChurn
 				Gini:               0.3,
+				Mode:               "complexity",
 			},
 			// Expected Score (Raw):
 			// 0.30*0.85 + 0.30*1.0 + 0.20*1.0 + 0.10*0.4 + 0.05*1.0 + 0.05*0.98
@@ -342,6 +353,7 @@ func TestComputeScoreComplexityMode(t *testing.T) {
 				AgeDays:            50,       // Low nAge (~0.35)
 				Churn:              50,       // 0.01 nChurn
 				Gini:               0.1,
+				Mode:               "complexity",
 			},
 			// Expected Score (Raw):
 			// 0.30*0.35 + 0.30*0.01 + 0.20*0.005 + 0.10*0.02 + 0.05*0.01 + 0.05*0.9
@@ -376,6 +388,7 @@ func TestComputeScoreAllModes(t *testing.T) {
 		Churn:              250,
 		Gini:               0.3,
 		FirstCommit:        time.Now().AddDate(0, 0, -365),
+		Mode:               "hot",
 	}
 
 	for _, mode := range modes {
@@ -429,6 +442,7 @@ func BenchmarkComputeScore(b *testing.B) {
 		AgeDays:            365,
 		Churn:              250,
 		Gini:               0.3,
+		Mode:               "hot",
 	}
 
 	for b.Loop() {
@@ -446,6 +460,7 @@ func TestComputeScoreWithCustomWeights(t *testing.T) {
 		AgeDays:            365,
 		Churn:              250,
 		Gini:               0.3,
+		Mode:               "hot",
 	}
 
 	// Get default score
@@ -485,6 +500,7 @@ func TestComputeScoreCustomWeightsAllModes(t *testing.T) {
 		Churn:              250,
 		Gini:               0.3,
 		LinesOfCode:        500,
+		Mode:               "hot",
 	}
 
 	for _, mode := range modes {
@@ -538,6 +554,7 @@ func TestComputeScoreInvalidCustomWeights(t *testing.T) {
 		AgeDays:            365,
 		Churn:              250,
 		Gini:               0.3,
+		Mode:               "hot",
 	}
 
 	// Test with nil custom weights (should use defaults)
