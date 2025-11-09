@@ -1,5 +1,14 @@
 # 🚀 Changelog
 
+## v1.1.4
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.1.3...v1.1.4)
+
+### Improvements
+
+- **CSV Data Integrity**: Use pipe delimiters for owner names in all CSV outputs to prevent parsing issues
+- **Comparison CSV Enhancement**: Separate before/after owner columns for clearer comparison data
+
 ## v1.1.3
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.1.2...v1.1.3)
