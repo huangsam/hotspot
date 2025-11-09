@@ -140,32 +140,39 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config) error {
 		cfgWindow := cfg.CloneWithTimeWindow(startTime, end)
 
 		var score float64
+		var owners []string
 		if isFolder {
 			output, err := runSingleAnalysisCore(ctx, cfgWindow, client)
 			if err != nil {
 				// If no data in this window, score is 0
 				score = 0
+				owners = []string{} // Empty slice instead of nil
 			} else {
 				folderResults := aggregateAndScoreFolders(cfgWindow, output.FileResults)
 				for _, fr := range folderResults {
 					if fr.Path == normalizedPath {
 						score = fr.Score
+						owners = fr.Owners
 						break
 					}
 				}
+				// If path not found, owners remains empty slice
 			}
 		} else {
 			output, err := runSingleAnalysisCore(ctx, cfgWindow, client)
 			if err != nil {
 				// If no data in this window, score is 0
 				score = 0
+				owners = []string{} // Empty slice instead of nil
 			} else {
 				for _, fr := range output.FileResults {
 					if fr.Path == normalizedPath {
 						score = fr.Score
+						owners = fr.Owners
 						break
 					}
 				}
+				// If path not found, owners remains empty slice
 			}
 		}
 
@@ -183,8 +190,8 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config) error {
 		timeseriesPoints = append(timeseriesPoints, schema.TimeseriesPoint{
 			Period: period,
 			Score:  score,
-			Mode:   cfg.Mode,
 			Path:   normalizedPath,
+			Owners: owners,
 		})
 	}
 

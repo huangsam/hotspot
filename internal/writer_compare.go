@@ -28,15 +28,10 @@ func writeCSVResultsForComparison(w *csv.Writer, comparisonResult schema.Compari
 		"base_score",
 		"comp_score",
 		"delta_score",
-	}
-	if cfg.Detail {
-		header = append(header,
-			"delta_commits",
-			"delta_churn",
-		)
-	}
-	if cfg.Owner {
-		header = append(header, "ownership_diff")
+		"delta_commits",
+		"delta_churn",
+		"ownership_diff",
+		"mode",
 	}
 	if err := w.Write(header); err != nil {
 		return err
@@ -45,20 +40,15 @@ func writeCSVResultsForComparison(w *csv.Writer, comparisonResult schema.Compari
 	// 2. Write Data Rows
 	for i, r := range comparisonResult.Results {
 		row := []string{
-			strconv.Itoa(i + 1), // Rank
-			r.Path,              // Path
-			fmtFloat(r.BeforeScore),
-			fmtFloat(r.AfterScore),
-			fmtFloat(r.Delta), // Delta Score (Comp - Base)
-		}
-		if cfg.Detail {
-			row = append(row,
-				fmt.Sprintf(intFmt, r.DeltaCommits),
-				fmt.Sprintf(intFmt, r.DeltaChurn),
-			)
-		}
-		if cfg.Owner {
-			row = append(row, formatOwnershipDiff(r))
+			strconv.Itoa(i + 1),                 // Rank
+			r.Path,                              // Path
+			fmtFloat(r.BeforeScore),             // Base Score
+			fmtFloat(r.AfterScore),              // Comp Score
+			fmtFloat(r.Delta),                   // Delta Score (Comp - Base)
+			fmt.Sprintf(intFmt, r.DeltaCommits), // Delta Commits
+			fmt.Sprintf(intFmt, r.DeltaChurn),   // Delta Churn
+			formatOwnershipDiff(r),              // Ownership Diff
+			cfg.Mode,                            // Mode
 		}
 		if err := w.Write(row); err != nil {
 			return err

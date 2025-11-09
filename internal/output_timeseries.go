@@ -83,7 +83,7 @@ func printTimeseriesTable(result schema.TimeseriesResult, cfg *Config, fmtFloat 
 	table := tablewriter.NewWriter(os.Stdout)
 
 	// --- 1. Define Headers ---
-	headers := []string{"Path", "Period", "Score", "Mode"}
+	headers := []string{"Path", "Period", "Score", "Mode", "Owners"}
 	table.Header(headers)
 
 	// 2. Configure Alignment
@@ -94,11 +94,18 @@ func printTimeseriesTable(result schema.TimeseriesResult, cfg *Config, fmtFloat 
 	// --- 3. Prepare Data Rows ---
 	var data [][]string
 	for _, p := range result.Points {
+		ownersStr := ""
+		if len(p.Owners) > 0 {
+			ownersStr = schema.FormatOwners(p.Owners)
+		} else {
+			ownersStr = "No owners"
+		}
 		row := []string{
 			truncatePath(p.Path, maxTablePathWidth),
 			p.Period,
 			fmtFloat(p.Score),
-			p.Mode,
+			cfg.Mode,
+			ownersStr,
 		}
 		data = append(data, row)
 	}

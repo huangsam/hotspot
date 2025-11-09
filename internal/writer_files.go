@@ -26,27 +26,27 @@ func writeCSVResults(w *csv.Writer, files []schema.FileResult, cfg *Config, fmtF
 		"churn",
 		"gini",
 		"first_commit",
-		"mode",
 		"owner",
+		"mode",
 	}
 	if err := w.Write(header); err != nil {
 		return err
 	}
 	for i, f := range files {
 		rec := []string{
-			strconv.Itoa(i + 1),
-			f.Path,
-			fmtFloat(f.Score),
-			getPlainLabel(f.Score),
-			fmt.Sprintf(intFmt, f.UniqueContributors),
-			fmt.Sprintf(intFmt, f.Commits),
-			fmtFloat(float64(f.SizeBytes) / 1024.0),
-			fmt.Sprintf(intFmt, f.AgeDays),
-			fmt.Sprintf(intFmt, f.Churn),
-			fmtFloat(f.Gini),
-			f.FirstCommit.Format(DateTimeFormat),
-			cfg.Mode,
-			strings.Join(f.Owners, ", "),
+			strconv.Itoa(i + 1),    // Rank
+			f.Path,                 // File Path
+			fmtFloat(f.Score),      // Score
+			getPlainLabel(f.Score), // Label
+			fmt.Sprintf(intFmt, f.UniqueContributors), // Contributors
+			fmt.Sprintf(intFmt, f.Commits),            // Commits
+			fmtFloat(float64(f.SizeBytes) / 1024.0),   // Size in KB
+			fmt.Sprintf(intFmt, f.AgeDays),            // Age in Days
+			fmt.Sprintf(intFmt, f.Churn),              // Churn
+			fmtFloat(f.Gini),                          // Gini Coefficient
+			f.FirstCommit.Format(DateTimeFormat),      // First Commit Date
+			strings.Join(f.Owners, ", "),              // Owners
+			cfg.Mode,                                  // Mode
 		}
 		if err := w.Write(rec); err != nil {
 			return err

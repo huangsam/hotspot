@@ -183,6 +183,19 @@ Aggregated metrics for folders, computed as weighted average of contained files.
 
 Time-series data for tracking hotspot scores over time.
 
+**Key Fields**:
+- **Points**: Array of TimeseriesPoint objects containing the time-series data
+
+#### TimeseriesPoint
+
+Time-series data point representing a single measurement in the timeseries analysis.
+
+**Key Fields**:
+- **Period**: Time period label (e.g., "Current (30d)", "30d to 60d Ago")
+- **Score**: Computed hotspot score for this time period
+- **Path**: File or folder path being analyzed
+- **Owners**: Top owners for this time period (may be empty for periods with no activity)
+
 #### AggregateOutput
 
 Raw aggregated data from Git analysis, used as input for file-level analysis.

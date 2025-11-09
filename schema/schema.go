@@ -154,10 +154,10 @@ type CompareAnalysisOutput struct {
 
 // TimeseriesPoint represents a single data point in the timeseries.
 type TimeseriesPoint struct {
-	Period string  `json:"period"`
-	Score  float64 `json:"score"`
-	Mode   string  `json:"mode"`
-	Path   string  `json:"path"`
+	Period string   `json:"period"`
+	Score  float64  `json:"score"`
+	Path   string   `json:"path"`
+	Owners []string `json:"owners"` // Top owners for this time period
 }
 
 // TimeseriesResult holds the timeseries data points.
