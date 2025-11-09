@@ -12,10 +12,9 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// runSingleAnalysisCoreWithHeader performs the common Aggregation, Filtering, and Analysis steps.
-// suppressHeader controls whether the analysis header is printed.
-func runSingleAnalysisCoreWithHeader(ctx context.Context, cfg *internal.Config, client *internal.LocalGitClient, suppressHeader bool) (*schema.SingleAnalysisOutput, error) {
-	if !suppressHeader {
+// runSingleAnalysisCore performs the common Aggregation, Filtering, and Analysis steps.
+func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client *internal.LocalGitClient) (*schema.SingleAnalysisOutput, error) {
+	if !shouldSuppressHeader(ctx) {
 		internal.LogAnalysisHeader(cfg)
 	}
 
@@ -128,7 +127,8 @@ func runFollowPass(ctx context.Context, cfg *internal.Config, client internal.Gi
 			// Note: This modifies the 'ranked' slice concurrently,
 			// but each goroutine writes to a *unique* index (ranked[idx]), which is safe.
 			rankedFile := ranked[idx]
-			rean := analyzeFileCommon(ctx, cfg, client, rankedFile.Path, output, true)
+			followCtx := withUseFollow(ctx, true)
+			rean := analyzeFileCommon(followCtx, cfg, client, rankedFile.Path, output)
 			ranked[idx] = rean
 		})
 	}
@@ -152,8 +152,8 @@ func analyzeRepo(ctx context.Context, cfg *internal.Config, client internal.GitC
 		// Add one to wait group for each worker
 		wg.Go(func() {
 			for f := range fileCh {
-				// Analysis with useFollow=false for initial run
-				result := analyzeFileCommon(ctx, cfg, client, f, output, false)
+				// Analysis with useFollow=false for initial run (default context behavior)
+				result := analyzeFileCommon(ctx, cfg, client, f, output)
 				fileResultCh <- result
 			}
 		})
@@ -182,10 +182,10 @@ func analyzeRepo(ctx context.Context, cfg *internal.Config, client internal.GitC
 // It gathers Git history data (commits, authors, dates), file size, and calculates
 // derived metrics like churn and the Gini coefficient of author contributions.
 // The analysis is constrained by the time range in cfg if specified.
-// If useFollow is true, git --follow is used to track file renames.
-func analyzeFileCommon(ctx context.Context, cfg *internal.Config, client internal.GitClient, path string, output *schema.AggregateOutput, useFollow bool) schema.FileResult {
+// Git follow behavior is controlled by the context.
+func analyzeFileCommon(ctx context.Context, cfg *internal.Config, client internal.GitClient, path string, output *schema.AggregateOutput) schema.FileResult {
 	// 1. Initialize the builder
-	builder := NewFileMetricsBuilder(ctx, cfg, client, path, output, useFollow)
+	builder := NewFileMetricsBuilder(ctx, cfg, client, path, output)
 
 	// 2. Execute the required steps in order (Method Chaining)
 	builder.

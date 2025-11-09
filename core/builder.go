@@ -17,13 +17,12 @@ import (
 
 // FileResultBuilder builds the file metric from Git output.
 type FileResultBuilder struct {
-	cfg       *internal.Config
-	git       internal.GitClient
-	result    *schema.FileResult
-	output    *schema.AggregateOutput
-	path      string
-	useFollow bool
-	ctx       context.Context
+	cfg    *internal.Config
+	git    internal.GitClient
+	result *schema.FileResult
+	output *schema.AggregateOutput
+	path   string
+	ctx    context.Context
 
 	// Internal data collected during the build process
 	contribCount map[string]int
@@ -31,14 +30,13 @@ type FileResultBuilder struct {
 }
 
 // NewFileMetricsBuilder is the starting point for building file metrics.
-func NewFileMetricsBuilder(ctx context.Context, cfg *internal.Config, client internal.GitClient, path string, output *schema.AggregateOutput, useFollow bool) *FileResultBuilder {
+func NewFileMetricsBuilder(ctx context.Context, cfg *internal.Config, client internal.GitClient, path string, output *schema.AggregateOutput) *FileResultBuilder {
 	return &FileResultBuilder{
 		cfg:          cfg,
 		git:          client,
 		result:       &schema.FileResult{Path: path, Mode: cfg.Mode},
 		output:       output,
 		path:         path,
-		useFollow:    useFollow,
 		ctx:          ctx,
 		contribCount: make(map[string]int),
 	}
@@ -47,8 +45,9 @@ func NewFileMetricsBuilder(ctx context.Context, cfg *internal.Config, client int
 // FetchAllGitMetrics populates basic metrics (commits, contributors) and churn from aggregated data or git log if follow is needed.
 func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 	path := b.path
+	useFollow := shouldUseFollow(b.ctx)
 
-	if !b.useFollow {
+	if !useFollow {
 		// Use aggregated data for initial analysis (no follow needed)
 		if commits, ok := b.output.CommitMap[path]; ok {
 			b.totalCommits = commits
@@ -73,7 +72,7 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 			b.path,
 			b.cfg.StartTime,
 			b.cfg.EndTime,
-			b.useFollow,
+			useFollow,
 		)
 		if err == nil {
 			// Parse the output to populate metrics

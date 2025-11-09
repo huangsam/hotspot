@@ -40,7 +40,7 @@ func TestAnalyzeFileCommon(t *testing.T) {
 	}
 
 	// Execute
-	result := analyzeFileCommon(ctx, cfg, mockClient, "main.go", aggOutput, false)
+	result := analyzeFileCommon(ctx, cfg, mockClient, "main.go", aggOutput)
 
 	// Assert
 	assert.Equal(t, "main.go", result.Path)

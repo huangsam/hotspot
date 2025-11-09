@@ -22,7 +22,7 @@ type ExecutorFunc func(ctx context.Context, cfg *internal.Config) error
 func ExecuteHotspotFiles(ctx context.Context, cfg *internal.Config) error {
 	start := time.Now()
 	client := internal.NewLocalGitClient()
-	output, err := runSingleAnalysisCoreWithHeader(ctx, cfg, client, false)
+	output, err := runSingleAnalysisCore(ctx, cfg, client)
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func ExecuteHotspotFiles(ctx context.Context, cfg *internal.Config) error {
 func ExecuteHotspotFolders(ctx context.Context, cfg *internal.Config) error {
 	start := time.Now()
 	client := internal.NewLocalGitClient()
-	output, err := runSingleAnalysisCoreWithHeader(ctx, cfg, client, false)
+	output, err := runSingleAnalysisCore(ctx, cfg, client)
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,8 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config) error {
 		var score float64
 		var owners []string
 		if isFolder {
-			output, err := runSingleAnalysisCoreWithHeader(ctx, cfgWindow, client, true) // suppress individual headers
+			suppressCtx := withSuppressHeader(ctx, true)
+			output, err := runSingleAnalysisCore(suppressCtx, cfgWindow, client) // suppress individual headers
 			if err != nil {
 				// If no data in this window, score is 0
 				score = 0
@@ -170,7 +171,8 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config) error {
 				// If path not found, owners remains empty slice
 			}
 		} else {
-			output, err := runSingleAnalysisCoreWithHeader(ctx, cfgWindow, client, true) // suppress individual headers
+			suppressCtx := withSuppressHeader(ctx, true)
+			output, err := runSingleAnalysisCore(suppressCtx, cfgWindow, client) // suppress individual headers
 			if err != nil {
 				// If no data in this window, score is 0
 				score = 0
