@@ -42,3 +42,5 @@ test-repos/
 /coverage.txt
 /*.csv
 /*.json
+/*.back
+/*.backup
