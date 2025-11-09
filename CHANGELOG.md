@@ -4,14 +4,20 @@
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.1.1...v1.1.2)
 
+### Performance
+
+- **Analysis Optimization**: Remove O(N) git calls during file analysis by using pre-aggregated commit data instead of individual `git log` calls per file, significantly improving performance for large repositories
+
 ### Fixes
 
-- **Age Calculation Bug**: Fix `GetFileFirstCommitTime` to correctly identify the oldest commit for age calculations by replacing the broken `git log --reverse -n 1` approach with proper timestamp parsing
+- **Age Calculation**: Fix age verification tests by using relative time windows from aggregated data instead of broken individual git queries
+- **Test Consolidation**: Remove duplicate `parseHotspotOutput` function and unify all integration tests to use single `parseHotspotDetailOutput` function with `HotspotFileDetail` struct
 
 ### Improvements
 
-- **Type Safety Refactoring**: Replace plain strings with custom types (`ScoringMode`, `Status`, `BreakdownKey`, `OutputMode`) throughout the codebase for better compile-time safety and reduced string conversions
-- **Test Coverage**: Add comprehensive unit tests for `GetFileFirstCommitTime` and integration tests for age calculation validation
+- **Integration Test Performance**: Optimize integration tests to build hotspot binary only once instead of 5-6 times, reducing test execution time by 37% (from ~7.4s to ~4.6s)
+- **Code Cleanup**: Remove unused `GetFileFirstCommitTime` method and related dead code
+- **Git Safety**: Add `hotspot-integration-*/` pattern to `.gitignore` to prevent accidental commits of temporary test directories
 
 ## v1.1.1
 
