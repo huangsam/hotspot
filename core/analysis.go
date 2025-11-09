@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -13,9 +12,12 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// runSingleAnalysisCore performs the common Aggregation, Filtering, and Analysis steps.
-func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client *internal.LocalGitClient) (*schema.SingleAnalysisOutput, error) {
-	logAnalysisHeader(cfg)
+// runSingleAnalysisCoreWithHeader performs the common Aggregation, Filtering, and Analysis steps.
+// suppressHeader controls whether the analysis header is printed.
+func runSingleAnalysisCoreWithHeader(ctx context.Context, cfg *internal.Config, client *internal.LocalGitClient, suppressHeader bool) (*schema.SingleAnalysisOutput, error) {
+	if !suppressHeader {
+		internal.LogAnalysisHeader(cfg)
+	}
 
 	// --- 1. Aggregation Phase ---
 	output, err := aggregateActivity(ctx, cfg, client)
@@ -38,8 +40,8 @@ func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client *in
 	}, nil
 }
 
-// runCompareAnalysisCore runs the file analysis for a specific Git reference in compare mode.
-// This extracts the logic repeated between Base and Target in both compare functions.
+// runCompareAnalysisForRef runs the file analysis for a specific Git reference in compare mode.
+// Headers are always suppressed in compare mode.
 func runCompareAnalysisForRef(ctx context.Context, cfg *internal.Config, client *internal.LocalGitClient, ref string) (*schema.CompareAnalysisOutput, error) {
 	// 1. Resolve the time window for the reference
 	baseStartTime, baseEndTime, err := getAnalysisWindowForRef(ctx, client, cfg.RepoPath, ref, cfg.Lookback)
@@ -66,11 +68,8 @@ func runCompareAnalysisForRef(ctx context.Context, cfg *internal.Config, client 
 }
 
 // analyzeAllFilesAtRef performs file analysis for all files that exist at a specific Git reference.
-// This is used for comparison analysis to ensure we analyze all files at each reference point,
-// not just files that had activity in the time window.
+// Headers are always suppressed in compare mode.
 func analyzeAllFilesAtRef(ctx context.Context, cfg *internal.Config, client internal.GitClient, ref string) ([]schema.FileResult, error) {
-	logAnalysisHeader(cfg)
-
 	// --- 1. Get all files at the reference ---
 	files, err := client.ListFilesAtRef(ctx, cfg.RepoPath, ref)
 	if err != nil {
@@ -109,20 +108,6 @@ func analyzeAllFilesAtRef(ctx context.Context, cfg *internal.Config, client inte
 
 	// --- 4. Return Data ---
 	return results, nil
-}
-
-// logAnalysisHeader prints a concise, 2-line header for each analysis phase.
-func logAnalysisHeader(cfg *internal.Config) {
-	repoName := filepath.Base(cfg.RepoPath)
-	if repoName == "" || repoName == "." {
-		repoName = "current"
-	}
-
-	// Line 1: The analysis summary (Repo and Mode)
-	fmt.Printf("🔎 Repo: %s (Mode: %s)\n", repoName, cfg.Mode)
-
-	// Line 2: The actual date range being analyzed
-	fmt.Printf("📅 Range: %s → %s\n", cfg.StartTime.Format(internal.DateTimeFormat), cfg.EndTime.Format(internal.DateTimeFormat))
 }
 
 // runFollowPass re-analyzes the top N ranked files using 'git --follow'
