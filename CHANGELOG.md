@@ -1,5 +1,19 @@
 # 🚀 Changelog
 
+## v1.1.0
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.0.1...v1.1.0)
+
+### Features
+
+- **Ownership Tracking**: Add owner information to comparison and timeseries outputs
+
+### Improvements
+
+- **Schema Consistency**: Add Mode field to all result structs for uniform API
+- **JSON Output Uniformity**: Add rank and label fields to folder JSON output
+- **Code Cleanup**: Remove unused config parameters from writer functions
+
 ## v1.0.1
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.0.0...v1.0.1)
