@@ -1,5 +1,18 @@
 # 🚀 Changelog
 
+## v1.1.2
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.1.1...v1.1.2)
+
+### Fixes
+
+- **Age Calculation Bug**: Fix `GetFileFirstCommitTime` to correctly identify the oldest commit for age calculations by replacing the broken `git log --reverse -n 1` approach with proper timestamp parsing
+
+### Improvements
+
+- **Type Safety Refactoring**: Replace plain strings with custom types (`ScoringMode`, `Status`, `BreakdownKey`, `OutputMode`) throughout the codebase for better compile-time safety and reduced string conversions
+- **Test Coverage**: Add comprehensive unit tests for `GetFileFirstCommitTime` and integration tests for age calculation validation
+
 ## v1.1.1
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.1.0...v1.1.1)
