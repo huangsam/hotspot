@@ -31,7 +31,7 @@ func formatWeights(weights map[string]float64, factorKeys []string) string {
 	for _, key := range factorKeys {
 		if weight, ok := weights[key]; ok && weight > 0 {
 			factorName := strings.ToLower(strings.TrimPrefix(key, "breakdown_"))
-			parts = append(parts, fmt.Sprintf("%.2f×%s", weight, factorName))
+			parts = append(parts, fmt.Sprintf("%.2f*%s", weight, factorName))
 		}
 	}
 	return strings.Join(parts, " + ")
