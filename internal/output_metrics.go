@@ -98,13 +98,6 @@ func PrintMetricsDefinitions(activeWeights map[string]map[string]float64) error 
 	fmt.Println("🔗 Special Relationship")
 	fmt.Println("RISK Score = HOT Score / Ownership Diversity Factor")
 	fmt.Println("(Factor ↓ when few contributors → RISK Score ↑)")
-	fmt.Println()
-	fmt.Println("⚙️  Configuration")
-	fmt.Println("Custom weights in .hotspot.yaml:")
-	fmt.Println("  weights:")
-	fmt.Println("    hot: {commits: 0.40, churn: 0.40, contrib: 0.05, age: 0.10, size: 0.05}")
-	fmt.Println("    risk: {inv_contrib: 0.30, gini: 0.26, age: 0.16, churn: 0.06, commits: 0.04, loc: 0.06, size: 0.12}")
-	fmt.Println("    # ... etc for complexity & stale")
 
 	return nil
 }
