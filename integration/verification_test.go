@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,13 +37,8 @@ func buildHotspot(t *testing.T, dir string) string {
 	return absPath
 }
 
-// HotspotFile represents a file entry in hotspot JSON output
-type HotspotFile struct {
-	Path    string `json:"path"`
-	Commits int    `json:"commits"`
-}
-
 // HotspotFileDetail represents a file entry with detailed metadata from hotspot JSON output
+// Also works for basic output (extra fields are ignored during unmarshaling)
 type HotspotFileDetail struct {
 	Path               string  `json:"path"`
 	Score              float64 `json:"score"`
@@ -77,7 +73,11 @@ func TestHotspotFilesVerification(t *testing.T) {
 	require.NoError(t, err)
 
 	// Parse output to extract file -> commits map
-	fileCommits := parseHotspotOutput(stdout.String())
+	fileDetails := parseHotspotDetailOutput(stdout.String())
+	fileCommits := make(map[string]int)
+	for _, detail := range fileDetails {
+		fileCommits[detail.Path] = detail.Commits
+	}
 
 	// For each file, verify against git log --oneline -- <file>
 	for file, hotspotCommits := range fileCommits {
@@ -101,7 +101,8 @@ func TestHotspotFilesVerification(t *testing.T) {
 	}
 }
 
-// TestHotspotFilesAgeVerification runs hotspot files --detail and verifies age calculations against git log
+// TestHotspotFilesAgeVerification runs hotspot files --detail with explicit time filters
+// and verifies age calculations against the first commit within that time range
 func TestHotspotFilesAgeVerification(t *testing.T) {
 	// Skip if not in a git repo
 	if _, err := exec.LookPath("git"); err != nil {
@@ -116,8 +117,12 @@ func TestHotspotFilesAgeVerification(t *testing.T) {
 	// Build hotspot binary
 	hotspotPath := buildHotspot(t, repoDir)
 
-	// Run hotspot files --output json --detail
-	cmd := exec.Command(hotspotPath, "files", "--output", "json", "--detail")
+	// Use a fixed time range for consistent testing (last 365 days)
+	startTime := time.Now().AddDate(0, 0, -365).Format(internal.DateTimeFormat)
+	endTime := time.Now().Format(internal.DateTimeFormat)
+
+	// Run hotspot files --output json --detail --start <start> --end <end>
+	cmd := exec.Command(hotspotPath, "files", "--output", "json", "--detail", "--start", startTime, "--end", endTime)
 	cmd.Dir = repoDir
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
@@ -127,40 +132,41 @@ func TestHotspotFilesAgeVerification(t *testing.T) {
 	// Parse output to extract file details
 	fileDetails := parseHotspotDetailOutput(stdout.String())
 
-	// For each file, verify age calculation against git log
+	// For each file, verify age calculation against the first commit within the time range
 	for file, details := range fileDetails {
 		t.Run(file, func(t *testing.T) {
-			// Get the first commit timestamp for this file
-			gitCmd := exec.Command("git", "log", "--pretty=format:%ct", "--follow", "--", file)
+			// Get the first commit timestamp for this file within the same time range as hotspot
+			gitCmd := exec.Command("git", "log", "--pretty=format:%ct", "--since", startTime, "--until", endTime, "--", file)
 			gitCmd.Dir = repoDir
 			gitOutput, err := gitCmd.Output()
 			if err != nil {
-				// File might not exist or have commits, skip
+				// File might not exist or have commits in range, skip
 				t.Skipf("git log failed for %s: %v", file, err)
 			}
 
 			lines := strings.Split(strings.TrimSpace(string(gitOutput)), "\n")
 			if len(lines) == 0 || (len(lines) == 1 && lines[0] == "") {
-				t.Skipf("no commits found for %s", file)
+				t.Skipf("no commits found for %s in time range", file)
 			}
 
-			// Parse the oldest commit timestamp (last line)
-			oldestTimestampStr := strings.TrimSpace(lines[len(lines)-1])
-			oldestTimestamp, err := strconv.ParseInt(oldestTimestampStr, 10, 64)
+			// Parse the first commit timestamp (oldest in the range due to reverse chronological order)
+			firstCommitTimestampStr := strings.TrimSpace(lines[len(lines)-1]) // Last line is oldest
+			firstCommitTimestamp, err := strconv.ParseInt(firstCommitTimestampStr, 10, 64)
 			require.NoError(t, err, "failed to parse git timestamp")
 
-			oldestCommitTime := time.Unix(oldestTimestamp, 0)
-			expectedAgeDays := int(time.Since(oldestCommitTime).Hours() / 24)
+			firstCommitTime := time.Unix(firstCommitTimestamp, 0)
+			expectedAgeDays := int(time.Since(firstCommitTime).Hours() / 24)
 
-			// Allow for small differences due to timing (test execution time)
-			ageDiff := abs(details.AgeDays - expectedAgeDays)
-			assert.LessOrEqual(t, ageDiff, 1, "age calculation should be within 1 day of expected for %s (got %d, expected %d)",
+			// Age should match exactly since we're using the same time range
+			assert.Equal(t, expectedAgeDays, details.AgeDays,
+				"age calculation should match first commit in analysis window for %s (got %d, expected %d)",
 				file, details.AgeDays, expectedAgeDays)
 		})
 	}
 }
 
-// parseHotspotDetailOutput extracts file details from hotspot JSON output with --detail
+// parseHotspotDetailOutput extracts file details from hotspot JSON output
+// Works with both basic and detailed output formats
 func parseHotspotDetailOutput(output string) map[string]HotspotFileDetail {
 	var files []HotspotFileDetail
 	lines := strings.Split(output, "\n")
@@ -179,35 +185,6 @@ func parseHotspotDetailOutput(output string) map[string]HotspotFileDetail {
 	}
 
 	return fileDetails
-}
-
-// abs returns the absolute value of an integer
-func abs(x int) int {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
-// parseHotspotOutput extracts file paths and commit counts from hotspot JSON output
-func parseHotspotOutput(output string) map[string]int {
-	var files []HotspotFile
-	lines := strings.Split(output, "\n")
-	for i, line := range lines {
-		if strings.TrimSpace(line) == "[" { // Start of JSON array
-			jsonPart := strings.Join(lines[i:], "\n")
-			if json.Unmarshal([]byte(jsonPart), &files) == nil {
-				break
-			}
-		}
-	}
-
-	fileCommits := make(map[string]int)
-	for _, file := range files {
-		fileCommits[file.Path] = file.Commits
-	}
-
-	return fileCommits
 }
 
 // TestExternalRepoVerification clones multiple small public repos and runs verification
@@ -258,7 +235,11 @@ func verifyRepo(t *testing.T, repoDir, hotspotPath string) {
 	require.NoError(t, err)
 
 	// Parse output
-	fileCommits := parseHotspotOutput(stdout.String())
+	fileDetails := parseHotspotDetailOutput(stdout.String())
+	fileCommits := make(map[string]int)
+	for _, detail := range fileDetails {
+		fileCommits[detail.Path] = detail.Commits
+	}
 
 	// Verify each file
 	for file, hotspotCommits := range fileCommits {
@@ -402,36 +383,6 @@ func extractJSONFromOutput(output string) string {
 	return output // Fallback to original output
 }
 
-// FuzzParseHotspotOutput fuzzes the parseHotspotOutput function with random JSON inputs.
-func FuzzParseHotspotOutput(f *testing.F) {
-	seeds := []string{
-		`[{"path": "main.go", "commits": 10}]`,
-		`[]`,
-		`[{"path": "", "commits": 0}]`,
-		`invalid json`,
-	}
-	for _, seed := range seeds {
-		f.Add(seed)
-	}
-
-	f.Fuzz(func(t *testing.T, output string) {
-		// Add timeout to prevent hanging on pathological JSON inputs
-		done := make(chan bool, 1)
-		go func() {
-			_ = parseHotspotOutput(output)
-			done <- true
-		}()
-
-		select {
-		case <-done:
-			// Function completed normally
-		case <-time.After(100 * time.Millisecond):
-			// Function took too long, likely pathological input
-			t.Skip("parseHotspotOutput took too long, likely pathological input")
-		}
-	})
-}
-
 // TestCustomWeightsIntegration tests the full CLI with custom weights configuration
 func TestCustomWeightsIntegration(t *testing.T) {
 	// Skip if not in a git repo
@@ -473,7 +424,7 @@ weights:
 	require.NoError(t, err)
 
 	// Parse output
-	var files []HotspotFile
+	var files []HotspotFileDetail
 	jsonPart := extractJSONFromOutput(stdout.String())
 	err = json.Unmarshal([]byte(jsonPart), &files)
 	require.NoError(t, err)
@@ -505,7 +456,7 @@ weights:
 	require.NoError(t, err)
 
 	// Parse second output
-	var files2 []HotspotFile
+	var files2 []HotspotFileDetail
 	jsonPart2 := extractJSONFromOutput(stdout2.String())
 	err = json.Unmarshal([]byte(jsonPart2), &files2)
 	require.NoError(t, err)

@@ -16,8 +16,7 @@ func TestAnalyzeFileCommon(t *testing.T) {
 	// Create mock client
 	mockClient := &internal.MockGitClient{}
 
-	// Setup expectations for file analysis
-	mockClient.On("GetFileFirstCommitTime", ctx, "/test/repo", "main.go", true).Return(time.Date(2023, 1, 15, 10, 30, 0, 0, time.UTC), nil)
+	// No git calls needed - all data comes from aggregation phase
 
 	// Create config
 	cfg := &internal.Config{
@@ -50,8 +49,6 @@ func TestAnalyzeFileCommon(t *testing.T) {
 	assert.True(t, result.Score >= 0 && result.Score <= 100)
 	// Note: Breakdown will be empty because SizeBytes is 0 (file doesn't exist in test)
 	// assert.NotEmpty(t, result.Breakdown)
-
-	mockClient.AssertExpectations(t)
 }
 
 func TestAnalyzeRepo(t *testing.T) {
@@ -60,10 +57,7 @@ func TestAnalyzeRepo(t *testing.T) {
 	// Create mock client
 	mockClient := &internal.MockGitClient{}
 
-	// Setup expectations for file analysis
-	mockClient.On("GetFileFirstCommitTime", ctx, "/test/repo", "main.go", true).Return(time.Date(2023, 1, 15, 10, 30, 0, 0, time.UTC), nil)
-
-	mockClient.On("GetFileFirstCommitTime", ctx, "/test/repo", "core/agg.go", true).Return(time.Date(2023, 1, 15, 10, 30, 0, 0, time.UTC), nil)
+	// No git calls needed - all data comes from aggregation phase
 
 	// Create config
 	cfg := &internal.Config{
@@ -116,6 +110,4 @@ func TestAnalyzeRepo(t *testing.T) {
 		// Note: Breakdown will be empty because SizeBytes is 0 (files don't exist in test)
 		// assert.NotEmpty(t, result.Breakdown)
 	}
-
-	mockClient.AssertExpectations(t)
 }

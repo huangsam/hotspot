@@ -71,36 +71,6 @@ func (c *LocalGitClient) GetCommitTime(ctx context.Context, repoPath string, ref
 	return time.Unix(timestamp, 0), nil
 }
 
-// GetFileFirstCommitTime implements the GitClient interface.
-func (c *LocalGitClient) GetFileFirstCommitTime(ctx context.Context, repoPath string, path string, follow bool) (time.Time, error) {
-	args := []string{
-		"log",
-		"--pretty=format:%ct",
-	}
-	if follow {
-		args = append(args, "--follow")
-	}
-	args = append(args, "--", path)
-	out, err := c.Run(ctx, repoPath, args...)
-	if err != nil {
-		return time.Time{}, err
-	}
-	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
-	if len(lines) == 0 || (len(lines) == 1 && lines[0] == "") {
-		return time.Time{}, fmt.Errorf("no commits found for file '%s'", path)
-	}
-	// The last line contains the timestamp of the oldest commit
-	timestampStr := strings.TrimSpace(lines[len(lines)-1])
-	if timestampStr == "" {
-		return time.Time{}, fmt.Errorf("no timestamp found for file '%s'", path)
-	}
-	timestamp, err := strconv.ParseInt(timestampStr, 10, 64)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("failed to parse commit time '%s': %w", timestampStr, err)
-	}
-	return time.Unix(timestamp, 0), nil
-}
-
 // GetFileActivityLog implements the GitClient interface.
 func (c *LocalGitClient) GetFileActivityLog(ctx context.Context, repoPath string, path string, startTime, endTime time.Time, follow bool) ([]byte, error) {
 	args := []string{

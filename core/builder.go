@@ -116,11 +116,12 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 		}
 	}
 
-	// Always get the absolute first commit date for accurate age calculation
-	absFirst, absErr := b.git.GetFileFirstCommitTime(b.ctx, b.cfg.RepoPath, b.path, true)
-	if absErr == nil {
-		b.result.FirstCommit = absFirst
-	}
+	// First commit time is already collected during aggregation phase
+	// No additional git calls needed! The reason is that finding the true
+	// age of the file is very inefficient since we would need to run a git
+	// command for each file with --follow which is very slow for large repos.
+	// This means that the true age is not fully accurate but it's acceptable
+	// for most use cases.
 
 	return b
 }

@@ -40,13 +40,6 @@ func (m *MockGitClient) GetCommitTime(ctx context.Context, repoPath string, ref 
 	return t, ret.Error(1)
 }
 
-// GetFileFirstCommitTime implements the GitClient interface.
-func (m *MockGitClient) GetFileFirstCommitTime(ctx context.Context, repoPath string, path string, follow bool) (time.Time, error) {
-	ret := m.Called(ctx, repoPath, path, follow)
-	t, _ := ret.Get(0).(time.Time)
-	return t, ret.Error(1)
-}
-
 // GetFileActivityLog implements the GitClient interface.
 func (m *MockGitClient) GetFileActivityLog(ctx context.Context, repoPath string, path string, startTime, endTime time.Time, follow bool) ([]byte, error) {
 	ret := m.Called(ctx, repoPath, path, startTime, endTime, follow)
