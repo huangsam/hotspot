@@ -98,9 +98,9 @@ func TestFilesVerification(t *testing.T) {
 	startTime := time.Now().AddDate(0, 0, -365).Format(internal.DateTimeFormat)
 	endTime := time.Now().Format(internal.DateTimeFormat)
 
-	// Run hotspot files --output json --detail --start <start> --end <end>
-	// This gives us both commit counts and age data within the time range
-	cmd := exec.Command(hotspotPath, "files", "--output", "json", "--detail", "--start", startTime, "--end", endTime)
+	// Run hotspot files --output json --detail --start <start> --end <end> --limit 1000
+	// Use a high limit to get all files, not just the top ranked ones
+	cmd := exec.Command(hotspotPath, "files", "--output", "json", "--detail", "--start", startTime, "--end", endTime, "--limit", "1000")
 	cmd.Dir = repoDir
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
@@ -177,6 +177,27 @@ func parseHotspotDetailOutput(output string) map[string]schema.FileResult {
 	}
 
 	return fileDetails
+}
+
+// parseHotspotFolderOutput extracts folder details from hotspot JSON output
+func parseHotspotFolderOutput(output string) map[string]schema.FolderResult {
+	var folders []schema.FolderResult
+	lines := strings.Split(output, "\n")
+	for i, line := range lines {
+		if strings.TrimSpace(line) == "[" { // Start of JSON array
+			jsonPart := strings.Join(lines[i:], "\n")
+			if json.Unmarshal([]byte(jsonPart), &folders) == nil {
+				break
+			}
+		}
+	}
+
+	folderDetails := make(map[string]schema.FolderResult)
+	for _, folder := range folders {
+		folderDetails[folder.Path] = folder
+	}
+
+	return folderDetails
 }
 
 // TestExternalRepoVerification clones multiple small public repos and runs verification
@@ -527,4 +548,47 @@ weights:
 		err = cmd.Run()
 		assert.Error(t, err, "Should fail with invalid weights that don't sum to 1.0")
 	})
+}
+
+// TestFoldersVerification runs hotspot folders with time filters and verifies folder aggregation
+func TestFoldersVerification(t *testing.T) {
+	// Skip if not in a git repo
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not available")
+	}
+
+	// Get current repo path
+	repoPath, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	require.NoError(t, err)
+	repoDir := strings.TrimSpace(string(repoPath))
+
+	// Get hotspot binary (built once and shared)
+	hotspotPath := getHotspotBinary()
+
+	// Use a fixed time range for consistent testing (last 365 days)
+	startTime := time.Now().AddDate(0, 0, -365).Format(internal.DateTimeFormat)
+	endTime := time.Now().Format(internal.DateTimeFormat)
+
+	// Run hotspot folders --output json --detail --start <start> --end <end> --limit 1000
+	cmd := exec.Command(hotspotPath, "folders", "--output", "json", "--detail", "--start", startTime, "--end", endTime, "--limit", "1000")
+	cmd.Dir = repoDir
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+	err = cmd.Run()
+	require.NoError(t, err)
+
+	// Parse output to extract folder details
+	folderDetails := parseHotspotFolderOutput(stdout.String())
+
+	// Verify folder aggregation for each folder
+	for folderPath, folder := range folderDetails {
+		t.Run(folderPath, func(t *testing.T) {
+			// Verify that folder has reasonable values and structure
+			assert.Greater(t, folder.Commits, 0, "folder should have commits")
+			assert.Greater(t, folder.Churn, 0, "folder should have churn")
+			assert.GreaterOrEqual(t, folder.Score, 0.0, "folder should have non-negative score")
+			assert.NotEmpty(t, folder.Path, "folder should have a path")
+			assert.Contains(t, []string{"hot", "risk", "complexity", "stale"}, string(folder.Mode), "folder should have valid mode")
+		})
+	}
 }
