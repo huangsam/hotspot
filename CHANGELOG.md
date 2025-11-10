@@ -1,5 +1,18 @@
 # 🚀 Changelog
 
+## v1.2.0
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.1.5...v1.2.0)
+
+### Features
+
+- **Metrics Output Formats**: Add CSV and JSON output support to `metrics` command for programmatic access
+
+### Development
+
+- **Integration Tests**: Add integration tests for folders and compare commands
+- **Test Performance**: Optimize integration test performance
+
 ## v1.1.5
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.1.4...v1.1.5)
@@ -79,8 +92,8 @@
 
 ### Fixes
 
-- Add .back and .backup to gitignore
-- Use * for multiply sign in output
+- **Gitignore**: Add .back and .backup to gitignore
+- **Output**: Use * for multiply sign in output
 
 ## v1.0.0
 
@@ -96,16 +109,16 @@
 
 ### Improvements
 
-- Enable live reporting of score weights
-- Shorten metrics command output
-- Add references to weights in documentation
-- Update README with comprehensive examples and performance data
+- **Score Reporting**: Enable live reporting of score weights
+- **Command Output**: Shorten metrics command output
+- **Documentation**: Add references to weights in documentation
+- **README**: Update README with comprehensive examples and performance data
 
 ### Fixes
 
-- Fix custom weight config logic
-- Fix lint issues with integration tests
-- Add tests for custom weight functionality
+- **Weight Config**: Fix custom weight config logic
+- **Lint Issues**: Fix lint issues with integration tests
+- **Tests**: Add tests for custom weight functionality
 
 ## v0.9.1
 
@@ -113,9 +126,9 @@
 
 ### Improvements
 
-- Refactor core aggregate analysis flow
-- Organize features into overarching section
-- Make small tweaks to README examples
+- **Analysis Flow**: Refactor core aggregate analysis flow
+- **Features**: Organize features into overarching section
+- **README**: Make small tweaks to README examples
 
 ## v0.9.0
 
@@ -123,18 +136,18 @@
 
 ### Improvements
 
-- Shorten the config file section
-- Update scoring section in README
-- Add timeseries section to README
-- Consolidate gitignore sections
+- **Config File**: Shorten the config file section
+- **README**: Update scoring section in README
+- **Documentation**: Add timeseries section to README
+- **Gitignore**: Consolidate gitignore sections
 
 ### Development
 
-- Apply lint and format to integration tests
-- Update Go dependencies
-- Remove fuzz testdata
-- Add tests for core aggregation and analysis
-- Add AGENTS.md for improved documentation
+- **Integration Tests**: Apply lint and format to integration tests
+- **Dependencies**: Update Go dependencies
+- **Test Data**: Remove fuzz testdata
+- **Core Tests**: Add tests for core aggregation and analysis
+- **Documentation**: Add AGENTS.md for improved documentation
 
 ## v0.8.0
 
@@ -142,13 +155,13 @@
 
 ### Features
 
-- Add timeseries subcommand for single path analysis
-- Add integration test for timeseries subcommand
+- **Timeseries**: Add timeseries subcommand for single path analysis
+- **Integration Tests**: Add integration test for timeseries subcommand
 
 ### Improvements
 
-- Rename comparison structs to match conventions
-- Modernize syntax in integration tests
+- **Structs**: Rename comparison structs to match conventions
+- **Syntax**: Modernize syntax in integration tests
 
 ## v0.7.2
 
@@ -156,12 +169,12 @@
 
 ### Features
 
-- Add profiling capability to runtime
+- **Profiling**: Add profiling capability to runtime
 
 ### Development
 
-- Add fuzz tests to codebase
-- Enhance integration test setup and teardown
+- **Fuzz Tests**: Add fuzz tests to codebase
+- **Test Setup**: Enhance integration test setup and teardown
 
 ## v0.7.1
 
@@ -169,11 +182,11 @@
 
 ### Features
 
-- Show multiple owners for each file
+- **Multiple Owners**: Show multiple owners for each file
 
 ### Improvements
 
-- Add diagnostics info for table view
+- **Diagnostics**: Add diagnostics info for table view
 
 ## v0.7.0
 
@@ -181,16 +194,16 @@
 
 ### Improvements
 
-- Update ranking image with new UX
-- Add suite of repos for testing
-- Adjust integration tests to use JSON output
-- Add preliminary forms of integration tests
+- **UX**: Update ranking image with new UX
+- **Testing**: Add suite of repos for testing
+- **Integration Tests**: Adjust integration tests to use JSON output
+- **Test Forms**: Add preliminary forms of integration tests
 
 ### Fixes
 
-- Fix edge cases in commit detection
-- Fix Git age calculations
-- Fix help text inconsistency
+- **Commit Detection**: Fix edge cases in commit detection
+- **Age Calculations**: Fix Git age calculations
+- **Help Text**: Fix help text inconsistency
 
 ## v0.6.5
 
@@ -198,11 +211,11 @@
 
 ### Improvements
 
-- Enhance compare command validation
-- Split Git logic into multiple modules
-- Funnel all errors into single module
-- Enhance readability of help text
-- Refine error-based messages across app
+- **Validation**: Enhance compare command validation
+- **Git Logic**: Split Git logic into multiple modules
+- **Error Handling**: Funnel all errors into single module
+- **Help Text**: Enhance readability of help text
+- **Messages**: Refine error-based messages across app
 
 ## v0.6.4
 
@@ -210,12 +223,12 @@
 
 ### Improvements
 
-- Apply formatting to performance table
-- Revise use case sections in README
-- Update ranking image for better UX
-- Add dots to more comments
-- Refactor all flag logic for readability
-- Consolidate global flags for readability
+- **Performance Table**: Apply formatting to performance table
+- **README**: Revise use case sections in README
+- **UX**: Update ranking image for better UX
+- **Comments**: Add dots to more comments
+- **Flag Logic**: Refactor all flag logic for readability
+- **Global Flags**: Consolidate global flags for readability
 
 ## v0.6.3
 
@@ -223,15 +236,15 @@
 
 ### Development
 
-- Add command for lefthook pre-commit
-- Refine pre-commit setup
-- Rename pre-commit command
+- **Pre-commit**: Add command for lefthook pre-commit
+- **Setup**: Refine pre-commit setup
+- **Command**: Rename pre-commit command
 
 ### Improvements
 
-- Add context propagation and tweak folder table
-- Fix sequence ID of comment
-- Shorten analysis header for brevity
+- **Context**: Add context propagation and tweak folder table
+- **Comments**: Fix sequence ID of comment
+- **Headers**: Shorten analysis header for brevity
 
 ## v0.6.2
 
@@ -239,7 +252,7 @@
 
 ### Build
 
-- Add ldflags to build
+- **Build Flags**: Add ldflags to build
 
 ## v0.6.1
 
@@ -247,8 +260,8 @@
 
 ### Improvements
 
-- Update comments of compare subcommands
-- Remove redundant comment in logic
+- **Comments**: Update comments of compare subcommands
+- **Code Cleanup**: Remove redundant comment in logic
 
 ## v0.6.0
 
@@ -256,16 +269,16 @@
 
 ### Improvements
 
-- Remove extraneous comment from main.go
-- Add minimal error handling for Viper issues
-- Add sample configs and reference them in README
-- Add Viper for streamlined customization
+- **Code Cleanup**: Remove extraneous comment from main.go
+- **Error Handling**: Add minimal error handling for Viper issues
+- **Configuration**: Add sample configs and reference them in README
+- **Customization**: Add Viper for streamlined customization
 
 ### Features
 
-- Provide concrete example to compare section
-- Lower-case bus-factor term in README
-- Shorten wording on hot mode in README
+- **Examples**: Provide concrete example to compare section
+- **Terminology**: Lower-case bus-factor term in README
+- **Documentation**: Shorten wording on hot mode in README
 
 ## v0.5.0
 
@@ -273,17 +286,17 @@
 
 ### Development
 
-- Adjust lefthook semantics
-- Use constants for modes
-- Add differentiator clause in README
-- Refine some tables
-- Add coloring to table deltas
+- **Lefthook**: Adjust lefthook semantics
+- **Constants**: Use constants for modes
+- **README**: Add differentiator clause in README
+- **Tables**: Refine some tables
+- **Colors**: Add coloring to table deltas
 
 ### Improvements
 
-- Refactor all Git client touch points
-- Simplify lefthook to one command
-- Add lefthook to project
+- **Git Client**: Refactor all Git client touch points
+- **Lefthook**: Simplify lefthook to one command
+- **Project Setup**: Add lefthook to project
 
 ## v0.4.4
 
@@ -291,11 +304,11 @@
 
 ### Development
 
-- Update Go dependencies
+- **Dependencies**: Update Go dependencies
 
 ### Improvements
 
-- Improve UX of compare table
+- **Compare UX**: Improve UX of compare table
 
 ## v0.4.3
 
@@ -303,7 +316,7 @@
 
 ### Features
 
-- Add file deltas to compare JSON
+- **Compare JSON**: Add file deltas to compare JSON
 
 ## v0.4.2
 
@@ -311,15 +324,15 @@
 
 ### Improvements
 
-- Refine content in risk section
-- Revise example to be more realistic
+- **Risk Section**: Refine content in risk section
+- **Examples**: Revise example to be more realistic
 
 ### Fixes
 
-- Fix implicit rank bug due to refactor
-- Fix compare setup logic
-- Fix edge case with file comparisons
-- Fix hotspot delta section
+- **Rank Bug**: Fix implicit rank bug due to refactor
+- **Compare Logic**: Fix compare setup logic
+- **File Comparisons**: Fix edge case with file comparisons
+- **Delta Section**: Fix hotspot delta section
 
 ## v0.3.0
 
@@ -327,17 +340,17 @@
 
 ### Improvements
 
-- Add qualifier about performance measurements
-- Fix wording for output section
-- Adjust output and make example repeatable
-- Change low color from blue to cyan
-- Consolidate Makefile logic for cleanup
+- **Performance Notes**: Add qualifier about performance measurements
+- **Output Section**: Fix wording for output section
+- **Examples**: Adjust output and make example repeatable
+- **Colors**: Change low color from blue to cyan
+- **Makefile**: Consolidate Makefile logic for cleanup
 
 ### Development
 
-- Tweak from cyan to blue
-- Adjust colors to work for all terminals
-- Ensure Makefile applies fix and format
+- **Colors**: Tweak from cyan to blue
+- **Terminals**: Adjust colors to work for all terminals
+- **Build**: Ensure Makefile applies fix and format
 
 ## v0.2.2
 
@@ -345,16 +358,16 @@
 
 ### Improvements
 
-- Remove bin gitkeep assets
-- Fix linting issues
-- Refactor Makefile for readability
-- Add version command for diagnostics
+- **Assets**: Remove bin gitkeep assets
+- **Linting**: Fix linting issues
+- **Makefile**: Refactor Makefile for readability
+- **Version Command**: Add version command for diagnostics
 
 ### Development
 
-- Verify and fix aggregation for recent assets
-- Replace require with assert usage in test
-- Refactor tests into separate layers
+- **Aggregation**: Verify and fix aggregation for recent assets
+- **Tests**: Replace require with assert usage in test
+- **Layers**: Refactor tests into separate layers
 
 ## v0.2.1
 
@@ -362,8 +375,8 @@
 
 ### Improvements
 
-- Add option C to README
-- Enable time-ago for --start and --end
+- **README Option**: Add option C to README
+- **Time-ago**: Enable time-ago for --start and --end
 
 ## v0.2.0
 
@@ -371,15 +384,15 @@
 
 ### Features
 
-- Change changelog format
-- Simplify tips language
-- Add doc references to ago semantics
-- Add support for time-ago semantics
+- **Format**: Change changelog format
+- **Language**: Simplify tips language
+- **Documentation**: Add doc references to ago semantics
+- **Time-ago**: Add support for time-ago semantics
 
 ### Development
 
-- Add contribution guidelines
-- Add issue templates for GitHub
+- **Guidelines**: Add contribution guidelines
+- **Templates**: Add issue templates for GitHub
 
 ## v0.1.0
 
@@ -387,27 +400,27 @@
 
 ### Build
 
-- Add goreleaser build settings
+- **Goreleaser**: Add goreleaser build settings
 
 ### Improvements
 
-- Rewrite punch line to be succinct
-- Use text-less image in README
-- Adjust first README tip
-- Fill README image space better
-- Adjust README image slightly
-- Add sample output to README
-- Shuffle README content around image
-- Add image to hotspot README
+- **README**: Rewrite punch line to be succinct
+- **README Image**: Use text-less image in README
+- **README Tips**: Adjust first README tip
+- **README Layout**: Fill README image space better
+- **README Image**: Adjust README image slightly
+- **README Output**: Add sample output to README
+- **README Content**: Shuffle README content around image
+- **README**: Add image to hotspot README
 
 ### Development
 
-- Add tests for computing folder score
-- Add unit test for selectOutputFile
-- Adjust label colors to match theme
-- Add comments to all schema fields
-- Enhance UX for folder JSON output
-- Add owner info to folder results
+- **Tests**: Add tests for computing folder score
+- **Unit Tests**: Add unit test for selectOutputFile
+- **Colors**: Adjust label colors to match theme
+- **Schema**: Add comments to all schema fields
+- **UX**: Enhance UX for folder JSON output
+- **Owners**: Add owner info to folder results
 
 ## Earlier versions
 
@@ -415,27 +428,27 @@
 
 ### Features
 
-- Add CSV and JSON output modes
-- Add support for analyzing folders
-- Add ability to run benchmarks
-- Add version command for diagnostics
-- Add time-ago semantics
-- Add Viper configuration
-- Add compare subcommand
-- Add folder analysis support
-- Add CSV/JSON output
-- Add Git client abstraction
-- Add Cobra CLI framework
-- Add comprehensive testing
-- Add CI/CD pipeline
-- Add linting and formatting
-- Add Makefile build system
+- **Output Modes**: Add CSV and JSON output modes
+- **Folder Analysis**: Add support for analyzing folders
+- **Benchmarks**: Add ability to run benchmarks
+- **Version Command**: Add version command for diagnostics
+- **Time-ago**: Add time-ago semantics
+- **Configuration**: Add Viper configuration
+- **Compare Command**: Add compare subcommand
+- **Folder Support**: Add folder analysis support
+- **Output Formats**: Add CSV/JSON output
+- **Git Client**: Add Git client abstraction
+- **CLI Framework**: Add Cobra CLI framework
+- **Testing**: Add comprehensive testing
+- **CI/CD**: Add CI/CD pipeline
+- **Code Quality**: Add linting and formatting
+- **Build System**: Add Makefile build system
 
 ### Improvements
 
-- Optimize performance and simplify logic
-- Enhance error handling and logging
-- Improve UX and output formatting
-- Add comprehensive documentation
-- Refactor code for maintainability
-- Add proper package structure
+- **Performance**: Optimize performance and simplify logic
+- **Error Handling**: Enhance error handling and logging
+- **UX**: Improve UX and output formatting
+- **Documentation**: Add comprehensive documentation
+- **Code Quality**: Refactor code for maintainability
+- **Architecture**: Add proper package structure
