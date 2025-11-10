@@ -199,6 +199,11 @@ hotspot timeseries --path pkg/api/v1.go --mode hot --interval "90 days" --points
 
 All measurements use default settings with 14 concurrent workers on a MacBook Pro with M3 chip.
 
+[csv-parser]: https://github.com/vincentlaucsb/csv-parser
+[fd]: https://github.com/sharkdp/fd
+[git]: https://github.com/git/git
+[kubernetes]: https://github.com/kubernetes/kubernetes
+
 ### Test Repositories
 
 The benchmarks use repositories of varying scales to demonstrate performance characteristics:
@@ -210,18 +215,13 @@ The benchmarks use repositories of varying scales to demonstrate performance cha
 | [git] | C | Large | Complex version control system |
 | [kubernetes] | Go | Massive | Distributed container orchestration platform |
 
-[csv-parser]: https://github.com/vincentlaucsb/csv-parser
-[fd]: https://github.com/sharkdp/fd
-[git]: https://github.com/git/git
-[kubernetes]: https://github.com/kubernetes/kubernetes
-
 ### Benchmark Results
 
 Comprehensive performance benchmarks using [this script](./benchmark/main.go), showing averages from 5 runs:
 
 | Repository | Files | Compare Files | Timeseries |
 |------------|-------|---------------|------------|
-| **csv-parser** | 0.041s | 0.126s | 0.057s |
-| **fd** | 0.042s | 0.068s | 0.062s |
-| **git** | 0.680s | 1.528s | 0.747s |
-| **kubernetes** | 3.741s | 8.449s | 3.861s |
+| [csv-parser] | 0.041s | 0.126s | 0.057s |
+| [fd] | 0.042s | 0.068s | 0.062s |
+| [git] | 0.680s | 1.528s | 0.747s |
+| [kubernetes] | 3.741s | 8.449s | 3.861s |
