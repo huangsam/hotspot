@@ -1,5 +1,6 @@
 // Package main provides a comprehensive performance benchmarking tool for the Hotspot CLI.
 // It measures execution times across different repository sizes and command types,
+// running each test multiple times and averaging results for statistical reliability,
 // generating CSV output for performance analysis and documentation.
 //
 // Prerequisites:
@@ -22,7 +23,7 @@ import (
 	"time"
 )
 
-// BenchmarkResult holds the result of a single benchmark run.
+// BenchmarkResult holds the result of a benchmark run (average of multiple runs).
 type BenchmarkResult struct {
 	Repository string
 	Command    string
@@ -34,6 +35,7 @@ type BenchmarkConfig struct {
 	RepoBase  string
 	Timeout   time.Duration
 	Workers   int
+	NumRuns   int
 	TestRepos []string
 	RepoPaths map[string]string
 	RepoRefs  map[string][2]string
@@ -51,6 +53,7 @@ func main() {
 		RepoBase:  repoBase,
 		Timeout:   5 * time.Minute,
 		Workers:   14,
+		NumRuns:   5,
 		TestRepos: []string{"csv-parser", "fd", "git", "kubernetes"},
 		RepoPaths: map[string]string{
 			"csv-parser": "python/csvpy.cpp",
@@ -103,8 +106,8 @@ func checkPrerequisites(config BenchmarkConfig) error {
 func runBenchmarks(config BenchmarkConfig) []BenchmarkResult {
 	var results []BenchmarkResult
 
-	fmt.Printf("Starting benchmark: %d repos, %v timeout, %d workers\n",
-		len(config.TestRepos), config.Timeout, config.Workers)
+	fmt.Printf("Starting benchmark: %d repos, %v timeout, %d workers, %d runs per test\n",
+		len(config.TestRepos), config.Timeout, config.Workers, config.NumRuns)
 
 	for _, repo := range config.TestRepos {
 		fmt.Printf("Benchmarking %s\n", repo)
@@ -137,61 +140,65 @@ func runBenchmarks(config BenchmarkConfig) []BenchmarkResult {
 	return results
 }
 
-// runBenchmark executes a single hotspot command with timing and timeout handling
+// runBenchmark executes a hotspot command multiple times and returns the average wall time
 func runBenchmark(config BenchmarkConfig, repo, repoPath, command, description, extraArgs string) BenchmarkResult {
-	fmt.Printf("Running %s on %s\n", description, repo)
+	fmt.Printf("Running %s on %s (%d runs)\n", description, repo, config.NumRuns)
 
-	start := time.Now()
+	var successfulTimes []float64
 
-	// Prepare command - properly parse arguments
-	args := []string{command}
-	if extraArgs != "" {
-		// Simple argument parsing - split on spaces but preserve quoted strings
-		args = append(args, parseArgs(extraArgs)...)
+	for run := 1; run <= config.NumRuns; run++ {
+		fmt.Printf("  Run %d/%d...\n", run, config.NumRuns)
+
+		start := time.Now()
+
+		// Prepare command - properly parse arguments
+		args := []string{command}
+		if extraArgs != "" {
+			// Simple argument parsing - split on spaces but preserve quoted strings
+			args = append(args, parseArgs(extraArgs)...)
+		}
+
+		cmd := exec.Command("hotspot", args...)
+		cmd.Dir = repoPath
+
+		// Run with timeout
+		done := make(chan bool, 1)
+		var output []byte
+		var cmdErr error
+
+		go func() {
+			output, cmdErr = cmd.CombinedOutput()
+			done <- true
+		}()
+
+		select {
+		case <-done:
+			elapsed := time.Since(start)
+
+			// Check if command succeeded by examining output
+			if cmdErr == nil && isSuccess(output, command) {
+				successfulTimes = append(successfulTimes, elapsed.Seconds())
+				fmt.Printf("    Completed in %.3fs\n", elapsed.Seconds())
+			} else {
+				fmt.Printf("    Failed\n")
+				if cmdErr != nil {
+					fmt.Printf("    Error: %v\n", cmdErr)
+				}
+			}
+
+		case <-time.After(config.Timeout):
+			fmt.Printf("    Timed out after %v\n", config.Timeout)
+		}
 	}
 
-	cmd := exec.Command("hotspot", args...)
-	cmd.Dir = repoPath
+	// Compute average time from successful runs
+	avgTime := computeAverageTime(successfulTimes)
+	fmt.Printf("  Average time: %s\n", avgTime)
 
-	// Run with timeout
-	done := make(chan bool, 1)
-	var output []byte
-	var cmdErr error
-
-	go func() {
-		output, cmdErr = cmd.CombinedOutput()
-		done <- true
-	}()
-
-	select {
-	case <-done:
-		elapsed := time.Since(start)
-
-		// Check if command succeeded by examining output
-		status := "TIMEOUT"
-		if cmdErr == nil && isSuccess(output, command) {
-			status = fmt.Sprintf("%.3fs", elapsed.Seconds())
-			fmt.Printf("Completed %s in %s\n", description, status)
-		} else {
-			fmt.Printf("Failed %s\n", description)
-			if cmdErr != nil {
-				fmt.Printf("Error: %v\n", cmdErr)
-			}
-		}
-
-		return BenchmarkResult{
-			Repository: repo,
-			Command:    command,
-			WallTime:   status,
-		}
-
-	case <-time.After(config.Timeout):
-		fmt.Printf("Timed out %s after %v\n", description, config.Timeout)
-		return BenchmarkResult{
-			Repository: repo,
-			Command:    command,
-			WallTime:   "TIMEOUT",
-		}
+	return BenchmarkResult{
+		Repository: repo,
+		Command:    command,
+		WallTime:   avgTime,
 	}
 }
 
@@ -254,6 +261,20 @@ func isSuccess(output []byte, command string) bool {
 	}
 }
 
+// computeAverageTime calculates the average time from multiple runs
+func computeAverageTime(times []float64) string {
+	if len(times) == 0 {
+		return "TIMEOUT"
+	}
+
+	var sum float64
+	for _, t := range times {
+		sum += t
+	}
+	avg := sum / float64(len(times))
+	return fmt.Sprintf("%.3fs", avg)
+}
+
 // saveResults writes benchmark results to a timestamped CSV file
 func saveResults(results []BenchmarkResult) error {
 	timestamp := time.Now().Format("20060102_150405")
@@ -273,7 +294,7 @@ func saveResults(results []BenchmarkResult) error {
 	defer writer.Flush()
 
 	// Write header
-	if err := writer.Write([]string{"Repository", "Command", "Wall_Time"}); err != nil {
+	if err := writer.Write([]string{"repo", "cmd", "wall_avg"}); err != nil {
 		return fmt.Errorf("failed to write CSV header: %w", err)
 	}
 

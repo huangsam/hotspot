@@ -215,11 +215,11 @@ The benchmarks use repositories of varying scales to demonstrate performance cha
 
 ### Benchmark Results
 
-Comprehensive performance benchmarks using the [included script](./benchmark/main.go):
+Comprehensive performance benchmarks using [this script](./benchmark/main.go), showing averages from 5 runs:
 
 | Repository | Files | Compare Files | Timeseries |
 |------------|-------|---------------|------------|
-| **csv-parser** | 0.045s | 0.131s | 0.061s |
-| **fd** | 0.046s | 0.067s | 0.062s |
-| **git** | 0.812s | 1.905s | 0.772s |
-| **kubernetes** | 3.791s | 9.349s | 4.009s |
+| **csv-parser** | 0.041s | 0.126s | 0.057s |
+| **fd** | 0.042s | 0.068s | 0.062s |
+| **git** | 0.680s | 1.528s | 0.747s |
+| **kubernetes** | 3.741s | 8.449s | 3.861s |
