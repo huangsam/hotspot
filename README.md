@@ -51,7 +51,7 @@ hotspot folders
 hotspot files /path/to/repo/pkg
 ```
 
-## Requirements
+### Requirements
 
 - **Go 1.25+** for building from source
 - **Git 2.7.0+** for `--date=iso-strict` support (used for precise timestamp parsing)
