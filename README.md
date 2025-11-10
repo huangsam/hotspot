@@ -36,11 +36,26 @@ Hotspot was born out of the desire to fix that: to provide a transparent, audita
 - 🧹 **Tech leads** prioritizing refactors and risk
 - 🧾 **Managers** monitoring bus factor and maintenance debt
 
-## Quick start
+## Installation
+
+### Requirements
+
+- **Go 1.25+** for building from source
+- **Git 2.7.0+** for `--date=iso-strict` support (used for precise timestamp parsing)
+
+### Install from source
 
 ```bash
 go install github.com/huangsam/hotspot@latest
+```
 
+### Download pre-built binary
+
+Visit the [latest release](https://github.com/huangsam/hotspot/releases/latest) and download the `tar` archive for your system, then extract the binary to your `$PATH`.
+
+## Quick start
+
+```bash
 # Analyze files for immediate, tactical risk
 hotspot files
 
@@ -50,19 +65,6 @@ hotspot folders
 # For an explicit path
 hotspot files /path/to/repo/pkg
 ```
-
-### Requirements
-
-- **Go 1.25+** for building from source
-- **Git 2.7.0+** for `--date=iso-strict` support (used for precise timestamp parsing)
-
-### Early testing
-
-1. **Download the Binary:** Visit the [latest release](https://github.com/huangsam/hotspot/releases/latest) and download the `tar` archive for your system
-2. **Extract & Install:**
-    * **Linux/macOS:** Extract `hotspot` binary to your `$PATH`
-    * **Windows:** Extract `hotspot.exe` to a known location
-3. **Verify Installation:** Run `hotspot --help` in your terminal
 
 ### Example output
 
