@@ -45,6 +45,9 @@ func (f FileResult) GetChurn() int {
 
 // GetOwners returns the top owners.
 func (f FileResult) GetOwners() []string {
+	if f.Owners == nil {
+		return []string{}
+	}
 	return f.Owners
 }
 
@@ -83,6 +86,9 @@ func (f FolderResult) GetChurn() int {
 
 // GetOwners returns the top owners.
 func (f FolderResult) GetOwners() []string {
+	if f.Owners == nil {
+		return []string{}
+	}
 	return f.Owners
 }
 
