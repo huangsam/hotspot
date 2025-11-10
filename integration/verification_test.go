@@ -179,6 +179,173 @@ func parseHotspotDetailOutput(output string) map[string]schema.FileResult {
 	return fileDetails
 }
 
+// TestFoldersVerification runs hotspot folders with time filters and verifies folder aggregation
+func TestFoldersVerification(t *testing.T) {
+	// Skip if not in a git repo
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not available")
+	}
+
+	// Get current repo path
+	repoPath, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	require.NoError(t, err)
+	repoDir := strings.TrimSpace(string(repoPath))
+
+	// Get hotspot binary (built once and shared)
+	hotspotPath := getHotspotBinary()
+
+	// Use a fixed time range for consistent testing (last 365 days)
+	startTime := time.Now().AddDate(0, 0, -365).Format(internal.DateTimeFormat)
+	endTime := time.Now().Format(internal.DateTimeFormat)
+
+	// Run hotspot folders --output json --detail --start <start> --end <end> --limit 1000
+	cmd := exec.Command(hotspotPath, "folders", "--output", "json", "--detail", "--start", startTime, "--end", endTime, "--limit", "1000")
+	cmd.Dir = repoDir
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+	err = cmd.Run()
+	require.NoError(t, err)
+
+	// Parse output to extract folder details
+	folderDetails := parseHotspotFolderOutput(stdout.String())
+
+	// Verify folder aggregation for each folder
+	for folderPath, folder := range folderDetails {
+		t.Run(folderPath, func(t *testing.T) {
+			// Verify that folder has reasonable values and structure
+			assert.Greater(t, folder.Commits, 0, "folder should have commits")
+			assert.Greater(t, folder.Churn, 0, "folder should have churn")
+			assert.GreaterOrEqual(t, folder.Score, 0.0, "folder should have non-negative score")
+			assert.NotEmpty(t, folder.Path, "folder should have a path")
+			assert.Contains(t, []string{"hot", "risk", "complexity", "stale"}, string(folder.Mode), "folder should have valid mode")
+		})
+	}
+}
+
+// TestCompareFilesVerification runs hotspot compare files and verifies comparison deltas
+func TestCompareFilesVerification(t *testing.T) {
+	// Skip if not in a git repo
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not available")
+	}
+
+	// Get current repo path
+	repoPath, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	require.NoError(t, err)
+	repoDir := strings.TrimSpace(string(repoPath))
+
+	// Get hotspot binary (built once and shared)
+	hotspotPath := getHotspotBinary()
+
+	// Use stable tags for consistent testing
+	baseRef := "v1.1.4"
+	targetRef := "v1.1.5"
+
+	// Run hotspot compare files --output json --base-ref v1.1.4 --target-ref v1.1.5 --limit 10
+	cmd := exec.Command(hotspotPath, "compare", "files", "--output", "json", "--base-ref", baseRef, "--target-ref", targetRef, "--limit", "10")
+	cmd.Dir = repoDir
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+	err = cmd.Run()
+	require.NoError(t, err)
+
+	// Parse the comparison JSON output
+	jsonPart := extractJSONFromOutput(stdout.String())
+	var result schema.ComparisonResult
+	err = json.Unmarshal([]byte(jsonPart), &result)
+	require.NoError(t, err)
+
+	// Verify basic structure
+	require.NotEmpty(t, result.Results, "should have comparison results")
+	require.NotNil(t, result.Summary, "should have comparison summary")
+
+	// Verify each comparison detail
+	for i, detail := range result.Results {
+		t.Run(fmt.Sprintf("file_%d_%s", i, filepath.Base(detail.Path)), func(t *testing.T) {
+			// Verify required fields are present
+			assert.NotEmpty(t, detail.Path, "path should not be empty")
+			assert.GreaterOrEqual(t, detail.BeforeScore, 0.0, "before score should be non-negative")
+			assert.GreaterOrEqual(t, detail.AfterScore, 0.0, "after score should be non-negative")
+			assert.Contains(t, []string{"hot", "risk", "complexity", "stale"}, string(detail.Mode), "should have valid mode")
+
+			// Delta can be positive or negative, just verify it's a valid number
+			assert.True(t, detail.Delta >= -100.0 && detail.Delta <= 100.0, "delta should be reasonable")
+
+			// Verify owners arrays are valid (can be empty)
+			assert.NotNil(t, detail.BeforeOwners, "before owners should not be nil")
+			assert.NotNil(t, detail.AfterOwners, "after owners should not be nil")
+		})
+	}
+
+	// Verify summary has reasonable values
+	assert.True(t, result.Summary.NetScoreDelta >= -1000.0 && result.Summary.NetScoreDelta <= 1000.0, "net score delta should be reasonable")
+	assert.GreaterOrEqual(t, result.Summary.TotalModifiedFiles, 0, "total modified files should be non-negative")
+	assert.GreaterOrEqual(t, result.Summary.TotalNewFiles, 0, "total new files should be non-negative")
+	assert.GreaterOrEqual(t, result.Summary.TotalInactiveFiles, 0, "total inactive files should be non-negative")
+}
+
+// TestCompareFoldersVerification runs hotspot compare folders and verifies comparison deltas
+func TestCompareFoldersVerification(t *testing.T) {
+	// Skip if not in a git repo
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not available")
+	}
+
+	// Get current repo path
+	repoPath, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	require.NoError(t, err)
+	repoDir := strings.TrimSpace(string(repoPath))
+
+	// Get hotspot binary (built once and shared)
+	hotspotPath := getHotspotBinary()
+
+	// Use stable tags for consistent testing
+	baseRef := "v1.1.4"
+	targetRef := "v1.1.5"
+
+	// Run hotspot compare folders --output json --base-ref v1.1.4 --target-ref v1.1.5 --limit 10
+	cmd := exec.Command(hotspotPath, "compare", "folders", "--output", "json", "--base-ref", baseRef, "--target-ref", targetRef, "--limit", "10")
+	cmd.Dir = repoDir
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+	err = cmd.Run()
+	require.NoError(t, err)
+
+	// Parse the comparison JSON output
+	jsonPart := extractJSONFromOutput(stdout.String())
+	var result schema.ComparisonResult
+	err = json.Unmarshal([]byte(jsonPart), &result)
+	require.NoError(t, err)
+
+	// Verify basic structure
+	require.NotEmpty(t, result.Results, "should have comparison results")
+	require.NotNil(t, result.Summary, "should have comparison summary")
+
+	// Verify each comparison detail
+	for i, detail := range result.Results {
+		t.Run(fmt.Sprintf("folder_%d_%s", i, filepath.Base(detail.Path)), func(t *testing.T) {
+			// Verify required fields are present
+			assert.NotEmpty(t, detail.Path, "path should not be empty")
+			assert.GreaterOrEqual(t, detail.BeforeScore, 0.0, "before score should be non-negative")
+			assert.GreaterOrEqual(t, detail.AfterScore, 0.0, "after score should be non-negative")
+			assert.Contains(t, []string{"hot", "risk", "complexity", "stale"}, string(detail.Mode), "should have valid mode")
+
+			// Delta can be positive or negative, just verify it's a valid number
+			assert.True(t, detail.Delta >= -100.0 && detail.Delta <= 100.0, "delta should be reasonable")
+
+			// Verify owners arrays are valid (can be empty)
+			assert.NotNil(t, detail.BeforeOwners, "before owners should not be nil")
+			assert.NotNil(t, detail.AfterOwners, "after owners should not be nil")
+		})
+	}
+
+	// Verify summary has reasonable values
+	assert.True(t, result.Summary.NetScoreDelta >= -1000.0 && result.Summary.NetScoreDelta <= 1000.0, "net score delta should be reasonable")
+	assert.GreaterOrEqual(t, result.Summary.TotalModifiedFiles, 0, "total modified files should be non-negative")
+	assert.GreaterOrEqual(t, result.Summary.TotalNewFiles, 0, "total new files should be non-negative")
+	assert.GreaterOrEqual(t, result.Summary.TotalInactiveFiles, 0, "total inactive files should be non-negative")
+}
+
 // parseHotspotFolderOutput extracts folder details from hotspot JSON output
 func parseHotspotFolderOutput(output string) map[string]schema.FolderResult {
 	var folders []schema.FolderResult
@@ -548,171 +715,4 @@ weights:
 		err = cmd.Run()
 		assert.Error(t, err, "Should fail with invalid weights that don't sum to 1.0")
 	})
-}
-
-// TestFoldersVerification runs hotspot folders with time filters and verifies folder aggregation
-func TestFoldersVerification(t *testing.T) {
-	// Skip if not in a git repo
-	if _, err := exec.LookPath("git"); err != nil {
-		t.Skip("git not available")
-	}
-
-	// Get current repo path
-	repoPath, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
-	require.NoError(t, err)
-	repoDir := strings.TrimSpace(string(repoPath))
-
-	// Get hotspot binary (built once and shared)
-	hotspotPath := getHotspotBinary()
-
-	// Use a fixed time range for consistent testing (last 365 days)
-	startTime := time.Now().AddDate(0, 0, -365).Format(internal.DateTimeFormat)
-	endTime := time.Now().Format(internal.DateTimeFormat)
-
-	// Run hotspot folders --output json --detail --start <start> --end <end> --limit 1000
-	cmd := exec.Command(hotspotPath, "folders", "--output", "json", "--detail", "--start", startTime, "--end", endTime, "--limit", "1000")
-	cmd.Dir = repoDir
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-	err = cmd.Run()
-	require.NoError(t, err)
-
-	// Parse output to extract folder details
-	folderDetails := parseHotspotFolderOutput(stdout.String())
-
-	// Verify folder aggregation for each folder
-	for folderPath, folder := range folderDetails {
-		t.Run(folderPath, func(t *testing.T) {
-			// Verify that folder has reasonable values and structure
-			assert.Greater(t, folder.Commits, 0, "folder should have commits")
-			assert.Greater(t, folder.Churn, 0, "folder should have churn")
-			assert.GreaterOrEqual(t, folder.Score, 0.0, "folder should have non-negative score")
-			assert.NotEmpty(t, folder.Path, "folder should have a path")
-			assert.Contains(t, []string{"hot", "risk", "complexity", "stale"}, string(folder.Mode), "folder should have valid mode")
-		})
-	}
-}
-
-// TestCompareFilesVerification runs hotspot compare files and verifies comparison deltas
-func TestCompareFilesVerification(t *testing.T) {
-	// Skip if not in a git repo
-	if _, err := exec.LookPath("git"); err != nil {
-		t.Skip("git not available")
-	}
-
-	// Get current repo path
-	repoPath, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
-	require.NoError(t, err)
-	repoDir := strings.TrimSpace(string(repoPath))
-
-	// Get hotspot binary (built once and shared)
-	hotspotPath := getHotspotBinary()
-
-	// Use stable tags for consistent testing
-	baseRef := "v1.1.4"
-	targetRef := "v1.1.5"
-
-	// Run hotspot compare files --output json --base-ref v1.1.4 --target-ref v1.1.5 --limit 10
-	cmd := exec.Command(hotspotPath, "compare", "files", "--output", "json", "--base-ref", baseRef, "--target-ref", targetRef, "--limit", "10")
-	cmd.Dir = repoDir
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-	err = cmd.Run()
-	require.NoError(t, err)
-
-	// Parse the comparison JSON output
-	jsonPart := extractJSONFromOutput(stdout.String())
-	var result schema.ComparisonResult
-	err = json.Unmarshal([]byte(jsonPart), &result)
-	require.NoError(t, err)
-
-	// Verify basic structure
-	require.NotEmpty(t, result.Results, "should have comparison results")
-	require.NotNil(t, result.Summary, "should have comparison summary")
-
-	// Verify each comparison detail
-	for i, detail := range result.Results {
-		t.Run(fmt.Sprintf("file_%d_%s", i, filepath.Base(detail.Path)), func(t *testing.T) {
-			// Verify required fields are present
-			assert.NotEmpty(t, detail.Path, "path should not be empty")
-			assert.GreaterOrEqual(t, detail.BeforeScore, 0.0, "before score should be non-negative")
-			assert.GreaterOrEqual(t, detail.AfterScore, 0.0, "after score should be non-negative")
-			assert.Contains(t, []string{"hot", "risk", "complexity", "stale"}, string(detail.Mode), "should have valid mode")
-
-			// Delta can be positive or negative, just verify it's a valid number
-			assert.True(t, detail.Delta >= -100.0 && detail.Delta <= 100.0, "delta should be reasonable")
-
-			// Verify owners arrays are valid (can be empty)
-			assert.NotNil(t, detail.BeforeOwners, "before owners should not be nil")
-			assert.NotNil(t, detail.AfterOwners, "after owners should not be nil")
-		})
-	}
-
-	// Verify summary has reasonable values
-	assert.True(t, result.Summary.NetScoreDelta >= -1000.0 && result.Summary.NetScoreDelta <= 1000.0, "net score delta should be reasonable")
-	assert.GreaterOrEqual(t, result.Summary.TotalModifiedFiles, 0, "total modified files should be non-negative")
-	assert.GreaterOrEqual(t, result.Summary.TotalNewFiles, 0, "total new files should be non-negative")
-	assert.GreaterOrEqual(t, result.Summary.TotalInactiveFiles, 0, "total inactive files should be non-negative")
-}
-
-// TestCompareFoldersVerification runs hotspot compare folders and verifies comparison deltas
-func TestCompareFoldersVerification(t *testing.T) {
-	// Skip if not in a git repo
-	if _, err := exec.LookPath("git"); err != nil {
-		t.Skip("git not available")
-	}
-
-	// Get current repo path
-	repoPath, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
-	require.NoError(t, err)
-	repoDir := strings.TrimSpace(string(repoPath))
-
-	// Get hotspot binary (built once and shared)
-	hotspotPath := getHotspotBinary()
-
-	// Use stable tags for consistent testing
-	baseRef := "v1.1.4"
-	targetRef := "v1.1.5"
-
-	// Run hotspot compare folders --output json --base-ref v1.1.4 --target-ref v1.1.5 --limit 10
-	cmd := exec.Command(hotspotPath, "compare", "folders", "--output", "json", "--base-ref", baseRef, "--target-ref", targetRef, "--limit", "10")
-	cmd.Dir = repoDir
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-	err = cmd.Run()
-	require.NoError(t, err)
-
-	// Parse the comparison JSON output
-	jsonPart := extractJSONFromOutput(stdout.String())
-	var result schema.ComparisonResult
-	err = json.Unmarshal([]byte(jsonPart), &result)
-	require.NoError(t, err)
-
-	// Verify basic structure
-	require.NotEmpty(t, result.Results, "should have comparison results")
-	require.NotNil(t, result.Summary, "should have comparison summary")
-
-	// Verify each comparison detail
-	for i, detail := range result.Results {
-		t.Run(fmt.Sprintf("folder_%d_%s", i, filepath.Base(detail.Path)), func(t *testing.T) {
-			// Verify required fields are present
-			assert.NotEmpty(t, detail.Path, "path should not be empty")
-			assert.GreaterOrEqual(t, detail.BeforeScore, 0.0, "before score should be non-negative")
-			assert.GreaterOrEqual(t, detail.AfterScore, 0.0, "after score should be non-negative")
-			assert.Contains(t, []string{"hot", "risk", "complexity", "stale"}, string(detail.Mode), "should have valid mode")
-
-			// Delta can be positive or negative, just verify it's a valid number
-			assert.True(t, detail.Delta >= -100.0 && detail.Delta <= 100.0, "delta should be reasonable")
-
-			// Verify owners arrays are valid (can be empty)
-			assert.NotNil(t, detail.BeforeOwners, "before owners should not be nil")
-			assert.NotNil(t, detail.AfterOwners, "after owners should not be nil")
-		})
-	}
-
-	// Verify summary has reasonable values
-	assert.True(t, result.Summary.NetScoreDelta >= -1000.0 && result.Summary.NetScoreDelta <= 1000.0, "net score delta should be reasonable")
-	assert.GreaterOrEqual(t, result.Summary.TotalModifiedFiles, 0, "total modified files should be non-negative")
-	assert.GreaterOrEqual(t, result.Summary.TotalNewFiles, 0, "total new files should be non-negative")
-	assert.GreaterOrEqual(t, result.Summary.TotalInactiveFiles, 0, "total inactive files should be non-negative")
 }
