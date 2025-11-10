@@ -38,6 +38,14 @@
 # Corresponds to: --output-file
 # output-file: report.csv
 
+# profile: Enable profiling and write profiles to files with this prefix.
+# Corresponds to: --profile
+# profile: hotspot-profile
+
+# width: Terminal width override (0 = auto-detect).
+# Corresponds to: --width
+# width: 120
+
 # filter: Filter analysis to files whose path begins with this prefix (e.g., "src/api/").
 # Corresponds to: --filter, -f
 # filter: ""
@@ -127,6 +135,17 @@
 # Corresponds to: --follow
 # follow: false
 
-# debug: Enable verbose structured debug logging (for developers).
-# Corresponds to: --debug
-# debug: false
+# path: Path to the file or folder to analyze.
+# Used by: 'hotspot timeseries'
+# Corresponds to: --path
+# path: src/main.go
+
+# interval: Total time interval for timeseries analysis.
+# Used by: 'hotspot timeseries'
+# Corresponds to: --interval
+# interval: 180d
+
+# points: Number of lookback points for timeseries analysis.
+# Used by: 'hotspot timeseries'
+# Corresponds to: --points
+# points: 4
