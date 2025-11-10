@@ -51,6 +51,11 @@ hotspot folders
 hotspot files /path/to/repo/pkg
 ```
 
+## Requirements
+
+- **Go 1.25+** for building from source
+- **Git 2.7.0+** for `--date=iso-strict` support (used for precise timestamp parsing)
+
 ### Early testing
 
 1. **Download the Binary:** Visit the [latest release](https://github.com/huangsam/hotspot/releases/latest) and download the `tar` archive for your system
@@ -190,18 +195,31 @@ hotspot timeseries --path pkg/api/v1.go --mode hot --interval "90 days" --points
 
 ## Performance
 
-| Command | Size | Duration | Notes |
-|---------|------|----------|-------|
-| `files`/`folders` | **Small repo (1k+ files)** | 0.03-0.05s | Single analysis pass |
-| `files`/`folders` | **Large repo (10k+ files)** | 3-4s | Single analysis pass |
-| `compare` | **Small repo** | 0.07-0.08s | Two analysis passes |
-| `compare` | **Large repo** | 8-9s | Two analysis passes |
-| `timeseries` | **Small repo** | 0.04s | Multiple analysis passes |
-| `timeseries` | **Large repo** | 1-2s | Multiple analysis passes |
+All measurements use default settings with 14 concurrent workers on a MacBook Pro with M3 chip.
 
-All measurements use default lookback windows. Timeseries performance scales with `--points` (more points = more analysis passes). Use `--workers` to parallelize analysis on multi-core systems.
+### Test Repositories
 
-**Test repositories used:**
+The benchmarks use repositories of varying scales to demonstrate performance characteristics:
 
-- Small: <https://github.com/sharkdp/fd>
-- Large: <https://github.com/kubernetes/kubernetes>
+| Repository | Language | Scale | Description |
+|------------|----------|-------|-------------|
+| [csv-parser] | C++ | Small | Focused single-purpose CSV parsing library |
+| [fd] | Rust | Medium | Actively maintained CLI file search utility |
+| [git] | C | Large | Complex version control system |
+| [kubernetes] | Go | Massive | Distributed container orchestration platform |
+
+[csv-parser]: https://github.com/vincentlaucsb/csv-parser
+[fd]: https://github.com/sharkdp/fd
+[git]: https://github.com/git/git
+[kubernetes]: https://github.com/kubernetes/kubernetes
+
+### Benchmark Results
+
+Comprehensive performance benchmarks using the [included script](./benchmark/main.go):
+
+| Repository | Files | Compare Files | Timeseries |
+|------------|-------|---------------|------------|
+| **csv-parser** | 0.045s | 0.131s | 0.061s |
+| **fd** | 0.046s | 0.067s | 0.062s |
+| **git** | 0.812s | 1.905s | 0.772s |
+| **kubernetes** | 3.791s | 9.349s | 4.009s |
