@@ -77,6 +77,7 @@ type Config struct {
 	OutputFile  string
 	Follow      bool
 	Owner       bool
+	Width       int // Terminal width override (0 = auto-detect)
 
 	CompareMode bool
 	BaseRef     string
@@ -106,6 +107,7 @@ type ConfigRawInput struct {
 	Output     string `mapstructure:"output"`
 	Owner      bool   `mapstructure:"owner"`
 	Detail     bool   `mapstructure:"detail"`
+	Width      int    `mapstructure:"width"`
 
 	// --- Fields from filesCmd.Flags() ---
 	Explain bool `mapstructure:"explain"`
@@ -178,6 +180,7 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	cfg.Explain = input.Explain
 	cfg.Owner = input.Owner
 	cfg.Follow = input.Follow
+	cfg.Width = input.Width
 
 	// --- 1. ResultLimit Validation ---
 	if input.Limit <= 0 || input.Limit > MaxResultLimit {

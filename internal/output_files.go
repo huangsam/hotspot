@@ -91,7 +91,7 @@ func printTableResults(files []schema.FileResult, cfg *Config, fmtFloat func(flo
 	// 1. Define Headers
 	headers := []string{"Rank", "Path", "Score", "Label"}
 	if cfg.Detail {
-		headers = append(headers, "Contrib", "Commits", "LOC", "Churn", "Age")
+		headers = append(headers, "Contrib", "Commits", "LOC", "Churn", "Age", "Gini")
 	}
 	if cfg.Explain {
 		headers = append(headers, "Explain")
@@ -111,10 +111,10 @@ func printTableResults(files []schema.FileResult, cfg *Config, fmtFloat func(flo
 	for i, f := range files {
 		// Prepare the row data as a slice of strings
 		row := []string{
-			strconv.Itoa(i + 1),                     // Rank
-			truncatePath(f.Path, maxTablePathWidth), // File
-			fmtFloat(f.Score),                       // Score
-			getColorLabel(f.Score),                  // Label
+			strconv.Itoa(i + 1),                             // Rank
+			truncatePath(f.Path, GetMaxTablePathWidth(cfg)), // File
+			fmtFloat(f.Score),                               // Score
+			getColorLabel(f.Score),                          // Label
 		}
 		if cfg.Detail {
 			row = append(
@@ -124,6 +124,7 @@ func printTableResults(files []schema.FileResult, cfg *Config, fmtFloat func(flo
 				fmt.Sprintf(intFmt, f.LinesOfCode),        // LOC
 				fmt.Sprintf(intFmt, f.Churn),              // Churn
 				fmt.Sprintf(intFmt, f.AgeDays),            // Age
+				fmtFloat(f.Gini),                          // Gini
 			)
 		}
 		if cfg.Explain {

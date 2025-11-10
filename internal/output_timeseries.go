@@ -100,7 +100,7 @@ func printTimeseriesTable(result schema.TimeseriesResult, cfg *Config, fmtFloat 
 			ownersStr = "No owners"
 		}
 		row := []string{
-			truncatePath(p.Path, maxTablePathWidth),
+			truncatePath(p.Path, GetMaxTablePathWidth(cfg)),
 			p.Period,
 			fmtFloat(p.Score),
 			string(p.Mode),

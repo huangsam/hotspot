@@ -103,10 +103,10 @@ func printFolderTable(results []schema.FolderResult, cfg *Config, fmtFloat func(
 	for i, r := range results {
 		// Prepare the row data as a slice of strings
 		row := []string{
-			strconv.Itoa(i + 1),                     // Rank
-			truncatePath(r.Path, maxTablePathWidth), // Folder Path
-			fmtFloat(r.Score),                       // Score
-			getColorLabel(r.Score),                  // Label
+			strconv.Itoa(i + 1),                             // Rank
+			truncatePath(r.Path, GetMaxTablePathWidth(cfg)), // Folder Path
+			fmtFloat(r.Score),                               // Score
+			getColorLabel(r.Score),                          // Label
 		}
 		if cfg.Detail {
 			row = append(row,

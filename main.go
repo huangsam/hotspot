@@ -298,6 +298,7 @@ func init() {
 	rootCmd.PersistentFlags().String("profile", "", "Enable profiling and write profiles to files with this prefix")
 	rootCmd.PersistentFlags().String("start", "", "Start date in ISO8601 or time ago")
 	rootCmd.PersistentFlags().Int("workers", internal.DefaultWorkers, "Number of concurrent workers")
+	rootCmd.PersistentFlags().Int("width", 0, "Terminal width override (0 = auto-detect)")
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
 		internal.LogFatal("Error binding root flags", err)
 	}
