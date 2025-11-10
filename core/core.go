@@ -218,40 +218,6 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config) error {
 
 // ExecuteHotspotMetrics displays the formal definitions of all scoring modes.
 // This is a static display that does not require Git analysis.
-func ExecuteHotspotMetrics() error {
-	// Load active weights from config file if available
-	var activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64
-
-	// Set up Viper for config loading (similar to main.go initConfig)
-	viper.SetConfigName(".hotspot")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
-	viper.AddConfigPath("$HOME")
-	viper.SetEnvPrefix("HOTSPOT")
-	viper.AutomaticEnv()
-
-	// Try to read config file
-	if err := viper.ReadInConfig(); err == nil {
-		// Config file found, try to unmarshal weights
-		var config struct {
-			Weights internal.WeightsRawInput `mapstructure:"weights"`
-		}
-		if err := viper.Unmarshal(&config); err == nil {
-			// Successfully unmarshaled, process the weights
-			activeWeights, _ = internal.ProcessWeightsRawInput(config.Weights, false)
-			// Ignore errors here - if weights are invalid, just show defaults
-		}
-	}
-	// If config loading fails or weights are invalid, activeWeights remains nil (use defaults)
-
-	// Convert to string-based format for display
-	stringWeights := make(map[string]map[string]float64)
-	for mode, modeMap := range activeWeights {
-		stringWeights[string(mode)] = make(map[string]float64)
-		for key, value := range modeMap {
-			stringWeights[string(mode)][string(key)] = value
-		}
-	}
-
-	return internal.PrintMetricsDefinitions(stringWeights)
+func ExecuteHotspotMetrics(_ context.Context, cfg *internal.Config) error {
+	return internal.PrintMetricsDefinitions(cfg.CustomWeights, cfg)
 }

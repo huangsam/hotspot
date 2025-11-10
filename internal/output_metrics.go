@@ -1,19 +1,35 @@
 package internal
 
 import (
+	"encoding/csv"
 	"fmt"
-	"maps"
+	"os"
 	"strings"
 
 	"github.com/huangsam/hotspot/schema"
 )
 
+// getDisplayNameForMode returns the display name with emoji for a given mode name.
+func getDisplayNameForMode(modeName string) string {
+	switch modeName {
+	case "hot":
+		return "🔥 HOT"
+	case "risk":
+		return "⚠️  RISK"
+	case "complexity":
+		return "🧩 COMPLEXITY"
+	case "stale":
+		return "🕰️  STALE"
+	default:
+		return strings.ToUpper(modeName)
+	}
+}
+
 // getDisplayWeightsForMode returns the weights to display for a given scoring mode.
 // Uses active weights if available, otherwise falls back to defaults.
-func getDisplayWeightsForMode(mode string, activeWeights map[string]map[string]float64) map[string]float64 {
+func getDisplayWeightsForMode(mode schema.ScoringMode, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64) map[string]float64 {
 	// Start with default weights
-	scoringMode := schema.ScoringMode(mode)
-	defaultWeights := schema.GetDefaultWeights(scoringMode)
+	defaultWeights := schema.GetDefaultWeights(mode)
 
 	// Convert BreakdownKey map to string map for backward compatibility
 	weights := make(map[string]float64)
@@ -25,7 +41,9 @@ func getDisplayWeightsForMode(mode string, activeWeights map[string]map[string]f
 	if activeWeights != nil {
 		if modeWeights, ok := activeWeights[mode]; ok {
 			// Only override weights that are actually customized
-			maps.Copy(weights, modeWeights)
+			for k, v := range modeWeights {
+				weights[string(k)] = v
+			}
 		}
 	}
 
@@ -41,65 +59,136 @@ func formatWeights(weights map[string]float64, factorKeys []string) string {
 			parts = append(parts, fmt.Sprintf("%.2f*%s", weight, factorName))
 		}
 	}
-	return strings.Join(parts, " + ")
+	return strings.Join(parts, "+")
 }
 
 // PrintMetricsDefinitions displays the formal definitions of all scoring modes.
 // This is a static display that does not require Git analysis.
-func PrintMetricsDefinitions(activeWeights map[string]map[string]float64) error {
+func PrintMetricsDefinitions(activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, cfg *Config) error {
+	// Build the complete render model with all processed data
+	renderModel := buildMetricsRenderModel(activeWeights)
+
+	switch cfg.Output {
+	case schema.JSONOut:
+		return printMetricsJSON(renderModel, cfg)
+	case schema.CSVOut:
+		return printMetricsCSV(renderModel, cfg)
+	default:
+		return printMetricsText(renderModel, cfg)
+	}
+}
+
+// printMetricsText displays metrics in human-readable text format
+func printMetricsText(renderModel *schema.MetricsRenderModel, _ *Config) error {
 	fmt.Println("🔥 Hotspot Scoring Modes")
 	fmt.Println("========================")
 	fmt.Println()
-	fmt.Println("All scores = weighted sum of normalized factors")
+	fmt.Println(renderModel.Description)
 	fmt.Println()
 
-	modes := []struct {
-		name       string
-		purpose    string
-		factors    []string
-		factorKeys []string
-	}{
-		{
-			name:       "🔥 HOT",
-			purpose:    "Activity hotspots - high recent activity & volatility",
-			factors:    []string{"Commits", "Churn", "Contributors", "Age", "Size"},
-			factorKeys: []string{string(schema.BreakdownCommits), string(schema.BreakdownChurn), string(schema.BreakdownContrib), string(schema.BreakdownAge), string(schema.BreakdownSize)},
-		},
-		{
-			name:       "⚠️  RISK",
-			purpose:    "Knowledge risk/bus factor - concentrated ownership",
-			factors:    []string{"InvContributors", "Gini", "Age", "Churn", "Commits", "LOC", "Size"},
-			factorKeys: []string{string(schema.BreakdownInvContrib), string(schema.BreakdownGini), string(schema.BreakdownAge), string(schema.BreakdownChurn), string(schema.BreakdownCommits), string(schema.BreakdownLOC), string(schema.BreakdownSize)},
-		},
-		{
-			name:       "🧩 COMPLEXITY",
-			purpose:    "Technical debt - large, old files with high maintenance burden",
-			factors:    []string{"Age", "Churn", "Commits", "LOC", "LowRecent", "Size"},
-			factorKeys: []string{string(schema.BreakdownAge), string(schema.BreakdownChurn), string(schema.BreakdownCommits), string(schema.BreakdownLOC), string(schema.BreakdownLowRecent), string(schema.BreakdownSize)},
-		},
-		{
-			name:       "🕰️  STALE",
-			purpose:    "Maintenance debt - important files untouched recently",
-			factors:    []string{"InvRecent", "Age", "Size", "Commits", "Contributors"},
-			factorKeys: []string{string(schema.BreakdownInvRecent), string(schema.BreakdownAge), string(schema.BreakdownSize), string(schema.BreakdownCommits), string(schema.BreakdownContrib)},
-		},
-	}
-
-	for _, mode := range modes {
-		fmt.Printf("%s: %s\n", mode.name, mode.purpose)
-		fmt.Printf("   Factors: %s\n", strings.Join(mode.factors, ", "))
-
-		// Extract mode name from emoji prefix
-		modeName := strings.ToLower(strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(mode.name, "🔥 "), "⚠️  "), "🧩 "), "🕰️  ")))
-		weights := getDisplayWeightsForMode(modeName, activeWeights)
-		formula := formatWeights(weights, mode.factorKeys)
-		fmt.Printf("   Formula: Score = %s\n", formula)
+	for _, mode := range renderModel.Modes {
+		// Add emoji prefix for display
+		displayName := getDisplayNameForMode(mode.Name)
+		fmt.Printf("%s: %s\n", displayName, mode.Purpose)
+		fmt.Printf("   Factors: %s\n", strings.Join(mode.Factors, ", "))
+		fmt.Printf("   Formula: Score = %s\n", mode.Formula)
 		fmt.Println()
 	}
 
 	fmt.Println("🔗 Special Relationship")
-	fmt.Println("RISK Score = HOT Score / Ownership Diversity Factor")
-	fmt.Println("(Factor ↓ when few contributors → RISK Score ↑)")
+	fmt.Println(renderModel.SpecialRelationship["description"])
+	fmt.Println(renderModel.SpecialRelationship["note"])
 
 	return nil
+}
+
+// printMetricsJSON displays metrics in JSON format
+func printMetricsJSON(renderModel *schema.MetricsRenderModel, cfg *Config) error {
+	file, err := selectOutputFile(cfg.OutputFile)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = file.Close() }()
+
+	if err := writeJSONMetrics(file, renderModel); err != nil {
+		return err
+	}
+
+	if file != os.Stdout {
+		fmt.Fprintf(os.Stderr, "💾 Wrote JSON to %s\n", cfg.OutputFile)
+	}
+	return nil
+}
+
+// printMetricsCSV displays metrics in CSV format
+func printMetricsCSV(renderModel *schema.MetricsRenderModel, cfg *Config) error {
+	file, err := selectOutputFile(cfg.OutputFile)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = file.Close() }()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	if err := writeCSVMetrics(writer, renderModel); err != nil {
+		return err
+	}
+
+	if file != os.Stdout {
+		fmt.Fprintf(os.Stderr, "💾 Wrote CSV to %s\n", cfg.OutputFile)
+	}
+	return nil
+}
+
+// buildMetricsRenderModel constructs the complete render model with all processed data.
+func buildMetricsRenderModel(activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64) *schema.MetricsRenderModel {
+	modes := []schema.MetricsMode{
+		{
+			Name:       "hot",
+			Purpose:    "Activity hotspots - high recent activity & volatility",
+			Factors:    []string{"Commits", "Churn", "Contributors", "Age", "Size"},
+			FactorKeys: []string{string(schema.BreakdownCommits), string(schema.BreakdownChurn), string(schema.BreakdownContrib), string(schema.BreakdownAge), string(schema.BreakdownSize)},
+		},
+		{
+			Name:       "risk",
+			Purpose:    "Knowledge risk/bus factor - concentrated ownership",
+			Factors:    []string{"InvContributors", "Gini", "Age", "Churn", "Commits", "LOC", "Size"},
+			FactorKeys: []string{string(schema.BreakdownInvContrib), string(schema.BreakdownGini), string(schema.BreakdownAge), string(schema.BreakdownChurn), string(schema.BreakdownCommits), string(schema.BreakdownLOC), string(schema.BreakdownSize)},
+		},
+		{
+			Name:       "complexity",
+			Purpose:    "Technical debt - large, old files with high maintenance burden",
+			Factors:    []string{"Age", "Churn", "Commits", "LOC", "LowRecent", "Size"},
+			FactorKeys: []string{string(schema.BreakdownAge), string(schema.BreakdownChurn), string(schema.BreakdownCommits), string(schema.BreakdownLOC), string(schema.BreakdownLowRecent), string(schema.BreakdownSize)},
+		},
+		{
+			Name:       "stale",
+			Purpose:    "Maintenance debt - important files untouched recently",
+			Factors:    []string{"InvRecent", "Age", "Size", "Commits", "Contributors"},
+			FactorKeys: []string{string(schema.BreakdownInvRecent), string(schema.BreakdownAge), string(schema.BreakdownSize), string(schema.BreakdownCommits), string(schema.BreakdownContrib)},
+		},
+	}
+	modesWithData := make([]schema.MetricsModeWithData, len(modes))
+
+	for i, mode := range modes {
+		weights := getDisplayWeightsForMode(schema.ScoringMode(mode.Name), activeWeights)
+		formula := formatWeights(weights, mode.FactorKeys)
+
+		modesWithData[i] = schema.MetricsModeWithData{
+			MetricsMode: mode,
+			Weights:     weights,
+			Formula:     formula,
+		}
+	}
+
+	return &schema.MetricsRenderModel{
+		Title:       "Hotspot Scoring Modes",
+		Description: "All scores = weighted sum of normalized factors",
+		Modes:       modesWithData,
+		SpecialRelationship: map[string]string{
+			"description": "RISK Score = HOT Score / Ownership Diversity Factor",
+			"note":        "(Factor ↓ when few contributors → RISK Score ↑)",
+		},
+	}
 }

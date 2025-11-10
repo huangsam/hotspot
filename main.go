@@ -243,11 +243,12 @@ var versionCmd = &cobra.Command{
 
 // metricsCmd displays the formal definitions of all scoring modes.
 var metricsCmd = &cobra.Command{
-	Use:   "metrics",
-	Short: "Display formal definitions of all scoring modes",
-	Long:  `The metrics command shows the purpose, factors, and mathematical formulas for all four core scoring modes without performing Git analysis.`,
+	Use:     "metrics",
+	Short:   "Display formal definitions of all scoring modes",
+	Long:    `The metrics command shows the purpose, factors, and mathematical formulas for all four core scoring modes without performing Git analysis.`,
+	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := core.ExecuteHotspotMetrics(); err != nil {
+		if err := core.ExecuteHotspotMetrics(rootCtx, cfg); err != nil {
 			internal.LogFatal("Cannot display metrics", err)
 		}
 	},
