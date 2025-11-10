@@ -146,9 +146,9 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config) error {
 	var timeseriesPoints []schema.TimeseriesPoint
 
 	for i := range numWindows {
-		end := now.Add(-time.Duration(i) * windowSize)
-		startTime := end.Add(-windowSize)
-		cfgWindow := cfg.CloneWithTimeWindow(startTime, end)
+		endTime := now.Add(-time.Duration(i) * windowSize)
+		startTime := endTime.Add(-windowSize)
+		cfgWindow := cfg.CloneWithTimeWindow(startTime, endTime)
 
 		var score float64
 		var owners []string
@@ -202,6 +202,8 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config) error {
 
 		timeseriesPoints = append(timeseriesPoints, schema.TimeseriesPoint{
 			Period: period,
+			Start:  startTime,
+			End:    endTime,
 			Score:  score,
 			Path:   normalizedPath,
 			Owners: owners,
