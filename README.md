@@ -14,7 +14,15 @@ This tool operates as a **tactical, code-level risk finder**. While [DORA] metri
 [DORA]: https://en.wikipedia.org/wiki/DevOps_Research_and_Assessment
 [SCA]: https://en.wikipedia.org/wiki/Static_program_analysis
 
-Offered capabilities:
+## Motivation
+
+For years, I've managed projects where everyone *knew* which files were the maintenance nightmares—the ones where a small change led to a two-day debugging session. As engineers, we invest heavily in **Code Correctness** - we run linters, use SCA tools, and write comprehensive unit tests.
+
+However, these traditional QA methods often fail against **System Resilience**. Outages are rarely caused by simple syntax errors; they stem from **concurrency issues, unexpected external inputs, or dependency failures** - all traced back to code that is **too complex, too fragile, or owned by too few people.**
+
+Hotspot was born out of the desire to fix that: to provide a **transparent, auditable, and quantifiable** tool for engineering teams to diagnose the **technical debt** and **knowledge risk** that truly cause production instability.
+
+## Key features
 
 - 🔍 **See what matters** - rank files and folders by activity, complexity, etc.
 - ⚡ **Fast results** - analyze thousands of files in seconds
@@ -22,7 +30,7 @@ Offered capabilities:
 - 🎯 **Actionable filters** - narrow down by path, exclude noise, or track trends over time
 - 📊 **Export results** - save to CSV/JSON to track trends and progress
 
-Target audience:
+## Target audience
 
 - 🧑‍💻 **Developers** tracking sprint or release activity
 - 🧹 **Tech leads** prioritizing refactors and risk
