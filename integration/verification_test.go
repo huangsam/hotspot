@@ -26,13 +26,16 @@ import (
 )
 
 var (
-	// sharedHotspotPath holds the path to a shared hotspot binary built once for all tests
+	// sharedHotspotPath holds the path to a shared hotspot binary built once for all tests.
 	sharedHotspotPath string
-	// buildOnce ensures we only build the binary once
+
+	// buildOnce ensures we only build the binary once.
 	buildOnce sync.Once
-	// buildMutex protects the shared binary path
+
+	// buildMutex protects the shared binary path.
 	buildMutex sync.Mutex
-	// tempDir holds the temp directory for cleanup
+
+	// tempDir holds the temp directory for cleanup.
 	tempDir string
 )
 
@@ -88,61 +91,8 @@ type HotspotFileDetail struct {
 	AgeDays            int     `json:"age_days"`
 }
 
-// TestHotspotFilesVerification runs hotspot files --detail and verifies commit counts against git log
+// TestHotspotFilesVerification runs hotspot files with time filters and verifies both commit counts and age calculations
 func TestHotspotFilesVerification(t *testing.T) {
-	// Skip if not in a git repo
-	if _, err := exec.LookPath("git"); err != nil {
-		t.Skip("git not available")
-	}
-
-	// Get current repo path
-	repoPath, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
-	require.NoError(t, err)
-	repoDir := strings.TrimSpace(string(repoPath))
-
-	// Get hotspot binary (built once and shared)
-	hotspotPath := getHotspotBinary()
-
-	// Run hotspot files --output json
-	cmd := exec.Command(hotspotPath, "files", "--output", "json")
-	cmd.Dir = repoDir
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-	err = cmd.Run()
-	require.NoError(t, err)
-
-	// Parse output to extract file -> commits map
-	fileDetails := parseHotspotDetailOutput(stdout.String())
-	fileCommits := make(map[string]int)
-	for _, detail := range fileDetails {
-		fileCommits[detail.Path] = detail.Commits
-	}
-
-	// For each file, verify against git log --oneline -- <file>
-	for file, hotspotCommits := range fileCommits {
-		t.Run(file, func(t *testing.T) {
-			gitCmd := exec.Command("git", "log", "--oneline", "--", file)
-			gitCmd.Dir = repoDir
-			gitOutput, err := gitCmd.Output()
-			if err != nil {
-				// File might not exist or have commits, skip
-				t.Skipf("git log failed for %s: %v", file, err)
-			}
-			gitLines := strings.Split(strings.TrimSpace(string(gitOutput)), "\n")
-			if gitLines[0] == "" {
-				gitLines = []string{}
-			}
-			gitCommits := len(gitLines)
-
-			assert.Equal(t, hotspotCommits, gitCommits,
-				"commit count mismatch for %s", file)
-		})
-	}
-}
-
-// TestHotspotFilesAgeVerification runs hotspot files --detail with explicit time filters
-// and verifies age calculations against the first commit within that time range
-func TestHotspotFilesAgeVerification(t *testing.T) {
 	// Skip if not in a git repo
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not available")
@@ -161,6 +111,7 @@ func TestHotspotFilesAgeVerification(t *testing.T) {
 	endTime := time.Now().Format(internal.DateTimeFormat)
 
 	// Run hotspot files --output json --detail --start <start> --end <end>
+	// This gives us both commit counts and age data within the time range
 	cmd := exec.Command(hotspotPath, "files", "--output", "json", "--detail", "--start", startTime, "--end", endTime)
 	cmd.Dir = repoDir
 	var stdout bytes.Buffer
@@ -171,35 +122,49 @@ func TestHotspotFilesAgeVerification(t *testing.T) {
 	// Parse output to extract file details
 	fileDetails := parseHotspotDetailOutput(stdout.String())
 
-	// For each file, verify age calculation against the first commit within the time range
+	// Verify both commit counts and age calculations for each file
 	for file, details := range fileDetails {
 		t.Run(file, func(t *testing.T) {
-			// Get the first commit timestamp for this file within the same time range as hotspot
-			gitCmd := exec.Command("git", "log", "--pretty=format:%ct", "--since", startTime, "--until", endTime, "--", file)
+			// Verify commit count within the time range
+			gitCmd := exec.Command("git", "log", "--oneline", "--since", startTime, "--until", endTime, "--", file)
 			gitCmd.Dir = repoDir
 			gitOutput, err := gitCmd.Output()
 			if err != nil {
 				// File might not exist or have commits in range, skip
 				t.Skipf("git log failed for %s: %v", file, err)
 			}
-
-			lines := strings.Split(strings.TrimSpace(string(gitOutput)), "\n")
-			if len(lines) == 0 || (len(lines) == 1 && lines[0] == "") {
-				t.Skipf("no commits found for %s in time range", file)
+			gitLines := strings.Split(strings.TrimSpace(string(gitOutput)), "\n")
+			if gitLines[0] == "" {
+				gitLines = []string{}
 			}
+			gitCommits := len(gitLines)
 
-			// Parse the first commit timestamp (oldest in the range due to reverse chronological order)
-			firstCommitTimestampStr := strings.TrimSpace(lines[len(lines)-1]) // Last line is oldest
-			firstCommitTimestamp, err := strconv.ParseInt(firstCommitTimestampStr, 10, 64)
-			require.NoError(t, err, "failed to parse git timestamp")
+			assert.Equal(t, details.Commits, gitCommits,
+				"commit count mismatch for %s in time range %s to %s", file, startTime, endTime)
 
-			firstCommitTime := time.Unix(firstCommitTimestamp, 0)
-			expectedAgeDays := int(time.Since(firstCommitTime).Hours() / 24)
+			// Verify age calculation against the first commit within the time range
+			if gitCommits > 0 {
+				ageGitCmd := exec.Command("git", "log", "--pretty=format:%ct", "--since", startTime, "--until", endTime, "--", file)
+				ageGitCmd.Dir = repoDir
+				ageGitOutput, err := ageGitCmd.Output()
+				require.NoError(t, err, "failed to get age data for %s", file)
 
-			// Age should match exactly since we're using the same time range
-			assert.Equal(t, expectedAgeDays, details.AgeDays,
-				"age calculation should match first commit in analysis window for %s (got %d, expected %d)",
-				file, details.AgeDays, expectedAgeDays)
+				lines := strings.Split(strings.TrimSpace(string(ageGitOutput)), "\n")
+				if len(lines) > 0 && lines[0] != "" {
+					// Parse the first commit timestamp (oldest in the range due to reverse chronological order)
+					firstCommitTimestampStr := strings.TrimSpace(lines[len(lines)-1]) // Last line is oldest
+					firstCommitTimestamp, err := strconv.ParseInt(firstCommitTimestampStr, 10, 64)
+					require.NoError(t, err, "failed to parse git timestamp for %s", file)
+
+					firstCommitTime := time.Unix(firstCommitTimestamp, 0)
+					expectedAgeDays := int(time.Since(firstCommitTime).Hours() / 24)
+
+					// Age should match exactly since we're using the same time range
+					assert.Equal(t, expectedAgeDays, details.AgeDays,
+						"age calculation should match first commit in analysis window for %s (got %d, expected %d)",
+						file, details.AgeDays, expectedAgeDays)
+				}
+			}
 		})
 	}
 }
@@ -422,7 +387,7 @@ func extractJSONFromOutput(output string) string {
 	return output // Fallback to original output
 }
 
-// TestCustomWeightsIntegration tests the full CLI with custom weights configuration
+// TestCustomWeightsIntegration tests custom weights functionality and validation
 func TestCustomWeightsIntegration(t *testing.T) {
 	// Skip if not in a git repo
 	if _, err := exec.LookPath("git"); err != nil {
@@ -437,8 +402,10 @@ func TestCustomWeightsIntegration(t *testing.T) {
 	// Get hotspot binary (built once and shared)
 	hotspotPath := getHotspotBinary()
 
-	// Create a temporary config file with custom weights
-	configContent := `
+	// Test valid custom weights configurations
+	t.Run("valid_weights_commit_focused", func(t *testing.T) {
+		// Create a temporary config file with custom weights favoring commits
+		configContent := `
 mode: hot
 limit: 5
 weights:
@@ -449,30 +416,32 @@ weights:
     contrib: 0.04
     size: 0.01
 `
-	configFile := filepath.Join(repoDir, ".hotspot.yml")
-	err = os.WriteFile(configFile, []byte(configContent), 0o644)
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = os.Remove(configFile) })
+		configFile := filepath.Join(repoDir, ".hotspot.yml")
+		err = os.WriteFile(configFile, []byte(configContent), 0o644)
+		require.NoError(t, err)
+		t.Cleanup(func() { _ = os.Remove(configFile) })
 
-	// Run hotspot files with custom config
-	cmd := exec.Command(hotspotPath, "files", "--output", "json")
-	cmd.Dir = repoDir
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-	err = cmd.Run()
-	require.NoError(t, err)
+		// Run hotspot files with custom config
+		cmd := exec.Command(hotspotPath, "files", "--output", "json")
+		cmd.Dir = repoDir
+		var stdout bytes.Buffer
+		cmd.Stdout = &stdout
+		err = cmd.Run()
+		require.NoError(t, err)
 
-	// Parse output
-	var files []HotspotFileDetail
-	jsonPart := extractJSONFromOutput(stdout.String())
-	err = json.Unmarshal([]byte(jsonPart), &files)
-	require.NoError(t, err)
+		// Parse output
+		var files []HotspotFileDetail
+		jsonPart := extractJSONFromOutput(stdout.String())
+		err = json.Unmarshal([]byte(jsonPart), &files)
+		require.NoError(t, err)
 
-	// Should have some results
-	assert.NotEmpty(t, files, "Should have file results")
+		// Should have some results
+		assert.NotEmpty(t, files, "Should have file results with commit-focused weights")
+	})
 
-	// Test with different custom weights for comparison
-	configContent2 := `
+	t.Run("valid_weights_churn_focused", func(t *testing.T) {
+		// Create a temporary config file with custom weights favoring churn
+		configContent := `
 mode: hot
 limit: 5
 weights:
@@ -483,46 +452,32 @@ weights:
     contrib: 0.04
     size: 0.01
 `
-	err = os.WriteFile(configFile, []byte(configContent2), 0o644)
-	require.NoError(t, err)
+		configFile := filepath.Join(repoDir, ".hotspot.yml")
+		err = os.WriteFile(configFile, []byte(configContent), 0o644)
+		require.NoError(t, err)
+		t.Cleanup(func() { _ = os.Remove(configFile) })
 
-	// Run hotspot files with different custom config
-	cmd2 := exec.Command(hotspotPath, "files", "--output", "json")
-	cmd2.Dir = repoDir
-	var stdout2 bytes.Buffer
-	cmd2.Stdout = &stdout2
-	err = cmd2.Run()
-	require.NoError(t, err)
+		// Run hotspot files with different custom config
+		cmd := exec.Command(hotspotPath, "files", "--output", "json")
+		cmd.Dir = repoDir
+		var stdout bytes.Buffer
+		cmd.Stdout = &stdout
+		err = cmd.Run()
+		require.NoError(t, err)
 
-	// Parse second output
-	var files2 []HotspotFileDetail
-	jsonPart2 := extractJSONFromOutput(stdout2.String())
-	err = json.Unmarshal([]byte(jsonPart2), &files2)
-	require.NoError(t, err)
+		// Parse output
+		var files []HotspotFileDetail
+		jsonPart := extractJSONFromOutput(stdout.String())
+		err = json.Unmarshal([]byte(jsonPart), &files)
+		require.NoError(t, err)
 
-	// Results should be different due to different weights
-	// (Note: we can't guarantee the scores will be different for all files,
-	// but the configuration should be accepted and processed)
-	assert.NotEmpty(t, files2, "Should have file results with different weights")
-}
+		// Should have some results with different weights
+		assert.NotEmpty(t, files, "Should have file results with churn-focused weights")
+	})
 
-// TestCustomWeightsValidationIntegration tests that invalid weights are rejected
-func TestCustomWeightsValidationIntegration(t *testing.T) {
-	// Skip if not in a git repo
-	if _, err := exec.LookPath("git"); err != nil {
-		t.Skip("git not available")
-	}
-
-	// Get current repo path
-	repoPath, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
-	require.NoError(t, err)
-	repoDir := strings.TrimSpace(string(repoPath))
-
-	// Get hotspot binary (built once and shared)
-	hotspotPath := getHotspotBinary()
-
-	// Create a temporary config file with invalid weights (don't sum to 1.0)
-	configContent := `
+	t.Run("invalid_weights_validation", func(t *testing.T) {
+		// Create a temporary config file with invalid weights (don't sum to 1.0)
+		configContent := `
 mode: hot
 limit: 5
 weights:
@@ -531,14 +486,15 @@ weights:
     churn: 0.3
     age: 0.3  # 0.5 + 0.3 + 0.3 = 1.1
 `
-	configFile := filepath.Join(repoDir, ".hotspot.yml")
-	err = os.WriteFile(configFile, []byte(configContent), 0o644)
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = os.Remove(configFile) })
+		configFile := filepath.Join(repoDir, ".hotspot.yml")
+		err = os.WriteFile(configFile, []byte(configContent), 0o644)
+		require.NoError(t, err)
+		t.Cleanup(func() { _ = os.Remove(configFile) })
 
-	// Run hotspot files - should fail due to invalid weights
-	cmd := exec.Command(hotspotPath, "files")
-	cmd.Dir = repoDir
-	err = cmd.Run()
-	assert.Error(t, err, "Should fail with invalid weights that don't sum to 1.0")
+		// Run hotspot files - should fail due to invalid weights
+		cmd := exec.Command(hotspotPath, "files")
+		cmd.Dir = repoDir
+		err = cmd.Run()
+		assert.Error(t, err, "Should fail with invalid weights that don't sum to 1.0")
+	})
 }
