@@ -192,11 +192,16 @@ hotspot timeseries --path pkg/api/v1.go --mode hot --interval "90 days" --points
 
 | Command | Size | Duration | Notes |
 |---------|------|----------|-------|
-| `files`/`folders` | **Typical repo (1k files)** | 2-5 seconds | Single analysis pass |
-| `files`/`folders` | **Large repo (10k+ files)** | 15-30 seconds | Single analysis pass |
-| `compare` | **Typical repo** | 4-10 seconds | Two analysis passes |
-| `compare` | **Large repo** | 30-60 seconds | Two analysis passes |
-| `timeseries` | **Typical repo** | 10-30 seconds | Multiple analysis passes |
-| `timeseries` | **Large repo** | 2-5 minutes | Multiple analysis passes |
+| `files`/`folders` | **Small repo (1k+ files)** | 0.03-0.05s | Single analysis pass |
+| `files`/`folders` | **Large repo (10k+ files)** | 3-4s | Single analysis pass |
+| `compare` | **Small repo** | 0.07-0.08s | Two analysis passes |
+| `compare` | **Large repo** | 8-9s | Two analysis passes |
+| `timeseries` | **Small repo** | 0.04s | Multiple analysis passes |
+| `timeseries` | **Large repo** | 1-2s | Multiple analysis passes |
 
 All measurements use default lookback windows. Timeseries performance scales with `--points` (more points = more analysis passes). Use `--workers` to parallelize analysis on multi-core systems.
+
+**Test repositories used:**
+
+- Small: <https://github.com/sharkdp/fd>
+- Large: <https://github.com/kubernetes/kubernetes>
