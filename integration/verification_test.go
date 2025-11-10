@@ -79,20 +79,8 @@ func getHotspotBinary() string {
 	return sharedHotspotPath
 }
 
-// HotspotFileDetail represents a file entry with detailed metadata from hotspot JSON output
-// Also works for basic output (extra fields are ignored during unmarshaling)
-type HotspotFileDetail struct {
-	Path               string  `json:"path"`
-	Score              float64 `json:"score"`
-	UniqueContributors int     `json:"unique_contributors"`
-	Commits            int     `json:"commits"`
-	LinesOfCode        int     `json:"lines_of_code"`
-	Churn              int     `json:"churn"`
-	AgeDays            int     `json:"age_days"`
-}
-
-// TestHotspotFilesVerification runs hotspot files with time filters and verifies both commit counts and age calculations
-func TestHotspotFilesVerification(t *testing.T) {
+// TestFilesVerification runs hotspot files with time filters and verifies both commit counts and age calculations
+func TestFilesVerification(t *testing.T) {
 	// Skip if not in a git repo
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not available")
@@ -171,8 +159,8 @@ func TestHotspotFilesVerification(t *testing.T) {
 
 // parseHotspotDetailOutput extracts file details from hotspot JSON output
 // Works with both basic and detailed output formats
-func parseHotspotDetailOutput(output string) map[string]HotspotFileDetail {
-	var files []HotspotFileDetail
+func parseHotspotDetailOutput(output string) map[string]schema.FileResult {
+	var files []schema.FileResult
 	lines := strings.Split(output, "\n")
 	for i, line := range lines {
 		if strings.TrimSpace(line) == "[" { // Start of JSON array
@@ -183,7 +171,7 @@ func parseHotspotDetailOutput(output string) map[string]HotspotFileDetail {
 		}
 	}
 
-	fileDetails := make(map[string]HotspotFileDetail)
+	fileDetails := make(map[string]schema.FileResult)
 	for _, file := range files {
 		fileDetails[file.Path] = file
 	}
@@ -387,8 +375,8 @@ func extractJSONFromOutput(output string) string {
 	return output // Fallback to original output
 }
 
-// TestCustomWeightsIntegration tests custom weights functionality and validation
-func TestCustomWeightsIntegration(t *testing.T) {
+// TestMetricsVerification tests the metrics command and custom weights handling
+func TestMetricsVerification(t *testing.T) {
 	// Skip if not in a git repo
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not available")
@@ -421,22 +409,43 @@ weights:
 		require.NoError(t, err)
 		t.Cleanup(func() { _ = os.Remove(configFile) })
 
-		// Run hotspot files with custom config
-		cmd := exec.Command(hotspotPath, "files", "--output", "json")
+		// Run hotspot metrics to verify custom weights are loaded and displayed
+		cmd := exec.Command(hotspotPath, "metrics", "--output", "json")
 		cmd.Dir = repoDir
 		var stdout bytes.Buffer
 		cmd.Stdout = &stdout
 		err = cmd.Run()
 		require.NoError(t, err)
 
-		// Parse output
-		var files []HotspotFileDetail
+		// Parse the metrics JSON output
 		jsonPart := extractJSONFromOutput(stdout.String())
-		err = json.Unmarshal([]byte(jsonPart), &files)
+		var metricsRenderModel schema.MetricsRenderModel
+		err = json.Unmarshal([]byte(jsonPart), &metricsRenderModel)
 		require.NoError(t, err)
 
-		// Should have some results
-		assert.NotEmpty(t, files, "Should have file results with commit-focused weights")
+		// Find the "hot" mode
+		var hotMode *schema.MetricsModeWithData
+		for i := range metricsRenderModel.Modes {
+			if metricsRenderModel.Modes[i].Name == "hot" {
+				hotMode = &metricsRenderModel.Modes[i]
+				break
+			}
+		}
+		require.NotNil(t, hotMode, "Should find 'hot' mode in metrics output")
+
+		// Verify the custom weights are correctly loaded
+		expectedWeights := map[string]float64{
+			"commits": 0.8,
+			"churn":   0.1,
+			"age":     0.05,
+			"contrib": 0.04,
+			"size":    0.01,
+		}
+		assert.Equal(t, expectedWeights, hotMode.Weights, "Weights should match custom configuration")
+
+		// Verify the formula reflects the custom weights
+		expectedFormula := "0.80*commits+0.10*churn+0.04*contrib+0.05*age+0.01*size"
+		assert.Equal(t, expectedFormula, hotMode.Formula, "Formula should reflect custom weights")
 	})
 
 	t.Run("valid_weights_churn_focused", func(t *testing.T) {
@@ -457,22 +466,43 @@ weights:
 		require.NoError(t, err)
 		t.Cleanup(func() { _ = os.Remove(configFile) })
 
-		// Run hotspot files with different custom config
-		cmd := exec.Command(hotspotPath, "files", "--output", "json")
+		// Run hotspot metrics to verify custom weights are loaded and displayed
+		cmd := exec.Command(hotspotPath, "metrics", "--output", "json")
 		cmd.Dir = repoDir
 		var stdout bytes.Buffer
 		cmd.Stdout = &stdout
 		err = cmd.Run()
 		require.NoError(t, err)
 
-		// Parse output
-		var files []HotspotFileDetail
+		// Parse the metrics JSON output
 		jsonPart := extractJSONFromOutput(stdout.String())
-		err = json.Unmarshal([]byte(jsonPart), &files)
+		var metricsRenderModel schema.MetricsRenderModel
+		err = json.Unmarshal([]byte(jsonPart), &metricsRenderModel)
 		require.NoError(t, err)
 
-		// Should have some results with different weights
-		assert.NotEmpty(t, files, "Should have file results with churn-focused weights")
+		// Find the "hot" mode
+		var hotMode *schema.MetricsModeWithData
+		for i := range metricsRenderModel.Modes {
+			if metricsRenderModel.Modes[i].Name == "hot" {
+				hotMode = &metricsRenderModel.Modes[i]
+				break
+			}
+		}
+		require.NotNil(t, hotMode, "Should find 'hot' mode in metrics output")
+
+		// Verify the custom weights are correctly loaded
+		expectedWeights := map[string]float64{
+			"commits": 0.1,
+			"churn":   0.8,
+			"age":     0.05,
+			"contrib": 0.04,
+			"size":    0.01,
+		}
+		assert.Equal(t, expectedWeights, hotMode.Weights, "Weights should match custom configuration")
+
+		// Verify the formula reflects the custom weights
+		expectedFormula := "0.10*commits+0.80*churn+0.04*contrib+0.05*age+0.01*size"
+		assert.Equal(t, expectedFormula, hotMode.Formula, "Formula should reflect custom weights")
 	})
 
 	t.Run("invalid_weights_validation", func(t *testing.T) {
@@ -491,8 +521,8 @@ weights:
 		require.NoError(t, err)
 		t.Cleanup(func() { _ = os.Remove(configFile) })
 
-		// Run hotspot files - should fail due to invalid weights
-		cmd := exec.Command(hotspotPath, "files")
+		// Run hotspot metrics - should fail due to invalid weights
+		cmd := exec.Command(hotspotPath, "metrics")
 		cmd.Dir = repoDir
 		err = cmd.Run()
 		assert.Error(t, err, "Should fail with invalid weights that don't sum to 1.0")
