@@ -1,5 +1,18 @@
 # 🚀 Changelog
 
+## v1.1.5
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.1.4...v1.1.5)
+
+### Improvements
+
+- **Timeseries Timestamps**: Add exact timestamps to timeseries output for better precision
+- **Terminal Width Detection**: Detect terminal width for improved tabular view formatting
+
+### Fixes
+
+- **JSON Output**: Fix nil owner arrays in JSON output to prevent serialization errors
+
 ## v1.1.4
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.1.3...v1.1.4)
