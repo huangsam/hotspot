@@ -20,7 +20,7 @@ INTEGRATION   ?= 0
 
 # --- Phony Targets ---
 # .PHONY: explicitly declares targets that do not represent files
-.PHONY: all build clean install test bench format lint check snapshot release fuzz fuzz-quick fuzz-long profile help
+.PHONY: all build clean install test bench format lint check snapshot release fuzz fuzz-quick fuzz-long profile demo help
 
 # --- Targets ---
 
@@ -139,6 +139,12 @@ fuzz-quick: fuzz
 fuzz-long: FUZZTIME=60s
 fuzz-long: fuzz
 
+# Run VHS demo
+demo:
+	@echo "🎥 Running VHS demo..."
+	@vhs demo.tape
+	@echo "✅ Demo complete"
+
 # Format code
 format:
 	@echo "📐 Formatting code..."
@@ -192,6 +198,7 @@ help:
 	@echo "  make fuzz-quick          - Runs fuzz tests for 5 seconds."
 	@echo "  make fuzz-long           - Runs fuzz tests for 60 seconds."
 	@echo "  make profile             - Run full profiling workflow and show top functions."
+	@echo "  make demo                - Runs the VHS demo script to generate a demo GIF."
 	@echo "  make format              - Runs code formatting."
 	@echo "  make lint                - Runs static analysis and checks."
 	@echo "  make check               - Executes format, lint, and test sequentially."

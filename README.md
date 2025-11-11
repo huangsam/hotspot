@@ -85,11 +85,17 @@ hotspot folders
 hotspot files /path/to/repo/pkg
 ```
 
-### Example output
+### Live demo
+
+Here's a demo of Hotspot in action:
+
+<img src="./images/demo.gif" alt="Hotspot Demo" width="800px" />
+
+### Real world output
 
 Here is what the tool shows for [kubernetes/kubernetes](https://github.com/kubernetes/kubernetes):
 
-<img src="./images/ranking.png" alt="Hotspot" width="768px" />
+<img src="./images/ranking.png" alt="Hotspot" width="700px" />
 
 This ranking displays the **complexity score** and a colored label based on:
 
