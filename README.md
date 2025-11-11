@@ -60,7 +60,7 @@ Traditional static analysis tools examine code structure:
 ### Requirements
 
 - **Go 1.25+** for building from source
-- **Git 2.7.0+** for `--date=iso-strict` support (used for precise timestamp parsing)
+- **Git 2.2.0+** for `--date=iso-strict` support (used for precise timestamp parsing)
 
 ### Install from source
 
