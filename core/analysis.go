@@ -13,7 +13,7 @@ import (
 )
 
 // runSingleAnalysisCore performs the common Aggregation, Filtering, and Analysis steps.
-func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client *internal.LocalGitClient) (*schema.SingleAnalysisOutput, error) {
+func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client internal.GitClient) (*schema.SingleAnalysisOutput, error) {
 	if !shouldSuppressHeader(ctx) {
 		internal.LogAnalysisHeader(cfg)
 	}
@@ -41,7 +41,7 @@ func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client *in
 
 // runCompareAnalysisForRef runs the file analysis for a specific Git reference in compare mode.
 // Headers are always suppressed in compare mode.
-func runCompareAnalysisForRef(ctx context.Context, cfg *internal.Config, client *internal.LocalGitClient, ref string) (*schema.CompareAnalysisOutput, error) {
+func runCompareAnalysisForRef(ctx context.Context, cfg *internal.Config, client internal.GitClient, ref string) (*schema.CompareAnalysisOutput, error) {
 	// 1. Resolve the time window for the reference
 	baseStartTime, baseEndTime, err := getAnalysisWindowForRef(ctx, client, cfg.RepoPath, ref, cfg.Lookback)
 	if err != nil {
@@ -215,4 +215,114 @@ func getAnalysisWindowForRef(ctx context.Context, client internal.GitClient, rep
 	startTime = endTime.Add(-lookback)
 
 	return startTime, endTime, nil
+}
+
+// runTimeseriesAnalysis performs the core timeseries analysis logic.
+func runTimeseriesAnalysis(
+	ctx context.Context,
+	cfg *internal.Config,
+	client internal.GitClient,
+	normalizedPath string,
+	isFolder bool,
+	now time.Time,
+	interval time.Duration,
+	numPoints int,
+	minCommits int,
+	minLookback time.Duration,
+	maxSearchDuration time.Duration,
+) []schema.TimeseriesPoint {
+	var timeseriesPoints []schema.TimeseriesPoint
+	currentEnd := now
+
+	// Process each time window in reverse chronological order
+	for i := range numPoints {
+		// 1. Establish the End Time for this point/window (fixed step-back)
+		if i > 0 {
+			currentEnd = currentEnd.Add(-interval)
+		}
+
+		// 2. Calculate T_M_min: time to get minCommits, limited by maxSearchDuration
+		// The Git search will be confined to [currentEnd - maxSearchDuration, currentEnd]
+		commitTime, err := client.GetOldestCommitDateForPath(
+			ctx,
+			cfg.RepoPath,
+			normalizedPath,
+			currentEnd,
+			minCommits,
+			maxSearchDuration, // Limiting the Git traversal depth
+		)
+
+		var lookbackFromCommits time.Duration
+		if err != nil || commitTime.IsZero() {
+			// If the search fails or finds fewer than minCommits within T_Max,
+			// assume the path is sparse and use the larger of T_min or T_Max.
+			lookbackFromCommits = max(minLookback, maxSearchDuration)
+		} else {
+			lookbackFromCommits = currentEnd.Sub(commitTime)
+		}
+
+		// 3. T_L is the max of the two constraints (T_min and T_M_min)
+		lookbackDuration := max(minLookback, lookbackFromCommits)
+		startTime := currentEnd.Add(-lookbackDuration)
+
+		cfgWindow := cfg.CloneWithTimeWindow(startTime, currentEnd)
+
+		// --- Execute Analysis Core ---
+		score, owners := analyzeTimeseriesPoint(ctx, cfgWindow, client, normalizedPath, isFolder)
+		// --- End Execute Analysis Core ---
+
+		// 4. Generate period label
+		var period string
+		if i == 0 {
+			period = "Current"
+		} else {
+			period = fmt.Sprintf("%dd Ago", int(interval.Hours()/24)*i)
+		}
+
+		timeseriesPoints = append(timeseriesPoints, schema.TimeseriesPoint{
+			Period:   period,
+			Start:    startTime,
+			End:      currentEnd,
+			Score:    score,
+			Path:     normalizedPath,
+			Owners:   owners,
+			Mode:     cfg.Mode,
+			Lookback: lookbackDuration,
+		})
+	}
+
+	return timeseriesPoints
+}
+
+// analyzeTimeseriesPoint performs the analysis for a single timeseries point.
+func analyzeTimeseriesPoint(
+	ctx context.Context,
+	cfg *internal.Config,
+	client internal.GitClient,
+	path string,
+	isFolder bool,
+) (float64, []string) {
+	suppressCtx := withSuppressHeader(ctx, true)
+	output, err := runSingleAnalysisCore(suppressCtx, cfg, client)
+	if err != nil {
+		// If no data in this window (e.g. no commits), score is 0
+		return 0, []string{}
+	}
+
+	// Extract score and owners from analysis output
+	if isFolder {
+		folderResults := aggregateAndScoreFolders(cfg, output.FileResults)
+		for _, fr := range folderResults {
+			if fr.Path == path {
+				return fr.Score, fr.Owners
+			}
+		}
+		return 0, []string{}
+	}
+	for _, fr := range output.FileResults {
+		if fr.Path == path {
+			return fr.Score, fr.Owners
+		}
+	}
+	return 0, []string{}
 }
