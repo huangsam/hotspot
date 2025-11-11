@@ -11,8 +11,8 @@ const (
 )
 
 // withSuppressHeader sets whether headers should be suppressed in the context
-func withSuppressHeader(ctx context.Context, suppress bool) context.Context {
-	return context.WithValue(ctx, suppressHeaderKey, suppress)
+func withSuppressHeader(ctx context.Context) context.Context {
+	return context.WithValue(ctx, suppressHeaderKey, true)
 }
 
 // shouldSuppressHeader returns whether headers should be suppressed from context

@@ -97,6 +97,9 @@ func parseAndAggregateGitLog(out []byte, fileExists map[string]bool, commitsMap,
 
 // parseCommitHeader extracts author and date from a commit header line.
 func parseCommitHeader(line string) (string, time.Time) {
+	if !strings.HasPrefix(line, "--") || len(line) < 5 { // --x|y|z minimum
+		return "", time.Time{}
+	}
 	parts := strings.SplitN(line[2:], "|", 3) // commit|author|date
 	if len(parts) == 3 {
 		author := parts[1]
@@ -129,7 +132,7 @@ func parseChurnValue(s string) int {
 	if s == "-" {
 		return 0
 	}
-	if val, err := strconv.Atoi(s); err == nil {
+	if val, err := strconv.Atoi(s); err == nil && val >= 0 {
 		return val
 	}
 	return 0
@@ -158,10 +161,18 @@ func determinePathsToAggregate(path string, fileExists map[string]bool) []string
 
 // parseRenamePath extracts old and new paths from a rename string.
 func parseRenamePath(path string) (string, string) {
-	if !strings.Contains(path, "{") || !strings.Contains(path, "}") {
+	if !strings.Contains(path, "{") {
 		// Simple format: "old => new"
 		parts := strings.SplitN(path, " => ", 2)
-		return parts[0], parts[1]
+		if len(parts) == 2 {
+			return parts[0], parts[1]
+		}
+		return "", ""
+	}
+
+	if !strings.Contains(path, "}") {
+		// Malformed: has { but no }
+		return "", ""
 	}
 
 	// Braced format: prefix{old => new}suffix

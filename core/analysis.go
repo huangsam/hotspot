@@ -125,7 +125,9 @@ func runFollowPass(ctx context.Context, cfg *internal.Config, client internal.Gi
 		return ranked // Nothing to do
 	}
 
-	fmt.Printf("🔁 Running --follow re-analysis for top %d files...\n", n)
+	if !shouldSuppressHeader(ctx) {
+		fmt.Printf("🔁 Running --follow re-analysis for top %d files...\n", n)
+	}
 
 	var wg sync.WaitGroup
 	for i := range n {
@@ -309,7 +311,7 @@ func analyzeTimeseriesPoint(
 	path string,
 	isFolder bool,
 ) (float64, []string) {
-	suppressCtx := withSuppressHeader(ctx, true)
+	suppressCtx := withSuppressHeader(ctx)
 	output, err := runSingleAnalysisCore(suppressCtx, cfg, client)
 	if err != nil {
 		// If no data in this window (e.g. no commits), score is 0
