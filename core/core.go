@@ -134,16 +134,11 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config) error {
 	}
 	isFolder := info.IsDir()
 
-	// Define constraints
-	const minCommits = 30
-	const minLookback = 3 * 30 * 24 * time.Hour       // T_min: 3 months (temporal coverage constraint)
-	const maxSearchDuration = 6 * 30 * 24 * time.Hour // T_Max: 6 months (performance constraint for Git search)
-
 	// Print single header for the entire timeseries analysis
 	internal.LogTimeseriesHeader(cfg, interval, numPoints)
 
 	// Execute the timeseries analysis
-	timeseriesPoints := runTimeseriesAnalysis(ctx, cfg, client, normalizedPath, isFolder, now, interval, numPoints, minCommits, minLookback, maxSearchDuration)
+	timeseriesPoints := runTimeseriesAnalysis(ctx, cfg, client, normalizedPath, isFolder, now, interval, numPoints)
 
 	result := schema.TimeseriesResult{Points: timeseriesPoints}
 	duration := time.Since(start)

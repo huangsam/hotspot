@@ -12,6 +12,13 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
+// Timeseries analysis constraints
+const (
+	minCommits        = 30
+	minLookback       = 3 * 30 * 24 * time.Hour // T_min: 3 months (temporal coverage constraint)
+	maxSearchDuration = 6 * 30 * 24 * time.Hour // T_Max: 6 months (performance constraint for Git search)
+)
+
 // runSingleAnalysisCore performs the common Aggregation, Filtering, and Analysis steps.
 func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client internal.GitClient) (*schema.SingleAnalysisOutput, error) {
 	if !shouldSuppressHeader(ctx) {
@@ -227,9 +234,6 @@ func runTimeseriesAnalysis(
 	now time.Time,
 	interval time.Duration,
 	numPoints int,
-	minCommits int,
-	minLookback time.Duration,
-	maxSearchDuration time.Duration,
 ) []schema.TimeseriesPoint {
 	var timeseriesPoints []schema.TimeseriesPoint
 	currentEnd := now
