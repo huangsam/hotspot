@@ -9,7 +9,7 @@ Hotspot cuts through Git history to show you which files and folders are your gr
 
 <img src="./images/logo.png" alt="Hotspot" width="250px" />
 
-This tool operates as a **tactical, code-level risk finder**. While [DORA] metrics track team performance and [SCA] flags external security issues, Hotspot focuses entirely on diagnosing **technical debt** and **bus factor risk** within **your code** at the file and folder level.
+This tool operates as a **data-driven development intelligence.** While traditional [SCA] tools focus on code structure and style, and [DORA] metrics track team performance, Hotspot analyzes **actual development behavior** - commit patterns, ownership distribution, churn trends, and maintenance activity - to diagnose **technical debt** and **bus factor risk** within **your code** at the file and folder level.
 
 [DORA]: https://en.wikipedia.org/wiki/DevOps_Research_and_Assessment
 [SCA]: https://en.wikipedia.org/wiki/Static_program_analysis
@@ -29,6 +29,25 @@ Hotspot was born out of the desire to fix that: to provide a transparent, audita
 - 🧮 **Rich insights** - contributors, churn, size, age, and risk metrics
 - 🎯 **Actionable filters** - narrow down by path, exclude noise, or track trends over time
 - 📊 **Export results** - save to CSV/JSON to track trends and progress
+- 🧠 **Data-driven decisions** - replace gut feelings with Git history evidence
+
+### What makes Hotspot different?
+
+Traditional static analysis tools examine code structure:
+
+- Code complexity metrics
+- Cyclomatic complexity scores
+- Lines of code counts
+- Style and formatting rules
+
+**Hotspot analyzes development behavior:**
+
+- **Activity patterns** - Which files are actually worked on frequently?
+- **Ownership distribution** - Are critical files maintained by enough people?
+- **Maintenance trends** - Is complexity increasing or decreasing over time?
+- **Risk evolution** - When did files become maintenance burdens?
+
+**Result**: Evidence-based refactoring decisions instead of opinion-based maintenance.
 
 ## Target audience
 
