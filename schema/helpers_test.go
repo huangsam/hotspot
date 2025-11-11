@@ -1,8 +1,9 @@
 package schema
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAbbreviateName(t *testing.T) {
@@ -64,9 +65,7 @@ func TestAbbreviateName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := AbbreviateName(tt.name)
-			if got != tt.want {
-				t.Fatalf("AbbreviateName(%q) = %q; want %q", tt.name, got, tt.want)
-			}
+			assert.Equal(t, tt.want, got, "AbbreviateName(%q) should match expected result", tt.name)
 		})
 	}
 }
@@ -78,29 +77,106 @@ func TestAbbreviateOwnersAndFormat(t *testing.T) {
 	wantAbbrev := []string{"Samuel H", "Ava C", "dependabot[bot]"}
 
 	got := AbbreviateOwners(owners)
-	if !reflect.DeepEqual(got, wantAbbrev) {
-		t.Fatalf("AbbreviateOwners = %v; want %v", got, wantAbbrev)
-	}
+	assert.Equal(t, wantAbbrev, got, "AbbreviateOwners should abbreviate all owners correctly")
 
 	// Test that FormatOwners joins the abbreviated owners with commas.
 	wantFormat := "Samuel H, Ava C, dependabot[bot]"
 	gotFormat := FormatOwners(owners)
-	if gotFormat != wantFormat {
-		t.Fatalf("FormatOwners = %q; want %q", gotFormat, wantFormat)
-	}
+	assert.Equal(t, wantFormat, gotFormat, "FormatOwners should join abbreviated owners with commas")
 }
 
 func TestOwnersEqual(t *testing.T) {
 	// Test order-insensitive equality: same owners in different order should be equal.
 	a := []string{"Alice", "Bob", "Carol"}
 	b := []string{"Carol", "Alice", "Bob"}
-	if !OwnersEqual(a, b) {
-		t.Fatalf("OwnersEqual should treat order-insensitively but returned false for %v vs %v", a, b)
-	}
+	assert.True(t, OwnersEqual(a, b), "OwnersEqual should treat order-insensitively")
 
 	// Test that different lengths are not equal.
 	c := []string{"Alice", "Bob"}
-	if OwnersEqual(a, c) {
-		t.Fatalf("OwnersEqual returned true for different-length slices %v vs %v", a, c)
+	assert.False(t, OwnersEqual(a, c), "OwnersEqual should return false for different-length slices")
+}
+
+func TestGetDefaultWeights(t *testing.T) {
+	tests := []struct {
+		name string
+		mode ScoringMode
+	}{
+		{"HotMode", HotMode},
+		{"RiskMode", RiskMode},
+		{"ComplexityMode", ComplexityMode},
+		{"StaleMode", StaleMode},
+		{"InvalidMode defaults to HotMode", ScoringMode("invalid")},
 	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			weights := GetDefaultWeights(tt.mode)
+
+			// Validate that all weights are non-negative
+			for key, weight := range weights {
+				assert.GreaterOrEqual(t, weight, 0.0, "weight for %s should be non-negative", key)
+			}
+
+			// Validate that we got some weights (not empty map)
+			assert.NotEmpty(t, weights, "weights map should not be empty")
+		})
+	}
+}
+
+func TestFileResultGetters(t *testing.T) {
+	file := FileResult{
+		Path:    "src/main.go",
+		Score:   85.5,
+		Commits: 42,
+		Churn:   156,
+		Owners:  []string{"Alice", "Bob"},
+	}
+
+	// Test GetPath
+	assert.Equal(t, "src/main.go", file.GetPath(), "GetPath should return the file path")
+
+	// Test GetScore
+	assert.Equal(t, 85.5, file.GetScore(), "GetScore should return the computed score")
+
+	// Test GetCommits
+	assert.Equal(t, 42, file.GetCommits(), "GetCommits should return the total commit count")
+
+	// Test GetChurn
+	assert.Equal(t, 156, file.GetChurn(), "GetChurn should return the total churn")
+
+	// Test GetOwners with populated owners
+	assert.Equal(t, []string{"Alice", "Bob"}, file.GetOwners(), "GetOwners should return the top owners")
+
+	// Test GetOwners with nil owners
+	fileNil := FileResult{Owners: nil}
+	assert.Equal(t, []string{}, fileNil.GetOwners(), "GetOwners should return empty slice for nil owners")
+}
+
+func TestFolderResultGetters(t *testing.T) {
+	folder := FolderResult{
+		Path:    "src/",
+		Score:   72.3,
+		Commits: 128,
+		Churn:   543,
+		Owners:  []string{"Charlie", "Dana"},
+	}
+
+	// Test GetPath
+	assert.Equal(t, "src/", folder.GetPath(), "GetPath should return the folder path")
+
+	// Test GetScore
+	assert.Equal(t, 72.3, folder.GetScore(), "GetScore should return the computed score")
+
+	// Test GetCommits
+	assert.Equal(t, 128, folder.GetCommits(), "GetCommits should return the total commit count")
+
+	// Test GetChurn
+	assert.Equal(t, 543, folder.GetChurn(), "GetChurn should return the total churn")
+
+	// Test GetOwners with populated owners
+	assert.Equal(t, []string{"Charlie", "Dana"}, folder.GetOwners(), "GetOwners should return the top owners")
+
+	// Test GetOwners with nil owners
+	folderNil := FolderResult{Owners: nil}
+	assert.Equal(t, []string{}, folderNil.GetOwners(), "GetOwners should return empty slice for nil owners")
 }
