@@ -15,6 +15,8 @@
 
 - **Test Robustness**: Enhance test reliability with paths and time tolerances
 
+## v1.3.1
+
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.3.0...v1.3.1)
 
 ### Improvements
