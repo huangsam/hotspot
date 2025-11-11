@@ -1,5 +1,21 @@
 # 🚀 Changelog
 
+## v1.3.3
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.3.2...v1.3.3)
+
+### Improvements
+
+- **Documentation**: Add docs for config weights and update timeseries section
+
+### Development
+
+- **Tests**: Add more schema tests
+
+### Fixes
+
+- **Changelog**: Fix accidental header cleanup
+
 ## v1.3.2
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.3.1...v1.3.2)
