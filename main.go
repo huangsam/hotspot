@@ -321,8 +321,8 @@ func init() {
 
 	// Bind all flags of timeseriesCmd to Viper
 	timeseriesCmd.Flags().String("path", "", "Path to the file or folder to analyze (required)")
-	timeseriesCmd.Flags().String("interval", "", "Total time interval (e.g., 180d) (required)")
-	timeseriesCmd.Flags().Int("points", 0, "Number of lookback points (required)")
+	timeseriesCmd.Flags().String("interval", "3 months", "Total time interval")
+	timeseriesCmd.Flags().Int("points", 3, "Number of lookback points")
 	if err := viper.BindPFlags(timeseriesCmd.Flags()); err != nil {
 		internal.LogFatal("Error binding timeseries flags", err)
 	}

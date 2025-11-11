@@ -21,16 +21,13 @@ func LogAnalysisHeader(cfg *Config) {
 }
 
 // LogTimeseriesHeader prints a header for timeseries analysis.
-func LogTimeseriesHeader(cfg *Config, totalInterval time.Duration, numPoints int) {
+func LogTimeseriesHeader(cfg *Config, intervalDuration time.Duration, numPoints int) {
 	repoName := filepath.Base(cfg.RepoPath)
 	if repoName == "" || repoName == "." {
 		repoName = "current"
 	}
 	fmt.Printf("🔎 Repo: %s (Mode: %s)\n", repoName, cfg.Mode)
-	fmt.Printf("📅 Total Interval: %s → %s (%d points)\n",
-		time.Now().Add(-totalInterval).Format(DateTimeFormat),
-		time.Now().Format(DateTimeFormat),
-		numPoints)
+	fmt.Printf("📅 Timeseries: %d data points (interval: %v)\n", numPoints, intervalDuration)
 }
 
 // LogCompareHeader prints a header for comparison analysis.
