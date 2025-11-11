@@ -1,6 +1,19 @@
 # 🚀 Changelog
 
-## v1.3.1
+## v1.3.2
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.3.1...v1.3.2)
+
+### Development
+
+- **Test Coverage**: Significantly improve test coverage across core analysis logic, configuration validation, and Git client functionality
+- **Config Testing**: Add comprehensive edge case testing for configuration validation including limit, workers, precision, and output format validation
+- **Time Assertions**: Replace brittle time equality assertions with robust `WithinDuration` checks for better test reliability
+- **Documentation**: Add demo GIF and minor README text improvements for better user engagement
+
+### Improvements
+
+- **Test Robustness**: Enhance test suite reliability with environment-aware path resolution and tolerant time comparisons
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.3.0...v1.3.1)
 
