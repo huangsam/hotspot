@@ -356,6 +356,8 @@ func ProcessWeightsRawInput(weights WeightsRawInput, validateSum bool) (map[sche
 		schema.ComplexityMode: weights.Complexity,
 	}
 
+	// Process each mode's raw weights and validate sums if required.
+	// Skip modes that are nil (not provided)
 	for _, mode := range modes {
 		rawMode := modeWeights[mode]
 		if rawMode == nil {
@@ -406,6 +408,7 @@ func ProcessWeightsRawInput(weights WeightsRawInput, validateSum bool) (map[sche
 			sum += *rawMode.LowRecent
 		}
 
+		// Only add to result if we have at least one weight
 		if len(modeMap) > 0 {
 			if validateSum && (sum < 0.999 || sum > 1.001) {
 				return nil, fmt.Errorf("custom weights for mode %s must sum to 1.0, got %.3f", mode, sum)
