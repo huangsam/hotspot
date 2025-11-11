@@ -273,10 +273,13 @@ func runTimeseriesAnalysis(
 
 		// 4. Generate period label
 		var period string
+		intervalDays := int(interval.Hours() / 24)
 		if i == 0 {
-			period = "Current"
+			period = fmt.Sprintf("0-%dd ago", intervalDays)
 		} else {
-			period = fmt.Sprintf("%dd Ago", int(interval.Hours()/24)*i)
+			startDays := intervalDays * i
+			endDays := startDays + intervalDays
+			period = fmt.Sprintf("%d-%dd ago", startDays, endDays)
 		}
 
 		timeseriesPoints = append(timeseriesPoints, schema.TimeseriesPoint{

@@ -50,9 +50,22 @@ func parseRelativeTime(s string, now time.Time) (time.Time, error) {
 // Define the regular expression to capture "N [units]".
 var lookbackDurationRe = regexp.MustCompile(`^(\d+)\s+(year|month|week|day|hour|minute)s?$`)
 
-// ParseLookbackDuration converts strings like "3 months" into a single time.Duration.
+// ParseLookbackDuration converts strings like "3 months" or "720h" into a single time.Duration.
+// It first tries Go's built-in time.ParseDuration for standard formats, then falls back
+// to custom parsing for human-readable formats.
 func ParseLookbackDuration(s string) (time.Duration, error) {
-	s = strings.TrimSpace(strings.ToLower(s))
+	s = strings.TrimSpace(s)
+
+	// Try Go's built-in duration parsing first (e.g., "720h", "168h", "30m")
+	if duration, err := time.ParseDuration(s); err == nil {
+		if duration == 0 {
+			return 0, errors.New("zero duration is not useful")
+		}
+		return duration, nil
+	}
+
+	// Fall back to custom parsing for human-readable formats (e.g., "30 days", "2 weeks")
+	s = strings.ToLower(s)
 	matches := lookbackDurationRe.FindStringSubmatch(s)
 
 	if len(matches) == 0 {
