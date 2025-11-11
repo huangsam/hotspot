@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/github/license/huangsam/hotspot)](https://github.com/huangsam/hotspot/blob/main/LICENSE)
 [![GitHub Release](https://img.shields.io/github/v/release/huangsam/hotspot)](https://github.com/huangsam/hotspot/releases/latest)
 
-Hotspot cuts through Git history to show you which files and folders are your greatest risk.
+Hotspot is a CLI tool that analyzes Git history to diagnose technical debt and bus factor risk based on developer activity, ownership, and churn patterns.
 
 <img src="./images/logo.png" alt="Hotspot" width="250px" />
 
@@ -70,7 +70,7 @@ go install github.com/huangsam/hotspot@latest
 
 ### Download pre-built binary
 
-Visit the [latest release](https://github.com/huangsam/hotspot/releases/latest) and download the `tar` archive for your system, then extract the binary to your `$PATH`.
+Visit the [latest release](https://github.com/huangsam/hotspot/releases/latest) and download the `tar` archive for your system (supports **Windows**, **macOS**, and **Linux**), then extract the binary to your `$PATH`.
 
 ## Quick start
 
