@@ -87,8 +87,10 @@ func ParseLookbackDuration(s string) (time.Duration, error) {
 		// Approximation: 1 month ≈ 30 days
 		totalDuration = time.Duration(value) * 30 * 24 * time.Hour
 	case "week":
+		// Approximation: 1 week = 7 days
 		totalDuration = time.Duration(value) * 7 * 24 * time.Hour
 	case "day":
+		// Approximation: 1 day = 24 hours
 		totalDuration = time.Duration(value) * 24 * time.Hour
 	case "hour":
 		totalDuration = time.Duration(value) * time.Hour
