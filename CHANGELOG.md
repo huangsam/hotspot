@@ -1,5 +1,22 @@
 # 🚀 Changelog
 
+## v1.3.0
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.2.0...v1.3.0)
+
+### Features
+
+- **Benchmark Script**: Add benchmark script and performance details for analysis
+
+### Fixes
+
+- **Name Abbreviation**: Handle edge cases in name abbreviation logic
+
+### Improvements
+
+- **Documentation**: Update README with motivation section and improved formatting
+- **Benchmark Results**: Update and link benchmark tables with latest performance data
+
 ## v1.2.0
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.1.5...v1.2.0)
