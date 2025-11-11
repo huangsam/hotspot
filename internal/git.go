@@ -35,4 +35,7 @@ type GitClient interface {
 
 	// ListFilesAtRef returns a list of all trackable files in the repository at a specific reference.
 	ListFilesAtRef(ctx context.Context, repoPath string, ref string) ([]string, error)
+
+	// GetOldestCommitDateForPath retrieves the commit date of the Nth oldest commit for a path.
+	GetOldestCommitDateForPath(ctx context.Context, repoPath string, path string, before time.Time, numCommits int, maxSearchDuration time.Duration) (time.Time, error)
 }

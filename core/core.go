@@ -11,7 +11,6 @@ import (
 
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/schema"
-	"github.com/spf13/viper"
 )
 
 // ExecutorFunc defines the function signature for executing different analysis modes.
@@ -97,32 +96,27 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *internal.Config) err
 	return internal.PrintComparisonResults(comparisonResult, cfg, duration)
 }
 
-// ExecuteHotspotTimeseries runs multiple analyses over disjoint time windows for a specific path.
+// ExecuteHotspotTimeseries runs multiple analyses over overlapping, dynamic-lookback time windows.
+// This implements Strategy 2: Time-Boxed M_min Approximation. The Git search for M_min commits
+// is capped by maxSearchDuration to prevent slow full-history traversal on large repos.
 func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config) error {
 	start := time.Now()
 
-	// Get timeseries-specific parameters from Viper
-	path := viper.GetString("path")
-	intervalStr := viper.GetString("interval")
-	numPoints := viper.GetInt("points")
+	// Get timeseries-specific parameters from config
+	path := cfg.TimeseriesPath
+	interval := cfg.TimeseriesInterval
+	numPoints := cfg.TimeseriesPoints
 
 	if path == "" {
 		return errors.New("--path is required")
 	}
-	if intervalStr == "" {
+	if interval == 0 {
 		return errors.New("--interval is required")
 	}
-	if numPoints < 2 {
-		return errors.New("--points must be at least 2")
+	if numPoints < 1 {
+		return errors.New("--points must be at least 1")
 	}
 
-	interval, err := internal.ParseLookbackDuration(intervalStr)
-	if err != nil {
-		return fmt.Errorf("invalid interval: %w", err)
-	}
-
-	numWindows := numPoints
-	windowSize := interval / time.Duration(numWindows)
 	now := time.Now()
 	client := internal.NewLocalGitClient()
 
@@ -140,74 +134,110 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config) error {
 	}
 	isFolder := info.IsDir()
 
+	// Define constraints
+	const minCommits = 30
+	const minLookback = 3 * 30 * 24 * time.Hour       // T_min: 3 months (temporal coverage constraint)
+	const maxSearchDuration = 6 * 30 * 24 * time.Hour // T_Max: 6 months (performance constraint for Git search)
+
 	// Print single header for the entire timeseries analysis
 	internal.LogTimeseriesHeader(cfg, interval, numPoints)
 
 	var timeseriesPoints []schema.TimeseriesPoint
+	currentEnd := now
 
-	for i := range numWindows {
-		endTime := now.Add(-time.Duration(i) * windowSize)
-		startTime := endTime.Add(-windowSize)
-		cfgWindow := cfg.CloneWithTimeWindow(startTime, endTime)
+	// Process each time window in reverse chronological order
+	for i := range numPoints {
+		// 1. Establish the End Time for this point/window (fixed step-back)
+		if i > 0 {
+			currentEnd = currentEnd.Add(-interval)
+		}
 
+		// 2. Calculate T_M_min: time to get minCommits, limited by maxSearchDuration
+		// The Git search will be confined to [currentEnd - maxSearchDuration, currentEnd]
+		commitTime, err := client.GetOldestCommitDateForPath(
+			ctx,
+			cfg.RepoPath,
+			normalizedPath,
+			currentEnd,
+			minCommits,
+			maxSearchDuration, // Limiting the Git traversal depth
+		)
+
+		var lookbackFromCommits time.Duration
+		if err != nil || commitTime.IsZero() {
+			// If the search fails or finds fewer than minCommits within T_Max,
+			// assume the path is sparse and use the larger of T_min or T_Max.
+			lookbackFromCommits = max(minLookback, maxSearchDuration)
+		} else {
+			lookbackFromCommits = currentEnd.Sub(commitTime)
+		}
+
+		// 3. T_L is the max of the two constraints (T_min and T_M_min)
+		lookbackDuration := max(minLookback, lookbackFromCommits)
+		startTime := currentEnd.Add(-lookbackDuration)
+
+		cfgWindow := cfg.CloneWithTimeWindow(startTime, currentEnd)
+
+		// --- Execute Analysis Core ---
 		var score float64
 		var owners []string
-		if isFolder {
-			suppressCtx := withSuppressHeader(ctx, true)
-			output, err := runSingleAnalysisCore(suppressCtx, cfgWindow, client) // suppress individual headers
-			if err != nil {
-				// If no data in this window, score is 0
-				score = 0
-				owners = []string{} // Empty slice instead of nil
-			} else {
+		suppressCtx := withSuppressHeader(ctx, true)
+		output, err := runSingleAnalysisCore(suppressCtx, cfgWindow, client)
+
+		if err != nil {
+			// If no data in this window (e.g. no commits), score is 0
+			score = 0
+			owners = []string{}
+		} else {
+			// Extract score and owners from analysis output
+			if isFolder {
 				folderResults := aggregateAndScoreFolders(cfgWindow, output.FileResults)
+				found := false
 				for _, fr := range folderResults {
 					if fr.Path == normalizedPath {
 						score = fr.Score
 						owners = fr.Owners
+						found = true
 						break
 					}
 				}
-				// If path not found, owners remains empty slice
-			}
-		} else {
-			suppressCtx := withSuppressHeader(ctx, true)
-			output, err := runSingleAnalysisCore(suppressCtx, cfgWindow, client) // suppress individual headers
-			if err != nil {
-				// If no data in this window, score is 0
-				score = 0
-				owners = []string{} // Empty slice instead of nil
+				if !found {
+					owners = []string{}
+				}
 			} else {
+				found := false
 				for _, fr := range output.FileResults {
 					if fr.Path == normalizedPath {
 						score = fr.Score
 						owners = fr.Owners
+						found = true
 						break
 					}
 				}
-				// If path not found, owners remains empty slice
+				if !found {
+					owners = []string{}
+				}
 			}
 		}
+		// --- End Execute Analysis Core ---
 
-		// Generate period label
-		windowDays := int(windowSize.Hours() / 24)
+		// 4. Generate period label
 		var period string
 		if i == 0 {
-			period = fmt.Sprintf("Current (%dd)", windowDays)
+			period = "Current"
 		} else {
-			startAgo := i * windowDays
-			endAgo := (i + 1) * windowDays
-			period = fmt.Sprintf("%dd to %dd Ago", startAgo, endAgo)
+			period = fmt.Sprintf("%dd Ago", int(interval.Hours()/24)*i)
 		}
 
 		timeseriesPoints = append(timeseriesPoints, schema.TimeseriesPoint{
-			Period: period,
-			Start:  startTime,
-			End:    endTime,
-			Score:  score,
-			Path:   normalizedPath,
-			Owners: owners,
-			Mode:   cfg.Mode,
+			Period:   period,
+			Start:    startTime,
+			End:      currentEnd,
+			Score:    score,
+			Path:     normalizedPath,
+			Owners:   owners,
+			Mode:     cfg.Mode,
+			Lookback: lookbackDuration,
 		})
 	}
 

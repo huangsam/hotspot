@@ -120,3 +120,33 @@ func (c *LocalGitClient) ListFilesAtRef(ctx context.Context, repoPath string, re
 	}
 	return files, nil
 }
+
+// GetOldestCommitDateForPath implements the GitClient interface.
+func (c *LocalGitClient) GetOldestCommitDateForPath(ctx context.Context, repoPath string, path string, before time.Time, numCommits int, maxSearchDuration time.Duration) (time.Time, error) {
+	afterTime := before.Add(-maxSearchDuration)
+	args := []string{
+		"log",
+		fmt.Sprintf("-n%d", numCommits),
+		"--pretty=format:%ct",
+		"--before=" + before.Format(time.RFC3339),
+		"--after=" + afterTime.Format(time.RFC3339),
+		"--",
+		path,
+	}
+	out, err := c.Run(ctx, repoPath, args...)
+	if err != nil {
+		return time.Time{}, err
+	}
+	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+	if len(lines) == 0 || lines[0] == "" {
+		return time.Time{}, errors.New("no commits found for path")
+	}
+
+	// The last line has the oldest commit's timestamp
+	oldestTimestampStr := lines[len(lines)-1]
+	timestamp, err := strconv.ParseInt(oldestTimestampStr, 10, 64)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("failed to parse commit time '%s': %w", oldestTimestampStr, err)
+	}
+	return time.Unix(timestamp, 0), nil
+}

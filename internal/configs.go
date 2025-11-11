@@ -84,6 +84,11 @@ type Config struct {
 	TargetRef   string
 	Lookback    time.Duration
 
+	// Timeseries parameters
+	TimeseriesPath     string
+	TimeseriesInterval time.Duration
+	TimeseriesPoints   int
+
 	// Processed map of custom scoring weights [ModeName][BreakdownKey] = Weight
 	CustomWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64
 }
@@ -117,6 +122,11 @@ type ConfigRawInput struct {
 	BaseRef   string `mapstructure:"base-ref"`
 	TargetRef string `mapstructure:"target-ref"`
 	Lookback  string `mapstructure:"lookback"`
+
+	// --- Fields from timeseriesCmd.Flags() ---
+	Path     string `mapstructure:"path"`
+	Interval string `mapstructure:"interval"`
+	Points   int    `mapstructure:"points"`
 
 	// --- Custom weights from config file ---
 	Weights WeightsRawInput `mapstructure:"weights"`
@@ -160,6 +170,9 @@ func ProcessAndValidate(ctx context.Context, cfg *Config, client GitClient, inpu
 		return err
 	}
 	if err := processCompareMode(cfg, input); err != nil {
+		return err
+	}
+	if err := processTimeseriesMode(cfg, input); err != nil {
 		return err
 	}
 	if err := processCustomWeights(cfg, input); err != nil {
@@ -305,6 +318,27 @@ func processCompareMode(cfg *Config, input *ConfigRawInput) error {
 		return err
 	}
 	cfg.Lookback = lookback
+
+	return nil
+}
+
+// processTimeseriesMode handles the timeseries parameters.
+func processTimeseriesMode(cfg *Config, input *ConfigRawInput) error {
+	cfg.TimeseriesPath = strings.TrimSpace(input.Path)
+	cfg.TimeseriesPoints = input.Points
+
+	if input.Interval != "" {
+		interval, err := ParseLookbackDuration(input.Interval)
+		if err != nil {
+			return fmt.Errorf("invalid interval: %w", err)
+		}
+		cfg.TimeseriesInterval = interval
+	}
+
+	// Basic validation
+	if cfg.TimeseriesPoints < 1 && cfg.TimeseriesPoints != 0 {
+		return fmt.Errorf("--points must be at least 1")
+	}
 
 	return nil
 }
