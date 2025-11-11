@@ -1,5 +1,21 @@
 # 🚀 Changelog
 
+## v1.3.1
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.3.0...v1.3.1)
+
+### Improvements
+
+- **Timeseries Accuracy**: Make timeseries logic more accurate with comprehensive analysis
+- **Timeseries UX**: Improve lookback and timeseries user experience with better defaults
+- **Timeseries Header**: Fix timeseries header semantics for clearer output
+- **Code Organization**: Migrate timeseries constants and refactor analysis logic
+- **Documentation**: Add comments to time approximations and update README benchmarks
+
+### Fixes
+
+- **Integration Tests**: Fix integration test issues and update benchmarks
+
 ## v1.3.0
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.2.0...v1.3.0)
