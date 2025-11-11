@@ -138,6 +138,8 @@ The `compare` subcommand allows you to measure the change in metrics between two
 
 The `timeseries` subcommand tracks how hotspot scores change over time for a specific file or folder path. This helps you understand trends and identify when risk started increasing or decreasing.
 
+*Note: Timeseries analysis is intentionally more comprehensive and may take longer than other commands, but provides deeper insights into risk evolution over time.*
+
 **Example:** Track complexity score for a specific file over the last month.
 
 `hotspot timeseries --path main.go --mode complexity --interval "30 days" --points 3`
@@ -240,7 +242,7 @@ Comprehensive performance benchmarks using [this script](./benchmark/main.go), s
 
 | Repository | Files | Compare Files | Timeseries |
 |------------|-------|---------------|------------|
-| [csv-parser] | 0.036s | 0.127s | 0.057s |
-| [fd] | 0.041s | 0.070s | 0.063s |
-| [git] | 0.685s | 1.523s | 0.751s |
-| [kubernetes] | 3.725s | 8.918s | 3.851s |
+| [csv-parser] | 0.055s | 0.127s | 0.108s |
+| [fd] | 0.041s | 0.073s | 0.119s |
+| [git] | 0.700s | 1.556s | 2.514s |
+| [kubernetes] | 3.745s | 8.832s | 13.411s |

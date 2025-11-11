@@ -544,10 +544,10 @@ func TestTimeseriesVerification(t *testing.T) {
 	})
 
 	t.Run("missing_required_flags", func(t *testing.T) {
-		cmd := exec.Command(hotspotPath, "timeseries", "--path", "main.go", "--interval", "30 days")
+		cmd := exec.Command(hotspotPath, "timeseries")
 		cmd.Dir = repoDir
 		err := cmd.Run()
-		assert.Error(t, err, "should error when --points is missing")
+		assert.Error(t, err, "should error when --path is missing")
 	})
 }
 
