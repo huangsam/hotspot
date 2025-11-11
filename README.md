@@ -221,7 +221,7 @@ Comprehensive performance benchmarks using [this script](./benchmark/main.go), s
 
 | Repository | Files | Compare Files | Timeseries |
 |------------|-------|---------------|------------|
-| [csv-parser] | 0.041s | 0.126s | 0.057s |
-| [fd] | 0.042s | 0.068s | 0.062s |
-| [git] | 0.680s | 1.528s | 0.747s |
-| [kubernetes] | 3.741s | 8.449s | 3.861s |
+| [csv-parser] | 0.036s | 0.127s | 0.057s |
+| [fd] | 0.041s | 0.070s | 0.063s |
+| [git] | 0.685s | 1.523s | 0.751s |
+| [kubernetes] | 3.725s | 8.918s | 3.851s |
