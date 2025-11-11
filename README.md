@@ -146,7 +146,7 @@ The `timeseries` subcommand tracks how hotspot scores change over time for a spe
 
 *Note: Timeseries analysis is intentionally more comprehensive and may take longer than other commands, but provides deeper insights into risk evolution over time.*
 
-**Example:** Track complexity score for a specific file over the last month.
+**Example:** Track complexity score for a specific file over the past 3 months.
 
 `hotspot timeseries --path main.go --mode complexity --interval "30 days" --points 3`
 
@@ -213,13 +213,13 @@ hotspot compare folders --mode hot --base-ref v0.15.0 --target-ref v0.16.0
 
 ```bash
 # 1. Monitor Critical File Evolution (Track how a core file's complexity changes)
-hotspot timeseries --path src/main/java/App.java --mode complexity --interval "6 months" --points 6
+hotspot timeseries --path src/main/java/App.java --mode complexity --interval "1 month" --points 6
 
 # 2. Identify When Risk Started (Find when a file became a maintenance burden)
-hotspot timeseries --path lib/legacy.js --mode stale --interval "2 years" --points 8
+hotspot timeseries --path lib/legacy.js --mode stale --interval "3 months" --points 8
 
 # 3. Sprint Velocity Impact (See how active development affects file stability)
-hotspot timeseries --path pkg/api/v1.go --mode hot --interval "90 days" --points 4
+hotspot timeseries --path pkg/api/v1.go --mode hot --interval "14 days" --points 10
 ```
 
 ## Performance
