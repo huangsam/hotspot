@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -56,19 +55,25 @@ func (c *LocalGitClient) GetActivityLog(ctx context.Context, repoPath string, st
 func (c *LocalGitClient) GetCommitTime(ctx context.Context, repoPath string, ref string) (time.Time, error) {
 	args := []string{
 		"log", "-n", "1",
-		"--pretty=format:%ct",
+		"--pretty=format:%ad",
+		"--date=iso-strict",
 		ref,
 	}
 	out, err := c.Run(ctx, repoPath, args...)
 	if err != nil {
 		return time.Time{}, err
 	}
-	timestampStr := strings.TrimSpace(string(out))
-	timestamp, err := strconv.ParseInt(timestampStr, 10, 64)
+	dateStr := strings.TrimSpace(string(out))
+	return time.Parse(time.RFC3339, dateStr)
+}
+
+// GetRepoHash implements the GitClient interface.
+func (c *LocalGitClient) GetRepoHash(ctx context.Context, repoPath string) (string, error) {
+	out, err := c.Run(ctx, repoPath, "rev-parse", "HEAD")
 	if err != nil {
-		return time.Time{}, fmt.Errorf("failed to parse commit time '%s': %w", timestampStr, err)
+		return "", err
 	}
-	return time.Unix(timestamp, 0), nil
+	return strings.TrimSpace(string(out)), nil
 }
 
 // GetFileActivityLog implements the GitClient interface.
@@ -127,7 +132,8 @@ func (c *LocalGitClient) GetOldestCommitDateForPath(ctx context.Context, repoPat
 	args := []string{
 		"log",
 		fmt.Sprintf("-n%d", numCommits),
-		"--pretty=format:%ct",
+		"--pretty=format:%ad",
+		"--date=iso-strict",
 		"--before=" + before.Format(time.RFC3339),
 		"--after=" + afterTime.Format(time.RFC3339),
 		"--",
@@ -142,11 +148,7 @@ func (c *LocalGitClient) GetOldestCommitDateForPath(ctx context.Context, repoPat
 		return time.Time{}, errors.New("no commits found for path")
 	}
 
-	// The last line has the oldest commit's timestamp
-	oldestTimestampStr := lines[len(lines)-1]
-	timestamp, err := strconv.ParseInt(oldestTimestampStr, 10, 64)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("failed to parse commit time '%s': %w", oldestTimestampStr, err)
-	}
-	return time.Unix(timestamp, 0), nil
+	// The last line has the oldest commit's date
+	oldestDateStr := lines[len(lines)-1]
+	return time.Parse(time.RFC3339, oldestDateStr)
 }

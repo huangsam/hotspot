@@ -14,6 +14,7 @@ import (
 func TestRunTimeseriesAnalysis(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
+	mockMgr := &internal.MockPersistenceManager{}
 
 	now := time.Date(2024, 6, 15, 10, 30, 0, 0, time.UTC)
 	interval := 30 * 24 * time.Hour // 30 days
@@ -36,6 +37,7 @@ func TestRunTimeseriesAnalysis(t *testing.T) {
 		Return(point2End.Add(-30*24*time.Hour), nil) // 30 days before point2End
 
 	// Mock the analysis calls for each point (simplified - just return success)
+	mockMgr.On("GetActivityStore").Return(nil).Maybe() // No caching for test
 	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{path}, nil).Maybe()
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil).Maybe()
@@ -47,7 +49,7 @@ func TestRunTimeseriesAnalysis(t *testing.T) {
 		ResultLimit: 10,
 	}
 
-	result := runTimeseriesAnalysis(ctx, cfg, mockClient, path, false, now, interval, numPoints)
+	result := runTimeseriesAnalysis(ctx, cfg, mockClient, path, false, now, interval, numPoints, mockMgr)
 
 	assert.Len(t, result, numPoints)
 
@@ -65,11 +67,13 @@ func TestRunTimeseriesAnalysis(t *testing.T) {
 	}
 
 	mockClient.AssertExpectations(t)
+	mockMgr.AssertExpectations(t)
 }
 
 func TestRunTimeseriesAnalysis_GetOldestCommitError(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
+	mockMgr := &internal.MockPersistenceManager{}
 
 	now := time.Date(2024, 6, 15, 10, 30, 0, 0, time.UTC)
 	interval := 30 * 24 * time.Hour
@@ -77,6 +81,7 @@ func TestRunTimeseriesAnalysis_GetOldestCommitError(t *testing.T) {
 	path := "main.go"
 
 	// Setup mock expectations - GetOldestCommitDateForPath fails
+	mockMgr.On("GetActivityStore").Return(nil).Maybe() // No caching for test
 	mockClient.On("GetOldestCommitDateForPath", ctx, "/test/repo", path, mock.AnythingOfType("time.Time"), minCommits, maxSearchDuration).
 		Return(time.Time{}, assert.AnError).Maybe()
 	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{path}, nil).Maybe()
@@ -90,7 +95,7 @@ func TestRunTimeseriesAnalysis_GetOldestCommitError(t *testing.T) {
 		ResultLimit: 10,
 	}
 
-	result := runTimeseriesAnalysis(ctx, cfg, mockClient, path, false, now, interval, numPoints)
+	result := runTimeseriesAnalysis(ctx, cfg, mockClient, path, false, now, interval, numPoints, mockMgr)
 
 	assert.Len(t, result, numPoints)
 
@@ -101,16 +106,19 @@ func TestRunTimeseriesAnalysis_GetOldestCommitError(t *testing.T) {
 	}
 
 	mockClient.AssertExpectations(t)
+	mockMgr.AssertExpectations(t)
 }
 
 func TestAnalyzeTimeseriesPoint_File(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
+	mockMgr := &internal.MockPersistenceManager{}
 
 	path := "main.go"
 	isFolder := false
 
 	// Setup mock expectations
+	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
 	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{path}, nil)
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
@@ -124,22 +132,25 @@ func TestAnalyzeTimeseriesPoint_File(t *testing.T) {
 		ResultLimit: 10,
 	}
 
-	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, isFolder)
+	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, isFolder, mockMgr)
 
 	assert.True(t, score >= 0 && score <= 100)
 	assert.NotNil(t, owners)
 
 	mockClient.AssertExpectations(t)
+	mockMgr.AssertExpectations(t)
 }
 
 func TestAnalyzeTimeseriesPoint_Folder(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
+	mockMgr := &internal.MockPersistenceManager{}
 
 	path := "src/"
 	isFolder := true
 
 	// Setup mock expectations
+	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
 	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{"src/main.go", "src/utils.go"}, nil)
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tsrc/main.go\n2\t1\tsrc/utils.go\n"), nil)
@@ -154,22 +165,25 @@ func TestAnalyzeTimeseriesPoint_Folder(t *testing.T) {
 		PathFilter:  "src/", // Only analyze files in src/
 	}
 
-	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, isFolder)
+	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, isFolder, mockMgr)
 
 	assert.True(t, score >= 0 && score <= 100)
 	assert.NotNil(t, owners)
 
 	mockClient.AssertExpectations(t)
+	mockMgr.AssertExpectations(t)
 }
 
 func TestAnalyzeTimeseriesPoint_NoData(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
+	mockMgr := &internal.MockPersistenceManager{}
 
 	path := "nonexistent.go"
 	isFolder := false
 
 	// Setup mock expectations - no files found
+	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
 	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{}, nil)
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte(""), nil)
@@ -182,22 +196,25 @@ func TestAnalyzeTimeseriesPoint_NoData(t *testing.T) {
 		Workers:   1,
 	}
 
-	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, isFolder)
+	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, isFolder, mockMgr)
 
 	assert.Equal(t, 0.0, score)
 	assert.Empty(t, owners)
 
 	mockClient.AssertExpectations(t)
+	mockMgr.AssertExpectations(t)
 }
 
 func TestAnalyzeTimeseriesPoint_PathNotFound(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
+	mockMgr := &internal.MockPersistenceManager{}
 
 	path := "missing.go"
 	isFolder := false
 
 	// Setup mock expectations - file exists but path not found in results
+	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
 	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{"other.go"}, nil)
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tother.go\n"), nil)
@@ -210,10 +227,11 @@ func TestAnalyzeTimeseriesPoint_PathNotFound(t *testing.T) {
 		Workers:   1,
 	}
 
-	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, isFolder)
+	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, isFolder, mockMgr)
 
 	assert.Equal(t, 0.0, score)
 	assert.Empty(t, owners)
 
 	mockClient.AssertExpectations(t)
+	mockMgr.AssertExpectations(t)
 }

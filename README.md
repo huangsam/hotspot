@@ -225,11 +225,19 @@ The benchmarks use repositories of varying scales to demonstrate performance cha
 
 ### Benchmark Results
 
-Comprehensive performance benchmarks using [this script](./benchmark/main.go), showing averages from 5 runs:
+Comprehensive performance benchmarks using [this script](./benchmark/main.go). This shows cold run (first run) and warm run (average of subsequent runs) times from 5 total runs:
 
-| Repository | Files | Compare Files | Timeseries |
-|------------|-------|---------------|------------|
-| [csv-parser] | 0.055s | 0.127s | 0.108s |
-| [fd] | 0.041s | 0.073s | 0.119s |
-| [git] | 0.700s | 1.556s | 2.514s |
-| [kubernetes] | 3.745s | 8.832s | 13.411s |
+| Repository | Files (Cold/Warm) | Compare Files (Cold/Warm) | Timeseries (Cold/Warm) |
+|------------|-------------------|---------------------------|-------------------------|
+| [csv-parser] | 0.123s / 0.016s | 0.137s / 0.037s | 0.105s / 0.049s |
+| [fd] | 0.056s / 0.015s | 0.088s / 0.038s | 0.131s / 0.054s |
+| [git] | 0.675s / 0.034s | 1.686s / 0.157s | 2.477s / 0.193s |
+| [kubernetes] | 4.029s / 0.114s | 8.679s / 1.634s | 9.256s / 0.649s |
+
+Hotspot caches Git analysis results to speed up repeat runs. Here are the benefits:
+
+- First run (cold): Analyzes Git history
+- Subsequent runs (warm): ~35x faster using cached data
+- No configuration required
+
+If you need fresh analysis, delete the cache file: `rm ~/.hotspot_cache.db`

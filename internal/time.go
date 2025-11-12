@@ -107,3 +107,11 @@ func ParseLookbackDuration(s string) (time.Duration, error) {
 
 	return totalDuration, nil
 }
+
+// CalculateDaysBetween computes the number of days between two time points.
+func CalculateDaysBetween(start, end time.Time) int {
+	if end.Before(start) {
+		return 0
+	}
+	return int(end.Sub(start) / (24 * time.Hour))
+}

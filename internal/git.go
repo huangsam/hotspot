@@ -19,6 +19,9 @@ type GitClient interface {
 	// GetCommitTime returns the time of the specified Git reference (e.g., commit hash, tag, branch name).
 	GetCommitTime(ctx context.Context, repoPath string, ref string) (time.Time, error)
 
+	// GetRepoHash returns the current HEAD commit hash of the repository.
+	GetRepoHash(ctx context.Context, repoPath string) (string, error)
+
 	// GetRepoRoot returns the absolute path to the root of the Git repository
 	// containing the given context path.
 	GetRepoRoot(ctx context.Context, contextPath string) (string, error)

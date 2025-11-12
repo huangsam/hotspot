@@ -13,7 +13,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -132,20 +131,19 @@ func TestFilesVerification(t *testing.T) {
 
 			// Verify age calculation against the first commit within the time range
 			if gitCommits > 0 {
-				ageGitCmd := exec.Command("git", "log", "--pretty=format:%ct", "--since", startTime, "--until", endTime, "--", file)
+				ageGitCmd := exec.Command("git", "log", "--pretty=format:%ad", "--date=iso-strict", "--since", startTime, "--until", endTime, "--", file)
 				ageGitCmd.Dir = repoDir
 				ageGitOutput, err := ageGitCmd.Output()
 				require.NoError(t, err, "failed to get age data for %s", file)
 
 				lines := strings.Split(strings.TrimSpace(string(ageGitOutput)), "\n")
 				if len(lines) > 0 && lines[0] != "" {
-					// Parse the first commit timestamp (oldest in the range due to reverse chronological order)
+					// Parse the first commit timestamp (oldest in the range, last line since newest first)
 					firstCommitTimestampStr := strings.TrimSpace(lines[len(lines)-1]) // Last line is oldest
-					firstCommitTimestamp, err := strconv.ParseInt(firstCommitTimestampStr, 10, 64)
+					firstCommitTime, err := time.Parse(time.RFC3339, firstCommitTimestampStr)
 					require.NoError(t, err, "failed to parse git timestamp for %s", file)
 
-					firstCommitTime := time.Unix(firstCommitTimestamp, 0)
-					expectedAgeDays := int(time.Since(firstCommitTime).Hours() / 24)
+					expectedAgeDays := internal.CalculateDaysBetween(firstCommitTime, time.Now())
 
 					// Age should match exactly since we're using the same time range
 					assert.Equal(t, expectedAgeDays, details.AgeDays,

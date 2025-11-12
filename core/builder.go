@@ -1,7 +1,6 @@
 package core
 
 import (
-	"bytes"
 	"context"
 	"maps"
 	"os"
@@ -126,22 +125,19 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 	return b
 }
 
-// FetchFileStats reads the file once to populate SizeBytes and LinesOfCode (PLOC).
+// FetchFileStats reads the file to populate SizeBytes and LinesOfCode (PLOC).
 func (b *FileResultBuilder) FetchFileStats() *FileResultBuilder {
 	fullPath := filepath.Join(b.cfg.RepoPath, b.path)
-
-	// 1. Read the entire file content as a byte slice. This is the main disk I/O.
 	content, err := os.ReadFile(fullPath)
 	if err != nil {
 		return b
 	}
 
-	// 2. Get Size from the already-read byte slice length (instant).
-	b.result.SizeBytes = int64(len(content))
+	size := int64(len(content))
+	lines := len(strings.Split(string(content), "\n"))
 
-	// 3. Count the number of newline characters (extremely fast byte operation).
-	lineCount := bytes.Count(content, []byte{'\n'})
-	b.result.LinesOfCode = lineCount
+	b.result.SizeBytes = size
+	b.result.LinesOfCode = lines
 
 	return b
 }
@@ -152,7 +148,7 @@ func (b *FileResultBuilder) CalculateDerivedMetrics() *FileResultBuilder {
 	if b.result.FirstCommit.IsZero() {
 		b.result.AgeDays = 0
 	} else {
-		b.result.AgeDays = int(time.Since(b.result.FirstCommit).Hours() / 24)
+		b.result.AgeDays = internal.CalculateDaysBetween(b.result.FirstCommit, time.Now())
 	}
 
 	// Gini coefficient for author diversity

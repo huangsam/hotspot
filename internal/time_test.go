@@ -127,3 +127,63 @@ func TestParseLookbackDuration(t *testing.T) {
 		})
 	}
 }
+
+// TestCalculateDaysBetween verifies the age calculation logic based on explicit start and end times.
+func TestCalculateDaysBetween(t *testing.T) {
+	// Use a fixed end time to anchor the test cases, simplifying the calculation of the start time.
+	// We use UTC to avoid any DST or local time issues during duration calculation.
+	fixedEnd := time.Date(2025, time.January, 10, 12, 0, 0, 0, time.UTC)
+
+	tests := []struct {
+		name         string
+		duration     time.Duration // Used to calculate the start time: fixedEnd.Add(-duration)
+		expectedDays int
+		description  string
+	}{
+		{
+			name:         "end before start",
+			duration:     -1 * time.Second, // Represents a duration where end is before start
+			expectedDays: 0,
+			description:  "Should return 0 days if end time is before start time.",
+		},
+		{
+			name:         "zero duration",
+			duration:     time.Duration(0),
+			expectedDays: 0,
+			description:  "Should return 0 days for zero duration (start == end).",
+		},
+		{
+			name:         "age less than 24 hours",
+			duration:     23*time.Hour + 59*time.Minute,
+			expectedDays: 0,
+			description:  "Age is less than 24 hours, should return 0 days.",
+		},
+		{
+			name:         "exactly 24 hours (forgiveness start)",
+			duration:     24 * time.Hour,
+			expectedDays: 1,
+			description:  "Age is exactly 24 hours, days = 1.",
+		},
+		{
+			name:         "exactly 48 hours",
+			duration:     48 * time.Hour,
+			expectedDays: 2,
+			description:  "Age is exactly 48 hours, days = 2.",
+		},
+		{
+			name:         "seven days old",
+			duration:     7 * 24 * time.Hour,
+			expectedDays: 7,
+			description:  "Age is exactly 7 days, days = 7.",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			start := fixedEnd.Add(-tt.duration) // Calculate start time based on fixed end time and duration
+			result := CalculateDaysBetween(start, fixedEnd)
+			assert.Equal(t, tt.expectedDays, result, "Mismatch: %s | Start: %s, End: %s, Duration: %s",
+				tt.description, start.Format(time.RFC3339), fixedEnd.Format(time.RFC3339), fixedEnd.Sub(start))
+		})
+	}
+}
