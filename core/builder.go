@@ -143,18 +143,7 @@ func (b *FileResultBuilder) CalculateDerivedMetrics() *FileResultBuilder {
 	if b.result.FirstCommit.IsZero() {
 		b.result.AgeDays = 0
 	} else {
-		d := time.Since(b.result.FirstCommit)
-
-		// The base calculation uses precise time.Duration integer arithmetic.
-		// We divide the total duration by the duration of a single day (24 hours).
-		b.result.AgeDays = int(d / (24 * time.Hour))
-
-		// Special case: If the file is only *just* over 24 hours old (24h <= age < 36h),
-		// we treat it as 0 days old. The 36h margin (1.5 days) accounts for clock skew,
-		// DST changes, and the time window truncation used for caching
-		if d >= 24*time.Hour && d < 36*time.Hour {
-			b.result.AgeDays = 0
-		}
+		b.result.AgeDays = internal.CalculateAgeDays(b.result.FirstCommit)
 	}
 
 	// Gini coefficient for author diversity

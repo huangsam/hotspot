@@ -107,3 +107,19 @@ func ParseLookbackDuration(s string) (time.Duration, error) {
 
 	return totalDuration, nil
 }
+
+// CalculateAgeDays computes the duration in days from the given start time to now.
+func CalculateAgeDays(start time.Time) int {
+	d := time.Since(start)
+	// The base calculation uses precise time.Duration integer arithmetic
+	// We divide the total duration by the duration of a single day (24 hours)
+	days := int(d / (24 * time.Hour))
+
+	// Special case: If the file is only *just* over 24 hours old (24h <= age < 36h),
+	// we treat it as 0 days old. The 36h margin (1.5 days) accounts for clock skew,
+	// DST changes, and the time window truncation used for caching
+	if d >= 24*time.Hour && d < 36*time.Hour {
+		days = 0
+	}
+	return days
+}

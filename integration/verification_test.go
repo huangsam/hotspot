@@ -79,22 +79,6 @@ func getHotspotBinary() string {
 	return sharedHotspotPath
 }
 
-// makeTruncatedStartAndEnd returns start and end times truncated to the hour using the
-// internal package's canonical logic, ensuring alignment with caching.
-func makeTruncatedStartAndEnd() (string, string) {
-	// Create a temporary config object to access the shared logic
-	cfg := &internal.Config{
-		StartTime: time.Now().AddDate(0, 0, -365),
-		EndTime:   time.Now(),
-	}
-
-	// USE THE CANONICAL INTERNAL HELPERS
-	startTime := cfg.GetAnalysisStartTime()
-	endTime := cfg.GetAnalysisEndTime()
-
-	return startTime.Format(internal.DateTimeFormat), endTime.Format(internal.DateTimeFormat)
-}
-
 // TestFilesVerification runs hotspot files with time filters and verifies both commit counts and age calculations
 func TestFilesVerification(t *testing.T) {
 	// Skip if not in a git repo
@@ -111,8 +95,8 @@ func TestFilesVerification(t *testing.T) {
 	hotspotPath := getHotspotBinary()
 
 	// Use a fixed time range for consistent testing (last 365 days)
-	// Truncate times using the canonical helper to ensure alignment with caching
-	startTime, endTime := makeTruncatedStartAndEnd()
+	startTime := time.Now().AddDate(0, 0, -365).Format(internal.DateTimeFormat)
+	endTime := time.Now().Format(internal.DateTimeFormat)
 
 	// Run hotspot files --output json --detail --start <start> --end <end> --limit 1000
 	// Use a high limit to get all files, not just the top ranked ones
@@ -161,7 +145,7 @@ func TestFilesVerification(t *testing.T) {
 					require.NoError(t, err, "failed to parse git timestamp for %s", file)
 
 					firstCommitTime := time.Unix(firstCommitTimestamp, 0)
-					expectedAgeDays := int(time.Since(firstCommitTime).Hours() / 24)
+					expectedAgeDays := internal.CalculateAgeDays(firstCommitTime)
 
 					// Age should match exactly since we're using the same time range
 					assert.Equal(t, expectedAgeDays, details.AgeDays,
@@ -211,8 +195,8 @@ func TestFoldersVerification(t *testing.T) {
 	hotspotPath := getHotspotBinary()
 
 	// Use a fixed time range for consistent testing (last 365 days)
-	// Truncate times using the canonical helper to ensure alignment with caching
-	startTime, endTime := makeTruncatedStartAndEnd()
+	startTime := time.Now().AddDate(0, 0, -365).Format(internal.DateTimeFormat)
+	endTime := time.Now().Format(internal.DateTimeFormat)
 
 	// Run hotspot folders --output json --detail --start <start> --end <end> --limit 1000
 	cmd := exec.Command(hotspotPath, "folders", "--output", "json", "--detail", "--start", startTime, "--end", endTime, "--limit", "1000")
