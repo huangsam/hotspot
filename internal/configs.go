@@ -21,6 +21,11 @@ const (
 	DefaultPrecision    = 1
 )
 
+// CacheGranularity defines the time granularity for caching analysis results.
+// This ensures consistent cache key generation and time window alignment across
+// the application and tests.
+const CacheGranularity = time.Hour
+
 // DefaultWorkers is the default number of concurrent workers to use.
 var DefaultWorkers = runtime.GOMAXPROCS(0)
 
@@ -157,6 +162,18 @@ func (c *Config) CloneWithTimeWindow(start time.Time, end time.Time) *Config {
 	clone.StartTime = start
 	clone.EndTime = end
 	return clone
+}
+
+// GetAnalysisStartTime returns the configured start time, truncated to the caching granularity.
+// This ensures consistent time window alignment across the application and tests.
+func (c *Config) GetAnalysisStartTime() time.Time {
+	return c.StartTime.Truncate(CacheGranularity)
+}
+
+// GetAnalysisEndTime returns the configured end time, truncated to the caching granularity.
+// This ensures consistent time window alignment across the application and tests.
+func (c *Config) GetAnalysisEndTime() time.Time {
+	return c.EndTime.Truncate(CacheGranularity)
 }
 
 // ProcessAndValidate performs all complex parsing and validation on the raw inputs

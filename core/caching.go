@@ -131,9 +131,9 @@ type FileStats struct {
 
 // generateCacheKey creates a unique key based on analysis parameters
 func generateCacheKey(cfg *internal.Config) string {
-	// Round timestamps to nearest hour for consistent caching
-	startHour := cfg.StartTime.Truncate(time.Hour)
-	endHour := cfg.EndTime.Truncate(time.Hour)
+	// Use canonical helpers from internal.Config to ensure consistent time granularity
+	startHour := cfg.GetAnalysisStartTime()
+	endHour := cfg.GetAnalysisEndTime()
 
 	// Include repo hash to invalidate cache when repository state changes
 	repoHash := getRepoHash(cfg.RepoPath)
