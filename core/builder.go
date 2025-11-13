@@ -186,7 +186,7 @@ func (b *FileResultBuilder) CalculateOwner() *FileResultBuilder {
 		return b
 	}
 
-	// Sort authors by commit count descending
+	// Sort authors by commit count descending, then by author name ascending for stable ordering
 	type authorCommits struct {
 		author  string
 		commits int
@@ -196,6 +196,9 @@ func (b *FileResultBuilder) CalculateOwner() *FileResultBuilder {
 		authors = append(authors, authorCommits{author: author, commits: commits})
 	}
 	sort.Slice(authors, func(i, j int) bool {
+		if authors[i].commits == authors[j].commits {
+			return authors[i].author < authors[j].author
+		}
 		return authors[i].commits > authors[j].commits
 	})
 
