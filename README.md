@@ -33,7 +33,7 @@ Hotspot was born out of the desire to fix that: to provide a transparent, audita
 ### Target audience
 
 - 🧑‍💻 **Developers** tracking sprint or release activity
-- 🧹 **Tech leads** prioritizing refactors and risk
+- 🧹 **Tech leads** prioritizing refactors and risk across projects
 - 🧾 **Managers** monitoring bus factor and maintenance debt
 
 ## Installation
