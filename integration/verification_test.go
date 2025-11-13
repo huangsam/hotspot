@@ -145,7 +145,7 @@ func TestFilesVerification(t *testing.T) {
 					require.NoError(t, err, "failed to parse git timestamp for %s", file)
 
 					firstCommitTime := time.Unix(firstCommitTimestamp, 0)
-					expectedAgeDays := internal.CalculateAgeDays(firstCommitTime)
+					expectedAgeDays := internal.CalculateDaysBetween(firstCommitTime, time.Now())
 
 					// Age should match exactly since we're using the same time range
 					assert.Equal(t, expectedAgeDays, details.AgeDays,

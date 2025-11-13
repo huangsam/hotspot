@@ -143,7 +143,7 @@ func (b *FileResultBuilder) CalculateDerivedMetrics() *FileResultBuilder {
 	if b.result.FirstCommit.IsZero() {
 		b.result.AgeDays = 0
 	} else {
-		b.result.AgeDays = internal.CalculateAgeDays(b.result.FirstCommit)
+		b.result.AgeDays = internal.CalculateDaysBetween(b.result.FirstCommit, time.Now())
 	}
 
 	// Gini coefficient for author diversity
