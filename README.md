@@ -30,7 +30,7 @@ Hotspot was born out of the desire to fix that: to provide a transparent, audita
 - 🎯 **Actionable filters** - narrow down by path, exclude noise, or track trends over time
 - 📊 **Export results** - save to CSV/JSON to track trends and progress
 
-## Target audience
+### Target audience
 
 - 🧑‍💻 **Developers** tracking sprint or release activity
 - 🧹 **Tech leads** prioritizing refactors and risk
