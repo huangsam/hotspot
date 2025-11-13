@@ -2,6 +2,7 @@ package internal
 
 import (
 	"os"
+	"sync"
 	"testing"
 )
 
@@ -9,6 +10,8 @@ func TestPersistenceInitialization(t *testing.T) {
 	// Clean up any existing test database
 	testDBPath := getDBFilePath()
 	defer func() { _ = os.Remove(testDBPath) }()
+	initOnce = sync.Once{}  // Reset for test
+	closeOnce = sync.Once{} // Reset for test
 
 	// Test initialization
 	err := InitPersistence()
@@ -43,6 +46,8 @@ func TestPersistenceIdempotency(t *testing.T) {
 	// Clean up any existing test database
 	testDBPath := getDBFilePath()
 	defer func() { _ = os.Remove(testDBPath) }()
+	initOnce = sync.Once{}  // Reset for test
+	closeOnce = sync.Once{} // Reset for test
 
 	// Multiple initializations should be safe (sync.Once)
 	err1 := InitPersistence()
