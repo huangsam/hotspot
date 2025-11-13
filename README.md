@@ -29,7 +29,6 @@ Hotspot was born out of the desire to fix that: to provide a transparent, audita
 - 🧮 **Rich insights** - contributors, churn, size, age, and risk metrics
 - 🎯 **Actionable filters** - narrow down by path, exclude noise, or track trends over time
 - 📊 **Export results** - save to CSV/JSON to track trends and progress
-- 🧠 **Data-driven decisions** - replace gut feelings with Git history evidence
 
 ## Target audience
 
