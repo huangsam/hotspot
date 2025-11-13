@@ -10,8 +10,8 @@ import (
 	_ "github.com/mattn/go-sqlite3" // SQLite driver
 )
 
-// DatabaseName is the name of the SQLite database file.
-const DatabaseName = ".hotspot_cache.db"
+// databaseName is the name of the SQLite database file.
+const databaseName = ".hotspot_cache.db"
 
 // PersistStoreManager manages multiple PersistStore instances.
 type PersistStoreManager struct {
@@ -42,7 +42,7 @@ type PersistStore struct {
 
 // NewPersistStore initializes and returns a new PersistStore.
 func NewPersistStore(tableName string) (*PersistStore, error) {
-	dbPath := getDBFilePath()
+	dbPath := GetDBFilePath()
 
 	db, err := sql.Open("sqlite3", dbPath) // Replace with actual SQLite driver
 	if err != nil {
@@ -73,10 +73,10 @@ func NewPersistStore(tableName string) (*PersistStore, error) {
 	return &PersistStore{db: db, tableName: tableName}, nil
 }
 
-// getDBFilePath returns the path to the SQLite DB file.
-func getDBFilePath() string {
+// GetDBFilePath returns the path to the SQLite DB file.
+func GetDBFilePath() string {
 	homeDir, _ := os.UserHomeDir()
-	return filepath.Join(homeDir, DatabaseName)
+	return filepath.Join(homeDir, databaseName)
 }
 
 // Get retrieves a value by key from the store. Returns sql.ErrNoRows when missing.

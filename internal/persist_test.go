@@ -9,7 +9,7 @@ import (
 func TestPersistence(t *testing.T) {
 	t.Run("single setup", func(t *testing.T) {
 		// Clean up any existing test database
-		testDBPath := getDBFilePath()
+		testDBPath := GetDBFilePath()
 		defer func() { _ = os.Remove(testDBPath) }()
 		initOnce = sync.Once{}  // Reset for test
 		closeOnce = sync.Once{} // Reset for test
@@ -45,7 +45,7 @@ func TestPersistence(t *testing.T) {
 
 	t.Run("idempotent setup", func(t *testing.T) {
 		// Clean up any existing test database
-		testDBPath := getDBFilePath()
+		testDBPath := GetDBFilePath()
 		defer func() { _ = os.Remove(testDBPath) }()
 		initOnce = sync.Once{}  // Reset for test
 		closeOnce = sync.Once{} // Reset for test

@@ -1,6 +1,6 @@
 // Package main provides a comprehensive performance benchmarking tool for the Hotspot CLI.
 // It measures execution times across different repository sizes and command types,
-// running each test multiple times and averaging results for statistical reliability,
+// running each test multiple times, treating the first successful run as cold and averaging the rest as warm,
 // generating CSV output for performance analysis and documentation.
 //
 // Prerequisites:
@@ -21,13 +21,16 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/huangsam/hotspot/internal"
 )
 
-// BenchmarkResult holds the result of a benchmark run (average of multiple runs).
+// BenchmarkResult holds the result of a benchmark run (cold run and average of warm runs).
 type BenchmarkResult struct {
 	Repository string
 	Command    string
-	WallTime   string
+	ColdTime   string
+	WarmTime   string
 }
 
 // BenchmarkConfig holds configuration for the benchmark run.
@@ -73,6 +76,10 @@ func main() {
 		fmt.Printf("Prerequisites check failed: %v\n", err)
 		os.Exit(1)
 	}
+
+	// Remove the old database file if it exists
+	dbPath := internal.GetDBFilePath()
+	_ = os.Remove(dbPath)
 
 	results := runBenchmarks(config)
 
@@ -140,11 +147,13 @@ func runBenchmarks(config BenchmarkConfig) []BenchmarkResult {
 	return results
 }
 
-// runBenchmark executes a hotspot command multiple times and returns the average wall time
+// runBenchmark executes a hotspot command multiple times and returns the cold run time and average warm run time
 func runBenchmark(config BenchmarkConfig, repo, repoPath, command, description, extraArgs string) BenchmarkResult {
 	fmt.Printf("Running %s on %s (%d runs)\n", description, repo, config.NumRuns)
 
-	var successfulTimes []float64
+	var coldTime float64
+	var warmTimes []float64
+	coldSet := false
 
 	for run := 1; run <= config.NumRuns; run++ {
 		fmt.Printf("  Run %d/%d...\n", run, config.NumRuns)
@@ -177,8 +186,14 @@ func runBenchmark(config BenchmarkConfig, repo, repoPath, command, description, 
 
 			// Check if command succeeded by examining output
 			if cmdErr == nil && isSuccess(output, command) {
-				successfulTimes = append(successfulTimes, elapsed.Seconds())
-				fmt.Printf("    Completed in %.3fs\n", elapsed.Seconds())
+				if !coldSet {
+					coldTime = elapsed.Seconds()
+					coldSet = true
+					fmt.Printf("    Cold run completed in %.3fs\n", elapsed.Seconds())
+				} else {
+					warmTimes = append(warmTimes, elapsed.Seconds())
+					fmt.Printf("    Warm run completed in %.3fs\n", elapsed.Seconds())
+				}
 			} else {
 				fmt.Printf("    Failed\n")
 				if cmdErr != nil {
@@ -191,14 +206,19 @@ func runBenchmark(config BenchmarkConfig, repo, repoPath, command, description, 
 		}
 	}
 
-	// Compute average time from successful runs
-	avgTime := computeAverageTime(successfulTimes)
-	fmt.Printf("  Average time: %s\n", avgTime)
+	// Compute cold and warm times
+	coldTimeStr := "TIMEOUT"
+	if coldSet {
+		coldTimeStr = fmt.Sprintf("%.3fs", coldTime)
+	}
+	warmAvgStr := computeAverageTime(warmTimes)
+	fmt.Printf("  Cold time: %s, Warm average: %s\n", coldTimeStr, warmAvgStr)
 
 	return BenchmarkResult{
 		Repository: repo,
 		Command:    command,
-		WallTime:   avgTime,
+		ColdTime:   coldTimeStr,
+		WarmTime:   warmAvgStr,
 	}
 }
 
@@ -294,13 +314,13 @@ func saveResults(results []BenchmarkResult) error {
 	defer writer.Flush()
 
 	// Write header
-	if err := writer.Write([]string{"repo", "cmd", "wall_avg"}); err != nil {
+	if err := writer.Write([]string{"repo", "cmd", "cold_time", "warm_avg"}); err != nil {
 		return fmt.Errorf("failed to write CSV header: %w", err)
 	}
 
 	// Write results
 	for _, result := range results {
-		if err := writer.Write([]string{result.Repository, result.Command, result.WallTime}); err != nil {
+		if err := writer.Write([]string{result.Repository, result.Command, result.ColdTime, result.WarmTime}); err != nil {
 			return fmt.Errorf("failed to write CSV record: %w", err)
 		}
 	}
@@ -325,7 +345,7 @@ func printCommandSummary(results []BenchmarkResult, command, title string) {
 	fmt.Printf("%s\n", title)
 	for _, result := range results {
 		if result.Command == command {
-			fmt.Printf("  %-12s: %s\n", result.Repository, result.WallTime)
+			fmt.Printf("  %-12s: Cold: %s, Warm: %s\n", result.Repository, result.ColdTime, result.WarmTime)
 		}
 	}
 }
