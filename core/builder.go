@@ -1,11 +1,8 @@
 package core
 
 import (
-	"bytes"
 	"context"
 	"maps"
-	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -126,22 +123,16 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 	return b
 }
 
-// FetchFileStats reads the file once to populate SizeBytes and LinesOfCode (PLOC).
+// FetchFileStats reads the file to populate SizeBytes and LinesOfCode (PLOC) with caching.
 func (b *FileResultBuilder) FetchFileStats() *FileResultBuilder {
-	fullPath := filepath.Join(b.cfg.RepoPath, b.path)
-
-	// 1. Read the entire file content as a byte slice. This is the main disk I/O.
-	content, err := os.ReadFile(fullPath)
+	// Use cached file stats
+	size, lines, err := CachedFetchFileStats(internal.Manager, b.cfg.RepoPath, b.path)
 	if err != nil {
 		return b
 	}
 
-	// 2. Get Size from the already-read byte slice length (instant).
-	b.result.SizeBytes = int64(len(content))
-
-	// 3. Count the number of newline characters (extremely fast byte operation).
-	lineCount := bytes.Count(content, []byte{'\n'})
-	b.result.LinesOfCode = lineCount
+	b.result.SizeBytes = size
+	b.result.LinesOfCode = lines
 
 	return b
 }

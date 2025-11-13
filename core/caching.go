@@ -13,7 +13,6 @@ import (
 
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/schema"
-	// _ "github.com/mattn/go-sqlite3" // SQLite driver - add this dependency
 )
 
 // currentCacheVersion defines the version of the cache schema

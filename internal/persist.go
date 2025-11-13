@@ -6,7 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-	// _ "github.com/mattn/go-sqlite3" // SQLite driver - add this dependency
+
+	_ "github.com/mattn/go-sqlite3" // SQLite driver
 )
 
 // dbFileName is the name of the SQLite database file.
