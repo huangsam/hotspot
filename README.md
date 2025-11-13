@@ -142,7 +142,7 @@ The `timeseries` subcommand tracks how hotspot scores change over time for a spe
 
 For complex or repetitive commands, Hotspot can read all flags from a configuration file named **`.hotspot.yaml`** or **`.hotspot.yml`** placed in your repository root or home directory.
 
-This allows you to manage settings without long command-line strings. Flags always override file settings. We provide three documented examples in the `examples/` directory to cover common use cases:
+This allows you to manage settings without long command-line strings. Flags always override file settings. We provide four documented examples in the `examples/` directory to cover common use cases:
 
 1.  [hotspot.basic.yml](./examples/hotspot.basic.yml): Quick setup for local development
 2.  [hotspot.ci.yml](./examples/hotspot.ci.yml): Optimized settings for automated CI/CD runs (e.g., JSON output)
@@ -205,7 +205,7 @@ hotspot timeseries --path pkg/api/v1.go --mode hot --interval "14 days" --points
 
 ## Performance
 
-All measurements use default settings with 14 concurrent workers on a MacBook Pro with M3 chip.
+All measurements use default settings with 14 concurrent workers on a MacBook Pro with a M3 Max chip.
 
 [csv-parser]: https://github.com/vincentlaucsb/csv-parser
 [fd]: https://github.com/sharkdp/fd
