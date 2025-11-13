@@ -31,24 +31,6 @@ Hotspot was born out of the desire to fix that: to provide a transparent, audita
 - 📊 **Export results** - save to CSV/JSON to track trends and progress
 - 🧠 **Data-driven decisions** - replace gut feelings with Git history evidence
 
-### What makes Hotspot different?
-
-Traditional static analysis tools examine code structure:
-
-- Code complexity metrics
-- Cyclomatic complexity scores
-- Lines of code counts
-- Style and formatting rules
-
-**Hotspot analyzes development behavior:**
-
-- **Activity patterns** - Which files are actually worked on frequently?
-- **Ownership distribution** - Are critical files maintained by enough people?
-- **Maintenance trends** - Is complexity increasing or decreasing over time?
-- **Risk evolution** - When did files become maintenance burdens?
-
-**Result**: Evidence-based refactoring decisions instead of opinion-based maintenance.
-
 ## Target audience
 
 - 🧑‍💻 **Developers** tracking sprint or release activity
