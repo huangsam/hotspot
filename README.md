@@ -225,11 +225,11 @@ The benchmarks use repositories of varying scales to demonstrate performance cha
 
 ### Benchmark Results
 
-Comprehensive performance benchmarks using [this script](./benchmark/main.go), showing averages from 5 runs:
+Comprehensive performance benchmarks using [this script](./benchmark/main.go). This shows cold run (first run) and warm run (average of subsequent runs) times from 5 total runs:
 
-| Repository | Files | Compare Files | Timeseries |
-|------------|-------|---------------|------------|
-| [csv-parser] | 0.055s | 0.127s | 0.108s |
-| [fd] | 0.041s | 0.073s | 0.119s |
-| [git] | 0.700s | 1.556s | 2.514s |
-| [kubernetes] | 3.745s | 8.832s | 13.411s |
+| Repository | Files (Cold/Warm) | Compare Files (Cold/Warm) | Timeseries (Cold/Warm) |
+|------------|-------------------|---------------------------|-------------------------|
+| [csv-parser] | 0.043s / 0.015s | 0.136s / 0.038s | 0.106s / 0.046s |
+| [fd] | 0.041s / 0.014s | 0.078s / 0.035s | 0.132s / 0.054s |
+| [git] | 0.657s / 0.033s | 1.684s / 0.157s | 2.463s / 0.193s |
+| [kubernetes] | 3.840s / 0.112s | 8.736s / 1.607s | 9.430s / 0.650s |
