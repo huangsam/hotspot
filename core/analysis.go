@@ -25,8 +25,8 @@ func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client int
 		internal.LogAnalysisHeader(cfg)
 	}
 
-	// --- 1. Aggregation Phase ---
-	output, err := aggregateActivity(ctx, cfg, client)
+	// --- 1. Aggregation Phase (with caching) ---
+	output, err := CachedAggregateActivity(ctx, cfg, client, internal.Manager)
 	if err != nil {
 		return nil, err
 	}
@@ -103,8 +103,8 @@ func analyzeAllFilesAtRef(ctx context.Context, cfg *internal.Config, client inte
 		return []schema.FileResult{}, nil // Return empty, not an error
 	}
 
-	// --- 2. Aggregation Phase ---
-	output, err := aggregateActivity(ctx, cfg, client)
+	// --- 2. Aggregation Phase (with caching) ---
+	output, err := CachedAggregateActivity(ctx, cfg, client, internal.Manager)
 	if err != nil {
 		return nil, err
 	}

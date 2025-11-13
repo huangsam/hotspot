@@ -330,6 +330,12 @@ func init() {
 
 // main starts the execution of the logic.
 func main() {
+	// Initialize persistence layer
+	if err := internal.InitPersistence(); err != nil {
+		internal.LogFatal("Failed to initialize persistence", err)
+	}
+	defer internal.ClosePersistence()
+
 	defer func() {
 		if err := stopProfiling(); err != nil {
 			internal.LogFatal("Error stopping profiling", err)
