@@ -17,7 +17,6 @@ const databaseName = ".hotspot_cache.db"
 type PersistStoreManager struct {
 	sync.RWMutex // Protects the store pointers during initialization
 	activity     *PersistStore
-	fileStats    *PersistStore
 }
 
 // GetActivityStore returns the activity PersistStore.
@@ -25,13 +24,6 @@ func (mgr *PersistStoreManager) GetActivityStore() *PersistStore {
 	mgr.RLock()
 	defer mgr.RUnlock()
 	return mgr.activity
-}
-
-// GetFileStatsStore returns the file stats PersistStore.
-func (mgr *PersistStoreManager) GetFileStatsStore() *PersistStore {
-	mgr.RLock()
-	defer mgr.RUnlock()
-	return mgr.fileStats
 }
 
 // PersistStore handles durable storage operations using SQLite.

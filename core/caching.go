@@ -5,9 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -63,72 +61,6 @@ func CachedAggregateActivity(ctx context.Context, cfg *internal.Config, client i
 	return result, nil
 }
 
-// CachedFetchFileStats retrieves or stores file statistics in SQLite
-func CachedFetchFileStats(mgr *internal.PersistStoreManager, repoPath, filePath string) (int64, int, error) {
-	fileStats := mgr.GetFileStatsStore()
-	if fileStats == nil {
-		// Fallback to direct computation
-		return computeFileStats(filepath.Join(repoPath, filePath))
-	}
-
-	// Generate the cache key
-	fullPath := filepath.Join(repoPath, filePath)
-	stat, err := os.Stat(fullPath)
-	if err != nil {
-		return 0, 0, err
-	}
-	modTime := stat.ModTime()
-	key := generateFileStatsKey(repoPath, filePath, modTime)
-
-	// Try to get from SQLite store
-	// CAPTURE version and ts
-	data, version, ts, err := fileStats.Get(key)
-
-	if err == nil {
-		// 1. Validate version (DB column)
-		if version == currentCacheVersion {
-			// 2. Validate staleness (DB column) - Using 7 days as the max life window
-			entryTimestamp := time.Unix(ts, 0)
-			if time.Since(entryTimestamp) <= 7*24*time.Hour {
-				// Cache Hit: Unmarshal the raw result data
-				var stats FileStats
-				if err := json.Unmarshal(data, &stats); err == nil {
-					return stats.SizeBytes, stats.LinesOfCode, nil
-				}
-			}
-			// Entry is stale - treat as cache miss, continue to computation
-		}
-		// Version mismatch - treat as cache miss, continue to computation
-	}
-
-	// Compute and cache if cache miss, validation failed, or unmarshal failed
-	size, lines, err := computeFileStats(fullPath)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	stats := FileStats{
-		SizeBytes:   size,
-		LinesOfCode: lines,
-		ModTime:     modTime,
-	}
-
-	// Persist the raw FileStats JSON bytes
-	if data, err := json.Marshal(stats); err == nil {
-		// Use the metadata columns for version and timestamp
-		_ = fileStats.Set(key, data, currentCacheVersion, time.Now().Unix())
-	}
-
-	return size, lines, nil
-}
-
-// FileStats represents cached file metadata
-type FileStats struct {
-	SizeBytes   int64     `json:"size_bytes"`
-	LinesOfCode int       `json:"lines_of_code"`
-	ModTime     time.Time `json:"mod_time"`
-}
-
 // generateCacheKey creates a unique key based on analysis parameters
 func generateCacheKey(cfg *internal.Config) string {
 	// Use canonical helpers from internal.Config to ensure consistent time granularity
@@ -149,12 +81,6 @@ func generateCacheKey(cfg *internal.Config) string {
 	return fmt.Sprintf("%x", md5.Sum([]byte(key)))
 }
 
-// generateFileStatsKey creates a cache key for file stats
-func generateFileStatsKey(repoPath, filePath string, modTime time.Time) string {
-	key := fmt.Sprintf("%s:%s:%d", repoPath, filePath, modTime.Unix())
-	return fmt.Sprintf("%x", md5.Sum([]byte(key)))
-}
-
 // getRepoHash gets the current Git HEAD hash for the repository
 func getRepoHash(repoPath string) string {
 	cmd := exec.Command("git", "-C", repoPath, "rev-parse", "HEAD")
@@ -164,17 +90,4 @@ func getRepoHash(repoPath string) string {
 	}
 	// Trim whitespace/newline to ensure consistent hash across environments
 	return strings.TrimSpace(string(output))
-}
-
-// computeFileStats computes file size and line count
-func computeFileStats(fullPath string) (int64, int, error) {
-	content, err := os.ReadFile(fullPath)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	size := int64(len(content))
-	lines := len(strings.Split(string(content), "\n"))
-
-	return size, lines, nil
 }

@@ -30,10 +30,6 @@ func TestPersistence(t *testing.T) {
 			t.Fatal("Activity store is nil")
 		}
 
-		if Manager.GetFileStatsStore() == nil {
-			t.Fatal("FileStats store is nil")
-		}
-
 		// Test cleanup
 		ClosePersistence()
 

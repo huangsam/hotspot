@@ -5,11 +5,8 @@ import (
 	"sync"
 )
 
-const (
-	// Table names
-	activityTable  = "activity_cache"
-	fileStatsTable = "file_stats_cache"
-)
+// activityTable is the name of the SQLite table for activity caching.
+const activityTable = "activity_cache"
 
 // Global Manager instance for main logic
 var (
@@ -33,16 +30,8 @@ func InitPersistence() error { // called in main entrypoint
 			return
 		}
 
-		// Initialize File Stats Store
-		fileStatsPersistStore, err := NewPersistStore(fileStatsTable)
-		if err != nil {
-			initErr = fmt.Errorf("failed to initialize file stats persistence: %w", err)
-			return
-		}
-
 		// Assign to global manager
 		Manager.activity = activityPersistStore
-		Manager.fileStats = fileStatsPersistStore
 	})
 
 	// After once.Do, initErr will contain any error from the initialization block.
@@ -56,9 +45,6 @@ func ClosePersistence() { // called in main defer
 		defer Manager.Unlock()
 		if Manager.activity != nil {
 			_ = Manager.activity.db.Close()
-		}
-		if Manager.fileStats != nil {
-			_ = Manager.fileStats.db.Close()
 		}
 	})
 }

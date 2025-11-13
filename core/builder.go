@@ -3,6 +3,8 @@ package core
 import (
 	"context"
 	"maps"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -123,13 +125,16 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 	return b
 }
 
-// FetchFileStats reads the file to populate SizeBytes and LinesOfCode (PLOC) with caching.
+// FetchFileStats reads the file to populate SizeBytes and LinesOfCode (PLOC).
 func (b *FileResultBuilder) FetchFileStats() *FileResultBuilder {
-	// Use cached file stats
-	size, lines, err := CachedFetchFileStats(internal.Manager, b.cfg.RepoPath, b.path)
+	fullPath := filepath.Join(b.cfg.RepoPath, b.path)
+	content, err := os.ReadFile(fullPath)
 	if err != nil {
 		return b
 	}
+
+	size := int64(len(content))
+	lines := len(strings.Split(string(content), "\n"))
 
 	b.result.SizeBytes = size
 	b.result.LinesOfCode = lines
