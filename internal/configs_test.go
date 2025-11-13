@@ -717,3 +717,37 @@ func TestNormalizeTimeseriesPath(t *testing.T) {
 		})
 	}
 }
+
+// TestGetAnalysisStartAndEndTime tests the canonical time truncation methods
+func TestGetAnalysisStartAndEndTime(t *testing.T) {
+	// Create a time with minutes, seconds, and nanoseconds
+	now := time.Date(2024, 1, 15, 14, 30, 45, 123456789, time.UTC)
+	startTime := now.AddDate(0, 0, -365)
+
+	cfg := &Config{
+		StartTime: startTime,
+		EndTime:   now,
+	}
+
+	// Test that GetAnalysisStartTime truncates to the hour
+	truncatedStart := cfg.GetAnalysisStartTime()
+	expectedStart := startTime.Truncate(CacheGranularity)
+
+	assert.Equal(t, expectedStart, truncatedStart, "GetAnalysisStartTime should truncate to hour")
+	assert.Equal(t, 0, truncatedStart.Minute(), "Minutes should be 0")
+	assert.Equal(t, 0, truncatedStart.Second(), "Seconds should be 0")
+	assert.Equal(t, 0, truncatedStart.Nanosecond(), "Nanoseconds should be 0")
+
+	// Test that GetAnalysisEndTime truncates to the hour
+	truncatedEnd := cfg.GetAnalysisEndTime()
+	expectedEnd := now.Truncate(CacheGranularity)
+
+	assert.Equal(t, expectedEnd, truncatedEnd, "GetAnalysisEndTime should truncate to hour")
+	assert.Equal(t, 0, truncatedEnd.Minute(), "Minutes should be 0")
+	assert.Equal(t, 0, truncatedEnd.Second(), "Seconds should be 0")
+	assert.Equal(t, 0, truncatedEnd.Nanosecond(), "Nanoseconds should be 0")
+
+	// Test that the granularity constant is indeed time.Hour
+	assert.Equal(t, time.Hour, CacheGranularity, "CacheGranularity should be time.Hour")
+}
+
