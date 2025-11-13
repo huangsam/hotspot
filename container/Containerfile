@@ -1,0 +1,21 @@
+FROM golang:1.25.4
+
+LABEL org.opencontainers.image.title="hotspot" \
+      org.opencontainers.image.description="Hotspot CLI - analyze git repository hotspots" \
+      org.opencontainers.image.url="https://github.com/huangsam/hotspot" \
+      org.opencontainers.image.source="https://github.com/huangsam/hotspot" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.base.name="golang:1.25.4"
+
+WORKDIR /scripts
+
+COPY ./git-check.sh .
+
+RUN chmod +x ./git-check.sh && \
+    ./git-check.sh && \
+    go install github.com/huangsam/hotspot@v1.3.3 && \
+    git config --global --add safe.directory /app
+
+WORKDIR /app
+
+ENTRYPOINT ["hotspot"]
