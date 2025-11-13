@@ -750,4 +750,3 @@ func TestGetAnalysisStartAndEndTime(t *testing.T) {
 	// Test that the granularity constant is indeed time.Hour
 	assert.Equal(t, time.Hour, CacheGranularity, "CacheGranularity should be time.Hour")
 }
-
