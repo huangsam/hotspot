@@ -10,8 +10,8 @@ import (
 	_ "github.com/mattn/go-sqlite3" // SQLite driver
 )
 
-// dbFileName is the name of the SQLite database file.
-const dbFileName = ".hotspot_cache.db"
+// DatabaseName is the name of the SQLite database file.
+const DatabaseName = ".hotspot_cache.db"
 
 // PersistStoreManager manages multiple PersistStore instances.
 type PersistStoreManager struct {
@@ -76,7 +76,7 @@ func NewPersistStore(tableName string) (*PersistStore, error) {
 // getDBFilePath returns the path to the SQLite DB file.
 func getDBFilePath() string {
 	homeDir, _ := os.UserHomeDir()
-	return filepath.Join(homeDir, dbFileName)
+	return filepath.Join(homeDir, DatabaseName)
 }
 
 // Get retrieves a value by key from the store. Returns sql.ErrNoRows when missing.
