@@ -22,7 +22,7 @@ However, these traditional QA methods often fail against **System Resilience**. 
 
 Hotspot was born out of the desire to fix that: to provide a transparent, auditable, and quantifiable tool for engineering teams to diagnose the **technical debt** and **knowledge risk** that truly cause production instability.
 
-## Key features
+### Key features
 
 - 🔍 **See what matters** - rank files and folders by activity, complexity, etc.
 - ⚡ **Fast results** - analyze thousands of files in seconds
