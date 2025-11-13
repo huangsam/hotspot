@@ -205,7 +205,7 @@ hotspot timeseries --path pkg/api/v1.go --mode hot --interval "14 days" --points
 
 ## Performance
 
-All measurements use default settings with 14 concurrent workers on a MacBook Pro with a M3 Max chip.
+All measurements use default settings with 14 concurrent workers on a MacBook Pro with an M3 Max chip.
 
 [csv-parser]: https://github.com/vincentlaucsb/csv-parser
 [fd]: https://github.com/sharkdp/fd
