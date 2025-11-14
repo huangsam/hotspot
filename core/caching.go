@@ -17,7 +17,7 @@ import (
 const currentCacheVersion = 1
 
 // CachedAggregateActivity - Simplified and validated using DB columns
-func CachedAggregateActivity(ctx context.Context, cfg *internal.Config, client internal.GitClient, mgr *internal.PersistStoreManager) (*schema.AggregateOutput, error) {
+func CachedAggregateActivity(ctx context.Context, cfg *internal.Config, client internal.GitClient, mgr internal.PersistenceManager) (*schema.AggregateOutput, error) {
 	activity := mgr.GetActivityStore()
 	if activity == nil {
 		// Fallback to direct computation

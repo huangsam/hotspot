@@ -13,6 +13,12 @@ import (
 // databaseName is the name of the SQLite database file.
 const databaseName = ".hotspot_cache.db"
 
+// PersistenceManager defines the interface for managing persistence stores.
+// This allows the persistence layer to be mocked for testing.
+type PersistenceManager interface {
+	GetActivityStore() *PersistStore
+}
+
 // PersistStoreManager manages multiple PersistStore instances.
 type PersistStoreManager struct {
 	sync.RWMutex // Protects the store pointers during initialization

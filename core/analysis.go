@@ -20,13 +20,13 @@ const (
 )
 
 // runSingleAnalysisCore performs the common Aggregation, Filtering, and Analysis steps.
-func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client internal.GitClient) (*schema.SingleAnalysisOutput, error) {
+func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client internal.GitClient, mgr internal.PersistenceManager) (*schema.SingleAnalysisOutput, error) {
 	if !shouldSuppressHeader(ctx) {
 		internal.LogAnalysisHeader(cfg)
 	}
 
 	// --- 1. Aggregation Phase (with caching) ---
-	output, err := CachedAggregateActivity(ctx, cfg, client, internal.Manager)
+	output, err := CachedAggregateActivity(ctx, cfg, client, mgr)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client int
 
 // runCompareAnalysisForRef runs the file analysis for a specific Git reference in compare mode.
 // Headers are always suppressed in compare mode.
-func runCompareAnalysisForRef(ctx context.Context, cfg *internal.Config, client internal.GitClient, ref string) (*schema.CompareAnalysisOutput, error) {
+func runCompareAnalysisForRef(ctx context.Context, cfg *internal.Config, client internal.GitClient, ref string, mgr internal.PersistenceManager) (*schema.CompareAnalysisOutput, error) {
 	// 1. Resolve the time window for the reference
 	baseStartTime, baseEndTime, err := getAnalysisWindowForRef(ctx, client, cfg.RepoPath, ref, cfg.Lookback)
 	if err != nil {
@@ -59,7 +59,7 @@ func runCompareAnalysisForRef(ctx context.Context, cfg *internal.Config, client 
 	cfgRef := cfg.CloneWithTimeWindow(baseStartTime, baseEndTime)
 
 	// 3. Run file analysis
-	fileResults, err := analyzeAllFilesAtRef(ctx, cfgRef, client, ref)
+	fileResults, err := analyzeAllFilesAtRef(ctx, cfgRef, client, ref, mgr)
 	if err != nil {
 		return nil, fmt.Errorf("analysis failed for ref %s", ref)
 	}
@@ -75,7 +75,7 @@ func runCompareAnalysisForRef(ctx context.Context, cfg *internal.Config, client 
 
 // analyzeAllFilesAtRef performs file analysis for all files that exist at a specific Git reference.
 // Headers are always suppressed in compare mode.
-func analyzeAllFilesAtRef(ctx context.Context, cfg *internal.Config, client internal.GitClient, ref string) ([]schema.FileResult, error) {
+func analyzeAllFilesAtRef(ctx context.Context, cfg *internal.Config, client internal.GitClient, ref string, mgr internal.PersistenceManager) ([]schema.FileResult, error) {
 	// --- 1. Get all files at the reference ---
 	files, err := client.ListFilesAtRef(ctx, cfg.RepoPath, ref)
 	if err != nil {
@@ -104,7 +104,7 @@ func analyzeAllFilesAtRef(ctx context.Context, cfg *internal.Config, client inte
 	}
 
 	// --- 2. Aggregation Phase (with caching) ---
-	output, err := CachedAggregateActivity(ctx, cfg, client, internal.Manager)
+	output, err := CachedAggregateActivity(ctx, cfg, client, mgr)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func analyzeAllFilesAtRef(ctx context.Context, cfg *internal.Config, client inte
 
 // runFollowPass re-analyzes the top N ranked files using 'git --follow'
 // to account for renames, and then returns a new, re-ranked list.
-func runFollowPass(ctx context.Context, cfg *internal.Config, client internal.GitClient, ranked []schema.FileResult, output *schema.AggregateOutput) []schema.FileResult {
+func runFollowPass(ctx context.Context, cfg *internal.Config, client internal.GitClient, ranked []schema.FileResult, output *schema.AggregateOutput, mgr internal.PersistenceManager) []schema.FileResult {
 	// Determine the number of files to re-analyze
 	n := min(cfg.ResultLimit, len(ranked))
 	if n == 0 {
@@ -236,6 +236,7 @@ func runTimeseriesAnalysis(
 	now time.Time,
 	interval time.Duration,
 	numPoints int,
+	mgr internal.PersistenceManager,
 ) []schema.TimeseriesPoint {
 	var timeseriesPoints []schema.TimeseriesPoint
 	currentEnd := now
@@ -274,7 +275,7 @@ func runTimeseriesAnalysis(
 		cfgWindow := cfg.CloneWithTimeWindow(startTime, currentEnd)
 
 		// --- Execute Analysis Core ---
-		score, owners := analyzeTimeseriesPoint(ctx, cfgWindow, client, normalizedPath, isFolder)
+		score, owners := analyzeTimeseriesPoint(ctx, cfgWindow, client, normalizedPath, isFolder, mgr)
 		// --- End Execute Analysis Core ---
 
 		// 4. Generate period label
@@ -310,9 +311,10 @@ func analyzeTimeseriesPoint(
 	client internal.GitClient,
 	path string,
 	isFolder bool,
+	mgr internal.PersistenceManager,
 ) (float64, []string) {
 	suppressCtx := withSuppressHeader(ctx)
-	output, err := runSingleAnalysisCore(suppressCtx, cfg, client)
+	output, err := runSingleAnalysisCore(suppressCtx, cfg, client, mgr)
 	if err != nil {
 		// If no data in this window (e.g. no commits), score is 0
 		return 0, []string{}

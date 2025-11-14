@@ -14,8 +14,10 @@ import (
 func TestRunSingleAnalysisCore(t *testing.T) {
 	ctx := withSuppressHeader(context.Background())
 	mockClient := &internal.MockGitClient{}
+	mockMgr := &internal.MockPersistenceManager{}
 
 	// Setup mock expectations
+	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return([]string{"main.go", "core/agg.go"}, nil)
 	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
 
@@ -28,7 +30,7 @@ func TestRunSingleAnalysisCore(t *testing.T) {
 		ResultLimit: 10,
 	}
 
-	result, err := runSingleAnalysisCore(ctx, cfg, mockClient)
+	result, err := runSingleAnalysisCore(ctx, cfg, mockClient, mockMgr)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
@@ -37,13 +39,16 @@ func TestRunSingleAnalysisCore(t *testing.T) {
 	assert.True(t, len(result.FileResults) > 0)
 
 	mockClient.AssertExpectations(t)
+	mockMgr.AssertExpectations(t)
 }
 
 func TestRunSingleAnalysisCore_NoFilesFound(t *testing.T) {
 	ctx := withSuppressHeader(context.Background())
 	mockClient := &internal.MockGitClient{}
+	mockMgr := &internal.MockPersistenceManager{}
 
 	// Setup mock expectations - return empty file list
+	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return([]string{}, nil)
 	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte(""), nil)
 
@@ -55,20 +60,23 @@ func TestRunSingleAnalysisCore_NoFilesFound(t *testing.T) {
 		Workers:   1,
 	}
 
-	result, err := runSingleAnalysisCore(ctx, cfg, mockClient)
+	result, err := runSingleAnalysisCore(ctx, cfg, mockClient, mockMgr)
 
 	assert.Error(t, err)
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "no files found")
 
 	mockClient.AssertExpectations(t)
+	mockMgr.AssertExpectations(t)
 }
 
 func TestRunSingleAnalysisCore_AggregationError(t *testing.T) {
 	ctx := withSuppressHeader(context.Background())
 	mockClient := &internal.MockGitClient{}
+	mockMgr := &internal.MockPersistenceManager{}
 
 	// Setup mock expectations - aggregation fails
+	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return([]string{"main.go"}, nil)
 	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(nil, assert.AnError)
 
@@ -80,23 +88,26 @@ func TestRunSingleAnalysisCore_AggregationError(t *testing.T) {
 		Workers:   1,
 	}
 
-	result, err := runSingleAnalysisCore(ctx, cfg, mockClient)
+	result, err := runSingleAnalysisCore(ctx, cfg, mockClient, mockMgr)
 
 	assert.Error(t, err)
 	assert.Nil(t, result)
 
 	mockClient.AssertExpectations(t)
+	mockMgr.AssertExpectations(t)
 }
 
 func TestRunCompareAnalysisForRef(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
+	mockMgr := &internal.MockPersistenceManager{}
 
 	ref := "main"
 	lookback := 30 * 24 * time.Hour // 30 days
 	commitTime := time.Date(2024, 6, 15, 10, 30, 0, 0, time.UTC)
 
 	// Setup mock expectations
+	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
 	mockClient.On("GetCommitTime", ctx, "/test/repo", ref).Return(commitTime, nil)
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", ref).Return([]string{"main.go", "core/agg.go"}, nil)
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return([]string{"main.go", "core/agg.go"}, nil) // For aggregateActivity
@@ -110,7 +121,7 @@ func TestRunCompareAnalysisForRef(t *testing.T) {
 		Lookback:    lookback,
 	}
 
-	result, err := runCompareAnalysisForRef(ctx, cfg, mockClient, ref)
+	result, err := runCompareAnalysisForRef(ctx, cfg, mockClient, ref, mockMgr)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
@@ -118,11 +129,13 @@ func TestRunCompareAnalysisForRef(t *testing.T) {
 	assert.NotNil(t, result.FolderResults)
 
 	mockClient.AssertExpectations(t)
+	mockMgr.AssertExpectations(t)
 }
 
 func TestRunCompareAnalysisForRef_CommitTimeError(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
+	mockMgr := &internal.MockPersistenceManager{}
 
 	ref := "main"
 
@@ -134,7 +147,7 @@ func TestRunCompareAnalysisForRef_CommitTimeError(t *testing.T) {
 		Lookback: 30 * 24 * time.Hour,
 	}
 
-	result, err := runCompareAnalysisForRef(ctx, cfg, mockClient, ref)
+	result, err := runCompareAnalysisForRef(ctx, cfg, mockClient, ref, mockMgr)
 
 	assert.Error(t, err)
 	assert.Nil(t, result)
@@ -146,10 +159,12 @@ func TestRunCompareAnalysisForRef_CommitTimeError(t *testing.T) {
 func TestAnalyzeAllFilesAtRef(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
+	mockMgr := &internal.MockPersistenceManager{}
 
 	ref := "feature-branch"
 
 	// Setup mock expectations
+	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", ref).Return([]string{"main.go", "core/agg.go", "test_main.go"}, nil)
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return([]string{"main.go", "core/agg.go", "test_main.go"}, nil) // For aggregateActivity
 	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
@@ -163,7 +178,7 @@ func TestAnalyzeAllFilesAtRef(t *testing.T) {
 		Excludes:  []string{"test_*"}, // Should exclude test_main.go
 	}
 
-	result, err := analyzeAllFilesAtRef(ctx, cfg, mockClient, ref)
+	result, err := analyzeAllFilesAtRef(ctx, cfg, mockClient, ref, mockMgr)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
@@ -175,11 +190,13 @@ func TestAnalyzeAllFilesAtRef(t *testing.T) {
 	}
 
 	mockClient.AssertExpectations(t)
+	mockMgr.AssertExpectations(t)
 }
 
 func TestAnalyzeAllFilesAtRef_EmptyAfterFiltering(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
+	mockMgr := &internal.MockPersistenceManager{}
 
 	ref := "feature-branch"
 
@@ -196,7 +213,7 @@ func TestAnalyzeAllFilesAtRef_EmptyAfterFiltering(t *testing.T) {
 		Excludes:  []string{"test_*"}, // Excludes all files
 	}
 
-	result, err := analyzeAllFilesAtRef(ctx, cfg, mockClient, ref)
+	result, err := analyzeAllFilesAtRef(ctx, cfg, mockClient, ref, mockMgr)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(result)) // Should return empty slice, not error
@@ -207,6 +224,7 @@ func TestAnalyzeAllFilesAtRef_EmptyAfterFiltering(t *testing.T) {
 func TestRunFollowPass(t *testing.T) {
 	ctx := withSuppressHeader(context.Background())
 	mockClient := &internal.MockGitClient{}
+	mockMgr := &internal.MockPersistenceManager{}
 
 	// Create test data
 	ranked := []schema.FileResult{
@@ -242,7 +260,7 @@ func TestRunFollowPass(t *testing.T) {
 	mockClient.On("GetFileActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "core/agg.go", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time"), true).
 		Return([]byte("--follow456|Bob|2024-01-01T00:00:00Z\nDELIMITER_COMMIT_STARTBob|2024-01-01T00:00:00Z\n1\t0\tcore/agg.go\n"), nil)
 
-	result := runFollowPass(ctx, cfg, mockClient, ranked, output)
+	result := runFollowPass(ctx, cfg, mockClient, ranked, output, mockMgr)
 
 	assert.NotNil(t, result)
 	assert.Len(t, result, 2)
@@ -255,6 +273,7 @@ func TestRunFollowPass(t *testing.T) {
 func TestRunFollowPass_EmptyInput(t *testing.T) {
 	ctx := withSuppressHeader(context.Background())
 	mockClient := &internal.MockGitClient{}
+	mockMgr := &internal.MockPersistenceManager{}
 
 	ranked := []schema.FileResult{}
 	output := &schema.AggregateOutput{}
@@ -263,7 +282,7 @@ func TestRunFollowPass_EmptyInput(t *testing.T) {
 		ResultLimit: 10,
 	}
 
-	result := runFollowPass(ctx, cfg, mockClient, ranked, output)
+	result := runFollowPass(ctx, cfg, mockClient, ranked, output, mockMgr)
 
 	assert.Equal(t, ranked, result) // Should return input unchanged
 
