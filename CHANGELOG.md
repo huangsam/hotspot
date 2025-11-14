@@ -1,5 +1,17 @@
 # 🚀 Changelog
 
+## v1.4.0
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.3.3...v1.4.0)
+
+### Features
+
+- **SQLite Result Caching**: Add persistent caching with ~35x faster analysis for repeated runs and seamless mode switching
+
+### Development
+
+- **Cache Schema**: Bump cache version for compatibility
+
 ## v1.3.3
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.3.2...v1.3.3)
