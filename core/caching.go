@@ -81,9 +81,8 @@ func generateCacheKey(ctx context.Context, cfg *internal.Config, client internal
 		repoHash = ""
 	}
 
-	key := fmt.Sprintf("%s:%s:%s:%d:%d:%s",
+	key := fmt.Sprintf("%s:%s:%d:%d:%s",
 		cfg.RepoPath,
-		cfg.Mode,
 		cfg.Lookback,
 		startHour.Unix(),
 		endHour.Unix(),
