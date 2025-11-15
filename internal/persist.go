@@ -8,7 +8,9 @@ import (
 	"sync"
 
 	"github.com/huangsam/hotspot/schema"
-	_ "github.com/mattn/go-sqlite3" // SQLite driver
+	_ "github.com/go-sql-driver/mysql" // MySQL driver
+	_ "github.com/lib/pq"               // PostgreSQL driver
+	_ "github.com/mattn/go-sqlite3"     // SQLite driver
 )
 
 // databaseName is the name of the SQLite database file.
@@ -68,10 +70,18 @@ func NewPersistStore(tableName string, backend schema.CacheBackend, connStr stri
 		}
 
 	case schema.MySQLBackend:
-		return nil, fmt.Errorf("MySQL backend not yet implemented")
+		driverName = "mysql"
+		db, err = sql.Open(driverName, connStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open MySQL database: %w", err)
+		}
 
 	case schema.PostgreSQLBackend:
-		return nil, fmt.Errorf("PostgreSQL backend not yet implemented")
+		driverName = "postgres"
+		db, err = sql.Open(driverName, connStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open PostgreSQL database: %w", err)
+		}
 
 	case schema.NoneBackend:
 		// Return a no-op store for disabled caching
