@@ -284,6 +284,31 @@ var timeseriesCmd = &cobra.Command{
 	},
 }
 
+// cacheCmd focused on cache management.
+var cacheCmd = &cobra.Command{
+	Use:   "cache",
+	Short: "Manage cache operations.",
+	Long:  `The cache command provides subcommands for managing the application's cache.`,
+}
+
+// cacheClearCmd clears the cache.
+var cacheClearCmd = &cobra.Command{
+	Use:   "clear",
+	Short: "Clear the cache for the configured backend.",
+	Long:  `The clear subcommand removes all cached data for the current backend configuration.`,
+	Run: func(_ *cobra.Command, _ []string) {
+		// Load minimal config for backend/dbFilePath/connStr
+		backend := schema.CacheBackend(viper.GetString("cache-backend"))
+		connStr := viper.GetString("cache-db-connect")
+		dbFilePath := internal.GetDBFilePath()
+
+		if err := internal.ClearCache(backend, dbFilePath, connStr); err != nil {
+			internal.LogFatal("Failed to clear cache", err)
+		}
+		fmt.Println("Cache cleared successfully.")
+	},
+}
+
 // init defines and binds all flags.
 func init() {
 	// Call initConfig on Cobra's initialization
@@ -296,10 +321,14 @@ func init() {
 	rootCmd.AddCommand(timeseriesCmd)
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(metricsCmd)
+	rootCmd.AddCommand(cacheCmd)
 
 	// Add the file comparison subcommand to the parent compare command
 	compareCmd.AddCommand(compareFilesCmd)
 	compareCmd.AddCommand(compareFoldersCmd)
+
+	// Add the clear subcommand to the parent cache command
+	cacheCmd.AddCommand(cacheClearCmd)
 
 	// Bind all persistent flags of rootCmd to Viper
 	rootCmd.PersistentFlags().Bool("detail", false, "Print per-target metadata (lines of code, size, age)")

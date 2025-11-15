@@ -3,8 +3,6 @@ package internal
 import (
 	"database/sql"
 	"fmt"
-	"os"
-	"path/filepath"
 	"sync"
 
 	_ "github.com/go-sql-driver/mysql" // MySQL driver
@@ -12,9 +10,6 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib" // PostgreSQL driver
 	_ "github.com/mattn/go-sqlite3"    // SQLite driver
 )
-
-// databaseName is the name of the SQLite database file.
-const databaseName = ".hotspot_cache.db"
 
 // PersistenceManager defines the interface for managing persistence stores.
 // This allows the persistence layer to be mocked for testing.
@@ -154,12 +149,6 @@ func getCreateTableQuery(tableName string, backend schema.CacheBackend) string {
 			);
 		`, tableName)
 	}
-}
-
-// GetDBFilePath returns the path to the SQLite DB file.
-func GetDBFilePath() string {
-	homeDir, _ := os.UserHomeDir()
-	return filepath.Join(homeDir, databaseName)
 }
 
 // Get retrieves a value by key from the store.

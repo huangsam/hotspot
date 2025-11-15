@@ -1,11 +1,17 @@
 package internal
 
 import (
+	"database/sql"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/huangsam/hotspot/schema"
 )
+
+// databaseName is the name of the SQLite database file.
+const databaseName = ".hotspot_cache.db"
 
 // activityTable is the name of the table for activity caching.
 const activityTable = "activity_cache"
@@ -16,6 +22,12 @@ var (
 	initOnce  sync.Once
 	closeOnce sync.Once
 )
+
+// GetDBFilePath returns the path to the SQLite DB file.
+func GetDBFilePath() string {
+	homeDir, _ := os.UserHomeDir()
+	return filepath.Join(homeDir, databaseName)
+}
 
 // InitPersistence uses sync.Once to safely initialize the global stores with the given backend.
 func InitPersistence(backend schema.CacheBackend, connStr string) error {
@@ -49,4 +61,54 @@ func ClosePersistence() { // called in main defer
 			_ = Manager.activity.db.Close()
 		}
 	})
+}
+
+// ClearCache clears the cache for the specified backend.
+// For SQLite, it deletes the database file.
+// For SQL backends (MySQL/PostgreSQL), it drops the table.
+// For NoneBackend, it does nothing.
+func ClearCache(backend schema.CacheBackend, dbFilePath, connStr string) error {
+	switch backend {
+	case schema.SQLiteBackend:
+		if dbFilePath == "" {
+			return fmt.Errorf("dbFilePath cannot be empty for SQLite backend")
+		}
+		// Remove the file; ignore if it doesn't exist
+		if err := os.Remove(dbFilePath); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to remove SQLite database file %s: %w", dbFilePath, err)
+		}
+		return nil
+
+	case schema.MySQLBackend:
+		return clearSQLTable("mysql", connStr, activityTable)
+
+	case schema.PostgreSQLBackend:
+		return clearSQLTable("pgx", connStr, activityTable)
+
+	case schema.NoneBackend:
+		return nil
+
+	default:
+		return fmt.Errorf("unsupported cache backend for clearing: %s", backend)
+	}
+}
+
+// clearSQLTable connects to the SQL database and drops the table if it exists.
+func clearSQLTable(driverName, connStr, tableName string) error {
+	db, err := sql.Open(driverName, connStr)
+	if err != nil {
+		return fmt.Errorf("failed to connect to %s database: %w", driverName, err)
+	}
+	defer func() { _ = db.Close() }()
+
+	if err := db.Ping(); err != nil {
+		return fmt.Errorf("failed to ping %s database: %w", driverName, err)
+	}
+
+	query := fmt.Sprintf("DROP TABLE IF EXISTS %s", tableName)
+	if _, err := db.Exec(query); err != nil {
+		return fmt.Errorf("failed to drop table %s: %w", tableName, err)
+	}
+
+	return nil
 }
