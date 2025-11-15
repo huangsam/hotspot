@@ -54,7 +54,8 @@
 
 # cache-db-connect: Database connection string for mysql/postgresql backends.
 # Corresponds to: --cache-db-connect
-# Example: user:pass@tcp(host:port)/dbname
+# MySQL format: user:password@tcp(host:port)/dbname
+# PostgreSQL format: host=localhost port=5432 user=postgres password=mysecretpassword dbname=postgres
 # cache-db-connect: ""
 
 # filter: Filter analysis to files whose path begins with this prefix (e.g., "src/api/").
