@@ -8,7 +8,7 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-func TestPersistence(t *testing.T) {
+func TestCaching(t *testing.T) {
 	t.Run("single setup", func(t *testing.T) {
 		// Clean up any existing test database
 		testDBPath := GetDBFilePath()
@@ -17,7 +17,7 @@ func TestPersistence(t *testing.T) {
 		closeOnce = sync.Once{} // Reset for test
 
 		// Test initialization with SQLite backend
-		err := InitPersistence(schema.SQLiteBackend, "")
+		err := InitCaching(schema.SQLiteBackend, "")
 		if err != nil {
 			t.Fatalf("Failed to initialize persistence: %v", err)
 		}
@@ -33,7 +33,7 @@ func TestPersistence(t *testing.T) {
 		}
 
 		// Test cleanup
-		ClosePersistence()
+		CloseCaching()
 
 		// Verify database file was created
 		if _, err := os.Stat(testDBPath); os.IsNotExist(err) {
@@ -49,9 +49,9 @@ func TestPersistence(t *testing.T) {
 		closeOnce = sync.Once{} // Reset for test
 
 		// Multiple initializations should be safe (sync.Once)
-		err1 := InitPersistence(schema.SQLiteBackend, "")
-		err2 := InitPersistence(schema.SQLiteBackend, "")
-		err3 := InitPersistence(schema.SQLiteBackend, "")
+		err1 := InitCaching(schema.SQLiteBackend, "")
+		err2 := InitCaching(schema.SQLiteBackend, "")
+		err3 := InitCaching(schema.SQLiteBackend, "")
 
 		if err1 != nil {
 			t.Fatalf("First init failed: %v", err1)
@@ -64,9 +64,9 @@ func TestPersistence(t *testing.T) {
 		}
 
 		// Multiple closes should be safe (sync.Once)
-		ClosePersistence()
-		ClosePersistence()
-		ClosePersistence()
+		CloseCaching()
+		CloseCaching()
+		CloseCaching()
 	})
 
 	t.Run("none backend", func(t *testing.T) {
@@ -74,7 +74,7 @@ func TestPersistence(t *testing.T) {
 		closeOnce = sync.Once{} // Reset for test
 
 		// Test initialization with None backend (no database)
-		err := InitPersistence(schema.NoneBackend, "")
+		err := InitCaching(schema.NoneBackend, "")
 		if err != nil {
 			t.Fatalf("Failed to initialize persistence with none backend: %v", err)
 		}
@@ -90,18 +90,13 @@ func TestPersistence(t *testing.T) {
 			t.Fatal("Activity store is nil")
 		}
 
-		// Verify backend is none
-		if store.backend != schema.NoneBackend {
-			t.Fatalf("Expected backend to be none, got %s", store.backend)
-		}
-
 		// Test cleanup (should be safe even with no DB)
-		ClosePersistence()
+		CloseCaching()
 	})
 
 	t.Run("none backend operations", func(t *testing.T) {
 		// Create a none backend store directly
-		store, err := NewPersistStore("test_table", schema.NoneBackend, "")
+		store, err := NewCacheStore("test_table", schema.NoneBackend, "")
 		if err != nil {
 			t.Fatalf("Failed to create none backend store: %v", err)
 		}

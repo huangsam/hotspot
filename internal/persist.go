@@ -11,46 +11,47 @@ import (
 	_ "github.com/mattn/go-sqlite3"    // SQLite driver
 )
 
-// PersistenceManager defines the interface for managing persistence stores.
-// This allows the persistence layer to be mocked for testing.
-type PersistenceManager interface {
-	GetActivityStore() *PersistStore
+// CacheManager defines the interface for managing cache stores.
+// This allows the cache layer to be mocked for testing.
+type CacheManager interface {
+	GetActivityStore() CacheStore
 }
 
-// PersistenceStore defines the interface for persistence data storage.
+// CacheStore defines the interface for cache data storage.
 // This allows mocking the store for testing.
-type PersistenceStore interface {
+type CacheStore interface {
 	Get(key string) ([]byte, int, int64, error)
 	Set(key string, value []byte, version int, timestamp int64) error
+	Close() error
 }
 
-// PersistStoreManager manages multiple PersistStore instances.
-type PersistStoreManager struct {
+// CacheStoreManager manages multiple CacheStore instances.
+type CacheStoreManager struct {
 	sync.RWMutex // Protects the store pointers during initialization
-	activity     *PersistStore
+	activity     CacheStore
 }
 
-var _ PersistenceManager = &PersistStoreManager{} // Compile-time check
+var _ CacheManager = &CacheStoreManager{} // Compile-time check
 
-// GetActivityStore returns the activity PersistStore.
-func (mgr *PersistStoreManager) GetActivityStore() *PersistStore {
+// GetActivityStore returns the activity CacheStore.
+func (mgr *CacheStoreManager) GetActivityStore() CacheStore {
 	mgr.RLock()
 	defer mgr.RUnlock()
 	return mgr.activity
 }
 
-// PersistStore handles durable storage operations using various database backends.
-type PersistStore struct {
+// CacheStoreImpl handles durable storage operations using various database backends.
+type CacheStoreImpl struct {
 	db         *sql.DB
 	tableName  string
 	backend    schema.CacheBackend
 	driverName string
 }
 
-var _ PersistenceStore = &PersistStore{} // Compile-time check
+var _ CacheStore = &CacheStoreImpl{} // Compile-time check
 
-// NewPersistStore initializes and returns a new PersistStore based on the backend type.
-func NewPersistStore(tableName string, backend schema.CacheBackend, connStr string) (*PersistStore, error) {
+// NewCacheStore initializes and returns a new CacheStore based on the backend type.
+func NewCacheStore(tableName string, backend schema.CacheBackend, connStr string) (CacheStore, error) {
 	var db *sql.DB
 	var err error
 	var driverName string
@@ -84,7 +85,7 @@ func NewPersistStore(tableName string, backend schema.CacheBackend, connStr stri
 
 	case schema.NoneBackend:
 		// Return a no-op store for disabled caching
-		return &PersistStore{
+		return &CacheStoreImpl{
 			db:         nil,
 			tableName:  tableName,
 			backend:    backend,
@@ -108,7 +109,7 @@ func NewPersistStore(tableName string, backend schema.CacheBackend, connStr stri
 		return nil, fmt.Errorf("failed to create table %s: %w", tableName, err)
 	}
 
-	return &PersistStore{
+	return &CacheStoreImpl{
 		db:         db,
 		tableName:  tableName,
 		backend:    backend,
@@ -152,7 +153,7 @@ func getCreateTableQuery(tableName string, backend schema.CacheBackend) string {
 }
 
 // Get retrieves a value by key from the store.
-func (ps *PersistStore) Get(key string) ([]byte, int, int64, error) {
+func (ps *CacheStoreImpl) Get(key string) ([]byte, int, int64, error) {
 	// Return not found error for NoneBackend
 	if ps.backend == schema.NoneBackend || ps.db == nil {
 		return nil, 0, 0, sql.ErrNoRows
@@ -174,7 +175,7 @@ func (ps *PersistStore) Get(key string) ([]byte, int, int64, error) {
 }
 
 // Set inserts or replaces a key/value pair in the store.
-func (ps *PersistStore) Set(key string, value []byte, version int, timestamp int64) error {
+func (ps *CacheStoreImpl) Set(key string, value []byte, version int, timestamp int64) error {
 	// Skip for NoneBackend
 	if ps.backend == schema.NoneBackend || ps.db == nil {
 		return nil
@@ -187,7 +188,7 @@ func (ps *PersistStore) Set(key string, value []byte, version int, timestamp int
 }
 
 // getPlaceholder returns the parameter placeholder for the backend.
-func (ps *PersistStore) getPlaceholder() string {
+func (ps *CacheStoreImpl) getPlaceholder() string {
 	switch ps.backend {
 	case schema.PostgreSQLBackend:
 		return "$1"
@@ -197,7 +198,7 @@ func (ps *PersistStore) getPlaceholder() string {
 }
 
 // getUpsertQuery returns the UPSERT query for the backend.
-func (ps *PersistStore) getUpsertQuery() string {
+func (ps *CacheStoreImpl) getUpsertQuery() string {
 	switch ps.backend {
 	case schema.MySQLBackend:
 		return fmt.Sprintf(`INSERT INTO %s (cache_key, cache_value, cache_version, cache_timestamp) VALUES (?, ?, ?, ?)
@@ -213,7 +214,7 @@ func (ps *PersistStore) getUpsertQuery() string {
 }
 
 // Close closes the underlying DB connection.
-func (ps *PersistStore) Close() error {
+func (ps *CacheStoreImpl) Close() error {
 	if ps.db != nil {
 		return ps.db.Close()
 	}

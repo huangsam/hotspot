@@ -12,11 +12,11 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockPersistStore for testing (alias for MockPersistenceStore)
-type MockPersistStore = internal.MockPersistenceStore
+// MockCacheStore for testing (alias for MockCacheStore)
+type MockCacheStore = internal.MockCacheStore
 
 func TestCheckCacheHit_CacheHit(t *testing.T) {
-	mockStore := &MockPersistStore{}
+	mockStore := &MockCacheStore{}
 	result := &schema.AggregateOutput{
 		CommitMap: map[string]int{"test.go": 5},
 	}
@@ -32,7 +32,7 @@ func TestCheckCacheHit_CacheHit(t *testing.T) {
 }
 
 func TestCheckCacheHit_CacheMiss_VersionMismatch(t *testing.T) {
-	mockStore := &MockPersistStore{}
+	mockStore := &MockCacheStore{}
 	data := []byte("{}")
 
 	// Version mismatch
@@ -44,7 +44,7 @@ func TestCheckCacheHit_CacheMiss_VersionMismatch(t *testing.T) {
 }
 
 func TestCheckCacheHit_CacheMiss_Stale(t *testing.T) {
-	mockStore := &MockPersistStore{}
+	mockStore := &MockCacheStore{}
 	data := []byte("{}")
 
 	// Stale entry (older than 7 days)
@@ -57,7 +57,7 @@ func TestCheckCacheHit_CacheMiss_Stale(t *testing.T) {
 }
 
 func TestCheckCacheHit_CacheMiss_Error(t *testing.T) {
-	mockStore := &MockPersistStore{}
+	mockStore := &MockCacheStore{}
 
 	// Simulate DB error
 	mockStore.On("Get", "test-key").Return([]byte{}, 0, int64(0), assert.AnError)
@@ -68,7 +68,7 @@ func TestCheckCacheHit_CacheMiss_Error(t *testing.T) {
 }
 
 func TestCheckCacheHit_CacheMiss_UnmarshalError(t *testing.T) {
-	mockStore := &MockPersistStore{}
+	mockStore := &MockCacheStore{}
 
 	// Invalid JSON data
 	mockStore.On("Get", "test-key").Return([]byte("invalid json"), currentCacheVersion, time.Now().Unix(), nil)

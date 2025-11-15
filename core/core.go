@@ -14,11 +14,11 @@ import (
 )
 
 // ExecutorFunc defines the function signature for executing different analysis modes.
-type ExecutorFunc func(ctx context.Context, cfg *internal.Config, mgr internal.PersistenceManager) error
+type ExecutorFunc func(ctx context.Context, cfg *internal.Config, mgr internal.CacheManager) error
 
 // ExecuteHotspotFiles runs the file-level analysis and prints results to stdout.
 // It serves as the main entry point for the 'files' mode.
-func ExecuteHotspotFiles(ctx context.Context, cfg *internal.Config, mgr internal.PersistenceManager) error {
+func ExecuteHotspotFiles(ctx context.Context, cfg *internal.Config, mgr internal.CacheManager) error {
 	start := time.Now()
 	client := internal.NewLocalGitClient()
 	output, err := runSingleAnalysisCore(ctx, cfg, client, mgr)
@@ -37,7 +37,7 @@ func ExecuteHotspotFiles(ctx context.Context, cfg *internal.Config, mgr internal
 
 // ExecuteHotspotFolders runs the folder-level analysis and prints results to stdout.
 // It serves as the main entry point for the 'folders' mode.
-func ExecuteHotspotFolders(ctx context.Context, cfg *internal.Config, mgr internal.PersistenceManager) error {
+func ExecuteHotspotFolders(ctx context.Context, cfg *internal.Config, mgr internal.CacheManager) error {
 	start := time.Now()
 	client := internal.NewLocalGitClient()
 	output, err := runSingleAnalysisCore(ctx, cfg, client, mgr)
@@ -52,7 +52,7 @@ func ExecuteHotspotFolders(ctx context.Context, cfg *internal.Config, mgr intern
 
 // ExecuteHotspotCompare runs two file-level analyses (Base and Target)
 // based on Git references and computes the delta results.
-func ExecuteHotspotCompare(ctx context.Context, cfg *internal.Config, mgr internal.PersistenceManager) error {
+func ExecuteHotspotCompare(ctx context.Context, cfg *internal.Config, mgr internal.CacheManager) error {
 	start := time.Now()
 	client := internal.NewLocalGitClient()
 
@@ -76,7 +76,7 @@ func ExecuteHotspotCompare(ctx context.Context, cfg *internal.Config, mgr intern
 // based on Git references and computes the delta results.
 // It follows the same pattern as ExecuteHotspotCompare but aggregates to folders
 // before performing the comparison.
-func ExecuteHotspotCompareFolders(ctx context.Context, cfg *internal.Config, mgr internal.PersistenceManager) error {
+func ExecuteHotspotCompareFolders(ctx context.Context, cfg *internal.Config, mgr internal.CacheManager) error {
 	start := time.Now()
 	client := internal.NewLocalGitClient()
 
@@ -99,7 +99,7 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *internal.Config, mgr
 // ExecuteHotspotTimeseries runs multiple analyses over overlapping, dynamic-lookback time windows.
 // This implements Strategy 2: Time-Boxed M_min Approximation. The Git search for M_min commits
 // is capped by maxSearchDuration to prevent slow full-history traversal on large repos.
-func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config, mgr internal.PersistenceManager) error {
+func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config, mgr internal.CacheManager) error {
 	start := time.Now()
 
 	// Get timeseries-specific parameters from config
@@ -147,6 +147,6 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config, mgr int
 
 // ExecuteHotspotMetrics displays the formal definitions of all scoring modes.
 // This is a static display that does not require Git analysis.
-func ExecuteHotspotMetrics(_ context.Context, cfg *internal.Config, _ internal.PersistenceManager) error {
+func ExecuteHotspotMetrics(_ context.Context, cfg *internal.Config, _ internal.CacheManager) error {
 	return internal.PrintMetricsDefinitions(cfg.CustomWeights, cfg)
 }

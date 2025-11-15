@@ -37,8 +37,8 @@ var input = &internal.ConfigRawInput{}
 // profile holds profiling configuration
 var profile = &internal.ProfileConfig{}
 
-// persistManager is the global persistence manager instance.
-var persistManager internal.PersistenceManager
+// cacheManager is the global persistence manager instance.
+var cacheManager internal.CacheManager
 
 // startProfiling starts CPU and memory profiling if enabled
 func startProfiling() error {
@@ -163,7 +163,7 @@ func sharedSetup(ctx context.Context, _ *cobra.Command, args []string) error {
 	}
 
 	// 5. Initialize persistence layer with validated config
-	if err := internal.InitPersistence(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
+	if err := internal.InitCaching(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
 		return fmt.Errorf("failed to initialize persistence: %w", err)
 	}
 
@@ -183,7 +183,7 @@ var filesCmd = &cobra.Command{
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := core.ExecuteHotspotFiles(rootCtx, cfg, persistManager); err != nil {
+		if err := core.ExecuteHotspotFiles(rootCtx, cfg, cacheManager); err != nil {
 			internal.LogFatal("Cannot run files analysis", err)
 		}
 	},
@@ -197,7 +197,7 @@ var foldersCmd = &cobra.Command{
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := core.ExecuteHotspotFolders(rootCtx, cfg, persistManager); err != nil {
+		if err := core.ExecuteHotspotFolders(rootCtx, cfg, cacheManager); err != nil {
 			internal.LogFatal("Cannot run folders analysis", err)
 		}
 	},
@@ -215,7 +215,7 @@ func checkCompareAndExecute(executeFunc core.ExecutorFunc) {
 	if !cfg.CompareMode {
 		internal.LogFatal("Cannot run compare analysis", errors.New("base and target refs must be provided"))
 	}
-	if err := executeFunc(rootCtx, cfg, persistManager); err != nil {
+	if err := executeFunc(rootCtx, cfg, cacheManager); err != nil {
 		internal.LogFatal("Cannot run compare analysis", err)
 	}
 }
@@ -264,7 +264,7 @@ var metricsCmd = &cobra.Command{
 	Long:    `The metrics command shows the purpose, factors, and mathematical formulas for all four core scoring modes without performing Git analysis.`,
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := core.ExecuteHotspotMetrics(rootCtx, cfg, persistManager); err != nil {
+		if err := core.ExecuteHotspotMetrics(rootCtx, cfg, cacheManager); err != nil {
 			internal.LogFatal("Cannot display metrics", err)
 		}
 	},
@@ -278,7 +278,7 @@ var timeseriesCmd = &cobra.Command{
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := core.ExecuteHotspotTimeseries(rootCtx, cfg, persistManager); err != nil {
+		if err := core.ExecuteHotspotTimeseries(rootCtx, cfg, cacheManager); err != nil {
 			internal.LogFatal("Cannot run timeseries analysis", err)
 		}
 	},
@@ -377,12 +377,12 @@ func init() {
 
 // main starts the execution of the logic.
 func main() {
-	// Set the global persistence manager (will be initialized in sharedSetup)
-	persistManager = internal.Manager
+	// Set the global caching manager (will be initialized in sharedSetup)
+	cacheManager = internal.Manager
 
 	defer func() {
-		// Close persistence on exit
-		internal.ClosePersistence()
+		// Close caching on exit
+		internal.CloseCaching()
 
 		if err := stopProfiling(); err != nil {
 			internal.LogFatal("Error stopping profiling", err)

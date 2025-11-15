@@ -11,10 +11,10 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestRunSingleAnalysisCore(t *testing.T) {
+func TestRunSingleAnalysisCore_Success(t *testing.T) {
 	ctx := withSuppressHeader(context.Background())
 	mockClient := &internal.MockGitClient{}
-	mockMgr := &internal.MockPersistenceManager{}
+	mockMgr := &internal.MockCacheManager{}
 
 	// Setup mock expectations
 	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
@@ -45,7 +45,7 @@ func TestRunSingleAnalysisCore(t *testing.T) {
 func TestRunSingleAnalysisCore_NoFilesFound(t *testing.T) {
 	ctx := withSuppressHeader(context.Background())
 	mockClient := &internal.MockGitClient{}
-	mockMgr := &internal.MockPersistenceManager{}
+	mockMgr := &internal.MockCacheManager{}
 
 	// Setup mock expectations - return empty file list
 	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
@@ -73,7 +73,7 @@ func TestRunSingleAnalysisCore_NoFilesFound(t *testing.T) {
 func TestRunSingleAnalysisCore_AggregationError(t *testing.T) {
 	ctx := withSuppressHeader(context.Background())
 	mockClient := &internal.MockGitClient{}
-	mockMgr := &internal.MockPersistenceManager{}
+	mockMgr := &internal.MockCacheManager{}
 
 	// Setup mock expectations - aggregation fails
 	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
@@ -100,7 +100,7 @@ func TestRunSingleAnalysisCore_AggregationError(t *testing.T) {
 func TestRunCompareAnalysisForRef(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
-	mockMgr := &internal.MockPersistenceManager{}
+	mockMgr := &internal.MockCacheManager{}
 
 	ref := "main"
 	lookback := 30 * 24 * time.Hour // 30 days
@@ -135,7 +135,7 @@ func TestRunCompareAnalysisForRef(t *testing.T) {
 func TestRunCompareAnalysisForRef_CommitTimeError(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
-	mockMgr := &internal.MockPersistenceManager{}
+	mockMgr := &internal.MockCacheManager{}
 
 	ref := "main"
 
@@ -159,7 +159,7 @@ func TestRunCompareAnalysisForRef_CommitTimeError(t *testing.T) {
 func TestAnalyzeAllFilesAtRef(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
-	mockMgr := &internal.MockPersistenceManager{}
+	mockMgr := &internal.MockCacheManager{}
 
 	ref := "feature-branch"
 
@@ -196,7 +196,7 @@ func TestAnalyzeAllFilesAtRef(t *testing.T) {
 func TestAnalyzeAllFilesAtRef_EmptyAfterFiltering(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
-	mockMgr := &internal.MockPersistenceManager{}
+	mockMgr := &internal.MockCacheManager{}
 
 	ref := "feature-branch"
 

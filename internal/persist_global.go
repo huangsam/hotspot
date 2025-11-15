@@ -18,7 +18,7 @@ const activityTable = "activity_cache"
 
 // Global Manager instance for main logic
 var (
-	Manager   = &PersistStoreManager{}
+	Manager   = &CacheStoreManager{}
 	initOnce  sync.Once
 	closeOnce sync.Once
 )
@@ -29,8 +29,8 @@ func GetDBFilePath() string {
 	return filepath.Join(homeDir, databaseName)
 }
 
-// InitPersistence uses sync.Once to safely initialize the global stores with the given backend.
-func InitPersistence(backend schema.CacheBackend, connStr string) error {
+// InitCaching uses sync.Once to safely initialize the global stores with the given backend.
+func InitCaching(backend schema.CacheBackend, connStr string) error {
 	var initErr error
 
 	initOnce.Do(func() {
@@ -38,27 +38,27 @@ func InitPersistence(backend schema.CacheBackend, connStr string) error {
 		var err error
 
 		// Initialize Activity Store with the specified backend
-		activityPersistStore, err := NewPersistStore(activityTable, backend, connStr)
+		activityCacheStore, err := NewCacheStore(activityTable, backend, connStr)
 		if err != nil {
-			initErr = fmt.Errorf("failed to initialize activity persistence: %w", err)
+			initErr = fmt.Errorf("failed to initialize activity caching: %w", err)
 			return
 		}
 
 		// Assign to global manager
-		Manager.activity = activityPersistStore
+		Manager.activity = activityCacheStore
 	})
 
 	// After once.Do, initErr will contain any error from the initialization block.
 	return initErr
 }
 
-// ClosePersistence should be called on application shutdown.
-func ClosePersistence() { // called in main defer
+// CloseCaching should be called on application shutdown.
+func CloseCaching() { // called in main defer
 	closeOnce.Do(func() {
 		Manager.Lock()
 		defer Manager.Unlock()
-		if Manager.activity != nil && Manager.activity.db != nil {
-			_ = Manager.activity.db.Close()
+		if Manager.activity != nil {
+			_ = Manager.activity.Close()
 		}
 	})
 }
