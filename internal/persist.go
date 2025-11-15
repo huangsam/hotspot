@@ -9,8 +9,8 @@ import (
 
 	_ "github.com/go-sql-driver/mysql" // MySQL driver
 	"github.com/huangsam/hotspot/schema"
-	_ "github.com/lib/pq"           // PostgreSQL driver
-	_ "github.com/mattn/go-sqlite3" // SQLite driver
+	_ "github.com/jackc/pgx/v5/stdlib" // PostgreSQL driver
+	_ "github.com/mattn/go-sqlite3"    // SQLite driver
 )
 
 // databaseName is the name of the SQLite database file.
@@ -207,11 +207,11 @@ func (ps *PersistStore) getPlaceholder() string {
 func (ps *PersistStore) getUpsertQuery() string {
 	switch ps.backend {
 	case schema.MySQLBackend:
-		return fmt.Sprintf(`INSERT INTO %s (key, value, version, timestamp) VALUES (?, ?, ?, ?) 
+		return fmt.Sprintf(`INSERT INTO %s (key, value, version, timestamp) VALUES (?, ?, ?, ?)
 			ON DUPLICATE KEY UPDATE value = VALUES(value), version = VALUES(version), timestamp = VALUES(timestamp)`, ps.tableName)
 
 	case schema.PostgreSQLBackend:
-		return fmt.Sprintf(`INSERT INTO %s (key, value, version, timestamp) VALUES ($1, $2, $3, $4) 
+		return fmt.Sprintf(`INSERT INTO %s (key, value, version, timestamp) VALUES ($1, $2, $3, $4)
 			ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, version = EXCLUDED.version, timestamp = EXCLUDED.timestamp`, ps.tableName)
 
 	default: // SQLite
