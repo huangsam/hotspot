@@ -231,6 +231,11 @@ func TestProcessAndValidate(t *testing.T) {
 				tt.setupMock(mockClient, workDir)
 			}
 
+			// Set default cache backend if not specified
+			if tt.input.CacheBackend == "" {
+				tt.input.CacheBackend = string(schema.SQLiteBackend)
+			}
+
 			cfg := &Config{}
 			ctx := context.Background()
 			err = ProcessAndValidate(ctx, cfg, mockClient, tt.input)

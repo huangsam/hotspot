@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/huangsam/hotspot/schema"
 	_ "github.com/mattn/go-sqlite3" // SQLite driver
 )
 
@@ -41,45 +42,104 @@ func (mgr *PersistStoreManager) GetActivityStore() *PersistStore {
 	return mgr.activity
 }
 
-// PersistStore handles durable storage operations using SQLite.
+// PersistStore handles durable storage operations using various database backends.
 type PersistStore struct {
-	db        *sql.DB
-	tableName string
+	db         *sql.DB
+	tableName  string
+	backend    schema.CacheBackend
+	driverName string
 }
 
 var _ PersistenceStore = &PersistStore{} // Compile-time check
 
-// NewPersistStore initializes and returns a new PersistStore.
-func NewPersistStore(tableName string) (*PersistStore, error) {
-	dbPath := GetDBFilePath()
+// NewPersistStore initializes and returns a new PersistStore based on the backend type.
+func NewPersistStore(tableName string, backend schema.CacheBackend, connStr string) (*PersistStore, error) {
+	var db *sql.DB
+	var err error
+	var driverName string
 
-	db, err := sql.Open("sqlite3", dbPath) // Replace with actual SQLite driver
-	if err != nil {
-		return nil, fmt.Errorf("failed to open SQLite database: %w", err)
+	switch backend {
+	case schema.SQLiteBackend:
+		driverName = "sqlite3"
+		dbPath := GetDBFilePath()
+		db, err = sql.Open(driverName, dbPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open SQLite database: %w", err)
+		}
+
+	case schema.MySQLBackend:
+		return nil, fmt.Errorf("MySQL backend not yet implemented")
+
+	case schema.PostgreSQLBackend:
+		return nil, fmt.Errorf("PostgreSQL backend not yet implemented")
+
+	case schema.NoneBackend:
+		// Return a no-op store for disabled caching
+		return &PersistStore{
+			db:         nil,
+			tableName:  tableName,
+			backend:    backend,
+			driverName: "",
+		}, nil
+
+	default:
+		return nil, fmt.Errorf("unsupported cache backend: %s", backend)
 	}
 
-	// Ping to verify connection
+	// Ping to verify connection (skip for NoneBackend)
 	if err := db.Ping(); err != nil {
 		_ = db.Close()
-		return nil, fmt.Errorf("failed to ping SQLite database: %w", err)
+		return nil, fmt.Errorf("failed to ping %s database: %w", backend, err)
 	}
 
-	// Set up the table with a key, a BLOB for the data, and a timestamp/version
-	query := fmt.Sprintf(`
-		CREATE TABLE IF NOT EXISTS %s (
-			key TEXT PRIMARY KEY,
-			value BLOB NOT NULL,
-			version INTEGER NOT NULL,
-			timestamp INTEGER NOT NULL
-		);
-	`, tableName)
-
+	// Create the table schema
+	query := getCreateTableQuery(tableName, backend)
 	if _, err := db.Exec(query); err != nil {
 		_ = db.Close()
 		return nil, fmt.Errorf("failed to create table %s: %w", tableName, err)
 	}
 
-	return &PersistStore{db: db, tableName: tableName}, nil
+	return &PersistStore{
+		db:         db,
+		tableName:  tableName,
+		backend:    backend,
+		driverName: driverName,
+	}, nil
+}
+
+// getCreateTableQuery returns the CREATE TABLE query for the given backend.
+func getCreateTableQuery(tableName string, backend schema.CacheBackend) string {
+	switch backend {
+	case schema.MySQLBackend:
+		return fmt.Sprintf(`
+			CREATE TABLE IF NOT EXISTS %s (
+				key VARCHAR(255) PRIMARY KEY,
+				value BLOB NOT NULL,
+				version INT NOT NULL,
+				timestamp BIGINT NOT NULL
+			);
+		`, tableName)
+
+	case schema.PostgreSQLBackend:
+		return fmt.Sprintf(`
+			CREATE TABLE IF NOT EXISTS %s (
+				key TEXT PRIMARY KEY,
+				value BYTEA NOT NULL,
+				version INTEGER NOT NULL,
+				timestamp BIGINT NOT NULL
+			);
+		`, tableName)
+
+	default: // SQLite
+		return fmt.Sprintf(`
+			CREATE TABLE IF NOT EXISTS %s (
+				key TEXT PRIMARY KEY,
+				value BLOB NOT NULL,
+				version INTEGER NOT NULL,
+				timestamp INTEGER NOT NULL
+			);
+		`, tableName)
+	}
 }
 
 // GetDBFilePath returns the path to the SQLite DB file.
@@ -90,10 +150,20 @@ func GetDBFilePath() string {
 
 // Get retrieves a value by key from the store.
 func (ps *PersistStore) Get(key string) ([]byte, int, int64, error) {
+	// Return not found error for NoneBackend
+	if ps.backend == schema.NoneBackend || ps.db == nil {
+		return nil, 0, 0, sql.ErrNoRows
+	}
+
 	var value []byte
 	var version int
 	var ts int64
-	row := ps.db.QueryRow(fmt.Sprintf(`SELECT value, version, timestamp FROM %s WHERE key = ?`, ps.tableName), key)
+	
+	// Use backend-specific placeholder
+	placeholder := ps.getPlaceholder()
+	query := fmt.Sprintf(`SELECT value, version, timestamp FROM %s WHERE key = %s`, ps.tableName, placeholder)
+	row := ps.db.QueryRow(query, key)
+	
 	if err := row.Scan(&value, &version, &ts); err != nil {
 		return nil, 0, 0, err
 	}
@@ -102,9 +172,41 @@ func (ps *PersistStore) Get(key string) ([]byte, int, int64, error) {
 
 // Set inserts or replaces a key/value pair in the store.
 func (ps *PersistStore) Set(key string, value []byte, version int, timestamp int64) error {
-	query := fmt.Sprintf(`INSERT OR REPLACE INTO %s (key, value, version, timestamp) VALUES (?, ?, ?, ?)`, ps.tableName)
+	// Skip for NoneBackend
+	if ps.backend == schema.NoneBackend || ps.db == nil {
+		return nil
+	}
+
+	// Use backend-specific UPSERT
+	query := ps.getUpsertQuery()
 	_, err := ps.db.Exec(query, key, value, version, timestamp)
 	return err
+}
+
+// getPlaceholder returns the parameter placeholder for the backend.
+func (ps *PersistStore) getPlaceholder() string {
+	switch ps.backend {
+	case schema.PostgreSQLBackend:
+		return "$1"
+	default:
+		return "?"
+	}
+}
+
+// getUpsertQuery returns the UPSERT query for the backend.
+func (ps *PersistStore) getUpsertQuery() string {
+	switch ps.backend {
+	case schema.MySQLBackend:
+		return fmt.Sprintf(`INSERT INTO %s (key, value, version, timestamp) VALUES (?, ?, ?, ?) 
+			ON DUPLICATE KEY UPDATE value = VALUES(value), version = VALUES(version), timestamp = VALUES(timestamp)`, ps.tableName)
+	
+	case schema.PostgreSQLBackend:
+		return fmt.Sprintf(`INSERT INTO %s (key, value, version, timestamp) VALUES ($1, $2, $3, $4) 
+			ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, version = EXCLUDED.version, timestamp = EXCLUDED.timestamp`, ps.tableName)
+	
+	default: // SQLite
+		return fmt.Sprintf(`INSERT OR REPLACE INTO %s (key, value, version, timestamp) VALUES (?, ?, ?, ?)`, ps.tableName)
+	}
 }
 
 // Close closes the underlying DB connection.

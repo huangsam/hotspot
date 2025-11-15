@@ -115,6 +115,8 @@ func initConfig() {
 	viper.SetDefault("precision", internal.DefaultPrecision)
 	viper.SetDefault("output", schema.TextOut)
 	viper.SetDefault("lookback", "6 months")
+	viper.SetDefault("cache-backend", schema.SQLiteBackend)
+	viper.SetDefault("cache-db-connect", "")
 }
 
 // sharedSetup unmarshals config and runs validation.
@@ -154,7 +156,16 @@ func sharedSetup(ctx context.Context, _ *cobra.Command, args []string) error {
 	// 4. Run all validation and complex parsing.
 	// This function now populates the global 'cfg' from 'input'.
 	client := internal.NewLocalGitClient()
-	return internal.ProcessAndValidate(ctx, cfg, client, input)
+	if err := internal.ProcessAndValidate(ctx, cfg, client, input); err != nil {
+		return err
+	}
+
+	// 5. Initialize persistence layer with validated config
+	if err := internal.InitPersistence(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
+		return fmt.Errorf("failed to initialize persistence: %w", err)
+	}
+
+	return nil
 }
 
 // sharedSetupWrapper wraps sharedSetup to provide context for Cobra's PreRunE.
@@ -303,6 +314,8 @@ func init() {
 	rootCmd.PersistentFlags().String("start", "", "Start date in ISO8601 or time ago")
 	rootCmd.PersistentFlags().Int("workers", internal.DefaultWorkers, "Number of concurrent workers")
 	rootCmd.PersistentFlags().Int("width", 0, "Terminal width override (0 = auto-detect)")
+	rootCmd.PersistentFlags().String("cache-backend", string(schema.SQLiteBackend), "Cache backend: sqlite or mysql or postgresql or none")
+	rootCmd.PersistentFlags().String("cache-db-connect", "", "Database connection string for mysql/postgresql (e.g., user:pass@tcp(host:port)/dbname)")
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
 		internal.LogFatal("Error binding root flags", err)
 	}
@@ -333,16 +346,13 @@ func init() {
 
 // main starts the execution of the logic.
 func main() {
-	// Initialize persistence layer
-	if err := internal.InitPersistence(); err != nil {
-		internal.LogFatal("Failed to initialize persistence", err)
-	}
-	defer internal.ClosePersistence()
-
-	// Set the global persistence manager
+	// Set the global persistence manager (will be initialized in sharedSetup)
 	persistManager = internal.Manager
 
 	defer func() {
+		// Close persistence on exit
+		internal.ClosePersistence()
+		
 		if err := stopProfiling(); err != nil {
 			internal.LogFatal("Error stopping profiling", err)
 		}
