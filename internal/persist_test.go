@@ -98,4 +98,36 @@ func TestPersistence(t *testing.T) {
 		// Test cleanup (should be safe even with no DB)
 		ClosePersistence()
 	})
+
+	t.Run("none backend operations", func(t *testing.T) {
+		// Create a none backend store directly
+		store, err := NewPersistStore("test_table", schema.NoneBackend, "")
+		if err != nil {
+			t.Fatalf("Failed to create none backend store: %v", err)
+		}
+
+		// Test Get returns error (no data)
+		_, _, _, err = store.Get("test_key")
+		if err == nil {
+			t.Fatal("Expected error from Get on none backend")
+		}
+
+		// Test Set is no-op (no error)
+		err = store.Set("test_key", []byte("test_value"), 1, 123456789)
+		if err != nil {
+			t.Fatalf("Set should not error on none backend: %v", err)
+		}
+
+		// Verify Get still returns error after Set (no-op)
+		_, _, _, err = store.Get("test_key")
+		if err == nil {
+			t.Fatal("Expected error from Get after Set on none backend")
+		}
+
+		// Close is safe
+		err = store.Close()
+		if err != nil {
+			t.Fatalf("Close should not error on none backend: %v", err)
+		}
+	})
 }

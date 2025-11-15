@@ -217,6 +217,88 @@ func TestProcessAndValidate(t *testing.T) {
 			expectError: true,
 			setupMock:   nil,
 		},
+		{
+			name: "invalid cache backend",
+			input: &ConfigRawInput{
+				Limit:        10,
+				Workers:      4,
+				Mode:         string(schema.HotMode),
+				Precision:    1,
+				Output:       "text",
+				Exclude:      "",
+				RepoPathStr:  ".",
+				CacheBackend: "invalid_backend",
+			},
+			expectError: true,
+			setupMock:   nil,
+		},
+		{
+			name: "mysql backend without connection string",
+			input: &ConfigRawInput{
+				Limit:        10,
+				Workers:      4,
+				Mode:         string(schema.HotMode),
+				Precision:    1,
+				Output:       "text",
+				Exclude:      "",
+				RepoPathStr:  ".",
+				CacheBackend: string(schema.MySQLBackend),
+			},
+			expectError: true,
+			setupMock:   nil,
+		},
+		{
+			name: "postgresql backend without connection string",
+			input: &ConfigRawInput{
+				Limit:        10,
+				Workers:      4,
+				Mode:         string(schema.HotMode),
+				Precision:    1,
+				Output:       "text",
+				Exclude:      "",
+				RepoPathStr:  ".",
+				CacheBackend: string(schema.PostgreSQLBackend),
+			},
+			expectError: true,
+			setupMock:   nil,
+		},
+		{
+			name: "mysql backend with connection string",
+			input: &ConfigRawInput{
+				Limit:          10,
+				Workers:        4,
+				Mode:           string(schema.HotMode),
+				Precision:      1,
+				Output:         "text",
+				Exclude:        "",
+				RepoPathStr:    ".",
+				CacheBackend:   string(schema.MySQLBackend),
+				CacheDBConnect: "user:pass@tcp(localhost:3306)/hotspot",
+			},
+			expectError: false,
+			setupMock: func(mock *MockGitClient, workDir string) {
+				ctx := context.Background()
+				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
+			},
+		},
+		{
+			name: "none backend",
+			input: &ConfigRawInput{
+				Limit:        10,
+				Workers:      4,
+				Mode:         string(schema.HotMode),
+				Precision:    1,
+				Output:       "text",
+				Exclude:      "",
+				RepoPathStr:  ".",
+				CacheBackend: string(schema.NoneBackend),
+			},
+			expectError: false,
+			setupMock: func(mock *MockGitClient, workDir string) {
+				ctx := context.Background()
+				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
+			},
+		},
 	}
 
 	for _, tt := range tests {
