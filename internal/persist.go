@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/huangsam/hotspot/schema"
 	_ "github.com/go-sql-driver/mysql" // MySQL driver
-	_ "github.com/lib/pq"               // PostgreSQL driver
-	_ "github.com/mattn/go-sqlite3"     // SQLite driver
+	"github.com/huangsam/hotspot/schema"
+	_ "github.com/lib/pq"           // PostgreSQL driver
+	_ "github.com/mattn/go-sqlite3" // SQLite driver
 )
 
 // databaseName is the name of the SQLite database file.
@@ -168,12 +168,12 @@ func (ps *PersistStore) Get(key string) ([]byte, int, int64, error) {
 	var value []byte
 	var version int
 	var ts int64
-	
+
 	// Use backend-specific placeholder
 	placeholder := ps.getPlaceholder()
 	query := fmt.Sprintf(`SELECT value, version, timestamp FROM %s WHERE key = %s`, ps.tableName, placeholder)
 	row := ps.db.QueryRow(query, key)
-	
+
 	if err := row.Scan(&value, &version, &ts); err != nil {
 		return nil, 0, 0, err
 	}
@@ -209,11 +209,11 @@ func (ps *PersistStore) getUpsertQuery() string {
 	case schema.MySQLBackend:
 		return fmt.Sprintf(`INSERT INTO %s (key, value, version, timestamp) VALUES (?, ?, ?, ?) 
 			ON DUPLICATE KEY UPDATE value = VALUES(value), version = VALUES(version), timestamp = VALUES(timestamp)`, ps.tableName)
-	
+
 	case schema.PostgreSQLBackend:
 		return fmt.Sprintf(`INSERT INTO %s (key, value, version, timestamp) VALUES ($1, $2, $3, $4) 
 			ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, version = EXCLUDED.version, timestamp = EXCLUDED.timestamp`, ps.tableName)
-	
+
 	default: // SQLite
 		return fmt.Sprintf(`INSERT OR REPLACE INTO %s (key, value, version, timestamp) VALUES (?, ?, ?, ?)`, ps.tableName)
 	}

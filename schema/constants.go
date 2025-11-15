@@ -36,7 +36,7 @@ const (
 // All output modes supported.
 const (
 	CSVOut  OutputMode = "csv"
-	TextOut OutputMode = "text"
+	TextOut OutputMode = "text" // default
 	JSONOut OutputMode = "json"
 )
 
@@ -50,7 +50,7 @@ const (
 
 // All scoring modes supported.
 const (
-	HotMode        ScoringMode = "hot"
+	HotMode        ScoringMode = "hot" // default
 	RiskMode       ScoringMode = "risk"
 	ComplexityMode ScoringMode = "complexity"
 	StaleMode      ScoringMode = "stale"
@@ -58,7 +58,7 @@ const (
 
 // All cache backends supported.
 const (
-	SQLiteBackend     CacheBackend = "sqlite"
+	SQLiteBackend     CacheBackend = "sqlite" // default
 	MySQLBackend      CacheBackend = "mysql"
 	PostgreSQLBackend CacheBackend = "postgresql"
 	NoneBackend       CacheBackend = "none"

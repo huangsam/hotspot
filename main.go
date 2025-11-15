@@ -352,7 +352,7 @@ func main() {
 	defer func() {
 		// Close persistence on exit
 		internal.ClosePersistence()
-		
+
 		if err := stopProfiling(); err != nil {
 			internal.LogFatal("Error stopping profiling", err)
 		}
