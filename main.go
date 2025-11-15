@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"strings"
 
 	"github.com/huangsam/hotspot/core"
 	"github.com/huangsam/hotspot/internal"
@@ -106,6 +107,7 @@ func initConfig() {
 
 	// Set environment variable prefix
 	viper.SetEnvPrefix("HOTSPOT")
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	viper.AutomaticEnv() // Read in environment variables that match
 
 	// Set defaults in Viper

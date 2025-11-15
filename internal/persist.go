@@ -70,6 +70,8 @@ func NewPersistStore(tableName string, backend schema.CacheBackend, connStr stri
 		}
 
 	case schema.MySQLBackend:
+		// connStr should be:
+		// user:password@tcp(host:port)/dbname
 		driverName = "mysql"
 		db, err = sql.Open(driverName, connStr)
 		if err != nil {
@@ -77,7 +79,9 @@ func NewPersistStore(tableName string, backend schema.CacheBackend, connStr stri
 		}
 
 	case schema.PostgreSQLBackend:
-		driverName = "postgres"
+		// connStr should be:
+		// host=localhost port=5432 user=postgres password=mysecretpassword dbname=postgres
+		driverName = "pgx"
 		db, err = sql.Open(driverName, connStr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open PostgreSQL database: %w", err)
@@ -123,30 +127,30 @@ func getCreateTableQuery(tableName string, backend schema.CacheBackend) string {
 	case schema.MySQLBackend:
 		return fmt.Sprintf(`
 			CREATE TABLE IF NOT EXISTS %s (
-				key VARCHAR(255) PRIMARY KEY,
-				value BLOB NOT NULL,
-				version INT NOT NULL,
-				timestamp BIGINT NOT NULL
+				cache_key VARCHAR(255) PRIMARY KEY,
+				cache_value BLOB NOT NULL,
+				cache_version INT NOT NULL,
+				cache_timestamp BIGINT NOT NULL
 			);
 		`, tableName)
 
 	case schema.PostgreSQLBackend:
 		return fmt.Sprintf(`
 			CREATE TABLE IF NOT EXISTS %s (
-				key TEXT PRIMARY KEY,
-				value BYTEA NOT NULL,
-				version INTEGER NOT NULL,
-				timestamp BIGINT NOT NULL
+				cache_key TEXT PRIMARY KEY,
+				cache_value BYTEA NOT NULL,
+				cache_version INTEGER NOT NULL,
+				cache_timestamp BIGINT NOT NULL
 			);
 		`, tableName)
 
 	default: // SQLite
 		return fmt.Sprintf(`
 			CREATE TABLE IF NOT EXISTS %s (
-				key TEXT PRIMARY KEY,
-				value BLOB NOT NULL,
-				version INTEGER NOT NULL,
-				timestamp INTEGER NOT NULL
+				cache_key TEXT PRIMARY KEY,
+				cache_value BLOB NOT NULL,
+				cache_version INTEGER NOT NULL,
+				cache_timestamp INTEGER NOT NULL
 			);
 		`, tableName)
 	}
@@ -171,7 +175,7 @@ func (ps *PersistStore) Get(key string) ([]byte, int, int64, error) {
 
 	// Use backend-specific placeholder
 	placeholder := ps.getPlaceholder()
-	query := fmt.Sprintf(`SELECT value, version, timestamp FROM %s WHERE key = %s`, ps.tableName, placeholder)
+	query := fmt.Sprintf(`SELECT cache_value, cache_version, cache_timestamp FROM %s WHERE cache_key = %s`, ps.tableName, placeholder)
 	row := ps.db.QueryRow(query, key)
 
 	if err := row.Scan(&value, &version, &ts); err != nil {
@@ -198,7 +202,7 @@ func (ps *PersistStore) getPlaceholder() string {
 	switch ps.backend {
 	case schema.PostgreSQLBackend:
 		return "$1"
-	default:
+	default: // SQLite and MySQL
 		return "?"
 	}
 }
@@ -207,15 +211,15 @@ func (ps *PersistStore) getPlaceholder() string {
 func (ps *PersistStore) getUpsertQuery() string {
 	switch ps.backend {
 	case schema.MySQLBackend:
-		return fmt.Sprintf(`INSERT INTO %s (key, value, version, timestamp) VALUES (?, ?, ?, ?)
-			ON DUPLICATE KEY UPDATE value = VALUES(value), version = VALUES(version), timestamp = VALUES(timestamp)`, ps.tableName)
+		return fmt.Sprintf(`INSERT INTO %s (cache_key, cache_value, cache_version, cache_timestamp) VALUES (?, ?, ?, ?)
+			ON DUPLICATE KEY UPDATE cache_value = VALUES(cache_value), cache_version = VALUES(cache_version), cache_timestamp = VALUES(cache_timestamp)`, ps.tableName)
 
 	case schema.PostgreSQLBackend:
-		return fmt.Sprintf(`INSERT INTO %s (key, value, version, timestamp) VALUES ($1, $2, $3, $4)
-			ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, version = EXCLUDED.version, timestamp = EXCLUDED.timestamp`, ps.tableName)
+		return fmt.Sprintf(`INSERT INTO %s (cache_key, cache_value, cache_version, cache_timestamp) VALUES ($1, $2, $3, $4)
+			ON CONFLICT (cache_key) DO UPDATE SET cache_value = EXCLUDED.cache_value, cache_version = EXCLUDED.cache_version, cache_timestamp = EXCLUDED.cache_timestamp`, ps.tableName)
 
 	default: // SQLite
-		return fmt.Sprintf(`INSERT OR REPLACE INTO %s (key, value, version, timestamp) VALUES (?, ?, ?, ?)`, ps.tableName)
+		return fmt.Sprintf(`INSERT OR REPLACE INTO %s (cache_key, cache_value, cache_version, cache_timestamp) VALUES (?, ?, ?, ?)`, ps.tableName)
 	}
 }
 
