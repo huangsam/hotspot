@@ -264,7 +264,7 @@ func isSuccess(output []byte, command string) bool {
 	}
 
 	return strings.Contains(outputStr, completionPhrase) &&
-		strings.Contains(outputStr, "using") &&
+		strings.Contains(outputStr, "with") &&
 		strings.Contains(outputStr, "workers")
 }
 
