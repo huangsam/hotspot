@@ -209,8 +209,8 @@ func (ps *CacheStoreImpl) getUpsertQuery() string {
 	quotedTableName := quoteTableName(ps.tableName, ps.backend)
 	switch ps.backend {
 	case schema.MySQLBackend:
-		return fmt.Sprintf(`INSERT INTO %s (cache_key, cache_value, cache_version, cache_timestamp) VALUES (?, ?, ?, ?)
-			ON DUPLICATE KEY UPDATE cache_value = VALUES(cache_value), cache_version = VALUES(cache_version), cache_timestamp = VALUES(cache_timestamp)`, quotedTableName)
+		return fmt.Sprintf(`INSERT INTO %s (cache_key, cache_value, cache_version, cache_timestamp) VALUES (?, ?, ?, ?) AS new
+			ON DUPLICATE KEY UPDATE cache_value = new.cache_value, cache_version = new.cache_version, cache_timestamp = new.cache_timestamp`, quotedTableName)
 
 	case schema.PostgreSQLBackend:
 		return fmt.Sprintf(`INSERT INTO %s (cache_key, cache_value, cache_version, cache_timestamp) VALUES ($1, $2, $3, $4)
