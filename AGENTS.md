@@ -35,7 +35,10 @@ CLI Args/Config → Validation → Git Analysis → Scoring → Ranking → Outp
 hotspot/
 ├── main.go             # CLI entry point and command definitions
 ├── core/               # Core analysis logic and algorithms
-│   ├── agg.go          # Git activity aggregation and filtering
+│   ├── agg/            # Git activity aggregation and caching
+│   │   ├── agg.go          # Git activity aggregation and filtering
+│   │   ├── agg_caching.go  # Caching layer for aggregation
+│   │   └── agg_test.go     # Aggregation tests
 │   ├── analysis.go     # Git analysis pipeline and file processing
 │   ├── core.go         # Main execution functions
 │   ├── score.go        # Scoring algorithms and metrics
@@ -46,6 +49,9 @@ hotspot/
 │   ├── schema.go       # Core data models
 │   └── constants.go    # Scoring modes and output formats
 └── internal/           # Internal utilities and helpers
+    ├── contract/       # Configuration, Git client interfaces, and utilities
+    ├── iocache/        # I/O caching implementation
+    └── outwriter/      # Output formatting and writing
 ```
 
 ## Main Package (main.go)
@@ -90,7 +96,7 @@ Global flags available on all commands include scoring mode, output format, and 
 
 ## Core Package
 
-The core package contains the main analysis algorithms, scoring logic, and execution functions.
+The core package contains the main analysis algorithms, scoring logic, and execution functions. Aggregation logic has been separated into the `core/agg` subpackage for better organization.
 
 ### Main Execution Functions
 
@@ -215,6 +221,19 @@ Three output formats supported: text (table), CSV, and JSON.
 
 Keys used in scoring breakdown to show contribution of each metric component.
 
+## Internal Package
+
+The internal package has been restructured into focused subpackages for better organization:
+
+### contract/
+Contains configuration management, Git client interfaces, time utilities, and general-purpose helpers.
+
+### iocache/
+Implements I/O caching functionality with support for multiple database backends (SQLite, MySQL, PostgreSQL).
+
+### outwriter/
+Handles output formatting and writing for different formats (text tables, JSON, CSV) and analysis types (files, folders, comparisons, timeseries).
+
 ## Key Design Patterns
 
 ### 1. Builder Pattern
@@ -244,7 +263,7 @@ main.go: sharedSetup() → validation → config population
 ↓
 core.ExecuteHotspotFiles() → runSingleAnalysisCore()
 ↓
-analysis.go: aggregateActivity() → buildFilteredFileList() → analyzeRepo()
+core/agg: CachedAggregateActivity() → BuildFilteredFileList() → analyzeRepo()
 ↓
 score.go: computeScore() for each file
 ↓
