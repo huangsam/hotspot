@@ -11,10 +11,10 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestRunTimeseriesAnalysis(t *testing.T) {
+func TestRunTimeseriesAnalysis_Success(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
-	mockMgr := &internal.MockPersistenceManager{}
+	mockMgr := &internal.MockCacheManager{}
 
 	now := time.Date(2024, 6, 15, 10, 30, 0, 0, time.UTC)
 	interval := 30 * 24 * time.Hour // 30 days
@@ -73,7 +73,7 @@ func TestRunTimeseriesAnalysis(t *testing.T) {
 func TestRunTimeseriesAnalysis_GetOldestCommitError(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
-	mockMgr := &internal.MockPersistenceManager{}
+	mockMgr := &internal.MockCacheManager{}
 
 	now := time.Date(2024, 6, 15, 10, 30, 0, 0, time.UTC)
 	interval := 30 * 24 * time.Hour
@@ -112,7 +112,7 @@ func TestRunTimeseriesAnalysis_GetOldestCommitError(t *testing.T) {
 func TestAnalyzeTimeseriesPoint_File(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
-	mockMgr := &internal.MockPersistenceManager{}
+	mockMgr := &internal.MockCacheManager{}
 
 	path := "main.go"
 	isFolder := false
@@ -144,7 +144,7 @@ func TestAnalyzeTimeseriesPoint_File(t *testing.T) {
 func TestAnalyzeTimeseriesPoint_Folder(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
-	mockMgr := &internal.MockPersistenceManager{}
+	mockMgr := &internal.MockCacheManager{}
 
 	path := "src/"
 	isFolder := true
@@ -177,7 +177,7 @@ func TestAnalyzeTimeseriesPoint_Folder(t *testing.T) {
 func TestAnalyzeTimeseriesPoint_NoData(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
-	mockMgr := &internal.MockPersistenceManager{}
+	mockMgr := &internal.MockCacheManager{}
 
 	path := "nonexistent.go"
 	isFolder := false
@@ -208,7 +208,7 @@ func TestAnalyzeTimeseriesPoint_NoData(t *testing.T) {
 func TestAnalyzeTimeseriesPoint_PathNotFound(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &internal.MockGitClient{}
-	mockMgr := &internal.MockPersistenceManager{}
+	mockMgr := &internal.MockCacheManager{}
 
 	path := "missing.go"
 	isFolder := false

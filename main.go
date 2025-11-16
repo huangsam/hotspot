@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"strings"
 
 	"github.com/huangsam/hotspot/core"
 	"github.com/huangsam/hotspot/internal"
@@ -36,8 +37,8 @@ var input = &internal.ConfigRawInput{}
 // profile holds profiling configuration
 var profile = &internal.ProfileConfig{}
 
-// persistManager is the global persistence manager instance.
-var persistManager internal.PersistenceManager
+// cacheManager is the global persistence manager instance.
+var cacheManager internal.CacheManager
 
 // startProfiling starts CPU and memory profiling if enabled
 func startProfiling() error {
@@ -106,6 +107,7 @@ func initConfig() {
 
 	// Set environment variable prefix
 	viper.SetEnvPrefix("HOTSPOT")
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	viper.AutomaticEnv() // Read in environment variables that match
 
 	// Set defaults in Viper
@@ -115,6 +117,8 @@ func initConfig() {
 	viper.SetDefault("precision", internal.DefaultPrecision)
 	viper.SetDefault("output", schema.TextOut)
 	viper.SetDefault("lookback", "6 months")
+	viper.SetDefault("cache-backend", schema.SQLiteBackend)
+	viper.SetDefault("cache-db-connect", "")
 }
 
 // sharedSetup unmarshals config and runs validation.
@@ -154,12 +158,57 @@ func sharedSetup(ctx context.Context, _ *cobra.Command, args []string) error {
 	// 4. Run all validation and complex parsing.
 	// This function now populates the global 'cfg' from 'input'.
 	client := internal.NewLocalGitClient()
-	return internal.ProcessAndValidate(ctx, cfg, client, input)
+	if err := internal.ProcessAndValidate(ctx, cfg, client, input); err != nil {
+		return err
+	}
+
+	// 5. Initialize persistence layer with validated config
+	if err := internal.InitCaching(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
+		return fmt.Errorf("failed to initialize persistence: %w", err)
+	}
+
+	return nil
 }
 
 // sharedSetupWrapper wraps sharedSetup to provide context for Cobra's PreRunE.
 func sharedSetupWrapper(cmd *cobra.Command, args []string) error {
 	return sharedSetup(rootCtx, cmd, args)
+}
+
+// cacheSetup loads minimal configuration needed for cache operations.
+// This is used by commands that need cache access without full shared setup.
+func cacheSetup() error {
+	// Load config file if present (similar to sharedSetup but minimal)
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return fmt.Errorf("error reading config file: %w", err)
+		}
+		// Config file not found, use defaults/env/flags
+	}
+
+	// Get cache-related config values
+	backend := schema.CacheBackend(viper.GetString("cache-backend"))
+	connStr := viper.GetString("cache-db-connect")
+
+	// Basic validation for database backends
+	if err := internal.ValidateDatabaseConnectionString(backend, connStr); err != nil {
+		return err
+	}
+
+	// Initialize caching with the loaded config
+	if err := internal.InitCaching(backend, connStr); err != nil {
+		return fmt.Errorf("failed to initialize cache: %w", err)
+	}
+
+	cfg.CacheBackend = backend
+	cfg.CacheDBConnect = connStr
+
+	return nil
+}
+
+// cacheSetupWrapper wraps initCacheConfig to provide PreRunE for cache commands.
+func cacheSetupWrapper(_ *cobra.Command, _ []string) error {
+	return cacheSetup()
 }
 
 // filesCmd focuses on tactical, file-level analysis.
@@ -170,7 +219,7 @@ var filesCmd = &cobra.Command{
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := core.ExecuteHotspotFiles(rootCtx, cfg, persistManager); err != nil {
+		if err := core.ExecuteHotspotFiles(rootCtx, cfg, cacheManager); err != nil {
 			internal.LogFatal("Cannot run files analysis", err)
 		}
 	},
@@ -184,7 +233,7 @@ var foldersCmd = &cobra.Command{
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := core.ExecuteHotspotFolders(rootCtx, cfg, persistManager); err != nil {
+		if err := core.ExecuteHotspotFolders(rootCtx, cfg, cacheManager); err != nil {
 			internal.LogFatal("Cannot run folders analysis", err)
 		}
 	},
@@ -202,7 +251,7 @@ func checkCompareAndExecute(executeFunc core.ExecutorFunc) {
 	if !cfg.CompareMode {
 		internal.LogFatal("Cannot run compare analysis", errors.New("base and target refs must be provided"))
 	}
-	if err := executeFunc(rootCtx, cfg, persistManager); err != nil {
+	if err := executeFunc(rootCtx, cfg, cacheManager); err != nil {
 		internal.LogFatal("Cannot run compare analysis", err)
 	}
 }
@@ -251,7 +300,7 @@ var metricsCmd = &cobra.Command{
 	Long:    `The metrics command shows the purpose, factors, and mathematical formulas for all four core scoring modes without performing Git analysis.`,
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := core.ExecuteHotspotMetrics(rootCtx, cfg, persistManager); err != nil {
+		if err := core.ExecuteHotspotMetrics(rootCtx, cfg, cacheManager); err != nil {
 			internal.LogFatal("Cannot display metrics", err)
 		}
 	},
@@ -265,9 +314,34 @@ var timeseriesCmd = &cobra.Command{
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := core.ExecuteHotspotTimeseries(rootCtx, cfg, persistManager); err != nil {
+		if err := core.ExecuteHotspotTimeseries(rootCtx, cfg, cacheManager); err != nil {
 			internal.LogFatal("Cannot run timeseries analysis", err)
 		}
+	},
+}
+
+// cacheCmd focused on cache management.
+//
+// Note: Cache subcommands use minimal initialization (initCacheConfig) instead of
+// the full sharedSetup used by analysis commands. This avoids Git repo validation
+// and complex config processing for simple cache operations.
+var cacheCmd = &cobra.Command{
+	Use:   "cache",
+	Short: "Manage cache operations.",
+	Long:  `The cache command provides subcommands for managing the application's cache.`,
+}
+
+// cacheClearCmd clears the cache.
+var cacheClearCmd = &cobra.Command{
+	Use:     "clear",
+	Short:   "Clear the cache for the configured backend.",
+	Long:    `The clear subcommand removes all cached data for the current backend configuration.`,
+	PreRunE: cacheSetupWrapper,
+	Run: func(_ *cobra.Command, _ []string) {
+		if err := internal.ClearCache(cfg.CacheBackend, internal.GetDBFilePath(), cfg.CacheDBConnect); err != nil {
+			internal.LogFatal("Failed to clear cache", err)
+		}
+		fmt.Println("Cache cleared successfully.")
 	},
 }
 
@@ -283,10 +357,14 @@ func init() {
 	rootCmd.AddCommand(timeseriesCmd)
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(metricsCmd)
+	rootCmd.AddCommand(cacheCmd)
 
 	// Add the file comparison subcommand to the parent compare command
 	compareCmd.AddCommand(compareFilesCmd)
 	compareCmd.AddCommand(compareFoldersCmd)
+
+	// Add the clear subcommand to the parent cache command
+	cacheCmd.AddCommand(cacheClearCmd)
 
 	// Bind all persistent flags of rootCmd to Viper
 	rootCmd.PersistentFlags().Bool("detail", false, "Print per-target metadata (lines of code, size, age)")
@@ -303,6 +381,8 @@ func init() {
 	rootCmd.PersistentFlags().String("start", "", "Start date in ISO8601 or time ago")
 	rootCmd.PersistentFlags().Int("workers", internal.DefaultWorkers, "Number of concurrent workers")
 	rootCmd.PersistentFlags().Int("width", 0, "Terminal width override (0 = auto-detect)")
+	rootCmd.PersistentFlags().String("cache-backend", string(schema.SQLiteBackend), "Cache backend: sqlite or mysql or postgresql or none")
+	rootCmd.PersistentFlags().String("cache-db-connect", "", "Database connection string for mysql/postgresql (e.g., user:pass@tcp(host:port)/dbname)")
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
 		internal.LogFatal("Error binding root flags", err)
 	}
@@ -333,16 +413,13 @@ func init() {
 
 // main starts the execution of the logic.
 func main() {
-	// Initialize persistence layer
-	if err := internal.InitPersistence(); err != nil {
-		internal.LogFatal("Failed to initialize persistence", err)
-	}
-	defer internal.ClosePersistence()
-
-	// Set the global persistence manager
-	persistManager = internal.Manager
+	// Set the global caching manager (will be initialized in sharedSetup)
+	cacheManager = internal.Manager
 
 	defer func() {
+		// Close caching on exit
+		internal.CloseCaching()
+
 		if err := stopProfiling(); err != nil {
 			internal.LogFatal("Error stopping profiling", err)
 		}

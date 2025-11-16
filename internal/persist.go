@@ -3,97 +3,178 @@ package internal
 import (
 	"database/sql"
 	"fmt"
-	"os"
-	"path/filepath"
 	"sync"
 
-	_ "github.com/mattn/go-sqlite3" // SQLite driver
+	_ "github.com/go-sql-driver/mysql" // MySQL driver
+	"github.com/huangsam/hotspot/schema"
+	_ "github.com/jackc/pgx/v5/stdlib" // PostgreSQL driver
+	_ "github.com/mattn/go-sqlite3"    // SQLite driver
 )
 
-// databaseName is the name of the SQLite database file.
-const databaseName = ".hotspot_cache.db"
-
-// PersistenceManager defines the interface for managing persistence stores.
-// This allows the persistence layer to be mocked for testing.
-type PersistenceManager interface {
-	GetActivityStore() *PersistStore
+// CacheManager defines the interface for managing cache stores.
+// This allows the cache layer to be mocked for testing.
+type CacheManager interface {
+	GetActivityStore() CacheStore
 }
 
-// PersistenceStore defines the interface for persistence data storage.
+// CacheStore defines the interface for cache data storage.
 // This allows mocking the store for testing.
-type PersistenceStore interface {
+type CacheStore interface {
 	Get(key string) ([]byte, int, int64, error)
 	Set(key string, value []byte, version int, timestamp int64) error
+	Close() error
 }
 
-// PersistStoreManager manages multiple PersistStore instances.
-type PersistStoreManager struct {
+// CacheStoreManager manages multiple CacheStore instances.
+type CacheStoreManager struct {
 	sync.RWMutex // Protects the store pointers during initialization
-	activity     *PersistStore
+	activity     CacheStore
 }
 
-var _ PersistenceManager = &PersistStoreManager{} // Compile-time check
+var _ CacheManager = &CacheStoreManager{} // Compile-time check
 
-// GetActivityStore returns the activity PersistStore.
-func (mgr *PersistStoreManager) GetActivityStore() *PersistStore {
+// GetActivityStore returns the activity CacheStore.
+func (mgr *CacheStoreManager) GetActivityStore() CacheStore {
 	mgr.RLock()
 	defer mgr.RUnlock()
 	return mgr.activity
 }
 
-// PersistStore handles durable storage operations using SQLite.
-type PersistStore struct {
-	db        *sql.DB
-	tableName string
+// CacheStoreImpl handles durable storage operations using various database backends.
+type CacheStoreImpl struct {
+	db         *sql.DB
+	tableName  string
+	backend    schema.CacheBackend
+	driverName string
 }
 
-var _ PersistenceStore = &PersistStore{} // Compile-time check
+var _ CacheStore = &CacheStoreImpl{} // Compile-time check
 
-// NewPersistStore initializes and returns a new PersistStore.
-func NewPersistStore(tableName string) (*PersistStore, error) {
-	dbPath := GetDBFilePath()
-
-	db, err := sql.Open("sqlite3", dbPath) // Replace with actual SQLite driver
-	if err != nil {
-		return nil, fmt.Errorf("failed to open SQLite database: %w", err)
+// NewCacheStore initializes and returns a new CacheStore based on the backend type.
+func NewCacheStore(tableName string, backend schema.CacheBackend, connStr string) (CacheStore, error) {
+	// Validate table name to prevent SQL injection
+	if err := validateTableName(tableName); err != nil {
+		return nil, err
 	}
 
-	// Ping to verify connection
+	var db *sql.DB
+	var err error
+	var driverName string
+
+	switch backend {
+	case schema.SQLiteBackend:
+		driverName = "sqlite3"
+		dbPath := GetDBFilePath()
+		db, err = sql.Open(driverName, dbPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open SQLite database: %w", err)
+		}
+
+	case schema.MySQLBackend:
+		// connStr should be:
+		// user:password@tcp(host:port)/dbname
+		driverName = "mysql"
+		db, err = sql.Open(driverName, connStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open MySQL database: %w", err)
+		}
+
+	case schema.PostgreSQLBackend:
+		// connStr should be:
+		// host=localhost port=5432 user=postgres password=mysecretpassword dbname=postgres
+		driverName = "pgx"
+		db, err = sql.Open(driverName, connStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open PostgreSQL database: %w", err)
+		}
+
+	case schema.NoneBackend:
+		// Return a no-op store for disabled caching
+		return &CacheStoreImpl{
+			db:         nil,
+			tableName:  tableName,
+			backend:    backend,
+			driverName: "",
+		}, nil
+
+	default:
+		return nil, fmt.Errorf("unsupported cache backend: %s", backend)
+	}
+
+	// Ping to verify connection (skip for NoneBackend)
 	if err := db.Ping(); err != nil {
 		_ = db.Close()
-		return nil, fmt.Errorf("failed to ping SQLite database: %w", err)
+		return nil, fmt.Errorf("failed to ping %s database: %w", backend, err)
 	}
 
-	// Set up the table with a key, a BLOB for the data, and a timestamp/version
-	query := fmt.Sprintf(`
-		CREATE TABLE IF NOT EXISTS %s (
-			key TEXT PRIMARY KEY,
-			value BLOB NOT NULL,
-			version INTEGER NOT NULL,
-			timestamp INTEGER NOT NULL
-		);
-	`, tableName)
-
+	// Create the table schema
+	query := getCreateTableQuery(tableName, backend)
 	if _, err := db.Exec(query); err != nil {
 		_ = db.Close()
 		return nil, fmt.Errorf("failed to create table %s: %w", tableName, err)
 	}
 
-	return &PersistStore{db: db, tableName: tableName}, nil
+	return &CacheStoreImpl{
+		db:         db,
+		tableName:  tableName,
+		backend:    backend,
+		driverName: driverName,
+	}, nil
 }
 
-// GetDBFilePath returns the path to the SQLite DB file.
-func GetDBFilePath() string {
-	homeDir, _ := os.UserHomeDir()
-	return filepath.Join(homeDir, databaseName)
+// getCreateTableQuery returns the CREATE TABLE query for the given backend.
+func getCreateTableQuery(tableName string, backend schema.CacheBackend) string {
+	quotedTableName := quoteTableName(tableName, backend)
+	switch backend {
+	case schema.MySQLBackend:
+		return fmt.Sprintf(`
+			CREATE TABLE IF NOT EXISTS %s (
+				cache_key VARCHAR(255) PRIMARY KEY,
+				cache_value BLOB NOT NULL,
+				cache_version INT NOT NULL,
+				cache_timestamp BIGINT NOT NULL
+			);
+		`, quotedTableName)
+
+	case schema.PostgreSQLBackend:
+		return fmt.Sprintf(`
+			CREATE TABLE IF NOT EXISTS %s (
+				cache_key TEXT PRIMARY KEY,
+				cache_value BYTEA NOT NULL,
+				cache_version INTEGER NOT NULL,
+				cache_timestamp BIGINT NOT NULL
+			);
+		`, quotedTableName)
+
+	default: // SQLite
+		return fmt.Sprintf(`
+			CREATE TABLE IF NOT EXISTS %s (
+				cache_key TEXT PRIMARY KEY,
+				cache_value BLOB NOT NULL,
+				cache_version INTEGER NOT NULL,
+				cache_timestamp INTEGER NOT NULL
+			);
+		`, quotedTableName)
+	}
 }
 
 // Get retrieves a value by key from the store.
-func (ps *PersistStore) Get(key string) ([]byte, int, int64, error) {
+func (ps *CacheStoreImpl) Get(key string) ([]byte, int, int64, error) {
+	// Return not found error for NoneBackend
+	if ps.backend == schema.NoneBackend || ps.db == nil {
+		return nil, 0, 0, sql.ErrNoRows
+	}
+
 	var value []byte
 	var version int
 	var ts int64
-	row := ps.db.QueryRow(fmt.Sprintf(`SELECT value, version, timestamp FROM %s WHERE key = ?`, ps.tableName), key)
+
+	// Use backend-specific placeholder
+	quotedTableName := quoteTableName(ps.tableName, ps.backend)
+	placeholder := ps.getPlaceholder()
+	query := fmt.Sprintf(`SELECT cache_value, cache_version, cache_timestamp FROM %s WHERE cache_key = %s`, quotedTableName, placeholder)
+	row := ps.db.QueryRow(query, key)
+
 	if err := row.Scan(&value, &version, &ts); err != nil {
 		return nil, 0, 0, err
 	}
@@ -101,14 +182,47 @@ func (ps *PersistStore) Get(key string) ([]byte, int, int64, error) {
 }
 
 // Set inserts or replaces a key/value pair in the store.
-func (ps *PersistStore) Set(key string, value []byte, version int, timestamp int64) error {
-	query := fmt.Sprintf(`INSERT OR REPLACE INTO %s (key, value, version, timestamp) VALUES (?, ?, ?, ?)`, ps.tableName)
+func (ps *CacheStoreImpl) Set(key string, value []byte, version int, timestamp int64) error {
+	// Skip for NoneBackend
+	if ps.backend == schema.NoneBackend || ps.db == nil {
+		return nil
+	}
+
+	// Use backend-specific UPSERT
+	query := ps.getUpsertQuery()
 	_, err := ps.db.Exec(query, key, value, version, timestamp)
 	return err
 }
 
+// getPlaceholder returns the parameter placeholder for the backend.
+func (ps *CacheStoreImpl) getPlaceholder() string {
+	switch ps.backend {
+	case schema.PostgreSQLBackend:
+		return "$1"
+	default: // SQLite and MySQL
+		return "?"
+	}
+}
+
+// getUpsertQuery returns the UPSERT query for the backend.
+func (ps *CacheStoreImpl) getUpsertQuery() string {
+	quotedTableName := quoteTableName(ps.tableName, ps.backend)
+	switch ps.backend {
+	case schema.MySQLBackend:
+		return fmt.Sprintf(`INSERT INTO %s (cache_key, cache_value, cache_version, cache_timestamp) VALUES (?, ?, ?, ?) AS new
+			ON DUPLICATE KEY UPDATE cache_value = new.cache_value, cache_version = new.cache_version, cache_timestamp = new.cache_timestamp`, quotedTableName)
+
+	case schema.PostgreSQLBackend:
+		return fmt.Sprintf(`INSERT INTO %s (cache_key, cache_value, cache_version, cache_timestamp) VALUES ($1, $2, $3, $4)
+			ON CONFLICT (cache_key) DO UPDATE SET cache_value = EXCLUDED.cache_value, cache_version = EXCLUDED.cache_version, cache_timestamp = EXCLUDED.cache_timestamp`, quotedTableName)
+
+	default: // SQLite
+		return fmt.Sprintf(`INSERT OR REPLACE INTO %s (cache_key, cache_value, cache_version, cache_timestamp) VALUES (?, ?, ?, ?)`, quotedTableName)
+	}
+}
+
 // Close closes the underlying DB connection.
-func (ps *PersistStore) Close() error {
+func (ps *CacheStoreImpl) Close() error {
 	if ps.db != nil {
 		return ps.db.Close()
 	}

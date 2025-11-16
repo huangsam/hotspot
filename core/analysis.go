@@ -20,7 +20,7 @@ const (
 )
 
 // runSingleAnalysisCore performs the common Aggregation, Filtering, and Analysis steps.
-func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client internal.GitClient, mgr internal.PersistenceManager) (*schema.SingleAnalysisOutput, error) {
+func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client internal.GitClient, mgr internal.CacheManager) (*schema.SingleAnalysisOutput, error) {
 	if !shouldSuppressHeader(ctx) {
 		internal.LogAnalysisHeader(cfg)
 	}
@@ -48,7 +48,7 @@ func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client int
 
 // runCompareAnalysisForRef runs the file analysis for a specific Git reference in compare mode.
 // Headers are always suppressed in compare mode.
-func runCompareAnalysisForRef(ctx context.Context, cfg *internal.Config, client internal.GitClient, ref string, mgr internal.PersistenceManager) (*schema.CompareAnalysisOutput, error) {
+func runCompareAnalysisForRef(ctx context.Context, cfg *internal.Config, client internal.GitClient, ref string, mgr internal.CacheManager) (*schema.CompareAnalysisOutput, error) {
 	// 1. Resolve the time window for the reference
 	baseStartTime, baseEndTime, err := getAnalysisWindowForRef(ctx, client, cfg.RepoPath, ref, cfg.Lookback)
 	if err != nil {
@@ -75,7 +75,7 @@ func runCompareAnalysisForRef(ctx context.Context, cfg *internal.Config, client 
 
 // analyzeAllFilesAtRef performs file analysis for all files that exist at a specific Git reference.
 // Headers are always suppressed in compare mode.
-func analyzeAllFilesAtRef(ctx context.Context, cfg *internal.Config, client internal.GitClient, ref string, mgr internal.PersistenceManager) ([]schema.FileResult, error) {
+func analyzeAllFilesAtRef(ctx context.Context, cfg *internal.Config, client internal.GitClient, ref string, mgr internal.CacheManager) ([]schema.FileResult, error) {
 	// --- 1. Get all files at the reference ---
 	files, err := client.ListFilesAtRef(ctx, cfg.RepoPath, ref)
 	if err != nil {
@@ -236,7 +236,7 @@ func runTimeseriesAnalysis(
 	now time.Time,
 	interval time.Duration,
 	numPoints int,
-	mgr internal.PersistenceManager,
+	mgr internal.CacheManager,
 ) []schema.TimeseriesPoint {
 	var timeseriesPoints []schema.TimeseriesPoint
 	currentEnd := now
@@ -311,7 +311,7 @@ func analyzeTimeseriesPoint(
 	client internal.GitClient,
 	path string,
 	isFolder bool,
-	mgr internal.PersistenceManager,
+	mgr internal.CacheManager,
 ) (float64, []string) {
 	suppressCtx := withSuppressHeader(ctx)
 	output, err := runSingleAnalysisCore(suppressCtx, cfg, client, mgr)

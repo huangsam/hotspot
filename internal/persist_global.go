@@ -1,50 +1,114 @@
 package internal
 
 import (
+	"database/sql"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
+
+	"github.com/huangsam/hotspot/schema"
 )
 
-// activityTable is the name of the SQLite table for activity caching.
+// databaseName is the name of the SQLite database file.
+const databaseName = ".hotspot_cache.db"
+
+// activityTable is the name of the table for activity caching.
 const activityTable = "activity_cache"
 
 // Global Manager instance for main logic
 var (
-	Manager   = &PersistStoreManager{}
+	Manager   = &CacheStoreManager{}
 	initOnce  sync.Once
 	closeOnce sync.Once
 )
 
-// InitPersistence uses sync.Once to safely initialize the global stores.
-func InitPersistence() error { // called in main entrypoint
+// GetDBFilePath returns the path to the SQLite DB file.
+func GetDBFilePath() string {
+	homeDir, _ := os.UserHomeDir()
+	return filepath.Join(homeDir, databaseName)
+}
+
+// InitCaching uses sync.Once to safely initialize the global stores with the given backend.
+func InitCaching(backend schema.CacheBackend, connStr string) error {
 	var initErr error
 
 	initOnce.Do(func() {
 		// This function body runs exactly once, even with concurrent calls.
 		var err error
 
-		// Initialize Activity Store
-		activityPersistStore, err := NewPersistStore(activityTable)
+		// Initialize Activity Store with the specified backend
+		activityCacheStore, err := NewCacheStore(activityTable, backend, connStr)
 		if err != nil {
-			initErr = fmt.Errorf("failed to initialize activity persistence: %w", err)
+			initErr = fmt.Errorf("failed to initialize activity caching: %w", err)
 			return
 		}
 
 		// Assign to global manager
-		Manager.activity = activityPersistStore
+		Manager.activity = activityCacheStore
 	})
 
 	// After once.Do, initErr will contain any error from the initialization block.
 	return initErr
 }
 
-// ClosePersistence should be called on application shutdown.
-func ClosePersistence() { // called in main defer
+// CloseCaching should be called on application shutdown.
+func CloseCaching() { // called in main defer
 	closeOnce.Do(func() {
 		Manager.Lock()
 		defer Manager.Unlock()
 		if Manager.activity != nil {
-			_ = Manager.activity.db.Close()
+			_ = Manager.activity.Close()
 		}
 	})
+}
+
+// ClearCache clears the cache for the specified backend.
+// For SQLite, it deletes the database file.
+// For SQL backends (MySQL/PostgreSQL), it drops the table.
+// For NoneBackend, it does nothing.
+func ClearCache(backend schema.CacheBackend, dbFilePath, connStr string) error {
+	switch backend {
+	case schema.SQLiteBackend:
+		if dbFilePath == "" {
+			return fmt.Errorf("dbFilePath cannot be empty for SQLite backend")
+		}
+		// Remove the file; ignore if it doesn't exist
+		if err := os.Remove(dbFilePath); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to remove SQLite database file %s: %w", dbFilePath, err)
+		}
+		return nil
+
+	case schema.MySQLBackend:
+		return clearSQLTable("mysql", connStr, activityTable)
+
+	case schema.PostgreSQLBackend:
+		return clearSQLTable("pgx", connStr, activityTable)
+
+	case schema.NoneBackend:
+		return nil
+
+	default:
+		return fmt.Errorf("unsupported cache backend for clearing: %s", backend)
+	}
+}
+
+// clearSQLTable connects to the SQL database and drops the table if it exists.
+func clearSQLTable(driverName, connStr, tableName string) error {
+	db, err := sql.Open(driverName, connStr)
+	if err != nil {
+		return fmt.Errorf("failed to connect to %s database: %w", driverName, err)
+	}
+	defer func() { _ = db.Close() }()
+
+	if err := db.Ping(); err != nil {
+		return fmt.Errorf("failed to ping %s database: %w", driverName, err)
+	}
+
+	query := fmt.Sprintf("DROP TABLE IF EXISTS %s", tableName)
+	if _, err := db.Exec(query); err != nil {
+		return fmt.Errorf("failed to drop table %s: %w", tableName, err)
+	}
+
+	return nil
 }

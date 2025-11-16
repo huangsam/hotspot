@@ -89,12 +89,14 @@ type Config struct {
 	TargetRef   string
 	Lookback    time.Duration
 
-	// Timeseries parameters
 	TimeseriesPath     string
 	TimeseriesInterval time.Duration
 	TimeseriesPoints   int
 
-	// Processed map of custom scoring weights [ModeName][BreakdownKey] = Weight
+	CacheBackend   schema.CacheBackend
+	CacheDBConnect string // Please use env var as this is plaintext
+
+	// CustomWeights is a mapping of [ModeName][BreakdownKey] = Weight
 	CustomWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64
 }
 
@@ -105,19 +107,21 @@ type ConfigRawInput struct {
 	RepoPathStr string
 
 	// --- Fields from rootCmd.PersistentFlags() ---
-	Filter     string `mapstructure:"filter"`
-	OutputFile string `mapstructure:"output-file"`
-	Limit      int    `mapstructure:"limit"`
-	Start      string `mapstructure:"start"`
-	End        string `mapstructure:"end"`
-	Workers    int    `mapstructure:"workers"`
-	Mode       string `mapstructure:"mode"`
-	Exclude    string `mapstructure:"exclude"`
-	Precision  int    `mapstructure:"precision"`
-	Output     string `mapstructure:"output"`
-	Owner      bool   `mapstructure:"owner"`
-	Detail     bool   `mapstructure:"detail"`
-	Width      int    `mapstructure:"width"`
+	Filter         string `mapstructure:"filter"`
+	OutputFile     string `mapstructure:"output-file"`
+	Limit          int    `mapstructure:"limit"`
+	Start          string `mapstructure:"start"`
+	End            string `mapstructure:"end"`
+	Workers        int    `mapstructure:"workers"`
+	Mode           string `mapstructure:"mode"`
+	Exclude        string `mapstructure:"exclude"`
+	Precision      int    `mapstructure:"precision"`
+	Output         string `mapstructure:"output"`
+	Owner          bool   `mapstructure:"owner"`
+	Detail         bool   `mapstructure:"detail"`
+	Width          int    `mapstructure:"width"`
+	CacheBackend   string `mapstructure:"cache-backend"`
+	CacheDBConnect string `mapstructure:"cache-db-connect"`
 
 	// --- Fields from filesCmd.Flags() ---
 	Explain bool `mapstructure:"explain"`
@@ -201,6 +205,36 @@ func ProcessAndValidate(ctx context.Context, cfg *Config, client GitClient, inpu
 	return nil
 }
 
+// ValidateDatabaseConnectionString validates the format of database connection strings
+// for MySQL and PostgreSQL backends.
+func ValidateDatabaseConnectionString(backend schema.CacheBackend, connStr string) error {
+	switch backend {
+	case schema.SQLiteBackend, schema.NoneBackend:
+		return nil
+	case schema.MySQLBackend:
+		if connStr == "" {
+			return fmt.Errorf("cache-db-connect is required when using %s backend", backend)
+		}
+		if !strings.Contains(connStr, "@tcp(") {
+			return fmt.Errorf("MySQL connection string must contain '@tcp(' for host:port specification")
+		}
+		if !strings.Contains(connStr, "/") {
+			return fmt.Errorf("MySQL connection string must contain '/' followed by database name")
+		}
+	case schema.PostgreSQLBackend:
+		if connStr == "" {
+			return fmt.Errorf("cache-db-connect is required when using %s backend", backend)
+		}
+		if !strings.Contains(connStr, "host=") {
+			return fmt.Errorf("PostgreSQL connection string must contain 'host=' parameter")
+		}
+		if !strings.Contains(connStr, "dbname=") {
+			return fmt.Errorf("PostgreSQL connection string must contain 'dbname=' parameter")
+		}
+	}
+	return nil
+}
+
 // validateSimpleInputs processes and validates all non-path related fields.
 func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	// --- 0. Transfer simple non-validated fields from input -> cfg ---
@@ -239,6 +273,16 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	cfg.Output = schema.OutputMode(strings.ToLower(input.Output))
 	if _, ok := schema.ValidOutputModes[cfg.Output]; !ok {
 		return fmt.Errorf("invalid output format '%s'. must be text, csv, json", cfg.Output)
+	}
+
+	// --- 5. Cache Backend Validation ---
+	cfg.CacheBackend = schema.CacheBackend(strings.ToLower(input.CacheBackend))
+	if _, ok := schema.ValidCacheBackends[cfg.CacheBackend]; !ok {
+		return fmt.Errorf("invalid cache backend '%s'. must be sqlite, mysql, postgresql, none", input.CacheBackend)
+	}
+	cfg.CacheDBConnect = input.CacheDBConnect
+	if err := ValidateDatabaseConnectionString(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
+		return err
 	}
 
 	// --- 6. Excludes Processing ---

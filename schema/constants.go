@@ -13,6 +13,9 @@ type (
 
 	// ScoringMode represents the scoring mode used.
 	ScoringMode string
+
+	// CacheBackend represents the database backend for caching.
+	CacheBackend string
 )
 
 // Breakdown keys used in the scoring logic.
@@ -33,7 +36,7 @@ const (
 // All output modes supported.
 const (
 	CSVOut  OutputMode = "csv"
-	TextOut OutputMode = "text"
+	TextOut OutputMode = "text" // default
 	JSONOut OutputMode = "json"
 )
 
@@ -47,10 +50,18 @@ const (
 
 // All scoring modes supported.
 const (
-	HotMode        ScoringMode = "hot"
+	HotMode        ScoringMode = "hot" // default
 	RiskMode       ScoringMode = "risk"
 	ComplexityMode ScoringMode = "complexity"
 	StaleMode      ScoringMode = "stale"
+)
+
+// All cache backends supported.
+const (
+	SQLiteBackend     CacheBackend = "sqlite" // default
+	MySQLBackend      CacheBackend = "mysql"
+	PostgreSQLBackend CacheBackend = "postgresql"
+	NoneBackend       CacheBackend = "none"
 )
 
 // ValidOutputModes lists all valid output modes.
@@ -66,6 +77,14 @@ var ValidScoringModes = map[ScoringMode]struct{}{
 	RiskMode:       {},
 	ComplexityMode: {},
 	StaleMode:      {},
+}
+
+// ValidCacheBackends lists all valid cache backends.
+var ValidCacheBackends = map[CacheBackend]struct{}{
+	SQLiteBackend:     {},
+	MySQLBackend:      {},
+	PostgreSQLBackend: {},
+	NoneBackend:       {},
 }
 
 // GetDefaultWeights returns the default weight map for a given scoring mode.

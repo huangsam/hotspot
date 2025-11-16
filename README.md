@@ -240,4 +240,4 @@ Hotspot caches Git analysis results to speed up repeat runs. Here are the benefi
 - Subsequent runs (warm): ~35x faster using cached data
 - No configuration required
 
-If you need fresh analysis, delete the cache file: `rm ~/.hotspot_cache.db`
+If you need fresh analysis, clear the cache: `hotspot cache clear`
