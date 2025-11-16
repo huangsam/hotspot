@@ -157,6 +157,6 @@ func printComparisonTable(comparisonResult schema.ComparisonResult, cfg *Config,
 	fmt.Printf("Showing top %d changes\n", numItems)
 	fmt.Printf("Net score delta: %.*f, Net churn delta: %d\n", cfg.Precision, comparisonResult.Summary.NetScoreDelta, comparisonResult.Summary.NetChurnDelta)
 	fmt.Printf("New files: %d, Inactive files: %d, Modified files: %d, Ownership changes: %d\n", comparisonResult.Summary.TotalNewFiles, comparisonResult.Summary.TotalInactiveFiles, comparisonResult.Summary.TotalModifiedFiles, comparisonResult.Summary.TotalOwnershipChanges)
-	fmt.Printf("Analysis completed in %v using %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend)
+	fmt.Printf("Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend)
 	return nil
 }

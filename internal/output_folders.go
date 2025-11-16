@@ -139,6 +139,6 @@ func printFolderTable(results []schema.FolderResult, cfg *Config, fmtFloat func(
 		totalLOC += r.TotalLOC
 	}
 	fmt.Printf("Showing top %d folders (total commits: %d, total churn: %d, total LOC: %d)\n", numFolders, totalCommits, totalChurn, totalLOC)
-	fmt.Printf("Analysis completed in %v using %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend)
+	fmt.Printf("Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend)
 	return nil
 }
