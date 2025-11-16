@@ -16,18 +16,18 @@ import (
 func TestWriteJSONResults(t *testing.T) {
 	files := []schema.FileResult{
 		{
-			Path:                "test.go",
-			Score:               85.5,
-			UniqueContributors:  3,
-			Commits:             10,
-			SizeBytes:           1024,
-			AgeDays:             30,
-			Churn:               500,
-			Gini:                0.6,
-			LinesOfCode:         100,
-			FirstCommit:         time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-			Owners:              []string{"Alice", "Bob"},
-			Mode:                schema.HotMode,
+			Path:               "test.go",
+			Score:              85.5,
+			UniqueContributors: 3,
+			Commits:            10,
+			SizeBytes:          1024,
+			AgeDays:            30,
+			Churn:              500,
+			Gini:               0.6,
+			LinesOfCode:        100,
+			FirstCommit:        time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			Owners:             []string{"Alice", "Bob"},
+			Mode:               schema.HotMode,
 		},
 	}
 
@@ -51,18 +51,18 @@ func TestWriteCSVResults(t *testing.T) {
 	fmtFloat, intFmt := createFormatters(2)
 	files := []schema.FileResult{
 		{
-			Path:                "file1.go",
-			Score:               75.25,
-			UniqueContributors:  2,
-			Commits:             5,
-			SizeBytes:           2048,
-			AgeDays:             60,
-			Churn:               300,
-			Gini:                0.5,
-			LinesOfCode:         200,
-			FirstCommit:         time.Date(2023, 2, 1, 0, 0, 0, 0, time.UTC),
-			Owners:              []string{"Charlie"},
-			Mode:                schema.RiskMode,
+			Path:               "file1.go",
+			Score:              75.25,
+			UniqueContributors: 2,
+			Commits:            5,
+			SizeBytes:          2048,
+			AgeDays:            60,
+			Churn:              300,
+			Gini:               0.5,
+			LinesOfCode:        200,
+			FirstCommit:        time.Date(2023, 2, 1, 0, 0, 0, 0, time.UTC),
+			Owners:             []string{"Charlie"},
+			Mode:               schema.RiskMode,
 		},
 	}
 
@@ -160,12 +160,12 @@ func TestWriteJSONResultsForComparison(t *testing.T) {
 			},
 		},
 		Summary: schema.ComparisonSummary{
-			NetScoreDelta:          10.0,
-			NetChurnDelta:          100,
-			TotalNewFiles:          0,
-			TotalInactiveFiles:     0,
-			TotalModifiedFiles:     1,
-			TotalOwnershipChanges:  1,
+			NetScoreDelta:         10.0,
+			NetChurnDelta:         100,
+			TotalNewFiles:         0,
+			TotalInactiveFiles:    0,
+			TotalModifiedFiles:    1,
+			TotalOwnershipChanges: 1,
 		},
 	}
 

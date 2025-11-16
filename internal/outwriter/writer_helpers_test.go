@@ -178,7 +178,7 @@ func TestWriteWithFileStdout(t *testing.T) {
 		_, err := w.Write([]byte("test"))
 		return err
 	}, "Test message")
-	
+
 	require.NoError(t, err)
 	assert.True(t, called, "Writer function should have been called")
 }
@@ -194,7 +194,7 @@ func TestWriteWithFileActualFile(t *testing.T) {
 		_, err := w.Write([]byte(testContent))
 		return err
 	}, "Test message")
-	
+
 	require.NoError(t, err)
 
 	// Verify file content
@@ -211,7 +211,7 @@ func TestWriteWithFileError(t *testing.T) {
 	err := writeWithFile(tmpFile, func(w io.Writer) error {
 		return assert.AnError
 	}, "Test message")
-	
+
 	require.Error(t, err)
 	assert.Equal(t, assert.AnError, err)
 }
@@ -221,7 +221,7 @@ func TestWriteWithFileInvalidPath(t *testing.T) {
 	err := writeWithFile("/nonexistent/path/file.txt", func(w io.Writer) error {
 		return nil
 	}, "Test message")
-	
+
 	require.Error(t, err)
 }
 
@@ -238,7 +238,7 @@ func TestWriteJSONIntegration(t *testing.T) {
 	err := writeWithFile(tmpFile, func(w io.Writer) error {
 		return writeJSON(w, testData)
 	}, "Wrote JSON")
-	
+
 	require.NoError(t, err)
 
 	// Read and verify
@@ -274,7 +274,7 @@ func TestWriteCSVIntegration(t *testing.T) {
 			return nil
 		})
 	}, "Wrote CSV")
-	
+
 	require.NoError(t, err)
 
 	// Read and verify

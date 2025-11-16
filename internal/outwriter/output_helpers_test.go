@@ -232,7 +232,7 @@ func TestBuildMetricsRenderModel(t *testing.T) {
 	}
 	model = buildMetricsRenderModel(activeWeights)
 	assert.NotNil(t, model)
-	
+
 	// Find hot mode and verify custom weights were applied
 	for _, mode := range model.Modes {
 		if mode.Name == "hot" {
