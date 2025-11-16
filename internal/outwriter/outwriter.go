@@ -11,37 +11,37 @@ import (
 	"golang.org/x/term"
 )
 
-// OutputFacade provides a unified interface for all output operations.
+// OutWriter provides a unified interface for all output operations.
 // It encapsulates the various output formats and provides a clean API for the core logic.
-type OutputFacade struct{}
+type OutWriter struct{}
 
-// NewOutputFacade creates a new instance of the output facade.
-func NewOutputFacade() *OutputFacade {
-	return &OutputFacade{}
+// NewOutWriter creates a new instance of the output writer.
+func NewOutWriter() *OutWriter {
+	return &OutWriter{}
 }
 
 // PrintFiles prints file analysis results using the configured output format.
-func (f *OutputFacade) PrintFiles(results []schema.FileResult, cfg *contract.Config, duration time.Duration) error {
+func (ow *OutWriter) PrintFiles(results []schema.FileResult, cfg *contract.Config, duration time.Duration) error {
 	return PrintFileResults(results, cfg, duration)
 }
 
 // PrintFolders prints folder analysis results using the configured output format.
-func (f *OutputFacade) PrintFolders(results []schema.FolderResult, cfg *contract.Config, duration time.Duration) error {
+func (ow *OutWriter) PrintFolders(results []schema.FolderResult, cfg *contract.Config, duration time.Duration) error {
 	return PrintFolderResults(results, cfg, duration)
 }
 
 // PrintComparison prints comparison analysis results using the configured output format.
-func (f *OutputFacade) PrintComparison(results schema.ComparisonResult, cfg *contract.Config, duration time.Duration) error {
+func (ow *OutWriter) PrintComparison(results schema.ComparisonResult, cfg *contract.Config, duration time.Duration) error {
 	return PrintComparisonResults(results, cfg, duration)
 }
 
 // PrintTimeseries prints timeseries analysis results using the configured output format.
-func (f *OutputFacade) PrintTimeseries(result schema.TimeseriesResult, cfg *contract.Config, duration time.Duration) error {
+func (ow *OutWriter) PrintTimeseries(result schema.TimeseriesResult, cfg *contract.Config, duration time.Duration) error {
 	return PrintTimeseriesResults(result, cfg, duration)
 }
 
 // PrintMetrics prints metrics definitions using the configured output format.
-func (f *OutputFacade) PrintMetrics(activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, cfg *contract.Config) error {
+func (ow *OutWriter) PrintMetrics(activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, cfg *contract.Config) error {
 	return PrintMetricsDefinitions(activeWeights, cfg)
 }
 

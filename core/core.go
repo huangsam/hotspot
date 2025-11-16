@@ -36,8 +36,8 @@ func ExecuteHotspotFiles(ctx context.Context, cfg *contract.Config, mgr contract
 	}
 	ranked := rankFiles(resultsToRank, cfg.ResultLimit)
 	duration := time.Since(start)
-	facade := outwriter.NewOutputFacade()
-	return facade.PrintFiles(ranked, cfg, duration)
+	writer := outwriter.NewOutWriter()
+	return writer.PrintFiles(ranked, cfg, duration)
 }
 
 // ExecuteHotspotFolders runs the folder-level analysis and prints results to stdout.
@@ -52,8 +52,8 @@ func ExecuteHotspotFolders(ctx context.Context, cfg *contract.Config, mgr contra
 	folderResults := agg.AggregateAndScoreFolders(cfg, output.FileResults)
 	ranked := rankFolders(folderResults, cfg.ResultLimit)
 	duration := time.Since(start)
-	facade := outwriter.NewOutputFacade()
-	return facade.PrintFolders(ranked, cfg, duration)
+	writer := outwriter.NewOutWriter()
+	return writer.PrintFolders(ranked, cfg, duration)
 }
 
 // ExecuteHotspotCompare runs two file-level analyses (Base and Target)
@@ -75,8 +75,8 @@ func ExecuteHotspotCompare(ctx context.Context, cfg *contract.Config, mgr contra
 	}
 	comparisonResult := compareFileResults(baseOutput.FileResults, targetOutput.FileResults, cfg.ResultLimit, string(cfg.Mode))
 	duration := time.Since(start)
-	facade := outwriter.NewOutputFacade()
-	return facade.PrintComparison(comparisonResult, cfg, duration)
+	writer := outwriter.NewOutWriter()
+	return writer.PrintComparison(comparisonResult, cfg, duration)
 }
 
 // ExecuteHotspotCompareFolders runs two folder-level analyses (Base and Target)
@@ -100,8 +100,8 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *contract.Config, mgr
 	}
 	comparisonResult := compareFolderMetrics(baseOutput.FolderResults, targetOutput.FolderResults, cfg.ResultLimit, string(cfg.Mode))
 	duration := time.Since(start)
-	facade := outwriter.NewOutputFacade()
-	return facade.PrintComparison(comparisonResult, cfg, duration)
+	writer := outwriter.NewOutWriter()
+	return writer.PrintComparison(comparisonResult, cfg, duration)
 }
 
 // ExecuteHotspotTimeseries runs multiple analyses over overlapping, dynamic-lookback time windows.
@@ -150,13 +150,13 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *contract.Config, mgr con
 
 	result := schema.TimeseriesResult{Points: timeseriesPoints}
 	duration := time.Since(start)
-	facade := outwriter.NewOutputFacade()
-	return facade.PrintTimeseries(result, cfg, duration)
+	writer := outwriter.NewOutWriter()
+	return writer.PrintTimeseries(result, cfg, duration)
 }
 
 // ExecuteHotspotMetrics displays the formal definitions of all scoring modes.
 // This is a static display that does not require Git analysis.
 func ExecuteHotspotMetrics(_ context.Context, cfg *contract.Config, _ contract.CacheManager) error {
-	facade := outwriter.NewOutputFacade()
-	return facade.PrintMetrics(cfg.CustomWeights, cfg)
+	writer := outwriter.NewOutWriter()
+	return writer.PrintMetrics(cfg.CustomWeights, cfg)
 }
