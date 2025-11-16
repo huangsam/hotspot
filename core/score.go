@@ -168,18 +168,3 @@ func gini(values []float64) float64 {
 	g := diffSum / (2 * float64(n*n) * mean)
 	return math.Min(math.Max(g, 0), 1) // clamp to [0,1]
 }
-
-// computeFolderScore computes the final score for a folder as a weighted average.
-// The weight for the average is Lines of Code (LOC).
-func computeFolderScore(folderResult *schema.FolderResult) float64 {
-	// Calculate Weighted Average Score
-	if folderResult.TotalLOC == 0 {
-		return 0.0
-	}
-	// Weighted Average Score = SUM(FileScore * FileLOC) / SUM(FileLOC)
-	score := folderResult.WeightedScoreSum / float64(folderResult.TotalLOC)
-
-	// Apply optional debuffs if needed, similar to CalculateFileScore
-	// For simplicity, we just return the raw weighted average here.
-	return score
-}

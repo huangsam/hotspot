@@ -165,3 +165,26 @@ func TestBuildFilteredFileList_WithPathFilter(t *testing.T) {
 	assert.NotContains(t, files, "main.go")
 	assert.NotContains(t, files, "schema/types.go")
 }
+
+// TestComputeFolderScore validates folder computation.
+func TestComputeFolderScore(t *testing.T) {
+	t.Run("divide by zero", func(t *testing.T) {
+		results := &schema.FolderResult{
+			Path:             ".",
+			TotalLOC:         0,
+			WeightedScoreSum: 100.0,
+		}
+		score := computeFolderScore(results)
+		assert.Empty(t, score)
+	})
+
+	t.Run("valid calculation", func(t *testing.T) {
+		results := &schema.FolderResult{
+			Path:             ".",
+			TotalLOC:         100,
+			WeightedScoreSum: 92.0,
+		}
+		score := computeFolderScore(results)
+		assert.InEpsilon(t, float64(.92), score, 0.01)
+	})
+}

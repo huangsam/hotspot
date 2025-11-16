@@ -91,29 +91,6 @@ func TestComputeScoreAllModes(t *testing.T) {
 	}
 }
 
-// TestComputeFolderScore validates folder computation.
-func TestComputeFolderScore(t *testing.T) {
-	t.Run("divide by zero", func(t *testing.T) {
-		results := &schema.FolderResult{
-			Path:             ".",
-			TotalLOC:         0,
-			WeightedScoreSum: 100.0,
-		}
-		score := computeFolderScore(results)
-		assert.Empty(t, score)
-	})
-
-	t.Run("valid calculation", func(t *testing.T) {
-		results := &schema.FolderResult{
-			Path:             ".",
-			TotalLOC:         100,
-			WeightedScoreSum: 92.0,
-		}
-		score := computeFolderScore(results)
-		assert.InEpsilon(t, float64(.92), score, 0.01)
-	})
-}
-
 // BenchmarkGini benchmarks the Gini coefficient calculation.
 func BenchmarkGini(b *testing.B) {
 	values := []float64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
