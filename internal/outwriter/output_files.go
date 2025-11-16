@@ -1,4 +1,4 @@
-package internal
+package outwriter
 
 import (
 	"encoding/csv"
@@ -112,10 +112,10 @@ func printTableResults(files []schema.FileResult, cfg *contract.Config, fmtFloat
 	for i, f := range files {
 		// Prepare the row data as a slice of strings
 		row := []string{
-			strconv.Itoa(i + 1),                             // Rank
-			truncatePath(f.Path, GetMaxTablePathWidth(cfg)), // File
-			fmtFloat(f.Score),                               // Score
-			contract.GetColorLabel(f.Score),                 // Label
+			strconv.Itoa(i + 1), // Rank
+			contract.TruncatePath(f.Path, GetMaxTablePathWidth(cfg)), // File
+			fmtFloat(f.Score),               // Score
+			contract.GetColorLabel(f.Score), // Label
 		}
 		if cfg.Detail {
 			row = append(

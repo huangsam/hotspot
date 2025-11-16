@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -15,7 +15,7 @@ import (
 func TestRunTimeseriesAnalysis_Success(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &contract.MockGitClient{}
-	mockMgr := &internal.MockCacheManager{}
+	mockMgr := &iocache.MockCacheManager{}
 
 	now := time.Date(2024, 6, 15, 10, 30, 0, 0, time.UTC)
 	interval := 30 * 24 * time.Hour // 30 days
@@ -74,7 +74,7 @@ func TestRunTimeseriesAnalysis_Success(t *testing.T) {
 func TestRunTimeseriesAnalysis_GetOldestCommitError(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &contract.MockGitClient{}
-	mockMgr := &internal.MockCacheManager{}
+	mockMgr := &iocache.MockCacheManager{}
 
 	now := time.Date(2024, 6, 15, 10, 30, 0, 0, time.UTC)
 	interval := 30 * 24 * time.Hour
@@ -113,7 +113,7 @@ func TestRunTimeseriesAnalysis_GetOldestCommitError(t *testing.T) {
 func TestAnalyzeTimeseriesPoint_File(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &contract.MockGitClient{}
-	mockMgr := &internal.MockCacheManager{}
+	mockMgr := &iocache.MockCacheManager{}
 
 	path := "main.go"
 	isFolder := false
@@ -145,7 +145,7 @@ func TestAnalyzeTimeseriesPoint_File(t *testing.T) {
 func TestAnalyzeTimeseriesPoint_Folder(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &contract.MockGitClient{}
-	mockMgr := &internal.MockCacheManager{}
+	mockMgr := &iocache.MockCacheManager{}
 
 	path := "src/"
 	isFolder := true
@@ -178,7 +178,7 @@ func TestAnalyzeTimeseriesPoint_Folder(t *testing.T) {
 func TestAnalyzeTimeseriesPoint_NoData(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &contract.MockGitClient{}
-	mockMgr := &internal.MockCacheManager{}
+	mockMgr := &iocache.MockCacheManager{}
 
 	path := "nonexistent.go"
 	isFolder := false
@@ -209,7 +209,7 @@ func TestAnalyzeTimeseriesPoint_NoData(t *testing.T) {
 func TestAnalyzeTimeseriesPoint_PathNotFound(t *testing.T) {
 	ctx := context.Background()
 	mockClient := &contract.MockGitClient{}
-	mockMgr := &internal.MockCacheManager{}
+	mockMgr := &iocache.MockCacheManager{}
 
 	path := "missing.go"
 	isFolder := false

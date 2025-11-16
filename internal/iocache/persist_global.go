@@ -1,4 +1,4 @@
-package internal
+package iocache
 
 import (
 	"database/sql"

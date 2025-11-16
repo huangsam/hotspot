@@ -1,4 +1,4 @@
-package internal
+package gitclient
 
 import (
 	"context"
@@ -81,6 +81,10 @@ func TestLocalGitClient_Run(t *testing.T) {
 	client := NewLocalGitClient()
 	ctx := context.Background()
 
+	// Get the repository root
+	repoRoot, err := client.GetRepoRoot(ctx, ".")
+	assert.NoError(t, err, "GetRepoRoot should not return an error")
+
 	tests := []struct {
 		name        string
 		repoPath    string
@@ -96,7 +100,7 @@ func TestLocalGitClient_Run(t *testing.T) {
 		},
 		{
 			name:        "invalid git command",
-			repoPath:    ".", // Use current directory (should be a git repo for this test)
+			repoPath:    repoRoot, // Use repository root
 			args:        []string{"invalid-command"},
 			expectError: true,
 		},
@@ -143,13 +147,17 @@ func TestLocalGitClient_GetCommitTime(t *testing.T) {
 	client := NewLocalGitClient()
 	ctx := context.Background()
 
+	// Get the repository root
+	repoRoot, err := client.GetRepoRoot(ctx, ".")
+	assert.NoError(t, err, "GetRepoRoot should not return an error")
+
 	// Test with HEAD
-	commitTime, err := client.GetCommitTime(ctx, ".", "HEAD")
+	commitTime, err := client.GetCommitTime(ctx, repoRoot, "HEAD")
 	assert.NoError(t, err, "GetCommitTime should not return an error for HEAD")
 	assert.True(t, commitTime.After(time.Time{}), "GetCommitTime should return a valid time")
 
 	// Test with invalid ref
-	_, err = client.GetCommitTime(ctx, ".", "invalid-ref")
+	_, err = client.GetCommitTime(ctx, repoRoot, "invalid-ref")
 	assert.Error(t, err, "GetCommitTime should return an error for invalid ref")
 }
 
@@ -160,16 +168,20 @@ func TestLocalGitClient_GetActivityLog(t *testing.T) {
 	client := NewLocalGitClient()
 	ctx := context.Background()
 
+	// Get the repository root
+	repoRoot, err := client.GetRepoRoot(ctx, ".")
+	assert.NoError(t, err, "GetRepoRoot should not return an error")
+
 	startTime := time.Now().AddDate(0, 0, -30) // 30 days ago
 	endTime := time.Now()
 
 	// Test with time range
-	_, err := client.GetActivityLog(ctx, ".", startTime, endTime)
+	_, err = client.GetActivityLog(ctx, repoRoot, startTime, endTime)
 	assert.NoError(t, err, "GetActivityLog should not return an error")
 	// Log might be empty if no commits in range, but should not error
 
 	// Test with zero times (no time filter)
-	_, err = client.GetActivityLog(ctx, ".", time.Time{}, time.Time{})
+	_, err = client.GetActivityLog(ctx, repoRoot, time.Time{}, time.Time{})
 	assert.NoError(t, err, "GetActivityLog should not return an error with zero times")
 }
 
@@ -180,19 +192,23 @@ func TestLocalGitClient_GetFileActivityLog(t *testing.T) {
 	client := NewLocalGitClient()
 	ctx := context.Background()
 
+	// Get the repository root
+	repoRoot, err := client.GetRepoRoot(ctx, ".")
+	assert.NoError(t, err, "GetRepoRoot should not return an error")
+
 	startTime := time.Now().AddDate(0, 0, -30)
 	endTime := time.Now()
 
 	// Test with existing file
-	_, err := client.GetFileActivityLog(ctx, ".", "main.go", startTime, endTime, false)
+	_, err = client.GetFileActivityLog(ctx, repoRoot, "main.go", startTime, endTime, false)
 	assert.NoError(t, err, "GetFileActivityLog should not return an error for existing file")
 
 	// Test with follow flag
-	_, err = client.GetFileActivityLog(ctx, ".", "main.go", time.Time{}, time.Time{}, true)
+	_, err = client.GetFileActivityLog(ctx, repoRoot, "main.go", time.Time{}, time.Time{}, true)
 	assert.NoError(t, err, "GetFileActivityLog should not return an error with follow flag")
 
 	// Test with non-existent file (git log doesn't error, just returns empty)
-	_, err = client.GetFileActivityLog(ctx, ".", "nonexistent.go", startTime, endTime, false)
+	_, err = client.GetFileActivityLog(ctx, repoRoot, "nonexistent.go", startTime, endTime, false)
 	assert.NoError(t, err, "GetFileActivityLog should not return an error for non-existent file (returns empty)")
 }
 
@@ -203,8 +219,12 @@ func TestLocalGitClient_ListFilesAtRef(t *testing.T) {
 	client := NewLocalGitClient()
 	ctx := context.Background()
 
+	// Get the repository root first
+	repoRoot, err := client.GetRepoRoot(ctx, ".")
+	assert.NoError(t, err, "GetRepoRoot should not return an error")
+
 	// Test with HEAD
-	files, err := client.ListFilesAtRef(ctx, ".", "HEAD")
+	files, err := client.ListFilesAtRef(ctx, repoRoot, "HEAD")
 	assert.NoError(t, err, "ListFilesAtRef should not return an error for HEAD")
 	assert.NotNil(t, files, "ListFilesAtRef should return a file list")
 	assert.True(t, len(files) > 0, "ListFilesAtRef should return at least one file")
@@ -212,7 +232,7 @@ func TestLocalGitClient_ListFilesAtRef(t *testing.T) {
 	t.Logf("Found %d files at HEAD", len(files))
 
 	// Test with invalid ref
-	_, err = client.ListFilesAtRef(ctx, ".", "invalid-ref")
+	_, err = client.ListFilesAtRef(ctx, repoRoot, "invalid-ref")
 	assert.Error(t, err, "ListFilesAtRef should return an error for invalid ref")
 }
 
@@ -223,16 +243,20 @@ func TestLocalGitClient_GetOldestCommitDateForPath(t *testing.T) {
 	client := NewLocalGitClient()
 	ctx := context.Background()
 
+	// Get the repository root first
+	repoRoot, err := client.GetRepoRoot(ctx, ".")
+	assert.NoError(t, err, "GetRepoRoot should not return an error")
+
 	before := time.Now()
 	maxSearchDuration := 365 * 24 * time.Hour // 1 year
 
 	// Test with a very broad time range to ensure we find commits
 	// Use a file that should definitely exist
-	_, _ = client.GetOldestCommitDateForPath(ctx, ".", "README.md", before, 1, maxSearchDuration)
+	_, _ = client.GetOldestCommitDateForPath(ctx, repoRoot, "README.md", before, 1, maxSearchDuration)
 	// Don't assert NoError since the file might not have commits in the time range
 	// Just ensure the function doesn't panic and returns some result
 
 	// Test with non-existent file (should error)
-	_, err := client.GetOldestCommitDateForPath(ctx, ".", "definitely-nonexistent-file-12345.txt", before, 1, maxSearchDuration)
+	_, err = client.GetOldestCommitDateForPath(ctx, repoRoot, "definitely-nonexistent-file-12345.txt", before, 1, maxSearchDuration)
 	assert.Error(t, err, "GetOldestCommitDateForPath should return an error for non-existent file")
 }

@@ -1,4 +1,5 @@
-package internal
+// Package iocache is for caching I/O calls.
+package iocache
 
 import (
 	"database/sql"

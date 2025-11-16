@@ -11,17 +11,20 @@ import (
 
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/gitclient"
+	"github.com/huangsam/hotspot/internal/iocache"
+	"github.com/huangsam/hotspot/internal/outwriter"
 	"github.com/huangsam/hotspot/schema"
 )
 
 // ExecutorFunc defines the function signature for executing different analysis modes.
-type ExecutorFunc func(ctx context.Context, cfg *contract.Config, mgr internal.CacheManager) error
+type ExecutorFunc func(ctx context.Context, cfg *contract.Config, mgr iocache.CacheManager) error
 
 // ExecuteHotspotFiles runs the file-level analysis and prints results to stdout.
 // It serves as the main entry point for the 'files' mode.
-func ExecuteHotspotFiles(ctx context.Context, cfg *contract.Config, mgr internal.CacheManager) error {
+func ExecuteHotspotFiles(ctx context.Context, cfg *contract.Config, mgr iocache.CacheManager) error {
 	start := time.Now()
-	client := internal.NewLocalGitClient()
+	client := gitclient.NewLocalGitClient()
 	output, err := runSingleAnalysisCore(ctx, cfg, client, mgr)
 	if err != nil {
 		return err
@@ -33,14 +36,14 @@ func ExecuteHotspotFiles(ctx context.Context, cfg *contract.Config, mgr internal
 	}
 	ranked := rankFiles(resultsToRank, cfg.ResultLimit)
 	duration := time.Since(start)
-	return internal.PrintFileResults(ranked, cfg, duration)
+	return outwriter.PrintFileResults(ranked, cfg, duration)
 }
 
 // ExecuteHotspotFolders runs the folder-level analysis and prints results to stdout.
 // It serves as the main entry point for the 'folders' mode.
-func ExecuteHotspotFolders(ctx context.Context, cfg *contract.Config, mgr internal.CacheManager) error {
+func ExecuteHotspotFolders(ctx context.Context, cfg *contract.Config, mgr iocache.CacheManager) error {
 	start := time.Now()
-	client := internal.NewLocalGitClient()
+	client := gitclient.NewLocalGitClient()
 	output, err := runSingleAnalysisCore(ctx, cfg, client, mgr)
 	if err != nil {
 		return err
@@ -48,14 +51,14 @@ func ExecuteHotspotFolders(ctx context.Context, cfg *contract.Config, mgr intern
 	folderResults := aggregateAndScoreFolders(cfg, output.FileResults)
 	ranked := rankFolders(folderResults, cfg.ResultLimit)
 	duration := time.Since(start)
-	return internal.PrintFolderResults(ranked, cfg, duration)
+	return outwriter.PrintFolderResults(ranked, cfg, duration)
 }
 
 // ExecuteHotspotCompare runs two file-level analyses (Base and Target)
 // based on Git references and computes the delta results.
-func ExecuteHotspotCompare(ctx context.Context, cfg *contract.Config, mgr internal.CacheManager) error {
+func ExecuteHotspotCompare(ctx context.Context, cfg *contract.Config, mgr iocache.CacheManager) error {
 	start := time.Now()
-	client := internal.NewLocalGitClient()
+	client := gitclient.NewLocalGitClient()
 
 	// Print single header for the comparison
 	internal.LogCompareHeader(cfg)
@@ -70,16 +73,16 @@ func ExecuteHotspotCompare(ctx context.Context, cfg *contract.Config, mgr intern
 	}
 	comparisonResult := compareFileResults(baseOutput.FileResults, targetOutput.FileResults, cfg.ResultLimit, string(cfg.Mode))
 	duration := time.Since(start)
-	return internal.PrintComparisonResults(comparisonResult, cfg, duration)
+	return outwriter.PrintComparisonResults(comparisonResult, cfg, duration)
 }
 
 // ExecuteHotspotCompareFolders runs two folder-level analyses (Base and Target)
 // based on Git references and computes the delta results.
 // It follows the same pattern as ExecuteHotspotCompare but aggregates to folders
 // before performing the comparison.
-func ExecuteHotspotCompareFolders(ctx context.Context, cfg *contract.Config, mgr internal.CacheManager) error {
+func ExecuteHotspotCompareFolders(ctx context.Context, cfg *contract.Config, mgr iocache.CacheManager) error {
 	start := time.Now()
-	client := internal.NewLocalGitClient()
+	client := gitclient.NewLocalGitClient()
 
 	// Print single header for the comparison
 	internal.LogCompareHeader(cfg)
@@ -94,13 +97,13 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *contract.Config, mgr
 	}
 	comparisonResult := compareFolderMetrics(baseOutput.FolderResults, targetOutput.FolderResults, cfg.ResultLimit, string(cfg.Mode))
 	duration := time.Since(start)
-	return internal.PrintComparisonResults(comparisonResult, cfg, duration)
+	return outwriter.PrintComparisonResults(comparisonResult, cfg, duration)
 }
 
 // ExecuteHotspotTimeseries runs multiple analyses over overlapping, dynamic-lookback time windows.
 // This implements Strategy 2: Time-Boxed M_min Approximation. The Git search for M_min commits
 // is capped by maxSearchDuration to prevent slow full-history traversal on large repos.
-func ExecuteHotspotTimeseries(ctx context.Context, cfg *contract.Config, mgr internal.CacheManager) error {
+func ExecuteHotspotTimeseries(ctx context.Context, cfg *contract.Config, mgr iocache.CacheManager) error {
 	start := time.Now()
 
 	// Get timeseries-specific parameters from config
@@ -119,7 +122,7 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *contract.Config, mgr int
 	}
 
 	now := time.Now()
-	client := internal.NewLocalGitClient()
+	client := gitclient.NewLocalGitClient()
 
 	// Normalize and validate the path relative to repo root
 	normalizedPath, err := contract.NormalizeTimeseriesPath(cfg.RepoPath, path)
@@ -143,11 +146,11 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *contract.Config, mgr int
 
 	result := schema.TimeseriesResult{Points: timeseriesPoints}
 	duration := time.Since(start)
-	return internal.PrintTimeseriesResults(result, cfg, duration)
+	return outwriter.PrintTimeseriesResults(result, cfg, duration)
 }
 
 // ExecuteHotspotMetrics displays the formal definitions of all scoring modes.
 // This is a static display that does not require Git analysis.
-func ExecuteHotspotMetrics(_ context.Context, cfg *contract.Config, _ internal.CacheManager) error {
-	return internal.PrintMetricsDefinitions(cfg.CustomWeights, cfg)
+func ExecuteHotspotMetrics(_ context.Context, cfg *contract.Config, _ iocache.CacheManager) error {
+	return outwriter.PrintMetricsDefinitions(cfg.CustomWeights, cfg)
 }

@@ -1,4 +1,4 @@
-package internal
+package outwriter
 
 import (
 	"encoding/csv"
@@ -104,10 +104,10 @@ func printFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFl
 	for i, r := range results {
 		// Prepare the row data as a slice of strings
 		row := []string{
-			strconv.Itoa(i + 1),                             // Rank
-			truncatePath(r.Path, GetMaxTablePathWidth(cfg)), // Folder Path
-			fmtFloat(r.Score),                               // Score
-			contract.GetColorLabel(r.Score),                 // Label
+			strconv.Itoa(i + 1), // Rank
+			contract.TruncatePath(r.Path, GetMaxTablePathWidth(cfg)), // Folder Path
+			fmtFloat(r.Score),               // Score
+			contract.GetColorLabel(r.Score), // Label
 		}
 		if cfg.Detail {
 			row = append(row,

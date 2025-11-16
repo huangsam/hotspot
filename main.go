@@ -11,8 +11,9 @@ import (
 	"strings"
 
 	"github.com/huangsam/hotspot/core"
-	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/gitclient"
+	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -39,7 +40,7 @@ var input = &contract.ConfigRawInput{}
 var profile = &contract.ProfileConfig{}
 
 // cacheManager is the global persistence manager instance.
-var cacheManager internal.CacheManager
+var cacheManager iocache.CacheManager
 
 // startProfiling starts CPU and memory profiling if enabled
 func startProfiling() error {
@@ -158,13 +159,13 @@ func sharedSetup(ctx context.Context, _ *cobra.Command, args []string) error {
 
 	// 4. Run all validation and complex parsing.
 	// This function now populates the global 'cfg' from 'input'.
-	client := internal.NewLocalGitClient()
+	client := gitclient.NewLocalGitClient()
 	if err := contract.ProcessAndValidate(ctx, cfg, client, input); err != nil {
 		return err
 	}
 
 	// 5. Initialize persistence layer with validated config
-	if err := internal.InitCaching(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
+	if err := iocache.InitCaching(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
 		return fmt.Errorf("failed to initialize persistence: %w", err)
 	}
 
@@ -197,7 +198,7 @@ func cacheSetup() error {
 	}
 
 	// Initialize caching with the loaded config
-	if err := internal.InitCaching(backend, connStr); err != nil {
+	if err := iocache.InitCaching(backend, connStr); err != nil {
 		return fmt.Errorf("failed to initialize cache: %w", err)
 	}
 
@@ -339,7 +340,7 @@ var cacheClearCmd = &cobra.Command{
 	Long:    `The clear subcommand removes all cached data for the current backend configuration.`,
 	PreRunE: cacheSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := internal.ClearCache(cfg.CacheBackend, contract.GetDBFilePath(), cfg.CacheDBConnect); err != nil {
+		if err := iocache.ClearCache(cfg.CacheBackend, contract.GetDBFilePath(), cfg.CacheDBConnect); err != nil {
 			contract.LogFatal("Failed to clear cache", err)
 		}
 		fmt.Println("Cache cleared successfully.")
@@ -415,11 +416,11 @@ func init() {
 // main starts the execution of the logic.
 func main() {
 	// Set the global caching manager (will be initialized in sharedSetup)
-	cacheManager = internal.Manager
+	cacheManager = iocache.Manager
 
 	defer func() {
 		// Close caching on exit
-		internal.CloseCaching()
+		iocache.CloseCaching()
 
 		if err := stopProfiling(); err != nil {
 			contract.LogFatal("Error stopping profiling", err)

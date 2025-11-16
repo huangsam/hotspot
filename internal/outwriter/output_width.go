@@ -1,4 +1,5 @@
-package internal
+// Package outwriter has output and writer logic.
+package outwriter
 
 import (
 	"os"

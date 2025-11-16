@@ -1,4 +1,4 @@
-package internal
+package outwriter
 
 import (
 	"encoding/csv"
@@ -130,12 +130,12 @@ func printComparisonTable(comparisonResult schema.ComparisonResult, cfg *contrac
 
 		// Prepare the row data as a slice of strings
 		row := []string{
-			strconv.Itoa(i + 1),                             // Rank
-			truncatePath(r.Path, GetMaxTablePathWidth(cfg)), // File Path
-			fmtFloat(r.BeforeScore),                         // Base Score
-			fmtFloat(r.AfterScore),                          // Comparison Score
-			deltaStr,                                        // Delta Score
-			string(r.Status),                                // Status
+			strconv.Itoa(i + 1), // Rank
+			contract.TruncatePath(r.Path, GetMaxTablePathWidth(cfg)), // File Path
+			fmtFloat(r.BeforeScore),                                  // Base Score
+			fmtFloat(r.AfterScore),                                   // Comparison Score
+			deltaStr,                                                 // Delta Score
+			string(r.Status),                                         // Status
 		}
 		if cfg.Detail {
 			row = append(row, fmt.Sprintf(intFmt, r.DeltaChurn))

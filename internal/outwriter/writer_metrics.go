@@ -1,4 +1,4 @@
-package internal
+package outwriter
 
 import (
 	"encoding/csv"

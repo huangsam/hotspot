@@ -6,15 +6,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 // MockCacheStore for testing (alias for MockCacheStore)
-type MockCacheStore = internal.MockCacheStore
+type MockCacheStore = iocache.MockCacheStore
 
 func TestCheckCacheHit_CacheHit(t *testing.T) {
 	mockStore := &MockCacheStore{}

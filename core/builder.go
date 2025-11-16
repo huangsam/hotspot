@@ -10,15 +10,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/gitclient"
 	"github.com/huangsam/hotspot/schema"
 )
 
 // FileResultBuilder builds the file metric from Git output.
 type FileResultBuilder struct {
 	cfg    *contract.Config
-	git    internal.GitClient
+	git    gitclient.GitClient
 	result *schema.FileResult
 	output *schema.AggregateOutput
 	path   string
@@ -30,7 +30,7 @@ type FileResultBuilder struct {
 }
 
 // NewFileMetricsBuilder is the starting point for building file metrics.
-func NewFileMetricsBuilder(ctx context.Context, cfg *contract.Config, client internal.GitClient, path string, output *schema.AggregateOutput) *FileResultBuilder {
+func NewFileMetricsBuilder(ctx context.Context, cfg *contract.Config, client gitclient.GitClient, path string, output *schema.AggregateOutput) *FileResultBuilder {
 	return &FileResultBuilder{
 		cfg:          cfg,
 		git:          client,

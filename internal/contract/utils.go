@@ -155,3 +155,14 @@ func NormalizeTimeseriesPath(repoPath, userPath string) (string, error) {
 
 	return normalized, nil
 }
+
+// TruncatePath truncates a file path to a maximum width with ellipsis prefix.
+// Requires maxWidth > 3 to ensure there's space for both the "..." prefix and at least one character of content.
+// Without this check, small maxWidth values could cause slice bounds errors in the truncation calculation.
+func TruncatePath(path string, maxWidth int) string {
+	runes := []rune(path)
+	if len(runes) > maxWidth && maxWidth > 3 {
+		return "..." + string(runes[len(runes)-maxWidth+3:])
+	}
+	return path
+}

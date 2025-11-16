@@ -1,4 +1,4 @@
-package internal
+package contract
 
 import (
 	"strings"
@@ -33,25 +33,5 @@ func FuzzShouldIgnore(f *testing.F) {
 			}
 		}
 		_ = ShouldIgnore(path, excludes)
-	})
-}
-
-// FuzzTruncatePath fuzzes the truncatePath function.
-func FuzzTruncatePath(f *testing.F) {
-	seeds := []struct {
-		path     string
-		maxWidth int
-	}{
-		{"short.txt", 10},
-		{"very/long/path/to/a/file/with/many/directories.txt", 20},
-		{"", 5},
-		{"a", 1},
-	}
-	for _, seed := range seeds {
-		f.Add(seed.path, seed.maxWidth)
-	}
-
-	f.Fuzz(func(_ *testing.T, path string, maxWidth int) {
-		_ = truncatePath(path, maxWidth)
 	})
 }

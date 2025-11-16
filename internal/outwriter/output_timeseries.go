@@ -1,4 +1,4 @@
-package internal
+package outwriter
 
 import (
 	"encoding/csv"
@@ -101,7 +101,7 @@ func printTimeseriesTable(result schema.TimeseriesResult, cfg *contract.Config, 
 			ownersStr = "No owners"
 		}
 		row := []string{
-			truncatePath(p.Path, GetMaxTablePathWidth(cfg)),
+			contract.TruncatePath(p.Path, GetMaxTablePathWidth(cfg)),
 			p.Period,
 			fmtFloat(p.Score),
 			string(p.Mode),

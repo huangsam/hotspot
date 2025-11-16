@@ -1,4 +1,4 @@
-package internal
+package iocache
 
 import (
 	"github.com/stretchr/testify/mock"
