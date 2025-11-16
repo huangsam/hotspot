@@ -17,7 +17,10 @@ func writeWithFile(outputFile string, writer func(io.Writer) error, successMsg s
 	if err != nil {
 		return err
 	}
-	defer func() { _ = file.Close() }()
+	// Only close if it's not stdout
+	if file != os.Stdout {
+		defer func() { _ = file.Close() }()
+	}
 
 	if err := writer(file); err != nil {
 		return err
