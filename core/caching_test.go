@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal"
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -79,8 +80,8 @@ func TestCheckCacheHit_CacheMiss_UnmarshalError(t *testing.T) {
 }
 
 func TestGenerateCacheKey(t *testing.T) {
-	mockClient := &internal.MockGitClient{}
-	cfg := &internal.Config{
+	mockClient := &contract.MockGitClient{}
+	cfg := &contract.Config{
 		RepoPath: "/test/repo",
 		Mode:     schema.HotMode,
 		Lookback: 30 * 24 * time.Hour, // 30 days
@@ -107,8 +108,8 @@ func TestGenerateCacheKey(t *testing.T) {
 }
 
 func TestGenerateCacheKey_RepoHashError(t *testing.T) {
-	mockClient := &internal.MockGitClient{}
-	cfg := &internal.Config{
+	mockClient := &contract.MockGitClient{}
+	cfg := &contract.Config{
 		RepoPath: "/test/repo",
 		Mode:     schema.HotMode,
 		Lookback: 30 * 24 * time.Hour,

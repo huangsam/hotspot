@@ -1,4 +1,4 @@
-package internal
+package contract
 
 import (
 	"testing"
@@ -57,7 +57,7 @@ func TestParseRelativeTimeUnit(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tResult, err := parseRelativeTime(tt.input, fixedNow)
+			tResult, err := ParseRelativeTime(tt.input, fixedNow)
 
 			if tt.expectError {
 				require.Error(t, err)

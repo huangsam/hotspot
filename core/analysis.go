@@ -21,7 +21,7 @@ const (
 )
 
 // runSingleAnalysisCore performs the common Aggregation, Filtering, and Analysis steps.
-func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client internal.GitClient, mgr internal.CacheManager) (*schema.SingleAnalysisOutput, error) {
+func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client internal.GitClient, mgr internal.CacheManager) (*schema.SingleAnalysisOutput, error) {
 	if !shouldSuppressHeader(ctx) {
 		internal.LogAnalysisHeader(cfg)
 	}
@@ -49,7 +49,7 @@ func runSingleAnalysisCore(ctx context.Context, cfg *internal.Config, client int
 
 // runCompareAnalysisForRef runs the file analysis for a specific Git reference in compare mode.
 // Headers are always suppressed in compare mode.
-func runCompareAnalysisForRef(ctx context.Context, cfg *internal.Config, client internal.GitClient, ref string, mgr internal.CacheManager) (*schema.CompareAnalysisOutput, error) {
+func runCompareAnalysisForRef(ctx context.Context, cfg *contract.Config, client internal.GitClient, ref string, mgr internal.CacheManager) (*schema.CompareAnalysisOutput, error) {
 	// 1. Resolve the time window for the reference
 	baseStartTime, baseEndTime, err := getAnalysisWindowForRef(ctx, client, cfg.RepoPath, ref, cfg.Lookback)
 	if err != nil {
@@ -76,7 +76,7 @@ func runCompareAnalysisForRef(ctx context.Context, cfg *internal.Config, client 
 
 // analyzeAllFilesAtRef performs file analysis for all files that exist at a specific Git reference.
 // Headers are always suppressed in compare mode.
-func analyzeAllFilesAtRef(ctx context.Context, cfg *internal.Config, client internal.GitClient, ref string, mgr internal.CacheManager) ([]schema.FileResult, error) {
+func analyzeAllFilesAtRef(ctx context.Context, cfg *contract.Config, client internal.GitClient, ref string, mgr internal.CacheManager) ([]schema.FileResult, error) {
 	// --- 1. Get all files at the reference ---
 	files, err := client.ListFilesAtRef(ctx, cfg.RepoPath, ref)
 	if err != nil {
@@ -93,7 +93,7 @@ func analyzeAllFilesAtRef(ctx context.Context, cfg *internal.Config, client inte
 		}
 
 		// Apply excludes filter
-		if contract.ShouldIgnore(f, cfg.Excludes) {
+		if internal.ShouldIgnore(f, cfg.Excludes) {
 			continue
 		}
 
@@ -119,7 +119,7 @@ func analyzeAllFilesAtRef(ctx context.Context, cfg *internal.Config, client inte
 
 // runFollowPass re-analyzes the top N ranked files using 'git --follow'
 // to account for renames, and then returns a new, re-ranked list.
-func runFollowPass(ctx context.Context, cfg *internal.Config, client internal.GitClient, ranked []schema.FileResult, output *schema.AggregateOutput) []schema.FileResult {
+func runFollowPass(ctx context.Context, cfg *contract.Config, client internal.GitClient, ranked []schema.FileResult, output *schema.AggregateOutput) []schema.FileResult {
 	// Determine the number of files to re-analyze
 	n := min(cfg.ResultLimit, len(ranked))
 	if n == 0 {
@@ -151,7 +151,7 @@ func runFollowPass(ctx context.Context, cfg *internal.Config, client internal.Gi
 // analyzeRepo processes all files in parallel using a worker pool.
 // It spawns cfg.Workers number of goroutines to analyze files concurrently
 // and aggregates their results into a single slice of schema.FileMetrics.
-func analyzeRepo(ctx context.Context, cfg *internal.Config, client internal.GitClient, output *schema.AggregateOutput, files []string) []schema.FileResult {
+func analyzeRepo(ctx context.Context, cfg *contract.Config, client internal.GitClient, output *schema.AggregateOutput, files []string) []schema.FileResult {
 	// Initialize channels based on the final number of files to be processed.
 	fileCh := make(chan string, len(files))
 	fileResultCh := make(chan schema.FileResult, len(files))
@@ -193,7 +193,7 @@ func analyzeRepo(ctx context.Context, cfg *internal.Config, client internal.GitC
 // derived metrics like churn and the Gini coefficient of author contributions.
 // The analysis is constrained by the time range in cfg if specified.
 // Git follow behavior is controlled by the context.
-func analyzeFileCommon(ctx context.Context, cfg *internal.Config, client internal.GitClient, path string, output *schema.AggregateOutput) schema.FileResult {
+func analyzeFileCommon(ctx context.Context, cfg *contract.Config, client internal.GitClient, path string, output *schema.AggregateOutput) schema.FileResult {
 	// 1. Initialize the builder
 	builder := NewFileMetricsBuilder(ctx, cfg, client, path, output)
 
@@ -230,7 +230,7 @@ func getAnalysisWindowForRef(ctx context.Context, client internal.GitClient, rep
 // runTimeseriesAnalysis performs the core timeseries analysis logic.
 func runTimeseriesAnalysis(
 	ctx context.Context,
-	cfg *internal.Config,
+	cfg *contract.Config,
 	client internal.GitClient,
 	normalizedPath string,
 	isFolder bool,
@@ -308,7 +308,7 @@ func runTimeseriesAnalysis(
 // analyzeTimeseriesPoint performs the analysis for a single timeseries point.
 func analyzeTimeseriesPoint(
 	ctx context.Context,
-	cfg *internal.Config,
+	cfg *contract.Config,
 	client internal.GitClient,
 	path string,
 	isFolder bool,

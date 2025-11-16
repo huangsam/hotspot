@@ -6,6 +6,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -43,8 +44,8 @@ func writeCSVResultsForTimeseries(w *csv.Writer, result schema.TimeseriesResult,
 		row := []string{
 			p.Path,
 			p.Period,
-			p.Start.Format(DateTimeFormat),
-			p.End.Format(DateTimeFormat),
+			p.Start.Format(contract.DateTimeFormat),
+			p.End.Format(contract.DateTimeFormat),
 			fmtFloat(p.Score),
 			ownersStr,
 			string(p.Mode),

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/huangsam/hotspot/internal"
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -23,14 +23,14 @@ func TestAggregateActivity(t *testing.T) {
 	ctx := context.Background()
 
 	// Create mock client
-	mockClient := &internal.MockGitClient{}
+	mockClient := &contract.MockGitClient{}
 
 	// Setup expectations
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return(strings.Split(strings.TrimSpace(fileListFixture), "\n"), nil)
 	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(gitLogBasicFixture, nil)
 
 	// Create config
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		RepoPath:  "/test/repo",
 		StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 		EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
@@ -111,7 +111,7 @@ func TestBuildFilteredFileList(t *testing.T) {
 		},
 	}
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		PathFilter: "",
 		Excludes:   []string{"test_*", "*.md"},
 	}
@@ -151,7 +151,7 @@ func TestBuildFilteredFileList_WithPathFilter(t *testing.T) {
 		},
 	}
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		PathFilter: "core/",
 		Excludes:   []string{},
 	}

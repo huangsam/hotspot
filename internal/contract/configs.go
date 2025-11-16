@@ -1,4 +1,4 @@
-package internal
+package contract
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -327,7 +326,7 @@ func processTimeRange(cfg *Config, input *ConfigRawInput) error {
 		if err == nil {
 			cfg.StartTime = t
 		} else {
-			t, relErr := parseRelativeTime(input.Start, now)
+			t, relErr := ParseRelativeTime(input.Start, now)
 			if relErr != nil {
 				return fmt.Errorf("invalid start date format for '%s'. Expected absolute ISO8601 or 'N [units] ago': %v", input.Start, err)
 			}
@@ -341,7 +340,7 @@ func processTimeRange(cfg *Config, input *ConfigRawInput) error {
 		if err == nil {
 			cfg.EndTime = t
 		} else {
-			t, relErr := parseRelativeTime(input.End, now)
+			t, relErr := ParseRelativeTime(input.End, now)
 			if relErr != nil {
 				return fmt.Errorf("invalid end date format for '%s'. Expected absolute ISO8601 or 'N [units] ago': %v", input.End, err)
 			}
@@ -545,10 +544,4 @@ func resolveGitPathAndFilter(ctx context.Context, cfg *Config, client GitClient,
 	}
 
 	return nil
-}
-
-// NormalizeTimeseriesPath normalizes a user-provided path relative to the repo root
-// and ensures it's within the repository boundaries.
-func NormalizeTimeseriesPath(repoPath, userPath string) (string, error) {
-	return contract.NormalizeTimeseriesPath(repoPath, userPath)
 }

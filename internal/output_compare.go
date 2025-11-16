@@ -15,7 +15,7 @@ import (
 )
 
 // PrintComparisonResults outputs the analysis results, dispatching based on the output format configured.
-func PrintComparisonResults(comparisonResult schema.ComparisonResult, cfg *Config, duration time.Duration) error {
+func PrintComparisonResults(comparisonResult schema.ComparisonResult, cfg *contract.Config, duration time.Duration) error {
 	// Helper format strings and closure for number formatting
 	numFmt := "%.*f"
 	intFmt := "%d"
@@ -43,7 +43,7 @@ func PrintComparisonResults(comparisonResult schema.ComparisonResult, cfg *Confi
 }
 
 // printJSONResultsForComparison handles opening the file and calling the JSON writer.
-func printJSONResultsForComparison(comparisonResult schema.ComparisonResult, cfg *Config) error {
+func printJSONResultsForComparison(comparisonResult schema.ComparisonResult, cfg *contract.Config) error {
 	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
@@ -61,7 +61,7 @@ func printJSONResultsForComparison(comparisonResult schema.ComparisonResult, cfg
 }
 
 // printCSVResultsForComparison handles opening the file and calling the CSV writer.
-func printCSVResultsForComparison(comparisonResult schema.ComparisonResult, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
+func printCSVResultsForComparison(comparisonResult schema.ComparisonResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string) error {
 	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
@@ -81,7 +81,7 @@ func printCSVResultsForComparison(comparisonResult schema.ComparisonResult, cfg 
 }
 
 // printComparisonTable prints the metrics in a custom comparison format.
-func printComparisonTable(comparisonResult schema.ComparisonResult, cfg *Config, fmtFloat func(float64) string, intFmt string, duration time.Duration) error {
+func printComparisonTable(comparisonResult schema.ComparisonResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration) error {
 	// Use os.Stdout, consistent with existing table printing
 	table := tablewriter.NewWriter(os.Stdout)
 

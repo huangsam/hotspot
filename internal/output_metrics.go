@@ -65,7 +65,7 @@ func formatWeights(weights map[string]float64, factorKeys []string) string {
 
 // PrintMetricsDefinitions displays the formal definitions of all scoring modes.
 // This is a static display that does not require Git analysis.
-func PrintMetricsDefinitions(activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, cfg *Config) error {
+func PrintMetricsDefinitions(activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, cfg *contract.Config) error {
 	// Build the complete render model with all processed data
 	renderModel := buildMetricsRenderModel(activeWeights)
 
@@ -80,7 +80,7 @@ func PrintMetricsDefinitions(activeWeights map[schema.ScoringMode]map[schema.Bre
 }
 
 // printMetricsText displays metrics in human-readable text format
-func printMetricsText(renderModel *schema.MetricsRenderModel, _ *Config) error {
+func printMetricsText(renderModel *schema.MetricsRenderModel, _ *contract.Config) error {
 	fmt.Println("🔥 Hotspot Scoring Modes")
 	fmt.Println("========================")
 	fmt.Println()
@@ -104,7 +104,7 @@ func printMetricsText(renderModel *schema.MetricsRenderModel, _ *Config) error {
 }
 
 // printMetricsJSON displays metrics in JSON format
-func printMetricsJSON(renderModel *schema.MetricsRenderModel, cfg *Config) error {
+func printMetricsJSON(renderModel *schema.MetricsRenderModel, cfg *contract.Config) error {
 	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
@@ -122,7 +122,7 @@ func printMetricsJSON(renderModel *schema.MetricsRenderModel, cfg *Config) error
 }
 
 // printMetricsCSV displays metrics in CSV format
-func printMetricsCSV(renderModel *schema.MetricsRenderModel, cfg *Config) error {
+func printMetricsCSV(renderModel *schema.MetricsRenderModel, cfg *contract.Config) error {
 	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err

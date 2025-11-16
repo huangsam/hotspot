@@ -39,15 +39,15 @@ func writeCSVResults(w *csv.Writer, files []schema.FileResult, fmtFloat func(flo
 			f.Path,                          // File Path
 			fmtFloat(f.Score),               // Score
 			contract.GetPlainLabel(f.Score), // Label
-			fmt.Sprintf(intFmt, f.UniqueContributors), // Contributors
-			fmt.Sprintf(intFmt, f.Commits),            // Commits
-			fmtFloat(float64(f.SizeBytes) / 1024.0),   // Size in KB
-			fmt.Sprintf(intFmt, f.AgeDays),            // Age in Days
-			fmt.Sprintf(intFmt, f.Churn),              // Churn
-			fmtFloat(f.Gini),                          // Gini Coefficient
-			f.FirstCommit.Format(DateTimeFormat),      // First Commit Date
-			strings.Join(f.Owners, "|"),               // Owners
-			string(f.Mode),                            // Mode
+			fmt.Sprintf(intFmt, f.UniqueContributors),     // Contributors
+			fmt.Sprintf(intFmt, f.Commits),                // Commits
+			fmtFloat(float64(f.SizeBytes) / 1024.0),       // Size in KB
+			fmt.Sprintf(intFmt, f.AgeDays),                // Age in Days
+			fmt.Sprintf(intFmt, f.Churn),                  // Churn
+			fmtFloat(f.Gini),                              // Gini Coefficient
+			f.FirstCommit.Format(contract.DateTimeFormat), // First Commit Date
+			strings.Join(f.Owners, "|"),                   // Owners
+			string(f.Mode),                                // Mode
 		}
 		if err := w.Write(rec); err != nil {
 			return err

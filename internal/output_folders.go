@@ -14,7 +14,7 @@ import (
 )
 
 // PrintFolderResults outputs the analysis results, dispatching based on the output format configured.
-func PrintFolderResults(results []schema.FolderResult, cfg *Config, duration time.Duration) error {
+func PrintFolderResults(results []schema.FolderResult, cfg *contract.Config, duration time.Duration) error {
 	// helper format strings and closure for number formatting
 	numFmt := "%.*f"
 	intFmt := "%d"
@@ -42,7 +42,7 @@ func PrintFolderResults(results []schema.FolderResult, cfg *Config, duration tim
 }
 
 // printJSONResultsForFolders handles opening the file and calling the JSON writer.
-func printJSONResultsForFolders(results []schema.FolderResult, cfg *Config) error {
+func printJSONResultsForFolders(results []schema.FolderResult, cfg *contract.Config) error {
 	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
@@ -60,7 +60,7 @@ func printJSONResultsForFolders(results []schema.FolderResult, cfg *Config) erro
 }
 
 // printCSVResultsForFolders handles opening the file and calling the CSV writer.
-func printCSVResultsForFolders(results []schema.FolderResult, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
+func printCSVResultsForFolders(results []schema.FolderResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string) error {
 	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
@@ -81,7 +81,7 @@ func printCSVResultsForFolders(results []schema.FolderResult, cfg *Config, fmtFl
 
 // printFolderTable prints the results in the custom folder-centric format,
 // using the tablewriter API.
-func printFolderTable(results []schema.FolderResult, cfg *Config, fmtFloat func(float64) string, intFmt string, duration time.Duration) error {
+func printFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration) error {
 	table := tablewriter.NewWriter(os.Stdout)
 
 	// 1. Define Headers (Folder Mode - Custom)

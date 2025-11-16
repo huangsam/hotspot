@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal"
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -13,7 +14,7 @@ import (
 
 func TestRunSingleAnalysisCore_Success(t *testing.T) {
 	ctx := withSuppressHeader(context.Background())
-	mockClient := &internal.MockGitClient{}
+	mockClient := &contract.MockGitClient{}
 	mockMgr := &internal.MockCacheManager{}
 
 	// Setup mock expectations
@@ -21,7 +22,7 @@ func TestRunSingleAnalysisCore_Success(t *testing.T) {
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return([]string{"main.go", "core/agg.go"}, nil)
 	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		RepoPath:    "/test/repo",
 		StartTime:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		EndTime:     time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
@@ -44,7 +45,7 @@ func TestRunSingleAnalysisCore_Success(t *testing.T) {
 
 func TestRunSingleAnalysisCore_NoFilesFound(t *testing.T) {
 	ctx := withSuppressHeader(context.Background())
-	mockClient := &internal.MockGitClient{}
+	mockClient := &contract.MockGitClient{}
 	mockMgr := &internal.MockCacheManager{}
 
 	// Setup mock expectations - return empty file list
@@ -52,7 +53,7 @@ func TestRunSingleAnalysisCore_NoFilesFound(t *testing.T) {
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return([]string{}, nil)
 	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte(""), nil)
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		RepoPath:  "/test/repo",
 		StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
@@ -72,7 +73,7 @@ func TestRunSingleAnalysisCore_NoFilesFound(t *testing.T) {
 
 func TestRunSingleAnalysisCore_AggregationError(t *testing.T) {
 	ctx := withSuppressHeader(context.Background())
-	mockClient := &internal.MockGitClient{}
+	mockClient := &contract.MockGitClient{}
 	mockMgr := &internal.MockCacheManager{}
 
 	// Setup mock expectations - aggregation fails
@@ -80,7 +81,7 @@ func TestRunSingleAnalysisCore_AggregationError(t *testing.T) {
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return([]string{"main.go"}, nil)
 	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(nil, assert.AnError)
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		RepoPath:  "/test/repo",
 		StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
@@ -99,7 +100,7 @@ func TestRunSingleAnalysisCore_AggregationError(t *testing.T) {
 
 func TestRunCompareAnalysisForRef(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &internal.MockGitClient{}
+	mockClient := &contract.MockGitClient{}
 	mockMgr := &internal.MockCacheManager{}
 
 	ref := "main"
@@ -113,7 +114,7 @@ func TestRunCompareAnalysisForRef(t *testing.T) {
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return([]string{"main.go", "core/agg.go"}, nil) // For aggregateActivity
 	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-06-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		RepoPath:    "/test/repo",
 		Mode:        schema.HotMode,
 		Workers:     1,
@@ -134,7 +135,7 @@ func TestRunCompareAnalysisForRef(t *testing.T) {
 
 func TestRunCompareAnalysisForRef_CommitTimeError(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &internal.MockGitClient{}
+	mockClient := &contract.MockGitClient{}
 	mockMgr := &internal.MockCacheManager{}
 
 	ref := "main"
@@ -142,7 +143,7 @@ func TestRunCompareAnalysisForRef_CommitTimeError(t *testing.T) {
 	// Setup mock expectations - commit time lookup fails
 	mockClient.On("GetCommitTime", ctx, "/test/repo", ref).Return(time.Time{}, assert.AnError)
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		RepoPath: "/test/repo",
 		Lookback: 30 * 24 * time.Hour,
 	}
@@ -158,7 +159,7 @@ func TestRunCompareAnalysisForRef_CommitTimeError(t *testing.T) {
 
 func TestAnalyzeAllFilesAtRef(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &internal.MockGitClient{}
+	mockClient := &contract.MockGitClient{}
 	mockMgr := &internal.MockCacheManager{}
 
 	ref := "feature-branch"
@@ -169,7 +170,7 @@ func TestAnalyzeAllFilesAtRef(t *testing.T) {
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return([]string{"main.go", "core/agg.go", "test_main.go"}, nil) // For aggregateActivity
 	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		RepoPath:  "/test/repo",
 		StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
@@ -195,7 +196,7 @@ func TestAnalyzeAllFilesAtRef(t *testing.T) {
 
 func TestAnalyzeAllFilesAtRef_EmptyAfterFiltering(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &internal.MockGitClient{}
+	mockClient := &contract.MockGitClient{}
 	mockMgr := &internal.MockCacheManager{}
 
 	ref := "feature-branch"
@@ -204,7 +205,7 @@ func TestAnalyzeAllFilesAtRef_EmptyAfterFiltering(t *testing.T) {
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", ref).Return([]string{"test_main.go", "test_utils.go"}, nil)
 	// No GetActivityLog mock needed since all files are filtered out before aggregation
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		RepoPath:  "/test/repo",
 		StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
@@ -223,7 +224,7 @@ func TestAnalyzeAllFilesAtRef_EmptyAfterFiltering(t *testing.T) {
 
 func TestRunFollowPass(t *testing.T) {
 	ctx := withSuppressHeader(context.Background())
-	mockClient := &internal.MockGitClient{}
+	mockClient := &contract.MockGitClient{}
 
 	// Create test data
 	ranked := []schema.FileResult{
@@ -244,7 +245,7 @@ func TestRunFollowPass(t *testing.T) {
 		},
 	}
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		RepoPath:    "/test/repo",
 		StartTime:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		EndTime:     time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
@@ -271,12 +272,12 @@ func TestRunFollowPass(t *testing.T) {
 
 func TestRunFollowPass_EmptyInput(t *testing.T) {
 	ctx := withSuppressHeader(context.Background())
-	mockClient := &internal.MockGitClient{}
+	mockClient := &contract.MockGitClient{}
 
 	ranked := []schema.FileResult{}
 	output := &schema.AggregateOutput{}
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		ResultLimit: 10,
 	}
 
@@ -289,7 +290,7 @@ func TestRunFollowPass_EmptyInput(t *testing.T) {
 
 func TestGetAnalysisWindowForRef(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &internal.MockGitClient{}
+	mockClient := &contract.MockGitClient{}
 
 	ref := "v1.0.0"
 	lookback := 90 * 24 * time.Hour // 90 days
@@ -310,7 +311,7 @@ func TestGetAnalysisWindowForRef(t *testing.T) {
 
 func TestGetAnalysisWindowForRef_Error(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &internal.MockGitClient{}
+	mockClient := &contract.MockGitClient{}
 
 	ref := "nonexistent-ref"
 

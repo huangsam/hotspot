@@ -17,7 +17,7 @@ import (
 // commits, churn and contributors. It runs over the entire history if
 // cfg.StartTime is zero, or runs since cfg.StartTime otherwise.
 // It filters out files that no longer exist in a single pass.
-func aggregateActivity(ctx context.Context, cfg *internal.Config, client internal.GitClient) (*schema.AggregateOutput, error) {
+func aggregateActivity(ctx context.Context, cfg *contract.Config, client internal.GitClient) (*schema.AggregateOutput, error) {
 	// 1. Get the list of currently existing files
 	currentFiles, err := client.ListFilesAtRef(ctx, cfg.RepoPath, "HEAD")
 	if err != nil {
@@ -218,7 +218,7 @@ func aggregateForPath(path string, churn int, author string, date time.Time, com
 
 // buildFilteredFileList creates a unified list of files from activity maps
 // and filters them based on the configuration.
-func buildFilteredFileList(cfg *internal.Config, output *schema.AggregateOutput) []string {
+func buildFilteredFileList(cfg *contract.Config, output *schema.AggregateOutput) []string {
 	// 1. Estimate capacity for 'seen'. Use a good guess based on the largest map.
 	capacity := max(
 		len(output.ContribMap), max(
@@ -257,7 +257,7 @@ func buildFilteredFileList(cfg *internal.Config, output *schema.AggregateOutput)
 		}
 
 		// Apply excludes filter
-		if contract.ShouldIgnore(f, cfg.Excludes) {
+		if internal.ShouldIgnore(f, cfg.Excludes) {
 			continue
 		}
 
@@ -268,7 +268,7 @@ func buildFilteredFileList(cfg *internal.Config, output *schema.AggregateOutput)
 }
 
 // aggregateAndScoreFolders correctly aggregates file results into folders.
-func aggregateAndScoreFolders(cfg *internal.Config, fileResults []schema.FileResult) []schema.FolderResult {
+func aggregateAndScoreFolders(cfg *contract.Config, fileResults []schema.FileResult) []schema.FolderResult {
 	folderResults := make(map[string]*schema.FolderResult)
 
 	// Map to track the aggregate commit count per author per folder:

@@ -29,14 +29,14 @@ var (
 var rootCtx = context.Background()
 
 // cfg will hold the validated, final configuration.
-var cfg = &internal.Config{}
+var cfg = &contract.Config{}
 
 // input holds the raw, unvalidated configuration from all sources (file, env, flags).
 // Viper will unmarshal into this struct.
-var input = &internal.ConfigRawInput{}
+var input = &contract.ConfigRawInput{}
 
 // profile holds profiling configuration
-var profile = &internal.ProfileConfig{}
+var profile = &contract.ProfileConfig{}
 
 // cacheManager is the global persistence manager instance.
 var cacheManager internal.CacheManager
@@ -112,10 +112,10 @@ func initConfig() {
 	viper.AutomaticEnv() // Read in environment variables that match
 
 	// Set defaults in Viper
-	viper.SetDefault("limit", internal.DefaultResultLimit)
-	viper.SetDefault("workers", internal.DefaultWorkers)
+	viper.SetDefault("limit", contract.DefaultResultLimit)
+	viper.SetDefault("workers", contract.DefaultWorkers)
 	viper.SetDefault("mode", schema.HotMode)
-	viper.SetDefault("precision", internal.DefaultPrecision)
+	viper.SetDefault("precision", contract.DefaultPrecision)
 	viper.SetDefault("output", schema.TextOut)
 	viper.SetDefault("lookback", "6 months")
 	viper.SetDefault("cache-backend", schema.SQLiteBackend)
@@ -126,7 +126,7 @@ func initConfig() {
 func sharedSetup(ctx context.Context, _ *cobra.Command, args []string) error {
 	// Handle profiling flag
 	profilePrefix := viper.GetString("profile")
-	if err := internal.ProcessProfilingConfig(profile, profilePrefix); err != nil {
+	if err := contract.ProcessProfilingConfig(profile, profilePrefix); err != nil {
 		return fmt.Errorf("failed to process profiling config: %w", err)
 	}
 	if profile.Enabled {
@@ -159,7 +159,7 @@ func sharedSetup(ctx context.Context, _ *cobra.Command, args []string) error {
 	// 4. Run all validation and complex parsing.
 	// This function now populates the global 'cfg' from 'input'.
 	client := internal.NewLocalGitClient()
-	if err := internal.ProcessAndValidate(ctx, cfg, client, input); err != nil {
+	if err := contract.ProcessAndValidate(ctx, cfg, client, input); err != nil {
 		return err
 	}
 
@@ -192,7 +192,7 @@ func cacheSetup() error {
 	connStr := viper.GetString("cache-db-connect")
 
 	// Basic validation for database backends
-	if err := internal.ValidateDatabaseConnectionString(backend, connStr); err != nil {
+	if err := contract.ValidateDatabaseConnectionString(backend, connStr); err != nil {
 		return err
 	}
 
@@ -372,15 +372,15 @@ func init() {
 	rootCmd.PersistentFlags().String("end", "", "End date in ISO8601 or time ago")
 	rootCmd.PersistentFlags().String("exclude", "", "Comma-separated list of path prefixes or patterns to ignore")
 	rootCmd.PersistentFlags().StringP("filter", "f", "", "Filter targets by path prefix")
-	rootCmd.PersistentFlags().IntP("limit", "l", internal.DefaultResultLimit, "Number of results to display")
+	rootCmd.PersistentFlags().IntP("limit", "l", contract.DefaultResultLimit, "Number of results to display")
 	rootCmd.PersistentFlags().String("mode", string(schema.HotMode), "Scoring mode: hot or risk or complexity or stale")
 	rootCmd.PersistentFlags().String("output", string(schema.TextOut), "Output format: text or csv or json")
 	rootCmd.PersistentFlags().String("output-file", "", "Optional path to write output to")
 	rootCmd.PersistentFlags().Bool("owner", false, "Print per-target owner")
-	rootCmd.PersistentFlags().Int("precision", internal.DefaultPrecision, "Decimal precision for numeric columns")
+	rootCmd.PersistentFlags().Int("precision", contract.DefaultPrecision, "Decimal precision for numeric columns")
 	rootCmd.PersistentFlags().String("profile", "", "Enable profiling and write profiles to files with this prefix")
 	rootCmd.PersistentFlags().String("start", "", "Start date in ISO8601 or time ago")
-	rootCmd.PersistentFlags().Int("workers", internal.DefaultWorkers, "Number of concurrent workers")
+	rootCmd.PersistentFlags().Int("workers", contract.DefaultWorkers, "Number of concurrent workers")
 	rootCmd.PersistentFlags().Int("width", 0, "Terminal width override (0 = auto-detect)")
 	rootCmd.PersistentFlags().String("cache-backend", string(schema.SQLiteBackend), "Cache backend: sqlite or mysql or postgresql or none")
 	rootCmd.PersistentFlags().String("cache-db-connect", "", "Database connection string for mysql/postgresql (e.g., user:pass@tcp(host:port)/dbname)")

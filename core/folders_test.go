@@ -3,7 +3,7 @@ package core
 import (
 	"testing"
 
-	"github.com/huangsam/hotspot/internal"
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 )
@@ -45,7 +45,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		},
 	}
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		Mode: schema.HotMode,
 	}
 
@@ -113,7 +113,7 @@ func TestAggregateAndScoreFolders_WithPathFilter(t *testing.T) {
 		},
 	}
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		PathFilter: "src/", // Only analyze files in src/
 		Mode:       schema.HotMode,
 	}
@@ -126,7 +126,7 @@ func TestAggregateAndScoreFolders_WithPathFilter(t *testing.T) {
 
 func TestAggregateAndScoreFolders_EmptyInput(t *testing.T) {
 	fileResults := []schema.FileResult{}
-	cfg := &internal.Config{Mode: schema.HotMode}
+	cfg := &contract.Config{Mode: schema.HotMode}
 
 	result := aggregateAndScoreFolders(cfg, fileResults)
 
@@ -145,7 +145,7 @@ func TestAggregateAndScoreFolders_SingleFileInRoot(t *testing.T) {
 		},
 	}
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		Mode: schema.HotMode,
 	}
 
@@ -184,7 +184,7 @@ func TestAggregateAndScoreFolders_OwnerCalculation(t *testing.T) {
 		},
 	}
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		Mode: schema.HotMode,
 	}
 
@@ -212,7 +212,7 @@ func TestAggregateAndScoreFolders_NoOwners(t *testing.T) {
 		},
 	}
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		Mode: schema.HotMode,
 	}
 

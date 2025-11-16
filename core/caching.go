@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal"
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -15,7 +16,7 @@ import (
 const currentCacheVersion = 1
 
 // cachedAggregateActivity - Simplified and validated using DB columns
-func cachedAggregateActivity(ctx context.Context, cfg *internal.Config, client internal.GitClient, mgr internal.CacheManager) (*schema.AggregateOutput, error) {
+func cachedAggregateActivity(ctx context.Context, cfg *contract.Config, client internal.GitClient, mgr internal.CacheManager) (*schema.AggregateOutput, error) {
 	activity := mgr.GetActivityStore()
 	if activity == nil {
 		// Fallback to direct computation
@@ -55,7 +56,7 @@ func checkCacheHit(activity internal.CacheStore, key string) *schema.AggregateOu
 }
 
 // computeAndStore computes the result and stores it in cache
-func computeAndStore(ctx context.Context, cfg *internal.Config, client internal.GitClient, activity internal.CacheStore, key string) (*schema.AggregateOutput, error) {
+func computeAndStore(ctx context.Context, cfg *contract.Config, client internal.GitClient, activity internal.CacheStore, key string) (*schema.AggregateOutput, error) {
 	result, err := aggregateActivity(ctx, cfg, client)
 	if err != nil {
 		return nil, err
@@ -70,7 +71,7 @@ func computeAndStore(ctx context.Context, cfg *internal.Config, client internal.
 }
 
 // generateCacheKey creates a unique key based on analysis parameters
-func generateCacheKey(ctx context.Context, cfg *internal.Config, client internal.GitClient) string {
+func generateCacheKey(ctx context.Context, cfg *contract.Config, client internal.GitClient) string {
 	// Use canonical helpers from internal.Config to ensure consistent time granularity
 	startHour := cfg.GetAnalysisStartTime()
 	endHour := cfg.GetAnalysisEndTime()

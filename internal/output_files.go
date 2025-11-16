@@ -18,7 +18,7 @@ import (
 )
 
 // PrintFileResults outputs the analysis results in a formatted table or exports them as CSV/JSON.
-func PrintFileResults(files []schema.FileResult, cfg *Config, duration time.Duration) error {
+func PrintFileResults(files []schema.FileResult, cfg *contract.Config, duration time.Duration) error {
 	// helper format strings and closure for number formatting
 	numFmt := "%.*f"
 	intFmt := "%d"
@@ -46,7 +46,7 @@ func PrintFileResults(files []schema.FileResult, cfg *Config, duration time.Dura
 }
 
 // printJSONResults handles opening the file and calling the JSON writer.
-func printJSONResults(files []schema.FileResult, cfg *Config) error {
+func printJSONResults(files []schema.FileResult, cfg *contract.Config) error {
 	// Use the unified file selector defined in writers.go
 	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
@@ -65,7 +65,7 @@ func printJSONResults(files []schema.FileResult, cfg *Config) error {
 }
 
 // printCSVResults handles opening the file and calling the CSV writer.
-func printCSVResults(files []schema.FileResult, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
+func printCSVResults(files []schema.FileResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string) error {
 	// Use the unified file selector defined in writers.go
 	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
@@ -86,7 +86,7 @@ func printCSVResults(files []schema.FileResult, cfg *Config, fmtFloat func(float
 }
 
 // printTableResults generates and prints the human-readable table.
-func printTableResults(files []schema.FileResult, cfg *Config, fmtFloat func(float64) string, intFmt string, duration time.Duration) error {
+func printTableResults(files []schema.FileResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration) error {
 	table := tablewriter.NewWriter(os.Stdout)
 
 	// 1. Define Headers

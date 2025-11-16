@@ -3,12 +3,13 @@ package internal
 import (
 	"os"
 
+	"github.com/huangsam/hotspot/internal/contract"
 	"golang.org/x/term"
 )
 
 // GetMaxTablePathWidth calculates the maximum width for file paths in table output
 // based on terminal width and table configuration.
-func GetMaxTablePathWidth(cfg *Config) int {
+func GetMaxTablePathWidth(cfg *contract.Config) int {
 	var termWidth int
 
 	// Check for absolute width override from flag/env

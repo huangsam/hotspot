@@ -1,11 +1,11 @@
-package internal
+package contract
 
 import (
 	"testing"
 	"time"
 )
 
-// FuzzParseRelativeTime fuzzes the parseRelativeTime function with random inputs.
+// FuzzParseRelativeTime fuzzes the ParseRelativeTime function with random inputs.
 func FuzzParseRelativeTime(f *testing.F) {
 	// Add some seed inputs
 	seeds := []string{
@@ -24,7 +24,7 @@ func FuzzParseRelativeTime(f *testing.F) {
 
 	f.Fuzz(func(_ *testing.T, input string) {
 		now := time.Now()
-		_, err := parseRelativeTime(input, now)
+		_, err := ParseRelativeTime(input, now)
 		// We don't assert on the result, just that it doesn't panic
 		_ = err // ignore error, we're testing for crashes
 	})

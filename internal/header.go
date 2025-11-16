@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"path/filepath"
 	"time"
+
+	"github.com/huangsam/hotspot/internal/contract"
 )
 
 // LogAnalysisHeader prints a concise, 2-line header for each analysis phase.
-func LogAnalysisHeader(cfg *Config) {
+func LogAnalysisHeader(cfg *contract.Config) {
 	repoName := filepath.Base(cfg.RepoPath)
 	if repoName == "" || repoName == "." {
 		repoName = "current"
@@ -17,11 +19,11 @@ func LogAnalysisHeader(cfg *Config) {
 	fmt.Printf("🔎 Repo: %s (Mode: %s)\n", repoName, cfg.Mode)
 
 	// Line 2: The actual date range being analyzed
-	fmt.Printf("📅 Range: %s → %s\n", cfg.StartTime.Format(DateTimeFormat), cfg.EndTime.Format(DateTimeFormat))
+	fmt.Printf("📅 Range: %s → %s\n", cfg.StartTime.Format(contract.DateTimeFormat), cfg.EndTime.Format(contract.DateTimeFormat))
 }
 
 // LogTimeseriesHeader prints a header for timeseries analysis.
-func LogTimeseriesHeader(cfg *Config, intervalDuration time.Duration, numPoints int) {
+func LogTimeseriesHeader(cfg *contract.Config, intervalDuration time.Duration, numPoints int) {
 	repoName := filepath.Base(cfg.RepoPath)
 	if repoName == "" || repoName == "." {
 		repoName = "current"
@@ -31,7 +33,7 @@ func LogTimeseriesHeader(cfg *Config, intervalDuration time.Duration, numPoints 
 }
 
 // LogCompareHeader prints a header for comparison analysis.
-func LogCompareHeader(cfg *Config) {
+func LogCompareHeader(cfg *contract.Config) {
 	repoName := filepath.Base(cfg.RepoPath)
 	if repoName == "" || repoName == "." {
 		repoName = "current"

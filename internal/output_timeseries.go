@@ -13,7 +13,7 @@ import (
 )
 
 // PrintTimeseriesResults outputs the timeseries results, dispatching based on the output format configured.
-func PrintTimeseriesResults(result schema.TimeseriesResult, cfg *Config, duration time.Duration) error {
+func PrintTimeseriesResults(result schema.TimeseriesResult, cfg *contract.Config, duration time.Duration) error {
 	// Helper format strings and closure for number formatting
 	numFmt := "%.*f"
 	fmtFloat := func(v float64) string {
@@ -40,7 +40,7 @@ func PrintTimeseriesResults(result schema.TimeseriesResult, cfg *Config, duratio
 }
 
 // printJSONResultsForTimeseries handles opening the file and calling the JSON writer.
-func printJSONResultsForTimeseries(result schema.TimeseriesResult, cfg *Config) error {
+func printJSONResultsForTimeseries(result schema.TimeseriesResult, cfg *contract.Config) error {
 	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func printJSONResultsForTimeseries(result schema.TimeseriesResult, cfg *Config) 
 }
 
 // printCSVResultsForTimeseries handles opening the file and calling the CSV writer.
-func printCSVResultsForTimeseries(result schema.TimeseriesResult, cfg *Config, fmtFloat func(float64) string) error {
+func printCSVResultsForTimeseries(result schema.TimeseriesResult, cfg *contract.Config, fmtFloat func(float64) string) error {
 	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
@@ -78,7 +78,7 @@ func printCSVResultsForTimeseries(result schema.TimeseriesResult, cfg *Config, f
 }
 
 // printTimeseriesTable prints the timeseries in a four-column table.
-func printTimeseriesTable(result schema.TimeseriesResult, cfg *Config, fmtFloat func(float64) string, duration time.Duration) error {
+func printTimeseriesTable(result schema.TimeseriesResult, cfg *contract.Config, fmtFloat func(float64) string, duration time.Duration) error {
 	// Use os.Stdout, consistent with existing table printing
 	table := tablewriter.NewWriter(os.Stdout)
 
