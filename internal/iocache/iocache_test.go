@@ -751,7 +751,8 @@ func TestValidateTableNameRegexError(t *testing.T) {
 		t.Errorf("Long valid table name should not error: %v", err)
 	}
 
-	// Unicode characters
+	// Unicode character '表' (meaning 'table') is intentionally used here to test that
+	// table names with Unicode are rejected. This is not a typo.
 	err = validateTableName("test_表")
 	if err == nil {
 		t.Error("Unicode characters should be rejected")
