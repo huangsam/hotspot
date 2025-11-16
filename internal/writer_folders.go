@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -24,7 +25,7 @@ func writeJSONResultsForFolders(w io.Writer, results []schema.FolderResult) erro
 	for i, r := range results {
 		output[i] = JSONFolderResult{
 			Rank:         i + 1,
-			Label:        getPlainLabel(r.Score),
+			Label:        contract.GetPlainLabel(r.Score),
 			FolderResult: r,
 		}
 	}
@@ -66,7 +67,7 @@ func writeCSVResultsForFolders(w *csv.Writer, results []schema.FolderResult, fmt
 			strconv.Itoa(i + 1),             // Rank
 			r.Path,                          // Folder Path
 			fmtFloat(r.Score),               // Score
-			getPlainLabel(r.Score),          // Label
+			contract.GetPlainLabel(r.Score),          // Label
 			fmt.Sprintf(intFmt, r.Commits),  // Total Commits
 			fmt.Sprintf(intFmt, r.Churn),    // Total Churn
 			fmt.Sprintf(intFmt, r.TotalLOC), // Total LOC

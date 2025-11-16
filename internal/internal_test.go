@@ -54,13 +54,13 @@ func TestGetPlainLabel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, getPlainLabel(tt.input))
+			assert.Equal(t, tt.expected, contract.GetPlainLabel(tt.input))
 		})
 	}
 }
 
 func TestSelectOutputFile_Fallback(t *testing.T) {
-	file, err := selectOutputFile("")
+	file, err := contract.SelectOutputFile("")
 	require.NoError(t, err)
 	assert.Equal(t, os.Stdout, file)
 }

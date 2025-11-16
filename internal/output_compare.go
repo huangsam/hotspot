@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
@@ -43,7 +44,7 @@ func PrintComparisonResults(comparisonResult schema.ComparisonResult, cfg *Confi
 
 // printJSONResultsForComparison handles opening the file and calling the JSON writer.
 func printJSONResultsForComparison(comparisonResult schema.ComparisonResult, cfg *Config) error {
-	file, err := selectOutputFile(cfg.OutputFile)
+	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
 	}
@@ -61,7 +62,7 @@ func printJSONResultsForComparison(comparisonResult schema.ComparisonResult, cfg
 
 // printCSVResultsForComparison handles opening the file and calling the CSV writer.
 func printCSVResultsForComparison(comparisonResult schema.ComparisonResult, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
-	file, err := selectOutputFile(cfg.OutputFile)
+	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
 	}

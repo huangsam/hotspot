@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -104,7 +105,7 @@ func printMetricsText(renderModel *schema.MetricsRenderModel, _ *Config) error {
 
 // printMetricsJSON displays metrics in JSON format
 func printMetricsJSON(renderModel *schema.MetricsRenderModel, cfg *Config) error {
-	file, err := selectOutputFile(cfg.OutputFile)
+	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
 	}
@@ -122,7 +123,7 @@ func printMetricsJSON(renderModel *schema.MetricsRenderModel, cfg *Config) error
 
 // printMetricsCSV displays metrics in CSV format
 func printMetricsCSV(renderModel *schema.MetricsRenderModel, cfg *Config) error {
-	file, err := selectOutputFile(cfg.OutputFile)
+	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
 	}

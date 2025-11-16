@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 
 	"github.com/olekukonko/tablewriter"
@@ -47,7 +48,7 @@ func PrintFileResults(files []schema.FileResult, cfg *Config, duration time.Dura
 // printJSONResults handles opening the file and calling the JSON writer.
 func printJSONResults(files []schema.FileResult, cfg *Config) error {
 	// Use the unified file selector defined in writers.go
-	file, err := selectOutputFile(cfg.OutputFile)
+	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
 	}
@@ -66,7 +67,7 @@ func printJSONResults(files []schema.FileResult, cfg *Config) error {
 // printCSVResults handles opening the file and calling the CSV writer.
 func printCSVResults(files []schema.FileResult, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
 	// Use the unified file selector defined in writers.go
-	file, err := selectOutputFile(cfg.OutputFile)
+	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
 	}
@@ -114,7 +115,7 @@ func printTableResults(files []schema.FileResult, cfg *Config, fmtFloat func(flo
 			strconv.Itoa(i + 1),                             // Rank
 			truncatePath(f.Path, GetMaxTablePathWidth(cfg)), // File
 			fmtFloat(f.Score),                               // Score
-			getColorLabel(f.Score),                          // Label
+			contract.GetColorLabel(f.Score),                          // Label
 		}
 		if cfg.Detail {
 			row = append(

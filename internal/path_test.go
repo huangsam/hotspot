@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -144,7 +145,7 @@ func TestGetPlainTextLabel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.want, func(t *testing.T) {
-			got := getPlainLabel(tt.score)
+			got := contract.GetPlainLabel(tt.score)
 			assert.Equal(t, tt.want, got)
 		})
 	}

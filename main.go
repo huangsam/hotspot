@@ -12,6 +12,7 @@ import (
 
 	"github.com/huangsam/hotspot/core"
 	"github.com/huangsam/hotspot/internal"
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -220,7 +221,7 @@ var filesCmd = &cobra.Command{
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := core.ExecuteHotspotFiles(rootCtx, cfg, cacheManager); err != nil {
-			internal.LogFatal("Cannot run files analysis", err)
+			contract.LogFatal("Cannot run files analysis", err)
 		}
 	},
 }
@@ -234,7 +235,7 @@ var foldersCmd = &cobra.Command{
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := core.ExecuteHotspotFolders(rootCtx, cfg, cacheManager); err != nil {
-			internal.LogFatal("Cannot run folders analysis", err)
+			contract.LogFatal("Cannot run folders analysis", err)
 		}
 	},
 }
@@ -249,10 +250,10 @@ var compareCmd = &cobra.Command{
 // checkCompareAndExecute validates compare mode and executes the given function.
 func checkCompareAndExecute(executeFunc core.ExecutorFunc) {
 	if !cfg.CompareMode {
-		internal.LogFatal("Cannot run compare analysis", errors.New("base and target refs must be provided"))
+		contract.LogFatal("Cannot run compare analysis", errors.New("base and target refs must be provided"))
 	}
 	if err := executeFunc(rootCtx, cfg, cacheManager); err != nil {
-		internal.LogFatal("Cannot run compare analysis", err)
+		contract.LogFatal("Cannot run compare analysis", err)
 	}
 }
 
@@ -301,7 +302,7 @@ var metricsCmd = &cobra.Command{
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := core.ExecuteHotspotMetrics(rootCtx, cfg, cacheManager); err != nil {
-			internal.LogFatal("Cannot display metrics", err)
+			contract.LogFatal("Cannot display metrics", err)
 		}
 	},
 }
@@ -315,7 +316,7 @@ var timeseriesCmd = &cobra.Command{
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := core.ExecuteHotspotTimeseries(rootCtx, cfg, cacheManager); err != nil {
-			internal.LogFatal("Cannot run timeseries analysis", err)
+			contract.LogFatal("Cannot run timeseries analysis", err)
 		}
 	},
 }
@@ -338,8 +339,8 @@ var cacheClearCmd = &cobra.Command{
 	Long:    `The clear subcommand removes all cached data for the current backend configuration.`,
 	PreRunE: cacheSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := internal.ClearCache(cfg.CacheBackend, internal.GetDBFilePath(), cfg.CacheDBConnect); err != nil {
-			internal.LogFatal("Failed to clear cache", err)
+		if err := internal.ClearCache(cfg.CacheBackend, contract.GetDBFilePath(), cfg.CacheDBConnect); err != nil {
+			contract.LogFatal("Failed to clear cache", err)
 		}
 		fmt.Println("Cache cleared successfully.")
 	},
@@ -384,14 +385,14 @@ func init() {
 	rootCmd.PersistentFlags().String("cache-backend", string(schema.SQLiteBackend), "Cache backend: sqlite or mysql or postgresql or none")
 	rootCmd.PersistentFlags().String("cache-db-connect", "", "Database connection string for mysql/postgresql (e.g., user:pass@tcp(host:port)/dbname)")
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
-		internal.LogFatal("Error binding root flags", err)
+		contract.LogFatal("Error binding root flags", err)
 	}
 
 	// Bind all flags of filesCmd to Viper
 	filesCmd.Flags().Bool("explain", false, "Print per-file component score breakdown")
 	filesCmd.Flags().Bool("follow", false, "Re-run per-file analysis with --follow")
 	if err := viper.BindPFlags(filesCmd.Flags()); err != nil {
-		internal.LogFatal("Error binding files flags", err)
+		contract.LogFatal("Error binding files flags", err)
 	}
 
 	// Bind all persistent flags of compareCmd to Viper
@@ -399,7 +400,7 @@ func init() {
 	compareCmd.PersistentFlags().String("target-ref", "", "Target Git reference for the AFTER state (required)")
 	compareCmd.PersistentFlags().String("lookback", "6 months", "Time duration to look back from Base/Target ref commit time")
 	if err := viper.BindPFlags(compareCmd.PersistentFlags()); err != nil {
-		internal.LogFatal("Error binding compare flags", err)
+		contract.LogFatal("Error binding compare flags", err)
 	}
 
 	// Bind all flags of timeseriesCmd to Viper
@@ -407,7 +408,7 @@ func init() {
 	timeseriesCmd.Flags().String("interval", "3 months", "Total time interval")
 	timeseriesCmd.Flags().Int("points", 3, "Number of lookback points")
 	if err := viper.BindPFlags(timeseriesCmd.Flags()); err != nil {
-		internal.LogFatal("Error binding timeseries flags", err)
+		contract.LogFatal("Error binding timeseries flags", err)
 	}
 }
 
@@ -421,11 +422,11 @@ func main() {
 		internal.CloseCaching()
 
 		if err := stopProfiling(); err != nil {
-			internal.LogFatal("Error stopping profiling", err)
+			contract.LogFatal("Error stopping profiling", err)
 		}
 	}()
 
 	if err := rootCmd.Execute(); err != nil {
-		internal.LogFatal("Error starting CLI", err)
+		contract.LogFatal("Error starting CLI", err)
 	}
 }

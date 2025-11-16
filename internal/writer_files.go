@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -37,7 +38,7 @@ func writeCSVResults(w *csv.Writer, files []schema.FileResult, fmtFloat func(flo
 			strconv.Itoa(i + 1),    // Rank
 			f.Path,                 // File Path
 			fmtFloat(f.Score),      // Score
-			getPlainLabel(f.Score), // Label
+			contract.GetPlainLabel(f.Score), // Label
 			fmt.Sprintf(intFmt, f.UniqueContributors), // Contributors
 			fmt.Sprintf(intFmt, f.Commits),            // Commits
 			fmtFloat(float64(f.SizeBytes) / 1024.0),   // Size in KB
@@ -68,7 +69,7 @@ func writeJSONResults(w io.Writer, files []schema.FileResult) error {
 	for i, f := range files {
 		output[i] = JSONFileResult{
 			Rank:       i + 1,
-			Label:      getPlainLabel(f.Score),
+			Label:      contract.GetPlainLabel(f.Score),
 			FileResult: f,
 		}
 	}

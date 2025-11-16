@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
@@ -42,7 +43,7 @@ func PrintFolderResults(results []schema.FolderResult, cfg *Config, duration tim
 
 // printJSONResultsForFolders handles opening the file and calling the JSON writer.
 func printJSONResultsForFolders(results []schema.FolderResult, cfg *Config) error {
-	file, err := selectOutputFile(cfg.OutputFile)
+	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
 	}
@@ -60,7 +61,7 @@ func printJSONResultsForFolders(results []schema.FolderResult, cfg *Config) erro
 
 // printCSVResultsForFolders handles opening the file and calling the CSV writer.
 func printCSVResultsForFolders(results []schema.FolderResult, cfg *Config, fmtFloat func(float64) string, intFmt string) error {
-	file, err := selectOutputFile(cfg.OutputFile)
+	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
 	}
@@ -106,7 +107,7 @@ func printFolderTable(results []schema.FolderResult, cfg *Config, fmtFloat func(
 			strconv.Itoa(i + 1),                             // Rank
 			truncatePath(r.Path, GetMaxTablePathWidth(cfg)), // Folder Path
 			fmtFloat(r.Score),                               // Score
-			getColorLabel(r.Score),                          // Label
+			contract.GetColorLabel(r.Score),                          // Label
 		}
 		if cfg.Detail {
 			row = append(row,

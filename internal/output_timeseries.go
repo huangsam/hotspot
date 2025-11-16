@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
@@ -40,7 +41,7 @@ func PrintTimeseriesResults(result schema.TimeseriesResult, cfg *Config, duratio
 
 // printJSONResultsForTimeseries handles opening the file and calling the JSON writer.
 func printJSONResultsForTimeseries(result schema.TimeseriesResult, cfg *Config) error {
-	file, err := selectOutputFile(cfg.OutputFile)
+	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
 	}
@@ -58,7 +59,7 @@ func printJSONResultsForTimeseries(result schema.TimeseriesResult, cfg *Config) 
 
 // printCSVResultsForTimeseries handles opening the file and calling the CSV writer.
 func printCSVResultsForTimeseries(result schema.TimeseriesResult, cfg *Config, fmtFloat func(float64) string) error {
-	file, err := selectOutputFile(cfg.OutputFile)
+	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
 	}

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal"
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -121,7 +122,7 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *internal.Config, mgr int
 	client := internal.NewLocalGitClient()
 
 	// Normalize and validate the path relative to repo root
-	normalizedPath, err := internal.NormalizeTimeseriesPath(cfg.RepoPath, path)
+	normalizedPath, err := contract.NormalizeTimeseriesPath(cfg.RepoPath, path)
 	if err != nil {
 		return fmt.Errorf("invalid path: %w", err)
 	}
