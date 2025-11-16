@@ -10,7 +10,6 @@ import (
 
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/internal/contract"
-	"github.com/huangsam/hotspot/internal/gitclient"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 )
@@ -23,7 +22,7 @@ const (
 )
 
 // runSingleAnalysisCore performs the common Aggregation, Filtering, and Analysis steps.
-func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client gitclient.GitClient, mgr iocache.CacheManager) (*schema.SingleAnalysisOutput, error) {
+func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client contract.GitClient, mgr iocache.CacheManager) (*schema.SingleAnalysisOutput, error) {
 	if !shouldSuppressHeader(ctx) {
 		internal.LogAnalysisHeader(cfg)
 	}
@@ -51,7 +50,7 @@ func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client git
 
 // runCompareAnalysisForRef runs the file analysis for a specific Git reference in compare mode.
 // Headers are always suppressed in compare mode.
-func runCompareAnalysisForRef(ctx context.Context, cfg *contract.Config, client gitclient.GitClient, ref string, mgr iocache.CacheManager) (*schema.CompareAnalysisOutput, error) {
+func runCompareAnalysisForRef(ctx context.Context, cfg *contract.Config, client contract.GitClient, ref string, mgr iocache.CacheManager) (*schema.CompareAnalysisOutput, error) {
 	// 1. Resolve the time window for the reference
 	baseStartTime, baseEndTime, err := getAnalysisWindowForRef(ctx, client, cfg.RepoPath, ref, cfg.Lookback)
 	if err != nil {
@@ -78,7 +77,7 @@ func runCompareAnalysisForRef(ctx context.Context, cfg *contract.Config, client 
 
 // analyzeAllFilesAtRef performs file analysis for all files that exist at a specific Git reference.
 // Headers are always suppressed in compare mode.
-func analyzeAllFilesAtRef(ctx context.Context, cfg *contract.Config, client gitclient.GitClient, ref string, mgr iocache.CacheManager) ([]schema.FileResult, error) {
+func analyzeAllFilesAtRef(ctx context.Context, cfg *contract.Config, client contract.GitClient, ref string, mgr iocache.CacheManager) ([]schema.FileResult, error) {
 	// --- 1. Get all files at the reference ---
 	files, err := client.ListFilesAtRef(ctx, cfg.RepoPath, ref)
 	if err != nil {
@@ -121,7 +120,7 @@ func analyzeAllFilesAtRef(ctx context.Context, cfg *contract.Config, client gitc
 
 // runFollowPass re-analyzes the top N ranked files using 'git --follow'
 // to account for renames, and then returns a new, re-ranked list.
-func runFollowPass(ctx context.Context, cfg *contract.Config, client gitclient.GitClient, ranked []schema.FileResult, output *schema.AggregateOutput) []schema.FileResult {
+func runFollowPass(ctx context.Context, cfg *contract.Config, client contract.GitClient, ranked []schema.FileResult, output *schema.AggregateOutput) []schema.FileResult {
 	// Determine the number of files to re-analyze
 	n := min(cfg.ResultLimit, len(ranked))
 	if n == 0 {
@@ -153,7 +152,7 @@ func runFollowPass(ctx context.Context, cfg *contract.Config, client gitclient.G
 // analyzeRepo processes all files in parallel using a worker pool.
 // It spawns cfg.Workers number of goroutines to analyze files concurrently
 // and aggregates their results into a single slice of schema.FileMetrics.
-func analyzeRepo(ctx context.Context, cfg *contract.Config, client gitclient.GitClient, output *schema.AggregateOutput, files []string) []schema.FileResult {
+func analyzeRepo(ctx context.Context, cfg *contract.Config, client contract.GitClient, output *schema.AggregateOutput, files []string) []schema.FileResult {
 	// Initialize channels based on the final number of files to be processed.
 	fileCh := make(chan string, len(files))
 	fileResultCh := make(chan schema.FileResult, len(files))
@@ -195,7 +194,7 @@ func analyzeRepo(ctx context.Context, cfg *contract.Config, client gitclient.Git
 // derived metrics like churn and the Gini coefficient of author contributions.
 // The analysis is constrained by the time range in cfg if specified.
 // Git follow behavior is controlled by the context.
-func analyzeFileCommon(ctx context.Context, cfg *contract.Config, client gitclient.GitClient, path string, output *schema.AggregateOutput) schema.FileResult {
+func analyzeFileCommon(ctx context.Context, cfg *contract.Config, client contract.GitClient, path string, output *schema.AggregateOutput) schema.FileResult {
 	// 1. Initialize the builder
 	builder := NewFileMetricsBuilder(ctx, cfg, client, path, output)
 
@@ -214,7 +213,7 @@ func analyzeFileCommon(ctx context.Context, cfg *contract.Config, client gitclie
 
 // getAnalysisWindowForRef queries Git for the exact commit time of the given reference
 // and sets the StartTime by looking back a fixed duration from that commit time.
-func getAnalysisWindowForRef(ctx context.Context, client gitclient.GitClient, repoPath, ref string, lookback time.Duration) (startTime time.Time, endTime time.Time, err error) {
+func getAnalysisWindowForRef(ctx context.Context, client contract.GitClient, repoPath, ref string, lookback time.Duration) (startTime time.Time, endTime time.Time, err error) {
 	// 1. Find the exact timestamp of the reference (which will be the EndTime)
 	// The GitClient implementation now handles running the command and parsing the output.
 	endTime, err = client.GetCommitTime(ctx, repoPath, ref)
@@ -233,7 +232,7 @@ func getAnalysisWindowForRef(ctx context.Context, client gitclient.GitClient, re
 func runTimeseriesAnalysis(
 	ctx context.Context,
 	cfg *contract.Config,
-	client gitclient.GitClient,
+	client contract.GitClient,
 	normalizedPath string,
 	isFolder bool,
 	now time.Time,
@@ -311,7 +310,7 @@ func runTimeseriesAnalysis(
 func analyzeTimeseriesPoint(
 	ctx context.Context,
 	cfg *contract.Config,
-	client gitclient.GitClient,
+	client contract.GitClient,
 	path string,
 	isFolder bool,
 	mgr iocache.CacheManager,

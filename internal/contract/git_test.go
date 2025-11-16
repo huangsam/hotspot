@@ -1,4 +1,4 @@
-package gitclient
+package contract
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -24,7 +23,7 @@ func skipIfGitNotAvailable(t *testing.T) {
 // expected values when its Run method is called.
 func TestMockGitClient_Run(t *testing.T) {
 	// 1. Setup the Mock
-	mockClient := new(contract.MockGitClient)
+	mockClient := new(MockGitClient)
 
 	// Define the expected input arguments for the mock's 'Run' method.
 	const expectedRepoPath = "/path/to/repo"

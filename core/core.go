@@ -11,7 +11,6 @@ import (
 
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/internal/contract"
-	"github.com/huangsam/hotspot/internal/gitclient"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/internal/outwriter"
 	"github.com/huangsam/hotspot/schema"
@@ -24,7 +23,7 @@ type ExecutorFunc func(ctx context.Context, cfg *contract.Config, mgr iocache.Ca
 // It serves as the main entry point for the 'files' mode.
 func ExecuteHotspotFiles(ctx context.Context, cfg *contract.Config, mgr iocache.CacheManager) error {
 	start := time.Now()
-	client := gitclient.NewLocalGitClient()
+	client := contract.NewLocalGitClient()
 	output, err := runSingleAnalysisCore(ctx, cfg, client, mgr)
 	if err != nil {
 		return err
@@ -43,7 +42,7 @@ func ExecuteHotspotFiles(ctx context.Context, cfg *contract.Config, mgr iocache.
 // It serves as the main entry point for the 'folders' mode.
 func ExecuteHotspotFolders(ctx context.Context, cfg *contract.Config, mgr iocache.CacheManager) error {
 	start := time.Now()
-	client := gitclient.NewLocalGitClient()
+	client := contract.NewLocalGitClient()
 	output, err := runSingleAnalysisCore(ctx, cfg, client, mgr)
 	if err != nil {
 		return err
@@ -58,7 +57,7 @@ func ExecuteHotspotFolders(ctx context.Context, cfg *contract.Config, mgr iocach
 // based on Git references and computes the delta results.
 func ExecuteHotspotCompare(ctx context.Context, cfg *contract.Config, mgr iocache.CacheManager) error {
 	start := time.Now()
-	client := gitclient.NewLocalGitClient()
+	client := contract.NewLocalGitClient()
 
 	// Print single header for the comparison
 	internal.LogCompareHeader(cfg)
@@ -82,7 +81,7 @@ func ExecuteHotspotCompare(ctx context.Context, cfg *contract.Config, mgr iocach
 // before performing the comparison.
 func ExecuteHotspotCompareFolders(ctx context.Context, cfg *contract.Config, mgr iocache.CacheManager) error {
 	start := time.Now()
-	client := gitclient.NewLocalGitClient()
+	client := contract.NewLocalGitClient()
 
 	// Print single header for the comparison
 	internal.LogCompareHeader(cfg)
@@ -122,7 +121,7 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *contract.Config, mgr ioc
 	}
 
 	now := time.Now()
-	client := gitclient.NewLocalGitClient()
+	client := contract.NewLocalGitClient()
 
 	// Normalize and validate the path relative to repo root
 	normalizedPath, err := contract.NormalizeTimeseriesPath(cfg.RepoPath, path)
