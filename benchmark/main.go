@@ -23,13 +23,12 @@ import (
 	"time"
 )
 
-// BenchmarkResult holds the result of a benchmark run (no-cache average, cold run and average of warm runs).
+// BenchmarkResult holds the result of a benchmark run (cold average and warm average).
 type BenchmarkResult struct {
-	Repository  string
-	Command     string
-	NoCacheTime string
-	ColdTime    string
-	WarmTime    string
+	Repository string
+	Command    string
+	ColdTime   string
+	WarmTime   string
 }
 
 // BenchmarkConfig holds configuration for the benchmark run.
@@ -158,46 +157,33 @@ func runBenchmarkSuite(config BenchmarkConfig, repo, repoPath, command, descript
 	fmt.Printf("Running %s on %s\n", description, repo)
 
 	// Helper to run a benchmark phase
-	runPhase := func(cacheBackend string, numRuns int, phaseName string) (coldTime float64, avgTime string) {
+	runPhase := func(cacheBackend string, numRuns int, phaseName string) string {
 		fmt.Printf("  %s phase (%d runs)\n", phaseName, numRuns)
-		cold, times := runBenchmark(config, repoPath, command, extraArgs, cacheBackend, numRuns)
-		if len(times) == 0 {
-			avgTime = "TIMEOUT"
-		} else {
-			var sum float64
-			for _, t := range times {
-				sum += t
-			}
-			avg := sum / float64(len(times))
-			avgTime = fmt.Sprintf("%.3fs", avg)
+		avgTime := runBenchmark(config, repoPath, command, extraArgs, cacheBackend, numRuns)
+		if avgTime == 0 {
+			return "TIMEOUT"
 		}
-		return cold, avgTime
+		return fmt.Sprintf("%.3fs", avgTime)
 	}
 
 	// Phase 1: No-cache runs
-	_, noCacheAvg := runPhase("none", config.NoCacheRuns, "No-cache")
+	noCacheAvg := runPhase("none", config.NoCacheRuns, "Cold")
 
 	// Phase 2: Cache runs
-	coldTime, warmAvg := runPhase("sqlite", config.CacheRuns, "Cache")
+	warmAvg := runPhase("sqlite", config.CacheRuns, "Cache")
 
-	coldTimeStr := "TIMEOUT"
-	if coldTime > 0 {
-		coldTimeStr = fmt.Sprintf("%.3fs", coldTime)
-	}
-
-	fmt.Printf("  No-cache average: %s, Cold time: %s, Warm average: %s\n", noCacheAvg, coldTimeStr, warmAvg)
+	fmt.Printf("  Cold average: %s, Warm average: %s\n", noCacheAvg, warmAvg)
 
 	return BenchmarkResult{
-		Repository:  repo,
-		Command:     command,
-		NoCacheTime: noCacheAvg,
-		ColdTime:    coldTimeStr,
-		WarmTime:    warmAvg,
+		Repository: repo,
+		Command:    command,
+		ColdTime:   noCacheAvg,
+		WarmTime:   warmAvg,
 	}
 }
 
-// runBenchmark executes a hotspot command multiple times with specified cache backend and returns cold time and warm times
-func runBenchmark(config BenchmarkConfig, repoPath, command, extraArgs, cacheBackend string, numRuns int) (coldTime float64, warmTimes []float64) {
+// runBenchmark executes a hotspot command multiple times with specified cache backend and returns the average time of successful runs
+func runBenchmark(config BenchmarkConfig, repoPath, command, extraArgs, cacheBackend string, numRuns int) float64 {
 	// Prepare command arguments
 	args := []string{command, "--cache-backend", cacheBackend}
 	if extraArgs != "" {
@@ -230,11 +216,14 @@ func runBenchmark(config BenchmarkConfig, repoPath, command, extraArgs, cacheBac
 		}
 	}
 
-	if len(times) > 0 {
-		coldTime = times[0]
-		warmTimes = times[1:]
+	if len(times) == 0 {
+		return 0
 	}
-	return
+	var sum float64
+	for _, t := range times {
+		sum += t
+	}
+	return sum / float64(len(times))
 }
 
 func parseArgs(argsStr string) []string {
@@ -298,13 +287,13 @@ func saveResults(results []BenchmarkResult) error {
 	defer writer.Flush()
 
 	// Write header
-	if err := writer.Write([]string{"repo", "cmd", "no_cache_avg", "cold_time", "warm_avg"}); err != nil {
+	if err := writer.Write([]string{"repo", "cmd", "cold_time", "warm_avg"}); err != nil {
 		return fmt.Errorf("failed to write CSV header: %w", err)
 	}
 
 	// Write results
 	for _, result := range results {
-		if err := writer.Write([]string{result.Repository, result.Command, result.NoCacheTime, result.ColdTime, result.WarmTime}); err != nil {
+		if err := writer.Write([]string{result.Repository, result.Command, result.ColdTime, result.WarmTime}); err != nil {
 			return fmt.Errorf("failed to write CSV record: %w", err)
 		}
 	}
@@ -329,7 +318,7 @@ func printCommandSummary(results []BenchmarkResult, command, title string) {
 	fmt.Printf("%s\n", title)
 	for _, result := range results {
 		if result.Command == command {
-			fmt.Printf("  %-12s: No-cache: %s, Cold: %s, Warm: %s\n", result.Repository, result.NoCacheTime, result.ColdTime, result.WarmTime)
+			fmt.Printf("  %-12s: Cold: %s, Warm: %s\n", result.Repository, result.ColdTime, result.WarmTime)
 		}
 	}
 }
