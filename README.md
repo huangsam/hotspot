@@ -154,53 +154,41 @@ This allows you to manage settings without long command-line strings. Flags alwa
 ### Daily & Sprint Workflows
 
 ```bash
-# 1. Identify active subsystems for daily standup/priority setting
+# Identify active subsystems for daily standup
 hotspot folders --mode hot --start "2 weeks ago"
 
-# 2. Drill down to the specific active files within a subsystem
+# Drill down to active files in a subsystem
 hotspot files --mode hot ./path/from/folder/hot --start "2 weeks ago"
-
-# 3. Immediate Refactoring Targets (Files with high recent complexity)
-hotspot files --mode complexity --start "3 months ago" ./path/from/file/hot
 ```
 
 ### Strategic Risk & Debt Management
 
 ```bash
-# 1. Bus Factor/Knowledge Risk Audit (Which subsystems lack owners?)
+# Bus Factor Audit (subsystems with few owners)
 hotspot folders --mode risk --start "1 year ago"
 
-# 2. Maintenance Debt Audit (Which modules are old, large, and neglected?)
+# Maintenance Debt Audit (old, neglected modules)
 hotspot folders --mode stale --start "5 years ago" --exclude "test/,vendor/"
-
-# 3. Structural Bottleneck Audit (Identify the largest, most-churned, core subsystems)
-hotspot folders --mode complexity --start "18 months ago"
 ```
 
 ### Change & Release Auditing
 
 ```bash
-# 1. Measure Release Risk (Did complexity increase in core folders between releases?)
+# Measure release risk changes
 hotspot compare folders --mode complexity --base-ref v1.0.0 --target-ref HEAD
 
-# 2. Audit File-Level Risk Change (Identify individual files where risk score worsened)
+# Audit file-level risk changes
 hotspot compare files --mode risk --base-ref main --target-ref feature/new-module
-
-# 3. Track Activity Shift (Which subsystems became 'hot' or 'stale' after the merge?)
-hotspot compare folders --mode hot --base-ref v0.15.0 --target-ref v0.16.0
 ```
 
 ### Trend Analysis & Historical Tracking
 
 ```bash
-# 1. Monitor Critical File Evolution (Track how a core file's complexity changes)
+# Track file complexity over time
 hotspot timeseries --path src/main/java/App.java --mode complexity --interval "1 month" --points 6
 
-# 2. Identify When Risk Started (Find when a file became a maintenance burden)
+# Identify when risk started increasing
 hotspot timeseries --path lib/legacy.js --mode stale --interval "3 months" --points 8
-
-# 3. Sprint Velocity Impact (See how active development affects file stability)
-hotspot timeseries --path pkg/api/v1.go --mode hot --interval "14 days" --points 10
 ```
 
 ## Performance
