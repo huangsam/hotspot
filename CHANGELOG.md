@@ -12,12 +12,14 @@
 
 - **Analysis Footer**: Make analysis footer more compact
 - **Benchmark Script**: Simplify benchmark report generation
-- **Documentation**: Update README with new findings
+- **Benchmark Timings**: Fix timing calculations in benchmark logic for accuracy
+- **Documentation**: Update README with new findings and make use cases section more focused
 
 ### Development
 
 - **Package Refactor**: Restructure core and internal packages for better organization
-- **Test Restoration**: Restore missing tests from recent refactor
+- **Test Coverage**: Significantly improve test coverage for iocache and outwriter
+- **Output Refactor**: Reduce duplication in outwriter package for better maintainability
 
 ## v1.4.0
 
