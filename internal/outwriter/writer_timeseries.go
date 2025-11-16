@@ -2,7 +2,6 @@ package outwriter
 
 import (
 	"encoding/csv"
-	"encoding/json"
 	"io"
 	"strings"
 
@@ -12,9 +11,7 @@ import (
 
 // writeJSONResultsForTimeseries marshals the schema.TimeseriesResult to JSON and writes it.
 func writeJSONResultsForTimeseries(w io.Writer, result schema.TimeseriesResult) error {
-	encoder := json.NewEncoder(w)
-	encoder.SetIndent("", "  ")
-	return encoder.Encode(result)
+	return writeJSON(w, result)
 }
 
 // writeCSVResultsForTimeseries writes the schema.TimeseriesResult data to a CSV writer.

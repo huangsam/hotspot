@@ -3,6 +3,7 @@ package outwriter
 import (
 	"encoding/csv"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"time"
@@ -16,12 +17,8 @@ import (
 
 // PrintComparisonResults outputs the analysis results, dispatching based on the output format configured.
 func PrintComparisonResults(comparisonResult schema.ComparisonResult, cfg *contract.Config, duration time.Duration) error {
-	// Helper format strings and closure for number formatting
-	numFmt := "%.*f"
-	intFmt := "%d"
-	fmtFloat := func(v float64) string {
-		return fmt.Sprintf(numFmt, cfg.Precision, v)
-	}
+	// Create formatters using helper
+	fmtFloat, intFmt := createFormatters(cfg.Precision)
 
 	// Dispatcher: Handle different output formats
 	switch cfg.Output {
@@ -44,40 +41,18 @@ func PrintComparisonResults(comparisonResult schema.ComparisonResult, cfg *contr
 
 // printJSONResultsForComparison handles opening the file and calling the JSON writer.
 func printJSONResultsForComparison(comparisonResult schema.ComparisonResult, cfg *contract.Config) error {
-	file, err := contract.SelectOutputFile(cfg.OutputFile)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = file.Close() }()
-
-	if err := writeJSONResultsForComparison(file, comparisonResult); err != nil {
-		return err
-	}
-
-	if file != os.Stdout {
-		fmt.Fprintf(os.Stderr, "💾 Wrote JSON comparison results to %s\n", cfg.OutputFile)
-	}
-	return nil
+	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
+		return writeJSONResultsForComparison(w, comparisonResult)
+	}, "Wrote JSON comparison results")
 }
 
 // printCSVResultsForComparison handles opening the file and calling the CSV writer.
 func printCSVResultsForComparison(comparisonResult schema.ComparisonResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string) error {
-	file, err := contract.SelectOutputFile(cfg.OutputFile)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = file.Close() }()
-
-	w := csv.NewWriter(file)
-	if err := writeCSVResultsForComparison(w, comparisonResult, fmtFloat, intFmt); err != nil {
-		return err
-	}
-	w.Flush()
-
-	if file != os.Stdout {
-		fmt.Fprintf(os.Stderr, "💾 Wrote CSV comparison results to %s\n", cfg.OutputFile)
-	}
-	return nil
+	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
+		csvWriter := csv.NewWriter(w)
+		defer csvWriter.Flush()
+		return writeCSVResultsForComparison(csvWriter, comparisonResult, fmtFloat, intFmt)
+	}, "Wrote CSV comparison results")
 }
 
 // printComparisonTable prints the metrics in a custom comparison format.

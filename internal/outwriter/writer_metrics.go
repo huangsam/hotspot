@@ -2,7 +2,6 @@ package outwriter
 
 import (
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -12,9 +11,7 @@ import (
 
 // writeJSONMetrics writes the metrics definitions in JSON format.
 func writeJSONMetrics(w io.Writer, renderModel *schema.MetricsRenderModel) error {
-	encoder := json.NewEncoder(w)
-	encoder.SetIndent("", "  ")
-	return encoder.Encode(renderModel)
+	return writeJSON(w, renderModel)
 }
 
 // writeCSVMetrics writes the metrics definitions in CSV format.

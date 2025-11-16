@@ -3,6 +3,7 @@ package outwriter
 import (
 	"encoding/csv"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"time"
@@ -15,12 +16,8 @@ import (
 
 // PrintFolderResults outputs the analysis results, dispatching based on the output format configured.
 func PrintFolderResults(results []schema.FolderResult, cfg *contract.Config, duration time.Duration) error {
-	// helper format strings and closure for number formatting
-	numFmt := "%.*f"
-	intFmt := "%d"
-	fmtFloat := func(v float64) string {
-		return fmt.Sprintf(numFmt, cfg.Precision, v)
-	}
+	// Create formatters using helper
+	fmtFloat, intFmt := createFormatters(cfg.Precision)
 
 	// Dispatcher: Handle different output formats
 	switch cfg.Output {
@@ -43,40 +40,18 @@ func PrintFolderResults(results []schema.FolderResult, cfg *contract.Config, dur
 
 // printJSONResultsForFolders handles opening the file and calling the JSON writer.
 func printJSONResultsForFolders(results []schema.FolderResult, cfg *contract.Config) error {
-	file, err := contract.SelectOutputFile(cfg.OutputFile)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = file.Close() }()
-
-	if err := writeJSONResultsForFolders(file, results); err != nil {
-		return err
-	}
-
-	if file != os.Stdout {
-		fmt.Fprintf(os.Stderr, "💾 Wrote JSON to %s\n", cfg.OutputFile)
-	}
-	return nil
+	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
+		return writeJSONResultsForFolders(w, results)
+	}, "Wrote JSON")
 }
 
 // printCSVResultsForFolders handles opening the file and calling the CSV writer.
 func printCSVResultsForFolders(results []schema.FolderResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string) error {
-	file, err := contract.SelectOutputFile(cfg.OutputFile)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = file.Close() }()
-
-	w := csv.NewWriter(file)
-	if err := writeCSVResultsForFolders(w, results, fmtFloat, intFmt); err != nil {
-		return err
-	}
-	w.Flush()
-
-	if file != os.Stdout {
-		fmt.Fprintf(os.Stderr, "💾 Wrote CSV to %s\n", cfg.OutputFile)
-	}
-	return nil
+	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
+		csvWriter := csv.NewWriter(w)
+		defer csvWriter.Flush()
+		return writeCSVResultsForFolders(csvWriter, results, fmtFloat, intFmt)
+	}, "Wrote CSV")
 }
 
 // printFolderTable prints the results in the custom folder-centric format,
