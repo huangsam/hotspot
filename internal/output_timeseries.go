@@ -117,6 +117,6 @@ func printTimeseriesTable(result schema.TimeseriesResult, cfg *Config, fmtFloat 
 		return err
 	}
 
-	fmt.Printf("Timeseries analysis completed in %v using %d workers.\n", duration, cfg.Workers)
+	fmt.Printf("Timeseries analysis completed in %v using %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend)
 	return nil
 }

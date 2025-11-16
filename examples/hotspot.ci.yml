@@ -14,6 +14,8 @@ mode: risk
 output: json
 # output-file: Write the structured output to a specific path for artifact collection.
 output-file: hotspot-report.json
+# cache-backend: Disable caching in CI to ensure fresh analysis on every run.
+cache-backend: none
 
 # --- Comparison Settings ---
 # base-ref: Compare against the main branch (e.g., to see risk added by a PR).

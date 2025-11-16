@@ -153,7 +153,7 @@ func printTableResults(files []schema.FileResult, cfg *Config, fmtFloat func(flo
 		totalChurn += f.Churn
 	}
 	fmt.Printf("Showing top %d files (total commits: %d, total churn: %d)\n", numFiles, totalCommits, totalChurn)
-	fmt.Printf("Analysis completed in %v using %d workers.\n", duration, cfg.Workers)
+	fmt.Printf("Analysis completed in %v using %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend)
 	return nil
 }
 

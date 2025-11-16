@@ -46,6 +46,18 @@
 # Corresponds to: --width
 # width: 120
 
+# cache-backend: The cache backend to use for storing analysis results.
+# Valid values: sqlite, mysql, postgresql, none
+# Corresponds to: --cache-backend
+# Default: sqlite
+# cache-backend: sqlite
+
+# cache-db-connect: Database connection string for mysql/postgresql backends.
+# Corresponds to: --cache-db-connect
+# MySQL format: user:password@tcp(host:port)/dbname
+# PostgreSQL format: host=localhost port=5432 user=postgres password=mysecretpassword dbname=postgres
+# cache-db-connect: ""
+
 # filter: Filter analysis to files whose path begins with this prefix (e.g., "src/api/").
 # Corresponds to: --filter, -f
 # filter: ""
