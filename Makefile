@@ -33,9 +33,9 @@ build: $(BIN_DIR)/$(BINARY_NAME)
 # The automatic variable $@ holds the name of the target (e.g., bin/hotspot)
 $(BIN_DIR)/$(BINARY_NAME): $(MAIN_FILE)
 	@echo "🛠  Building $(BINARY_NAME)..."
-	# Ensure the output directory exists
+	@echo "🔒 Ensure the output directory exists"
 	@mkdir -p $(BIN_DIR)
-	# Compile the application
+	@echo "🔢 Compiling the application..."
 	@$(GO) build -o $@ $(MAIN_FILE)
 	@echo "✅ Build complete: $@"
 
