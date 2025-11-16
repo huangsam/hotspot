@@ -229,10 +229,10 @@ Comprehensive performance benchmarks using [this script](./benchmark/main.go). T
 
 | Repository | Files (Cold/Warm) | Compare Files (Cold/Warm) | Timeseries (Cold/Warm) |
 |------------|-------------------|---------------------------|------------------------|
-| [csv-parser] | 0.035s / 0.013s | 0.127s / 0.034s | 0.124s / 0.045s |
-| [fd] | 0.036s / 0.013s | 0.072s / 0.033s | 0.121s / 0.051s |
-| [git] | 0.637s / 0.031s | 1.513s / 0.154s | 2.523s / 0.199s |
-| [kubernetes] | 3.677s / 0.110s | 8.950s / 1.615s | 13.944s / 0.615s |
+| [csv-parser] | 0.036s / 0.019s | 0.132s / 0.058s | 0.122s / 0.058s |
+| [fd] | 0.047s / 0.019s | 0.076s / 0.045s | 0.124s / 0.071s |
+| [git] | 0.693s / 0.196s | 1.626s / 0.532s | 2.655s / 0.817s |
+| [kubernetes] | 3.858s / 1.031s | 8.828s / 3.294s | 13.328s / 3.001s |
 
 Hotspot caches Git analysis results to speed up repeat runs. Here are the benefits:
 
