@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 
@@ -261,17 +262,17 @@ func TestQuoteTableName(t *testing.T) {
 func TestSQLiteBackendOperations(t *testing.T) {
 	// Use the default database path for tests
 	dbPath := GetDBFilePath()
-	defer os.Remove(dbPath) // Clean up after all subtests
+	defer func() { _ = os.Remove(dbPath) }() // Clean up after all subtests
 
 	t.Run("set and get operations", func(t *testing.T) {
 		// Clean up before test
 		_ = os.Remove(dbPath)
-		
+
 		store, err := NewCacheStore("test_table", schema.SQLiteBackend, "")
 		if err != nil {
 			t.Fatalf("Failed to create SQLite store: %v", err)
 		}
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 
 		// Test Set operation
 		testKey := "test_key"
@@ -304,12 +305,12 @@ func TestSQLiteBackendOperations(t *testing.T) {
 	t.Run("upsert behavior", func(t *testing.T) {
 		// Clean up before test
 		_ = os.Remove(dbPath)
-		
+
 		store, err := NewCacheStore("test_table", schema.SQLiteBackend, "")
 		if err != nil {
 			t.Fatalf("Failed to create SQLite store: %v", err)
 		}
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 
 		// Insert initial value
 		testKey := "upsert_key"
@@ -344,12 +345,12 @@ func TestSQLiteBackendOperations(t *testing.T) {
 	t.Run("get non-existent key", func(t *testing.T) {
 		// Clean up before test
 		_ = os.Remove(dbPath)
-		
+
 		store, err := NewCacheStore("test_table", schema.SQLiteBackend, "")
 		if err != nil {
 			t.Fatalf("Failed to create SQLite store: %v", err)
 		}
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 
 		_, _, _, err = store.Get("non_existent_key")
 		if err != sql.ErrNoRows {
@@ -360,12 +361,12 @@ func TestSQLiteBackendOperations(t *testing.T) {
 	t.Run("multiple keys", func(t *testing.T) {
 		// Clean up before test
 		_ = os.Remove(dbPath)
-		
+
 		store, err := NewCacheStore("test_table", schema.SQLiteBackend, "")
 		if err != nil {
 			t.Fatalf("Failed to create SQLite store: %v", err)
 		}
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 
 		// Set multiple keys
 		keys := []string{"key1", "key2", "key3"}
@@ -592,13 +593,13 @@ func TestClearCache(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to create database: %v", err)
 		}
-		
+
 		// Create a simple table
 		_, err = db.Exec("CREATE TABLE test (id INTEGER PRIMARY KEY)")
 		if err != nil {
 			t.Fatalf("Failed to create table: %v", err)
 		}
-		db.Close()
+		_ = db.Close()
 
 		// Verify file exists
 		if _, err := os.Stat(dbPath); os.IsNotExist(err) {
@@ -653,8 +654,8 @@ func TestClearCache(t *testing.T) {
 // TestCacheStoreManagerConcurrency tests concurrent access to CacheStoreManager.
 func TestCacheStoreManagerConcurrency(t *testing.T) {
 	dbPath := GetDBFilePath()
-	defer os.Remove(dbPath)
-	
+	defer func() { _ = os.Remove(dbPath) }()
+
 	// Clean up before test
 	_ = os.Remove(dbPath)
 
@@ -671,7 +672,7 @@ func TestCacheStoreManagerConcurrency(t *testing.T) {
 	const numGoroutines = 10
 	done := make(chan bool, numGoroutines)
 
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		go func(id int) {
 			defer func() { done <- true }()
 			store := Manager.GetActivityStore()
@@ -689,16 +690,16 @@ func TestCacheStoreManagerConcurrency(t *testing.T) {
 	}
 
 	// Wait for all goroutines to complete
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		<-done
 	}
 }
 
 // Helper function to check if a string contains a substring.
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && 
-		(s[:len(substr)] == substr || s[len(s)-len(substr):] == substr || 
-		 findInString(s, substr)))
+	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) &&
+		(s[:len(substr)] == substr || s[len(s)-len(substr):] == substr ||
+			findInString(s, substr)))
 }
 
 func findInString(s, substr string) bool {
@@ -716,7 +717,7 @@ func TestInitCachingErrors(t *testing.T) {
 		// This test verifies that errors during store creation are properly propagated
 		// We can't easily test this without modifying activityTable constant,
 		// but we can test with invalid backend combinations
-		
+
 		// Reset for clean test
 		initOnce = sync.Once{}
 		closeOnce = sync.Once{}
@@ -742,7 +743,7 @@ func TestSQLiteCloseNil(t *testing.T) {
 		tableName: "test",
 		backend:   schema.NoneBackend,
 	}
-	
+
 	err := store.Close()
 	if err != nil {
 		t.Errorf("Close on nil db should not error: %v", err)
@@ -753,17 +754,18 @@ func TestSQLiteCloseNil(t *testing.T) {
 func TestValidateTableNameRegexError(t *testing.T) {
 	// The current implementation uses a simple regex that shouldn't error,
 	// but we test the function with various edge cases
-	
+
 	// Very long table name
-	longName := ""
-	for i := 0; i < 1000; i++ {
-		longName += "a"
+	var sb strings.Builder
+	for range 1000 {
+		sb.WriteString("a")
 	}
+	longName := sb.String()
 	err := validateTableName(longName)
 	if err != nil {
 		t.Errorf("Long valid table name should not error: %v", err)
 	}
-	
+
 	// Unicode characters
 	err = validateTableName("test_表")
 	if err == nil {
@@ -777,7 +779,7 @@ func TestCacheStoreImplGetWithNilDB(t *testing.T) {
 		db:      nil,
 		backend: schema.NoneBackend,
 	}
-	
+
 	_, _, _, err := store.Get("test_key")
 	if err != sql.ErrNoRows {
 		t.Errorf("Get with nil db should return sql.ErrNoRows, got: %v", err)
@@ -790,7 +792,7 @@ func TestCacheStoreImplSetWithNilDB(t *testing.T) {
 		db:      nil,
 		backend: schema.NoneBackend,
 	}
-	
+
 	err := store.Set("test_key", []byte("value"), 1, 1000)
 	if err != nil {
 		t.Errorf("Set with nil db (NoneBackend) should not error: %v", err)
@@ -800,38 +802,38 @@ func TestCacheStoreImplSetWithNilDB(t *testing.T) {
 // TestMultipleInitCachingCalls tests that InitCaching can be called multiple times safely.
 func TestMultipleInitCachingCalls(t *testing.T) {
 	dbPath := GetDBFilePath()
-	defer os.Remove(dbPath)
-	
+	defer func() { _ = os.Remove(dbPath) }()
+
 	// Clean up before test
 	_ = os.Remove(dbPath)
-	
+
 	// Reset sync.Once for this test
 	initOnce = sync.Once{}
 	closeOnce = sync.Once{}
-	
+
 	// First call should succeed
 	err := InitCaching(schema.SQLiteBackend, "")
 	if err != nil {
 		t.Fatalf("First InitCaching call failed: %v", err)
 	}
-	
+
 	// Subsequent calls should be no-ops (due to sync.Once) and not error
 	err = InitCaching(schema.SQLiteBackend, "")
 	if err != nil {
 		t.Errorf("Second InitCaching call should not error: %v", err)
 	}
-	
+
 	err = InitCaching(schema.MySQLBackend, "different:connection@string")
 	if err != nil {
 		t.Errorf("Third InitCaching call (different backend) should not error: %v", err)
 	}
-	
+
 	// Verify the store is still the SQLite one from the first call
 	store := Manager.GetActivityStore()
 	if store == nil {
 		t.Fatal("Store should not be nil")
 	}
-	
+
 	// Close
 	CloseCaching()
 }
