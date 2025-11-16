@@ -175,6 +175,34 @@ func sharedSetupWrapper(cmd *cobra.Command, args []string) error {
 	return sharedSetup(rootCtx, cmd, args)
 }
 
+// cacheSetup loads minimal configuration needed for cache operations.
+// This is used by commands that need cache access without full shared setup.
+func cacheSetup() error {
+	// Load config file if present (similar to sharedSetup but minimal)
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return fmt.Errorf("error reading config file: %w", err)
+		}
+		// Config file not found, use defaults/env/flags
+	}
+
+	// Get cache-related config values
+	backend := schema.CacheBackend(viper.GetString("cache-backend"))
+	connStr := viper.GetString("cache-db-connect")
+
+	// Initialize caching with the loaded config
+	if err := internal.InitCaching(backend, connStr); err != nil {
+		return fmt.Errorf("failed to initialize cache: %w", err)
+	}
+
+	return nil
+}
+
+// cacheSetupWrapper wraps initCacheConfig to provide PreRunE for cache commands.
+func cacheSetupWrapper(_ *cobra.Command, _ []string) error {
+	return cacheSetup()
+}
+
 // filesCmd focuses on tactical, file-level analysis.
 var filesCmd = &cobra.Command{
 	Use:     "files [repo-path]",
@@ -285,6 +313,10 @@ var timeseriesCmd = &cobra.Command{
 }
 
 // cacheCmd focused on cache management.
+//
+// Note: Cache subcommands use minimal initialization (initCacheConfig) instead of
+// the full sharedSetup used by analysis commands. This avoids Git repo validation
+// and complex config processing for simple cache operations.
 var cacheCmd = &cobra.Command{
 	Use:   "cache",
 	Short: "Manage cache operations.",
@@ -293,19 +325,12 @@ var cacheCmd = &cobra.Command{
 
 // cacheClearCmd clears the cache.
 var cacheClearCmd = &cobra.Command{
-	Use:   "clear",
-	Short: "Clear the cache for the configured backend.",
-	Long:  `The clear subcommand removes all cached data for the current backend configuration.`,
+	Use:     "clear",
+	Short:   "Clear the cache for the configured backend.",
+	Long:    `The clear subcommand removes all cached data for the current backend configuration.`,
+	PreRunE: cacheSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		// Load minimal config for backend/dbFilePath/connStr
-		backend := schema.CacheBackend(viper.GetString("cache-backend"))
-		connStr := viper.GetString("cache-db-connect")
-		dbFilePath := internal.GetDBFilePath()
-		if backend == "" && connStr == "" {
-			internal.LogFatal("Failed to clear cache", errors.New("empty backend and connection string"))
-		}
-
-		if err := internal.ClearCache(backend, dbFilePath, connStr); err != nil {
+		if err := internal.ClearCache(schema.CacheBackend(viper.GetString("cache-backend")), internal.GetDBFilePath(), viper.GetString("cache-db-connect")); err != nil {
 			internal.LogFatal("Failed to clear cache", err)
 		}
 		fmt.Println("Cache cleared successfully.")
