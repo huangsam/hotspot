@@ -1,4 +1,5 @@
-package core
+// Package agg has aggregation logic for Git activity data.
+package agg
 
 import (
 	"context"
@@ -116,7 +117,7 @@ func TestBuildFilteredFileList(t *testing.T) {
 		Excludes:   []string{"test_*", "*.md"},
 	}
 
-	files := buildFilteredFileList(cfg, output)
+	files := BuildFilteredFileList(cfg, output)
 
 	// Should include main.go, core/agg.go, core/analysis.go
 	// Should exclude test_main.go (matches test_*), README.md (matches *.md)
@@ -156,7 +157,7 @@ func TestBuildFilteredFileList_WithPathFilter(t *testing.T) {
 		Excludes:   []string{},
 	}
 
-	files := buildFilteredFileList(cfg, output)
+	files := BuildFilteredFileList(cfg, output)
 
 	// Should only include files starting with "core/"
 	assert.Len(t, files, 2)

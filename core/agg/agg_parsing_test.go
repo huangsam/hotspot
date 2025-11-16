@@ -1,4 +1,5 @@
-package core
+// Package agg has aggregation logic for Git activity data.
+package agg
 
 import (
 	"testing"

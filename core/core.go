@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/huangsam/hotspot/core/agg"
+
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/outwriter"
@@ -46,7 +48,7 @@ func ExecuteHotspotFolders(ctx context.Context, cfg *contract.Config, mgr contra
 	if err != nil {
 		return err
 	}
-	folderResults := aggregateAndScoreFolders(cfg, output.FileResults)
+	folderResults := agg.AggregateAndScoreFolders(cfg, output.FileResults)
 	ranked := rankFolders(folderResults, cfg.ResultLimit)
 	duration := time.Since(start)
 	return outwriter.PrintFolderResults(ranked, cfg, duration)

@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/huangsam/hotspot/core/agg"
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
@@ -27,13 +28,13 @@ func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client con
 	}
 
 	// --- 1. Aggregation Phase (with caching) ---
-	output, err := cachedAggregateActivity(ctx, cfg, client, mgr)
+	output, err := agg.CachedAggregateActivity(ctx, cfg, client, mgr)
 	if err != nil {
 		return nil, err
 	}
 
 	// --- 2. File List Building and Filtering ---
-	files := buildFilteredFileList(cfg, output)
+	files := agg.BuildFilteredFileList(cfg, output)
 	if len(files) == 0 {
 		return nil, errors.New("no files found")
 	}
@@ -66,7 +67,7 @@ func runCompareAnalysisForRef(ctx context.Context, cfg *contract.Config, client 
 	}
 
 	// 4. Aggregate folder metrics
-	folderResults := aggregateAndScoreFolders(cfgRef, fileResults)
+	folderResults := agg.AggregateAndScoreFolders(cfgRef, fileResults)
 
 	return &schema.CompareAnalysisOutput{
 		FileResults:   fileResults,
@@ -105,7 +106,7 @@ func analyzeAllFilesAtRef(ctx context.Context, cfg *contract.Config, client cont
 	}
 
 	// --- 2. Aggregation Phase (with caching) ---
-	output, err := cachedAggregateActivity(ctx, cfg, client, mgr)
+	output, err := agg.CachedAggregateActivity(ctx, cfg, client, mgr)
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +324,7 @@ func analyzeTimeseriesPoint(
 
 	// Extract score and owners from analysis output
 	if isFolder {
-		folderResults := aggregateAndScoreFolders(cfg, output.FileResults)
+		folderResults := agg.AggregateAndScoreFolders(cfg, output.FileResults)
 		for _, fr := range folderResults {
 			if fr.Path == path {
 				return fr.Score, fr.Owners

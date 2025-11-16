@@ -1,4 +1,5 @@
-package core
+// Package agg has aggregation logic for Git activity data.
+package agg
 
 import (
 	"context"
@@ -14,8 +15,8 @@ import (
 // currentCacheVersion defines the version of the cache schema
 const currentCacheVersion = 1
 
-// cachedAggregateActivity - Simplified and validated using DB columns
-func cachedAggregateActivity(ctx context.Context, cfg *contract.Config, client contract.GitClient, mgr contract.CacheManager) (*schema.AggregateOutput, error) {
+// CachedAggregateActivity - Simplified and validated using DB columns
+func CachedAggregateActivity(ctx context.Context, cfg *contract.Config, client contract.GitClient, mgr contract.CacheManager) (*schema.AggregateOutput, error) {
 	activity := mgr.GetActivityStore()
 	if activity == nil {
 		// Fallback to direct computation

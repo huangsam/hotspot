@@ -1,4 +1,5 @@
-package core
+// Package agg has aggregation logic for Git activity data.
+package agg
 
 import (
 	"context"
@@ -215,9 +216,9 @@ func aggregateForPath(path string, churn int, author string, date time.Time, com
 	}
 }
 
-// buildFilteredFileList creates a unified list of files from activity maps
+// BuildFilteredFileList creates a unified list of files from activity maps
 // and filters them based on the configuration.
-func buildFilteredFileList(cfg *contract.Config, output *schema.AggregateOutput) []string {
+func BuildFilteredFileList(cfg *contract.Config, output *schema.AggregateOutput) []string {
 	// 1. Estimate capacity for 'seen'. Use a good guess based on the largest map.
 	capacity := max(
 		len(output.ContribMap), max(
@@ -266,8 +267,8 @@ func buildFilteredFileList(cfg *contract.Config, output *schema.AggregateOutput)
 	return files
 }
 
-// aggregateAndScoreFolders correctly aggregates file results into folders.
-func aggregateAndScoreFolders(cfg *contract.Config, fileResults []schema.FileResult) []schema.FolderResult {
+// AggregateAndScoreFolders correctly aggregates file results into folders.
+func AggregateAndScoreFolders(cfg *contract.Config, fileResults []schema.FileResult) []schema.FolderResult {
 	folderResults := make(map[string]*schema.FolderResult)
 
 	// Map to track the aggregate commit count per author per folder:
@@ -341,4 +342,19 @@ func aggregateAndScoreFolders(cfg *contract.Config, fileResults []schema.FileRes
 	}
 
 	return finalResults
+}
+
+// computeFolderScore computes the final score for a folder as a weighted average.
+// The weight for the average is Lines of Code (LOC).
+func computeFolderScore(folderResult *schema.FolderResult) float64 {
+	// Calculate Weighted Average Score
+	if folderResult.TotalLOC == 0 {
+		return 0.0
+	}
+	// Weighted Average Score = SUM(FileScore * FileLOC) / SUM(FileLOC)
+	score := folderResult.WeightedScoreSum / float64(folderResult.TotalLOC)
+
+	// Apply optional debuffs if needed, similar to CalculateFileScore
+	// For simplicity, we just return the raw weighted average here.
+	return score
 }
