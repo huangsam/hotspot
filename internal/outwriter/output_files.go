@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -35,9 +34,9 @@ func PrintFileResults(files []schema.FileResult, cfg *contract.Config, duration 
 		}
 	default:
 		// Default to human-readable table
-		if err := printTableResults(files, cfg, fmtFloat, intFmt, duration); err != nil {
-			return fmt.Errorf("error writing table output: %w", err)
-		}
+		return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
+			return printTableResults(files, cfg, fmtFloat, intFmt, duration, w)
+		}, "Wrote table")
 	}
 	return nil
 }
@@ -59,8 +58,8 @@ func printCSVResults(files []schema.FileResult, cfg *contract.Config, fmtFloat f
 }
 
 // printTableResults generates and prints the human-readable table.
-func printTableResults(files []schema.FileResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration) error {
-	table := tablewriter.NewWriter(os.Stdout)
+func printTableResults(files []schema.FileResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
+	table := tablewriter.NewWriter(writer)
 
 	// 1. Define Headers
 	headers := []string{"Rank", "Path", "Score", "Label"}
@@ -126,8 +125,12 @@ func printTableResults(files []schema.FileResult, cfg *contract.Config, fmtFloat
 		totalCommits += f.Commits
 		totalChurn += f.Churn
 	}
-	fmt.Printf("Showing top %d files (total commits: %d, total churn: %d)\n", numFiles, totalCommits, totalChurn)
-	fmt.Printf("Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend)
+	if _, err := fmt.Fprintf(writer, "Showing top %d files (total commits: %d, total churn: %d)\n", numFiles, totalCommits, totalChurn); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(writer, "Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend); err != nil {
+		return err
+	}
 	return nil
 }
 

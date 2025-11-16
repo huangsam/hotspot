@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 	"time"
 
@@ -32,9 +31,9 @@ func PrintComparisonResults(comparisonResult schema.ComparisonResult, cfg *contr
 		}
 	default:
 		// Default to human-readable table
-		if err := printComparisonTable(comparisonResult, cfg, fmtFloat, intFmt, duration); err != nil {
-			return fmt.Errorf("error writing comparison table output: %w", err)
-		}
+		return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
+			return printComparisonTable(comparisonResult, cfg, fmtFloat, intFmt, duration, w)
+		}, "Wrote comparison table")
 	}
 	return nil
 }
@@ -56,9 +55,9 @@ func printCSVResultsForComparison(comparisonResult schema.ComparisonResult, cfg 
 }
 
 // printComparisonTable prints the metrics in a custom comparison format.
-func printComparisonTable(comparisonResult schema.ComparisonResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration) error {
+func printComparisonTable(comparisonResult schema.ComparisonResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
 	// Use os.Stdout, consistent with existing table printing
-	table := tablewriter.NewWriter(os.Stdout)
+	table := tablewriter.NewWriter(writer)
 
 	// --- 1. Define Headers (Comparison Mode) ---
 	// Note: Use clear headers for base, comparison, and the change (Delta)
@@ -130,9 +129,17 @@ func printComparisonTable(comparisonResult schema.ComparisonResult, cfg *contrac
 	}
 	// Compute summary stats
 	numItems := len(comparisonResult.Results)
-	fmt.Printf("Showing top %d changes\n", numItems)
-	fmt.Printf("Net score delta: %.*f, Net churn delta: %d\n", cfg.Precision, comparisonResult.Summary.NetScoreDelta, comparisonResult.Summary.NetChurnDelta)
-	fmt.Printf("New files: %d, Inactive files: %d, Modified files: %d, Ownership changes: %d\n", comparisonResult.Summary.TotalNewFiles, comparisonResult.Summary.TotalInactiveFiles, comparisonResult.Summary.TotalModifiedFiles, comparisonResult.Summary.TotalOwnershipChanges)
-	fmt.Printf("Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend)
+	if _, err := fmt.Fprintf(writer, "Showing top %d changes\n", numItems); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(writer, "Net score delta: %.*f, Net churn delta: %d\n", cfg.Precision, comparisonResult.Summary.NetScoreDelta, comparisonResult.Summary.NetChurnDelta); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(writer, "New files: %d, Inactive files: %d, Modified files: %d, Ownership changes: %d\n", comparisonResult.Summary.TotalNewFiles, comparisonResult.Summary.TotalInactiveFiles, comparisonResult.Summary.TotalModifiedFiles, comparisonResult.Summary.TotalOwnershipChanges); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(writer, "Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend); err != nil {
+		return err
+	}
 	return nil
 }

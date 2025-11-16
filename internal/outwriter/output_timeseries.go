@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"os"
 	"time"
 
 	"github.com/huangsam/hotspot/internal/contract"
@@ -30,9 +29,9 @@ func PrintTimeseriesResults(result schema.TimeseriesResult, cfg *contract.Config
 		}
 	default:
 		// Default to human-readable table
-		if err := printTimeseriesTable(result, cfg, fmtFloat, duration); err != nil {
-			return fmt.Errorf("error writing timeseries table output: %w", err)
-		}
+		return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
+			return printTimeseriesTable(result, cfg, fmtFloat, duration, w)
+		}, "Wrote timeseries table")
 	}
 	return nil
 }
@@ -54,9 +53,9 @@ func printCSVResultsForTimeseries(result schema.TimeseriesResult, cfg *contract.
 }
 
 // printTimeseriesTable prints the timeseries in a four-column table.
-func printTimeseriesTable(result schema.TimeseriesResult, cfg *contract.Config, fmtFloat func(float64) string, duration time.Duration) error {
+func printTimeseriesTable(result schema.TimeseriesResult, cfg *contract.Config, fmtFloat func(float64) string, duration time.Duration, writer io.Writer) error {
 	// Use os.Stdout, consistent with existing table printing
-	table := tablewriter.NewWriter(os.Stdout)
+	table := tablewriter.NewWriter(writer)
 
 	// --- 1. Define Headers ---
 	headers := []string{"Path", "Period", "Score", "Mode", "Owners"}
@@ -94,6 +93,8 @@ func printTimeseriesTable(result schema.TimeseriesResult, cfg *contract.Config, 
 		return err
 	}
 
-	fmt.Printf("Timeseries analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend)
+	if _, err := fmt.Fprintf(writer, "Timeseries analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend); err != nil {
+		return err
+	}
 	return nil
 }

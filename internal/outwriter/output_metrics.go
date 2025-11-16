@@ -75,30 +75,56 @@ func PrintMetricsDefinitions(activeWeights map[schema.ScoringMode]map[schema.Bre
 	case schema.CSVOut:
 		return printMetricsCSV(renderModel, cfg)
 	default:
-		return printMetricsText(renderModel, cfg)
+		return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
+			return printMetricsText(w, renderModel, cfg)
+		}, "Wrote text")
 	}
 }
 
 // printMetricsText displays metrics in human-readable text format.
-func printMetricsText(renderModel *schema.MetricsRenderModel, _ *contract.Config) error {
-	fmt.Println("🔥 Hotspot Scoring Modes")
-	fmt.Println("========================")
-	fmt.Println()
-	fmt.Println(renderModel.Description)
-	fmt.Println()
+func printMetricsText(w io.Writer, renderModel *schema.MetricsRenderModel, _ *contract.Config) error {
+	if _, err := fmt.Fprintf(w, "🔥 Hotspot Scoring Modes\n"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "========================\n"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "\n"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "%s\n", renderModel.Description); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "\n"); err != nil {
+		return err
+	}
 
 	for _, mode := range renderModel.Modes {
 		// Add emoji prefix for display
 		displayName := getDisplayNameForMode(mode.Name)
-		fmt.Printf("%s: %s\n", displayName, mode.Purpose)
-		fmt.Printf("   Factors: %s\n", strings.Join(mode.Factors, ", "))
-		fmt.Printf("   Formula: Score = %s\n", mode.Formula)
-		fmt.Println()
+		if _, err := fmt.Fprintf(w, "%s: %s\n", displayName, mode.Purpose); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(w, "   Factors: %s\n", strings.Join(mode.Factors, ", ")); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(w, "   Formula: Score = %s\n", mode.Formula); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(w, "\n"); err != nil {
+			return err
+		}
 	}
 
-	fmt.Println("🔗 Special Relationship")
-	fmt.Println(renderModel.SpecialRelationship["description"])
-	fmt.Println(renderModel.SpecialRelationship["note"])
+	if _, err := fmt.Fprintf(w, "🔗 Special Relationship\n"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "%s\n", renderModel.SpecialRelationship["description"]); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "%s\n", renderModel.SpecialRelationship["note"]); err != nil {
+		return err
+	}
 
 	return nil
 }

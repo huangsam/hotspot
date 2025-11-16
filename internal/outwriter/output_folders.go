@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 	"time"
 
@@ -31,9 +30,9 @@ func PrintFolderResults(results []schema.FolderResult, cfg *contract.Config, dur
 		}
 	default:
 		// Default to human-readable table
-		if err := printFolderTable(results, cfg, fmtFloat, intFmt, duration); err != nil {
-			return fmt.Errorf("error writing table output: %w", err)
-		}
+		return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
+			return printFolderTable(results, cfg, fmtFloat, intFmt, duration, w)
+		}, "Wrote table")
 	}
 	return nil
 }
@@ -56,8 +55,8 @@ func printCSVResultsForFolders(results []schema.FolderResult, cfg *contract.Conf
 
 // printFolderTable prints the results in the custom folder-centric format,
 // using the tablewriter API.
-func printFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration) error {
-	table := tablewriter.NewWriter(os.Stdout)
+func printFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
+	table := tablewriter.NewWriter(writer)
 
 	// 1. Define Headers (Folder Mode - Custom)
 	headers := []string{"Rank", "Path", "Score", "Label"}
@@ -114,7 +113,11 @@ func printFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFl
 		totalChurn += r.Churn
 		totalLOC += r.TotalLOC
 	}
-	fmt.Printf("Showing top %d folders (total commits: %d, total churn: %d, total LOC: %d)\n", numFolders, totalCommits, totalChurn, totalLOC)
-	fmt.Printf("Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend)
+	if _, err := fmt.Fprintf(writer, "Showing top %d folders (total commits: %d, total churn: %d, total LOC: %d)\n", numFolders, totalCommits, totalChurn, totalLOC); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(writer, "Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend); err != nil {
+		return err
+	}
 	return nil
 }
