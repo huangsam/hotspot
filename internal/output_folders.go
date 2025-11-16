@@ -107,7 +107,7 @@ func printFolderTable(results []schema.FolderResult, cfg *Config, fmtFloat func(
 			strconv.Itoa(i + 1),                             // Rank
 			truncatePath(r.Path, GetMaxTablePathWidth(cfg)), // Folder Path
 			fmtFloat(r.Score),                               // Score
-			contract.GetColorLabel(r.Score),                          // Label
+			contract.GetColorLabel(r.Score),                 // Label
 		}
 		if cfg.Detail {
 			row = append(row,

@@ -115,7 +115,7 @@ func printTableResults(files []schema.FileResult, cfg *Config, fmtFloat func(flo
 			strconv.Itoa(i + 1),                             // Rank
 			truncatePath(f.Path, GetMaxTablePathWidth(cfg)), // File
 			fmtFloat(f.Score),                               // Score
-			contract.GetColorLabel(f.Score),                          // Label
+			contract.GetColorLabel(f.Score),                 // Label
 		}
 		if cfg.Detail {
 			row = append(

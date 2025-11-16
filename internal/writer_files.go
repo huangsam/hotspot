@@ -35,9 +35,9 @@ func writeCSVResults(w *csv.Writer, files []schema.FileResult, fmtFloat func(flo
 	}
 	for i, f := range files {
 		rec := []string{
-			strconv.Itoa(i + 1),    // Rank
-			f.Path,                 // File Path
-			fmtFloat(f.Score),      // Score
+			strconv.Itoa(i + 1),             // Rank
+			f.Path,                          // File Path
+			fmtFloat(f.Score),               // Score
 			contract.GetPlainLabel(f.Score), // Label
 			fmt.Sprintf(intFmt, f.UniqueContributors), // Contributors
 			fmt.Sprintf(intFmt, f.Commits),            // Commits

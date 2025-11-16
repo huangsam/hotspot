@@ -67,7 +67,7 @@ func writeCSVResultsForFolders(w *csv.Writer, results []schema.FolderResult, fmt
 			strconv.Itoa(i + 1),             // Rank
 			r.Path,                          // Folder Path
 			fmtFloat(r.Score),               // Score
-			contract.GetPlainLabel(r.Score),          // Label
+			contract.GetPlainLabel(r.Score), // Label
 			fmt.Sprintf(intFmt, r.Commits),  // Total Commits
 			fmt.Sprintf(intFmt, r.Churn),    // Total Churn
 			fmt.Sprintf(intFmt, r.TotalLOC), // Total LOC
