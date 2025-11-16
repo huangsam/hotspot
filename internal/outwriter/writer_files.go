@@ -2,7 +2,6 @@ package outwriter
 
 import (
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"io"
 	"strconv"
@@ -74,15 +73,6 @@ func writeJSONResults(w io.Writer, files []schema.FileResult) error {
 		}
 	}
 
-	// 2. Create a JSON encoder
-	encoder := json.NewEncoder(w)
-	// Use indenting for cleaner output, especially when writing to a file
-	encoder.SetIndent("", "  ")
-
-	// 3. Encode and write the data
-	if err := encoder.Encode(output); err != nil {
-		return fmt.Errorf("failed to encode JSON: %w", err)
-	}
-
-	return nil
+	// 2. Use the generic JSON writer
+	return writeJSON(w, output)
 }

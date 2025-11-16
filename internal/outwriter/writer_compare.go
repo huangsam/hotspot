@@ -2,7 +2,6 @@ package outwriter
 
 import (
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"io"
 	"strconv"
@@ -13,11 +12,7 @@ import (
 
 // writeJSONResultsForComparison marshals the schema.ComparisonResult to JSON and writes it.
 func writeJSONResultsForComparison(w io.Writer, comparisonResult schema.ComparisonResult) error {
-	encoder := json.NewEncoder(w)
-	encoder.SetIndent("", "  ")
-	// NOTE: The ComparisonResult struct fields are already public (uppercase),
-	// so they will be correctly marshaled to JSON.
-	return encoder.Encode(comparisonResult)
+	return writeJSON(w, comparisonResult)
 }
 
 // writeCSVResultsForComparison writes the schema.ComparisonResult data to a CSV writer.

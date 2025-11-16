@@ -3,6 +3,7 @@ package outwriter
 import (
 	"encoding/csv"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -14,11 +15,8 @@ import (
 
 // PrintTimeseriesResults outputs the timeseries results, dispatching based on the output format configured.
 func PrintTimeseriesResults(result schema.TimeseriesResult, cfg *contract.Config, duration time.Duration) error {
-	// Helper format strings and closure for number formatting
-	numFmt := "%.*f"
-	fmtFloat := func(v float64) string {
-		return fmt.Sprintf(numFmt, cfg.Precision, v)
-	}
+	// Create formatters using helper
+	fmtFloat, _ := createFormatters(cfg.Precision)
 
 	// Dispatcher: Handle different output formats
 	switch cfg.Output {
@@ -41,40 +39,18 @@ func PrintTimeseriesResults(result schema.TimeseriesResult, cfg *contract.Config
 
 // printJSONResultsForTimeseries handles opening the file and calling the JSON writer.
 func printJSONResultsForTimeseries(result schema.TimeseriesResult, cfg *contract.Config) error {
-	file, err := contract.SelectOutputFile(cfg.OutputFile)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = file.Close() }()
-
-	if err := writeJSONResultsForTimeseries(file, result); err != nil {
-		return err
-	}
-
-	if file != os.Stdout {
-		fmt.Fprintf(os.Stderr, "💾 Wrote JSON timeseries results to %s\n", cfg.OutputFile)
-	}
-	return nil
+	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
+		return writeJSONResultsForTimeseries(w, result)
+	}, "Wrote JSON timeseries results")
 }
 
 // printCSVResultsForTimeseries handles opening the file and calling the CSV writer.
 func printCSVResultsForTimeseries(result schema.TimeseriesResult, cfg *contract.Config, fmtFloat func(float64) string) error {
-	file, err := contract.SelectOutputFile(cfg.OutputFile)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = file.Close() }()
-
-	w := csv.NewWriter(file)
-	if err := writeCSVResultsForTimeseries(w, result, fmtFloat); err != nil {
-		return err
-	}
-	w.Flush()
-
-	if file != os.Stdout {
-		fmt.Fprintf(os.Stderr, "💾 Wrote CSV timeseries results to %s\n", cfg.OutputFile)
-	}
-	return nil
+	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
+		csvWriter := csv.NewWriter(w)
+		defer csvWriter.Flush()
+		return writeCSVResultsForTimeseries(csvWriter, result, fmtFloat)
+	}, "Wrote CSV timeseries results")
 }
 
 // printTimeseriesTable prints the timeseries in a four-column table.

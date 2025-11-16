@@ -3,6 +3,7 @@ package outwriter
 import (
 	"encoding/csv"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"sort"
@@ -19,12 +20,8 @@ import (
 
 // PrintFileResults outputs the analysis results in a formatted table or exports them as CSV/JSON.
 func PrintFileResults(files []schema.FileResult, cfg *contract.Config, duration time.Duration) error {
-	// helper format strings and closure for number formatting
-	numFmt := "%.*f"
-	intFmt := "%d"
-	fmtFloat := func(v float64) string {
-		return fmt.Sprintf(numFmt, cfg.Precision, v)
-	}
+	// Create formatters using helper
+	fmtFloat, intFmt := createFormatters(cfg.Precision)
 
 	// Dispatcher: Handle different output formats
 	switch cfg.Output {
@@ -47,42 +44,18 @@ func PrintFileResults(files []schema.FileResult, cfg *contract.Config, duration 
 
 // printJSONResults handles opening the file and calling the JSON writer.
 func printJSONResults(files []schema.FileResult, cfg *contract.Config) error {
-	// Use the unified file selector defined in writers.go
-	file, err := contract.SelectOutputFile(cfg.OutputFile)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = file.Close() }()
-
-	if err := writeJSONResults(file, files); err != nil {
-		return err
-	}
-
-	if file != os.Stdout {
-		fmt.Fprintf(os.Stderr, "💾 Wrote JSON to %s\n", cfg.OutputFile)
-	}
-	return nil
+	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
+		return writeJSONResults(w, files)
+	}, "Wrote JSON")
 }
 
 // printCSVResults handles opening the file and calling the CSV writer.
 func printCSVResults(files []schema.FileResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string) error {
-	// Use the unified file selector defined in writers.go
-	file, err := contract.SelectOutputFile(cfg.OutputFile)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = file.Close() }()
-
-	w := csv.NewWriter(file)
-	if err := writeCSVResults(w, files, fmtFloat, intFmt); err != nil {
-		return err
-	}
-	w.Flush()
-
-	if file != os.Stdout {
-		fmt.Fprintf(os.Stderr, "💾 Wrote CSV to %s\n", cfg.OutputFile)
-	}
-	return nil
+	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
+		csvWriter := csv.NewWriter(w)
+		defer csvWriter.Flush()
+		return writeCSVResults(csvWriter, files, fmtFloat, intFmt)
+	}, "Wrote CSV")
 }
 
 // printTableResults generates and prints the human-readable table.

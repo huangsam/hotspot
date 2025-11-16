@@ -3,7 +3,7 @@ package outwriter
 import (
 	"encoding/csv"
 	"fmt"
-	"os"
+	"io"
 	"strings"
 
 	"github.com/huangsam/hotspot/internal/contract"
@@ -105,41 +105,18 @@ func printMetricsText(renderModel *schema.MetricsRenderModel, _ *contract.Config
 
 // printMetricsJSON displays metrics in JSON format.
 func printMetricsJSON(renderModel *schema.MetricsRenderModel, cfg *contract.Config) error {
-	file, err := contract.SelectOutputFile(cfg.OutputFile)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = file.Close() }()
-
-	if err := writeJSONMetrics(file, renderModel); err != nil {
-		return err
-	}
-
-	if file != os.Stdout {
-		fmt.Fprintf(os.Stderr, "💾 Wrote JSON to %s\n", cfg.OutputFile)
-	}
-	return nil
+	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
+		return writeJSONMetrics(w, renderModel)
+	}, "Wrote JSON")
 }
 
 // printMetricsCSV displays metrics in CSV format.
 func printMetricsCSV(renderModel *schema.MetricsRenderModel, cfg *contract.Config) error {
-	file, err := contract.SelectOutputFile(cfg.OutputFile)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = file.Close() }()
-
-	writer := csv.NewWriter(file)
-	defer writer.Flush()
-
-	if err := writeCSVMetrics(writer, renderModel); err != nil {
-		return err
-	}
-
-	if file != os.Stdout {
-		fmt.Fprintf(os.Stderr, "💾 Wrote CSV to %s\n", cfg.OutputFile)
-	}
-	return nil
+	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
+		writer := csv.NewWriter(w)
+		defer writer.Flush()
+		return writeCSVMetrics(writer, renderModel)
+	}, "Wrote CSV")
 }
 
 // buildMetricsRenderModel constructs the complete render model with all processed data.
