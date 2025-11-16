@@ -225,19 +225,18 @@ The benchmarks use repositories of varying scales to demonstrate performance cha
 
 ### Benchmark Results
 
-Comprehensive performance benchmarks using [this script](./benchmark/main.go). This shows cold run (first run) and warm run (average of subsequent runs) times from 5 total runs:
+Comprehensive performance benchmarks using [this script](./benchmark/main.go). This shows cold vs warm timings:
 
 | Repository | Files (Cold/Warm) | Compare Files (Cold/Warm) | Timeseries (Cold/Warm) |
-|------------|-------------------|---------------------------|-------------------------|
-| [csv-parser] | 0.123s / 0.016s | 0.137s / 0.037s | 0.105s / 0.049s |
-| [fd] | 0.056s / 0.015s | 0.088s / 0.038s | 0.131s / 0.054s |
-| [git] | 0.675s / 0.034s | 1.686s / 0.157s | 2.477s / 0.193s |
-| [kubernetes] | 4.029s / 0.114s | 8.679s / 1.634s | 9.256s / 0.649s |
+|------------|-------------------|---------------------------|------------------------|
+| [csv-parser] | 0.035s / 0.013s | 0.127s / 0.034s | 0.124s / 0.045s |
+| [fd] | 0.036s / 0.013s | 0.072s / 0.033s | 0.121s / 0.051s |
+| [git] | 0.637s / 0.031s | 1.513s / 0.154s | 2.523s / 0.199s |
+| [kubernetes] | 3.677s / 0.110s | 8.950s / 1.615s | 13.944s / 0.615s |
 
 Hotspot caches Git analysis results to speed up repeat runs. Here are the benefits:
 
-- First run (cold): Analyzes Git history
-- Subsequent runs (warm): ~35x faster using cached data
-- No configuration required
+- Cold runs: Analyzes Git history without caching
+- Warm runs: ~35x faster using cached data
 
 If you need fresh analysis, clear the cache: `hotspot cache clear`
