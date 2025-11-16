@@ -1,6 +1,6 @@
 package schema
 
-// Custom string types for type safety
+// Custom string types for type safety.
 type (
 	// BreakdownKey represents keys used in scoring breakdowns.
 	BreakdownKey string

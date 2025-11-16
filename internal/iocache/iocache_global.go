@@ -13,7 +13,7 @@ import (
 // activityTable is the name of the table for activity caching.
 const activityTable = "activity_cache"
 
-// Global Manager instance for main logic
+// Global Manager instance for main logic.
 var (
 	Manager   = &CacheStoreManager{}
 	initOnce  sync.Once

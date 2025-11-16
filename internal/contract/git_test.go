@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// skipIfGitNotAvailable skips the test if git binary is not found in PATH
+// skipIfGitNotAvailable skips the test if git binary is not found in PATH.
 func skipIfGitNotAvailable(t *testing.T) {
 	t.Helper()
 	if _, err := exec.LookPath("git"); err != nil {

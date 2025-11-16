@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// gitLogScenario represents a single commit scenario for test data generation
+// gitLogScenario represents a single commit scenario for test data generation.
 type gitLogScenario struct {
 	commitHash string
 	author     string
@@ -14,14 +14,14 @@ type gitLogScenario struct {
 	files      []fileChange
 }
 
-// fileChange represents a single file change in a commit
+// fileChange represents a single file change in a commit.
 type fileChange struct {
 	path      string
 	additions int
 	deletions int
 }
 
-// generateTestGitLog creates a programmatic git log fixture for testing
+// generateTestGitLog creates a programmatic git log fixture for testing.
 func generateTestGitLog(scenarios []gitLogScenario) []byte {
 	var lines []string
 	for _, scenario := range scenarios {
@@ -34,7 +34,7 @@ func generateTestGitLog(scenarios []gitLogScenario) []byte {
 	return []byte(strings.Join(lines, "\n"))
 }
 
-// generateComprehensiveTestData creates test data that covers various parsing scenarios
+// generateComprehensiveTestData creates test data that covers various parsing scenarios.
 func generateComprehensiveTestData() ([]byte, map[string]bool) {
 	baseTime := time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC)
 
@@ -77,7 +77,7 @@ func generateComprehensiveTestData() ([]byte, map[string]bool) {
 	return generateTestGitLog(scenarios), fileExists
 }
 
-// generateRenameTestData creates test data for rename scenarios
+// generateRenameTestData creates test data for rename scenarios.
 func generateRenameTestData() ([]byte, map[string]bool) {
 	baseTime := time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC)
 
@@ -125,7 +125,7 @@ func generateRenameTestData() ([]byte, map[string]bool) {
 	return generateTestGitLog(scenarios), fileExists
 }
 
-// generateEdgeCaseTestData creates test data for edge cases
+// generateEdgeCaseTestData creates test data for edge cases.
 func generateEdgeCaseTestData() ([]byte, map[string]bool) {
 	baseTime := time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC)
 
@@ -165,7 +165,7 @@ func generateEdgeCaseTestData() ([]byte, map[string]bool) {
 	return generateTestGitLog(scenarios), fileExists
 }
 
-// createTestFileExistsMap creates a standard file existence map for testing
+// createTestFileExistsMap creates a standard file existence map for testing.
 func createTestFileExistsMap(files []string) map[string]bool {
 	result := make(map[string]bool)
 	for _, file := range files {
@@ -174,7 +174,7 @@ func createTestFileExistsMap(files []string) map[string]bool {
 	return result
 }
 
-// createAggregationMaps creates initialized aggregation maps for testing
+// createAggregationMaps creates initialized aggregation maps for testing.
 func createAggregationMaps() (map[string]int, map[string]int, map[string]map[string]int, map[string]time.Time) {
 	return make(map[string]int), make(map[string]int), make(map[string]map[string]int), make(map[string]time.Time)
 }

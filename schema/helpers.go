@@ -76,7 +76,7 @@ func AbbreviateName(name string) string {
 	return trimmedName
 }
 
-// AbbreviateOwners applies abbreviation to all owners in the slice
+// AbbreviateOwners applies abbreviation to all owners in the slice.
 func AbbreviateOwners(owners []string) []string {
 	abbreviated := make([]string, len(owners))
 	for i, owner := range owners {
@@ -85,7 +85,7 @@ func AbbreviateOwners(owners []string) []string {
 	return abbreviated
 }
 
-// FormatOwners formats the top owners as "S. Huang, J. Doe"
+// FormatOwners formats the top owners as "S. Huang, J. Doe".
 func FormatOwners(owners []string) string {
 	var abbreviated []string
 	for _, owner := range owners {
@@ -95,7 +95,7 @@ func FormatOwners(owners []string) string {
 }
 
 // OwnersEqual compares two slices of owners, considering them equal if they contain the same owners
-// regardless of order
+// regardless of order.
 func OwnersEqual(a, b []string) bool {
 	if len(a) != len(b) {
 		return false

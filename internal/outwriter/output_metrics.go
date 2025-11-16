@@ -51,7 +51,7 @@ func getDisplayWeightsForMode(mode schema.ScoringMode, activeWeights map[schema.
 	return weights
 }
 
-// formatWeights formats weights for display in formulas
+// formatWeights formats weights for display in formulas.
 func formatWeights(weights map[string]float64, factorKeys []string) string {
 	var parts []string
 	for _, key := range factorKeys {
@@ -79,7 +79,7 @@ func PrintMetricsDefinitions(activeWeights map[schema.ScoringMode]map[schema.Bre
 	}
 }
 
-// printMetricsText displays metrics in human-readable text format
+// printMetricsText displays metrics in human-readable text format.
 func printMetricsText(renderModel *schema.MetricsRenderModel, _ *contract.Config) error {
 	fmt.Println("🔥 Hotspot Scoring Modes")
 	fmt.Println("========================")
@@ -103,7 +103,7 @@ func printMetricsText(renderModel *schema.MetricsRenderModel, _ *contract.Config
 	return nil
 }
 
-// printMetricsJSON displays metrics in JSON format
+// printMetricsJSON displays metrics in JSON format.
 func printMetricsJSON(renderModel *schema.MetricsRenderModel, cfg *contract.Config) error {
 	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
@@ -121,7 +121,7 @@ func printMetricsJSON(renderModel *schema.MetricsRenderModel, cfg *contract.Conf
 	return nil
 }
 
-// printMetricsCSV displays metrics in CSV format
+// printMetricsCSV displays metrics in CSV format.
 func printMetricsCSV(renderModel *schema.MetricsRenderModel, cfg *contract.Config) error {
 	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {

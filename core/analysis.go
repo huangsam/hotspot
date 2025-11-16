@@ -14,7 +14,7 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// Timeseries analysis constraints
+// Timeseries analysis constraints.
 const (
 	minCommits        = 30
 	minLookback       = 3 * 30 * 24 * time.Hour // T_min: 3 months (temporal coverage constraint)

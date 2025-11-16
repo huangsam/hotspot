@@ -139,7 +139,7 @@ func BenchmarkComputeScore(b *testing.B) {
 	}
 }
 
-// TestComputeScoreWithCustomWeights tests that custom weights produce different results than defaults
+// TestComputeScoreWithCustomWeights tests that custom weights produce different results than defaults.
 func TestComputeScoreWithCustomWeights(t *testing.T) {
 	metrics := schema.FileResult{
 		Path:               "test.go",
@@ -175,7 +175,7 @@ func TestComputeScoreWithCustomWeights(t *testing.T) {
 	assert.True(t, customScore >= 0 && customScore <= 100, "Custom score should be valid")
 }
 
-// TestComputeScoreCustomWeightsAllModes tests custom weights for all scoring modes
+// TestComputeScoreCustomWeightsAllModes tests custom weights for all scoring modes.
 func TestComputeScoreCustomWeightsAllModes(t *testing.T) {
 	modes := []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode}
 
@@ -233,7 +233,7 @@ func TestComputeScoreCustomWeightsAllModes(t *testing.T) {
 	}
 }
 
-// TestComputeScoreInvalidCustomWeights tests behavior with invalid custom weights
+// TestComputeScoreInvalidCustomWeights tests behavior with invalid custom weights.
 func TestComputeScoreInvalidCustomWeights(t *testing.T) {
 	metrics := schema.FileResult{
 		Path:               "test.go",

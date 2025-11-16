@@ -11,10 +11,10 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// currentCacheVersion defines the version of the cache schema
+// currentCacheVersion defines the version of the cache schema.
 const currentCacheVersion = 1
 
-// CachedAggregateActivity - Simplified and validated using DB columns
+// CachedAggregateActivity - Simplified and validated using DB columns.
 func CachedAggregateActivity(ctx context.Context, cfg *contract.Config, client contract.GitClient, mgr contract.CacheManager) (*schema.AggregateOutput, error) {
 	activity := mgr.GetActivityStore()
 	if activity == nil {
@@ -33,7 +33,7 @@ func CachedAggregateActivity(ctx context.Context, cfg *contract.Config, client c
 	return computeAndStore(ctx, cfg, client, activity, key)
 }
 
-// checkCacheHit attempts to retrieve and validate a cached result
+// checkCacheHit attempts to retrieve and validate a cached result.
 func checkCacheHit(activity contract.CacheStore, key string) *schema.AggregateOutput {
 	data, version, ts, err := activity.Get(key)
 	if err != nil {
@@ -54,7 +54,7 @@ func checkCacheHit(activity contract.CacheStore, key string) *schema.AggregateOu
 	return nil // Cache miss (stale or version mismatch)
 }
 
-// computeAndStore computes the result and stores it in cache
+// computeAndStore computes the result and stores it in cache.
 func computeAndStore(ctx context.Context, cfg *contract.Config, client contract.GitClient, activity contract.CacheStore, key string) (*schema.AggregateOutput, error) {
 	result, err := aggregateActivity(ctx, cfg, client)
 	if err != nil {
@@ -69,7 +69,7 @@ func computeAndStore(ctx context.Context, cfg *contract.Config, client contract.
 	return result, nil
 }
 
-// generateCacheKey creates a unique key based on analysis parameters
+// generateCacheKey creates a unique key based on analysis parameters.
 func generateCacheKey(ctx context.Context, cfg *contract.Config, client contract.GitClient) string {
 	// Use canonical helpers from internal.Config to ensure consistent time granularity
 	startHour := cfg.GetAnalysisStartTime()

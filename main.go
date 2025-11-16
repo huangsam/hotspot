@@ -35,13 +35,13 @@ var cfg = &contract.Config{}
 // Viper will unmarshal into this struct.
 var input = &contract.ConfigRawInput{}
 
-// profile holds profiling configuration
+// profile holds profiling configuration.
 var profile = &contract.ProfileConfig{}
 
 // cacheManager is the global persistence manager instance.
 var cacheManager contract.CacheManager
 
-// startProfiling starts CPU and memory profiling if enabled
+// startProfiling starts CPU and memory profiling if enabled.
 func startProfiling() error {
 	if !profile.Enabled {
 		return nil
@@ -61,7 +61,7 @@ func startProfiling() error {
 	return nil
 }
 
-// stopProfiling stops profiling and writes memory profile
+// stopProfiling stops profiling and writes memory profile.
 func stopProfiling() error {
 	if !profile.Enabled {
 		return nil

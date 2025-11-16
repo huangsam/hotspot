@@ -34,7 +34,7 @@ func getWeightsForMode(mode schema.ScoringMode, customWeights map[schema.Scoring
 // - hot: Activity hotspots (high commits, churn, contributors)
 // - risk: Knowledge risk/bus factor (few contributors, high inequality)
 // - complexity: Technical debt candidates (large, old, high total churn)
-// - stale: Maintenance debt (important but untouched)
+// - stale: Maintenance debt (important but untouched).
 func computeScore(m *schema.FileResult, mode schema.ScoringMode, customWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64) float64 {
 	// DEFENSIVE CHECK: If the file has no content, its score should be 0.
 	if m.SizeBytes == 0 {

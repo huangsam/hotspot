@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockCacheStore for testing (alias for MockCacheStore)
+// MockCacheStore for testing (alias for MockCacheStore).
 type MockCacheStore = iocache.MockCacheStore
 
 func TestCheckCacheHit_CacheHit(t *testing.T) {
