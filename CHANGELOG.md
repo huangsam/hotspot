@@ -1,5 +1,24 @@
 # 🚀 Changelog
 
+## v1.5.0
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.4.0...v1.5.0)
+
+### Features
+
+- **Database Cache Backends**: Add MySQL and PostgreSQL support for result caching
+
+### Improvements
+
+- **Analysis Footer**: Make analysis footer more compact
+- **Benchmark Script**: Simplify benchmark report generation
+- **Documentation**: Update README with new findings
+
+### Development
+
+- **Package Refactor**: Restructure core and internal packages for better organization
+- **Test Restoration**: Restore missing tests from recent refactor
+
 ## v1.4.0
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.3.3...v1.4.0)
