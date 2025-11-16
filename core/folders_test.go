@@ -3,7 +3,8 @@ package core
 import (
 	"testing"
 
-	"github.com/huangsam/hotspot/internal"
+	"github.com/huangsam/hotspot/core/agg"
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 )
@@ -45,11 +46,11 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		},
 	}
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		Mode: schema.HotMode,
 	}
 
-	result := aggregateAndScoreFolders(cfg, fileResults)
+	result := agg.AggregateAndScoreFolders(cfg, fileResults)
 
 	// Should have 2 folders: src/, tests/ (root is skipped when PathFilter is empty)
 	assert.Len(t, result, 2)
@@ -113,12 +114,12 @@ func TestAggregateAndScoreFolders_WithPathFilter(t *testing.T) {
 		},
 	}
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		PathFilter: "src/", // Only analyze files in src/
 		Mode:       schema.HotMode,
 	}
 
-	result := aggregateAndScoreFolders(cfg, fileResults)
+	result := agg.AggregateAndScoreFolders(cfg, fileResults)
 
 	// PathFilter doesn't affect folder aggregation - should still have both folders
 	assert.Len(t, result, 2)
@@ -126,9 +127,9 @@ func TestAggregateAndScoreFolders_WithPathFilter(t *testing.T) {
 
 func TestAggregateAndScoreFolders_EmptyInput(t *testing.T) {
 	fileResults := []schema.FileResult{}
-	cfg := &internal.Config{Mode: schema.HotMode}
+	cfg := &contract.Config{Mode: schema.HotMode}
 
-	result := aggregateAndScoreFolders(cfg, fileResults)
+	result := agg.AggregateAndScoreFolders(cfg, fileResults)
 
 	assert.Empty(t, result)
 }
@@ -145,11 +146,11 @@ func TestAggregateAndScoreFolders_SingleFileInRoot(t *testing.T) {
 		},
 	}
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		Mode: schema.HotMode,
 	}
 
-	result := aggregateAndScoreFolders(cfg, fileResults)
+	result := agg.AggregateAndScoreFolders(cfg, fileResults)
 
 	// Should not include root folder when PathFilter is empty
 	assert.Empty(t, result)
@@ -184,11 +185,11 @@ func TestAggregateAndScoreFolders_OwnerCalculation(t *testing.T) {
 		},
 	}
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		Mode: schema.HotMode,
 	}
 
-	result := aggregateAndScoreFolders(cfg, fileResults)
+	result := agg.AggregateAndScoreFolders(cfg, fileResults)
 
 	assert.Len(t, result, 1)
 	folder := result[0]
@@ -212,11 +213,11 @@ func TestAggregateAndScoreFolders_NoOwners(t *testing.T) {
 		},
 	}
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		Mode: schema.HotMode,
 	}
 
-	result := aggregateAndScoreFolders(cfg, fileResults)
+	result := agg.AggregateAndScoreFolders(cfg, fileResults)
 
 	assert.Len(t, result, 1)
 	folder := result[0]

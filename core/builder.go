@@ -10,14 +10,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/huangsam/hotspot/internal"
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 )
 
 // FileResultBuilder builds the file metric from Git output.
 type FileResultBuilder struct {
-	cfg    *internal.Config
-	git    internal.GitClient
+	cfg    *contract.Config
+	git    contract.GitClient
 	result *schema.FileResult
 	output *schema.AggregateOutput
 	path   string
@@ -29,7 +29,7 @@ type FileResultBuilder struct {
 }
 
 // NewFileMetricsBuilder is the starting point for building file metrics.
-func NewFileMetricsBuilder(ctx context.Context, cfg *internal.Config, client internal.GitClient, path string, output *schema.AggregateOutput) *FileResultBuilder {
+func NewFileMetricsBuilder(ctx context.Context, cfg *contract.Config, client contract.GitClient, path string, output *schema.AggregateOutput) *FileResultBuilder {
 	return &FileResultBuilder{
 		cfg:          cfg,
 		git:          client,
@@ -148,7 +148,7 @@ func (b *FileResultBuilder) CalculateDerivedMetrics() *FileResultBuilder {
 	if b.result.FirstCommit.IsZero() {
 		b.result.AgeDays = 0
 	} else {
-		b.result.AgeDays = internal.CalculateDaysBetween(b.result.FirstCommit, time.Now())
+		b.result.AgeDays = contract.CalculateDaysBetween(b.result.FirstCommit, time.Now())
 	}
 
 	// Gini coefficient for author diversity

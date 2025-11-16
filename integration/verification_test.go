@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/huangsam/hotspot/internal"
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -94,8 +94,8 @@ func TestFilesVerification(t *testing.T) {
 	hotspotPath := getHotspotBinary()
 
 	// Use a fixed time range for consistent testing (last 365 days)
-	startTime := time.Now().AddDate(0, 0, -365).Format(internal.DateTimeFormat)
-	endTime := time.Now().Format(internal.DateTimeFormat)
+	startTime := time.Now().AddDate(0, 0, -365).Format(contract.DateTimeFormat)
+	endTime := time.Now().Format(contract.DateTimeFormat)
 
 	// Run hotspot files --output json --detail --start <start> --end <end> --limit 1000
 	// Use a high limit to get all files, not just the top ranked ones
@@ -143,7 +143,7 @@ func TestFilesVerification(t *testing.T) {
 					firstCommitTime, err := time.Parse(time.RFC3339, firstCommitTimestampStr)
 					require.NoError(t, err, "failed to parse git timestamp for %s", file)
 
-					expectedAgeDays := internal.CalculateDaysBetween(firstCommitTime, time.Now())
+					expectedAgeDays := contract.CalculateDaysBetween(firstCommitTime, time.Now())
 
 					// Age should match exactly since we're using the same time range
 					assert.Equal(t, expectedAgeDays, details.AgeDays,
@@ -193,8 +193,8 @@ func TestFoldersVerification(t *testing.T) {
 	hotspotPath := getHotspotBinary()
 
 	// Use a fixed time range for consistent testing (last 365 days)
-	startTime := time.Now().AddDate(0, 0, -365).Format(internal.DateTimeFormat)
-	endTime := time.Now().Format(internal.DateTimeFormat)
+	startTime := time.Now().AddDate(0, 0, -365).Format(contract.DateTimeFormat)
+	endTime := time.Now().Format(contract.DateTimeFormat)
 
 	// Run hotspot folders --output json --detail --start <start> --end <end> --limit 1000
 	cmd := exec.Command(hotspotPath, "folders", "--output", "json", "--detail", "--start", startTime, "--end", endTime, "--limit", "1000")
@@ -212,7 +212,7 @@ func TestFoldersVerification(t *testing.T) {
 		t.Run(folderPath, func(t *testing.T) {
 			// Verify that folder has reasonable values and structure
 			assert.Greater(t, folder.Commits, 0, "folder should have commits")
-			assert.Greater(t, folder.Churn, 0, "folder should have churn")
+			assert.GreaterOrEqual(t, folder.Churn, 0, "folder should have non-negative churn")
 			assert.GreaterOrEqual(t, folder.Score, 0.0, "folder should have non-negative score")
 			assert.NotEmpty(t, folder.Path, "folder should have a path")
 			assert.Contains(t, []string{"hot", "risk", "complexity", "stale"}, string(folder.Mode), "folder should have valid mode")

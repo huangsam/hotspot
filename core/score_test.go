@@ -2,6 +2,8 @@ package core
 
 import (
 	"math"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -89,29 +91,6 @@ func TestComputeScoreAllModes(t *testing.T) {
 	}
 }
 
-// TestComputeFolderScore validates folder computation.
-func TestComputeFolderScore(t *testing.T) {
-	t.Run("divide by zero", func(t *testing.T) {
-		results := &schema.FolderResult{
-			Path:             ".",
-			TotalLOC:         0,
-			WeightedScoreSum: 100.0,
-		}
-		score := computeFolderScore(results)
-		assert.Empty(t, score)
-	})
-
-	t.Run("valid calculation", func(t *testing.T) {
-		results := &schema.FolderResult{
-			Path:             ".",
-			TotalLOC:         100,
-			WeightedScoreSum: 92.0,
-		}
-		score := computeFolderScore(results)
-		assert.InEpsilon(t, float64(.92), score, 0.01)
-	})
-}
-
 // BenchmarkGini benchmarks the Gini coefficient calculation.
 func BenchmarkGini(b *testing.B) {
 	values := []float64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
@@ -139,7 +118,7 @@ func BenchmarkComputeScore(b *testing.B) {
 	}
 }
 
-// TestComputeScoreWithCustomWeights tests that custom weights produce different results than defaults
+// TestComputeScoreWithCustomWeights tests that custom weights produce different results than defaults.
 func TestComputeScoreWithCustomWeights(t *testing.T) {
 	metrics := schema.FileResult{
 		Path:               "test.go",
@@ -175,7 +154,7 @@ func TestComputeScoreWithCustomWeights(t *testing.T) {
 	assert.True(t, customScore >= 0 && customScore <= 100, "Custom score should be valid")
 }
 
-// TestComputeScoreCustomWeightsAllModes tests custom weights for all scoring modes
+// TestComputeScoreCustomWeightsAllModes tests custom weights for all scoring modes.
 func TestComputeScoreCustomWeightsAllModes(t *testing.T) {
 	modes := []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode}
 
@@ -233,7 +212,7 @@ func TestComputeScoreCustomWeightsAllModes(t *testing.T) {
 	}
 }
 
-// TestComputeScoreInvalidCustomWeights tests behavior with invalid custom weights
+// TestComputeScoreInvalidCustomWeights tests behavior with invalid custom weights.
 func TestComputeScoreInvalidCustomWeights(t *testing.T) {
 	metrics := schema.FileResult{
 		Path:               "test.go",
@@ -254,4 +233,124 @@ func TestComputeScoreInvalidCustomWeights(t *testing.T) {
 	emptyWeights := map[schema.ScoringMode]map[schema.BreakdownKey]float64{}
 	score = computeScore(&metrics, schema.HotMode, emptyWeights)
 	assert.True(t, score >= 0 && score <= 100, "Score with empty custom weights should be valid")
+}
+
+// FuzzComputeScore fuzzes the computeScore function with random FileResult inputs.
+func FuzzComputeScore(f *testing.F) {
+	seeds := []struct {
+		result schema.FileResult
+		mode   schema.ScoringMode
+	}{
+		{
+			result: schema.FileResult{
+				Path:               "main.go",
+				SizeBytes:          1000,
+				LinesOfCode:        50,
+				Commits:            10,
+				Churn:              100,
+				AgeDays:            365,
+				UniqueContributors: 2,
+				Gini:               0.5,
+				RecentCommits:      5,
+				Mode:               schema.HotMode,
+			},
+			mode: schema.HotMode,
+		},
+		{
+			result: schema.FileResult{
+				Path:               "test.go",
+				SizeBytes:          1000,
+				LinesOfCode:        100,
+				Commits:            10,
+				Churn:              50,
+				AgeDays:            365,
+				UniqueContributors: 2,
+				Gini:               0.5,
+				RecentCommits:      5,
+				Mode:               schema.HotMode,
+			},
+			mode: schema.HotMode,
+		},
+		{
+			result: schema.FileResult{
+				Path:               "test.go",
+				SizeBytes:          0, // edge case
+				LinesOfCode:        0,
+				Commits:            0,
+				Churn:              0,
+				AgeDays:            0,
+				UniqueContributors: 0,
+				Gini:               0,
+				RecentCommits:      0,
+				Mode:               schema.RiskMode,
+			},
+			mode: schema.RiskMode,
+		},
+	}
+	for _, seed := range seeds {
+		f.Add(seed.result.Path, seed.result.SizeBytes, seed.result.LinesOfCode,
+			seed.result.Commits, seed.result.Churn, seed.result.AgeDays,
+			seed.result.UniqueContributors, seed.result.Gini, seed.result.RecentCommits,
+			string(seed.mode))
+	}
+
+	f.Fuzz(func(_ *testing.T,
+		path string,
+		sizeBytes int64,
+		linesOfCode int,
+		commits int,
+		churn int,
+		ageDays int,
+		uniqueContributors int,
+		gini float64,
+		recentCommits int,
+		mode string,
+	) {
+		result := schema.FileResult{
+			Path:               path,
+			SizeBytes:          sizeBytes,
+			LinesOfCode:        linesOfCode,
+			Commits:            commits,
+			Churn:              churn,
+			AgeDays:            ageDays,
+			UniqueContributors: uniqueContributors,
+			Gini:               gini,
+			RecentCommits:      recentCommits,
+			Mode:               schema.ScoringMode(mode),
+		}
+		_ = computeScore(&result, schema.ScoringMode(mode), nil)
+	})
+}
+
+// FuzzGini fuzzes the gini function with random value arrays.
+func FuzzGini(f *testing.F) {
+	seeds := []string{
+		"[1,2,3]",
+		"[0,0,0]",
+		"[100]",
+		"[]",
+		"[1,1,1,1]",
+	}
+	for _, seed := range seeds {
+		f.Add(seed)
+	}
+
+	f.Fuzz(func(_ *testing.T, valuesJSON string) {
+		// Simple parsing, may fail but that's ok for fuzzing
+		values := []float64{}
+		if valuesJSON != "" && valuesJSON[0] == '[' && valuesJSON[len(valuesJSON)-1] == ']' {
+			// Very basic parsing, just for fuzzing
+			inner := valuesJSON[1 : len(valuesJSON)-1]
+			if inner != "" {
+				parts := strings.SplitSeq(inner, ",")
+				for p := range parts {
+					// Skip parsing errors, just try
+					if f, err := strconv.ParseFloat(strings.TrimSpace(p), 64); err == nil {
+						values = append(values, f)
+					}
+				}
+			}
+		}
+		_ = gini(values)
+	})
 }

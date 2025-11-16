@@ -17,10 +17,10 @@ type ComparableResult interface {
 	GetOwners() []string
 }
 
-// DeltaExtractor extracts additional deltas for comparison details
+// DeltaExtractor extracts additional deltas for comparison details.
 type DeltaExtractor[T ComparableResult] func(base, target T) (deltaLOC, deltaContrib int)
 
-// compareResults is a generic function that compares two sets of results
+// compareResults is a generic function that compares two sets of results.
 func compareResults[T ComparableResult](baseResults, targetResults []T, limit int, mode string, extractDeltas DeltaExtractor[T]) schema.ComparisonResult {
 	baseMap := make(map[string]T, len(baseResults))
 	targetMap := make(map[string]T, len(targetResults))
@@ -152,7 +152,7 @@ func compareResults[T ComparableResult](baseResults, targetResults []T, limit in
 	return schema.ComparisonResult{Results: comparisonResults, Summary: summary}
 }
 
-// determineStatus returns the status based on existence in base and target
+// determineStatus returns the status based on existence in base and target.
 func determineStatus(baseExists, targetExists bool) schema.Status {
 	switch {
 	case !baseExists && targetExists:
@@ -166,7 +166,7 @@ func determineStatus(baseExists, targetExists bool) schema.Status {
 	}
 }
 
-// sortComparisonResults sorts comparison results by absolute delta, then delta sign, then path
+// sortComparisonResults sorts comparison results by absolute delta, then delta sign, then path.
 func sortComparisonResults(results []schema.ComparisonDetails) {
 	sort.Slice(results, func(i, j int) bool {
 		a := results[i]

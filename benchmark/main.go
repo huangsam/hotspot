@@ -96,7 +96,7 @@ func main() {
 	printSummary(results)
 }
 
-// checkPrerequisites verifies that hotspot binary and test repositories exist
+// checkPrerequisites verifies that hotspot binary and test repositories exist.
 func checkPrerequisites(config BenchmarkConfig) error {
 	// Check if hotspot is available
 	if _, err := exec.LookPath("hotspot"); err != nil {
@@ -114,7 +114,7 @@ func checkPrerequisites(config BenchmarkConfig) error {
 	return nil
 }
 
-// runBenchmarks executes all benchmark tests across configured repositories
+// runBenchmarks executes all benchmark tests across configured repositories.
 func runBenchmarks(config BenchmarkConfig) []BenchmarkResult {
 	var results []BenchmarkResult
 
@@ -152,7 +152,7 @@ func runBenchmarks(config BenchmarkConfig) []BenchmarkResult {
 	return results
 }
 
-// runBenchmarkSuite runs both no-cache and cache benchmarks for a command
+// runBenchmarkSuite runs both no-cache and cache benchmarks for a command.
 func runBenchmarkSuite(config BenchmarkConfig, repo, repoPath, command, description, extraArgs string) BenchmarkResult {
 	fmt.Printf("Running %s on %s\n", description, repo)
 
@@ -182,7 +182,7 @@ func runBenchmarkSuite(config BenchmarkConfig, repo, repoPath, command, descript
 	}
 }
 
-// runBenchmark executes a hotspot command multiple times with specified cache backend and returns the average time of successful runs
+// runBenchmark executes a hotspot command multiple times with specified cache backend and returns the average time of successful runs.
 func runBenchmark(config BenchmarkConfig, repoPath, command, extraArgs, cacheBackend string, numRuns int) float64 {
 	// Prepare command arguments
 	args := []string{command, "--cache-backend", cacheBackend}
@@ -252,7 +252,7 @@ func parseArgs(argsStr string) []string {
 	return args
 }
 
-// isSuccess checks if command output indicates successful completion
+// isSuccess checks if command output indicates successful completion.
 func isSuccess(output []byte, command string) bool {
 	outputStr := string(output)
 
@@ -264,11 +264,11 @@ func isSuccess(output []byte, command string) bool {
 	}
 
 	return strings.Contains(outputStr, completionPhrase) &&
-		strings.Contains(outputStr, "using") &&
+		strings.Contains(outputStr, "with") &&
 		strings.Contains(outputStr, "workers")
 }
 
-// saveResults writes benchmark results to a timestamped CSV file
+// saveResults writes benchmark results to a timestamped CSV file.
 func saveResults(results []BenchmarkResult) error {
 	timestamp := time.Now().Format("20060102_150405")
 	filename := fmt.Sprintf("/tmp/hotspot_benchmark_%s.csv", timestamp)
@@ -302,7 +302,7 @@ func saveResults(results []BenchmarkResult) error {
 	return nil
 }
 
-// printSummary displays the final benchmark results summary
+// printSummary displays the final benchmark results summary.
 func printSummary(results []BenchmarkResult) {
 	fmt.Printf("Benchmark complete\n")
 
@@ -313,7 +313,7 @@ func printSummary(results []BenchmarkResult) {
 	fmt.Printf("Benchmark script completed successfully\n")
 }
 
-// printCommandSummary displays results for a specific command type
+// printCommandSummary displays results for a specific command type.
 func printCommandSummary(results []BenchmarkResult, command, title string) {
 	fmt.Printf("%s\n", title)
 	for _, result := range results {

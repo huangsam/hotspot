@@ -5,7 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/huangsam/hotspot/internal"
+	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -13,8 +14,8 @@ import (
 
 func TestRunTimeseriesAnalysis_Success(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &internal.MockGitClient{}
-	mockMgr := &internal.MockCacheManager{}
+	mockClient := &contract.MockGitClient{}
+	mockMgr := &iocache.MockCacheManager{}
 
 	now := time.Date(2024, 6, 15, 10, 30, 0, 0, time.UTC)
 	interval := 30 * 24 * time.Hour // 30 days
@@ -42,7 +43,7 @@ func TestRunTimeseriesAnalysis_Success(t *testing.T) {
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil).Maybe()
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		RepoPath:    "/test/repo",
 		Mode:        schema.HotMode,
 		Workers:     1,
@@ -72,8 +73,8 @@ func TestRunTimeseriesAnalysis_Success(t *testing.T) {
 
 func TestRunTimeseriesAnalysis_GetOldestCommitError(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &internal.MockGitClient{}
-	mockMgr := &internal.MockCacheManager{}
+	mockClient := &contract.MockGitClient{}
+	mockMgr := &iocache.MockCacheManager{}
 
 	now := time.Date(2024, 6, 15, 10, 30, 0, 0, time.UTC)
 	interval := 30 * 24 * time.Hour
@@ -88,7 +89,7 @@ func TestRunTimeseriesAnalysis_GetOldestCommitError(t *testing.T) {
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte(""), nil).Maybe() // Empty log for fallback case
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		RepoPath:    "/test/repo",
 		Mode:        schema.HotMode,
 		Workers:     1,
@@ -111,8 +112,8 @@ func TestRunTimeseriesAnalysis_GetOldestCommitError(t *testing.T) {
 
 func TestAnalyzeTimeseriesPoint_File(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &internal.MockGitClient{}
-	mockMgr := &internal.MockCacheManager{}
+	mockClient := &contract.MockGitClient{}
+	mockMgr := &iocache.MockCacheManager{}
 
 	path := "main.go"
 	isFolder := false
@@ -123,7 +124,7 @@ func TestAnalyzeTimeseriesPoint_File(t *testing.T) {
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		RepoPath:    "/test/repo",
 		StartTime:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		EndTime:     time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
@@ -143,8 +144,8 @@ func TestAnalyzeTimeseriesPoint_File(t *testing.T) {
 
 func TestAnalyzeTimeseriesPoint_Folder(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &internal.MockGitClient{}
-	mockMgr := &internal.MockCacheManager{}
+	mockClient := &contract.MockGitClient{}
+	mockMgr := &iocache.MockCacheManager{}
 
 	path := "src/"
 	isFolder := true
@@ -155,7 +156,7 @@ func TestAnalyzeTimeseriesPoint_Folder(t *testing.T) {
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tsrc/main.go\n2\t1\tsrc/utils.go\n"), nil)
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		RepoPath:    "/test/repo",
 		StartTime:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		EndTime:     time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
@@ -176,8 +177,8 @@ func TestAnalyzeTimeseriesPoint_Folder(t *testing.T) {
 
 func TestAnalyzeTimeseriesPoint_NoData(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &internal.MockGitClient{}
-	mockMgr := &internal.MockCacheManager{}
+	mockClient := &contract.MockGitClient{}
+	mockMgr := &iocache.MockCacheManager{}
 
 	path := "nonexistent.go"
 	isFolder := false
@@ -188,7 +189,7 @@ func TestAnalyzeTimeseriesPoint_NoData(t *testing.T) {
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte(""), nil)
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		RepoPath:  "/test/repo",
 		StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
@@ -207,8 +208,8 @@ func TestAnalyzeTimeseriesPoint_NoData(t *testing.T) {
 
 func TestAnalyzeTimeseriesPoint_PathNotFound(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &internal.MockGitClient{}
-	mockMgr := &internal.MockCacheManager{}
+	mockClient := &contract.MockGitClient{}
+	mockMgr := &iocache.MockCacheManager{}
 
 	path := "missing.go"
 	isFolder := false
@@ -219,7 +220,7 @@ func TestAnalyzeTimeseriesPoint_PathNotFound(t *testing.T) {
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tother.go\n"), nil)
 
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		RepoPath:  "/test/repo",
 		StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),

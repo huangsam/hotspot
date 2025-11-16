@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/huangsam/hotspot/internal"
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,12 +14,12 @@ func TestAnalyzeFileCommon(t *testing.T) {
 	ctx := context.Background()
 
 	// Create mock client
-	mockClient := &internal.MockGitClient{}
+	mockClient := &contract.MockGitClient{}
 
 	// No git calls needed - all data comes from aggregation phase
 
 	// Create config
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		RepoPath:  "/test/repo",
 		StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 		EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
@@ -55,12 +55,12 @@ func TestAnalyzeRepo(t *testing.T) {
 	ctx := context.Background()
 
 	// Create mock client
-	mockClient := &internal.MockGitClient{}
+	mockClient := &contract.MockGitClient{}
 
 	// No git calls needed - all data comes from aggregation phase
 
 	// Create config
-	cfg := &internal.Config{
+	cfg := &contract.Config{
 		RepoPath:  "/test/repo",
 		StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 		EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),

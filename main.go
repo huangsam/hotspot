@@ -11,7 +11,8 @@ import (
 	"strings"
 
 	"github.com/huangsam/hotspot/core"
-	"github.com/huangsam/hotspot/internal"
+	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -28,19 +29,19 @@ var (
 var rootCtx = context.Background()
 
 // cfg will hold the validated, final configuration.
-var cfg = &internal.Config{}
+var cfg = &contract.Config{}
 
 // input holds the raw, unvalidated configuration from all sources (file, env, flags).
 // Viper will unmarshal into this struct.
-var input = &internal.ConfigRawInput{}
+var input = &contract.ConfigRawInput{}
 
-// profile holds profiling configuration
-var profile = &internal.ProfileConfig{}
+// profile holds profiling configuration.
+var profile = &contract.ProfileConfig{}
 
 // cacheManager is the global persistence manager instance.
-var cacheManager internal.CacheManager
+var cacheManager contract.CacheManager
 
-// startProfiling starts CPU and memory profiling if enabled
+// startProfiling starts CPU and memory profiling if enabled.
 func startProfiling() error {
 	if !profile.Enabled {
 		return nil
@@ -60,7 +61,7 @@ func startProfiling() error {
 	return nil
 }
 
-// stopProfiling stops profiling and writes memory profile
+// stopProfiling stops profiling and writes memory profile.
 func stopProfiling() error {
 	if !profile.Enabled {
 		return nil
@@ -111,10 +112,10 @@ func initConfig() {
 	viper.AutomaticEnv() // Read in environment variables that match
 
 	// Set defaults in Viper
-	viper.SetDefault("limit", internal.DefaultResultLimit)
-	viper.SetDefault("workers", internal.DefaultWorkers)
+	viper.SetDefault("limit", contract.DefaultResultLimit)
+	viper.SetDefault("workers", contract.DefaultWorkers)
 	viper.SetDefault("mode", schema.HotMode)
-	viper.SetDefault("precision", internal.DefaultPrecision)
+	viper.SetDefault("precision", contract.DefaultPrecision)
 	viper.SetDefault("output", schema.TextOut)
 	viper.SetDefault("lookback", "6 months")
 	viper.SetDefault("cache-backend", schema.SQLiteBackend)
@@ -125,7 +126,7 @@ func initConfig() {
 func sharedSetup(ctx context.Context, _ *cobra.Command, args []string) error {
 	// Handle profiling flag
 	profilePrefix := viper.GetString("profile")
-	if err := internal.ProcessProfilingConfig(profile, profilePrefix); err != nil {
+	if err := contract.ProcessProfilingConfig(profile, profilePrefix); err != nil {
 		return fmt.Errorf("failed to process profiling config: %w", err)
 	}
 	if profile.Enabled {
@@ -157,13 +158,13 @@ func sharedSetup(ctx context.Context, _ *cobra.Command, args []string) error {
 
 	// 4. Run all validation and complex parsing.
 	// This function now populates the global 'cfg' from 'input'.
-	client := internal.NewLocalGitClient()
-	if err := internal.ProcessAndValidate(ctx, cfg, client, input); err != nil {
+	client := contract.NewLocalGitClient()
+	if err := contract.ProcessAndValidate(ctx, cfg, client, input); err != nil {
 		return err
 	}
 
 	// 5. Initialize persistence layer with validated config
-	if err := internal.InitCaching(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
+	if err := iocache.InitCaching(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
 		return fmt.Errorf("failed to initialize persistence: %w", err)
 	}
 
@@ -191,12 +192,12 @@ func cacheSetup() error {
 	connStr := viper.GetString("cache-db-connect")
 
 	// Basic validation for database backends
-	if err := internal.ValidateDatabaseConnectionString(backend, connStr); err != nil {
+	if err := contract.ValidateDatabaseConnectionString(backend, connStr); err != nil {
 		return err
 	}
 
 	// Initialize caching with the loaded config
-	if err := internal.InitCaching(backend, connStr); err != nil {
+	if err := iocache.InitCaching(backend, connStr); err != nil {
 		return fmt.Errorf("failed to initialize cache: %w", err)
 	}
 
@@ -220,7 +221,7 @@ var filesCmd = &cobra.Command{
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := core.ExecuteHotspotFiles(rootCtx, cfg, cacheManager); err != nil {
-			internal.LogFatal("Cannot run files analysis", err)
+			contract.LogFatal("Cannot run files analysis", err)
 		}
 	},
 }
@@ -234,7 +235,7 @@ var foldersCmd = &cobra.Command{
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := core.ExecuteHotspotFolders(rootCtx, cfg, cacheManager); err != nil {
-			internal.LogFatal("Cannot run folders analysis", err)
+			contract.LogFatal("Cannot run folders analysis", err)
 		}
 	},
 }
@@ -249,10 +250,10 @@ var compareCmd = &cobra.Command{
 // checkCompareAndExecute validates compare mode and executes the given function.
 func checkCompareAndExecute(executeFunc core.ExecutorFunc) {
 	if !cfg.CompareMode {
-		internal.LogFatal("Cannot run compare analysis", errors.New("base and target refs must be provided"))
+		contract.LogFatal("Cannot run compare analysis", errors.New("base and target refs must be provided"))
 	}
 	if err := executeFunc(rootCtx, cfg, cacheManager); err != nil {
-		internal.LogFatal("Cannot run compare analysis", err)
+		contract.LogFatal("Cannot run compare analysis", err)
 	}
 }
 
@@ -301,7 +302,7 @@ var metricsCmd = &cobra.Command{
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := core.ExecuteHotspotMetrics(rootCtx, cfg, cacheManager); err != nil {
-			internal.LogFatal("Cannot display metrics", err)
+			contract.LogFatal("Cannot display metrics", err)
 		}
 	},
 }
@@ -315,7 +316,7 @@ var timeseriesCmd = &cobra.Command{
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := core.ExecuteHotspotTimeseries(rootCtx, cfg, cacheManager); err != nil {
-			internal.LogFatal("Cannot run timeseries analysis", err)
+			contract.LogFatal("Cannot run timeseries analysis", err)
 		}
 	},
 }
@@ -338,8 +339,8 @@ var cacheClearCmd = &cobra.Command{
 	Long:    `The clear subcommand removes all cached data for the current backend configuration.`,
 	PreRunE: cacheSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := internal.ClearCache(cfg.CacheBackend, internal.GetDBFilePath(), cfg.CacheDBConnect); err != nil {
-			internal.LogFatal("Failed to clear cache", err)
+		if err := iocache.ClearCache(cfg.CacheBackend, contract.GetDBFilePath(), cfg.CacheDBConnect); err != nil {
+			contract.LogFatal("Failed to clear cache", err)
 		}
 		fmt.Println("Cache cleared successfully.")
 	},
@@ -371,27 +372,27 @@ func init() {
 	rootCmd.PersistentFlags().String("end", "", "End date in ISO8601 or time ago")
 	rootCmd.PersistentFlags().String("exclude", "", "Comma-separated list of path prefixes or patterns to ignore")
 	rootCmd.PersistentFlags().StringP("filter", "f", "", "Filter targets by path prefix")
-	rootCmd.PersistentFlags().IntP("limit", "l", internal.DefaultResultLimit, "Number of results to display")
+	rootCmd.PersistentFlags().IntP("limit", "l", contract.DefaultResultLimit, "Number of results to display")
 	rootCmd.PersistentFlags().String("mode", string(schema.HotMode), "Scoring mode: hot or risk or complexity or stale")
 	rootCmd.PersistentFlags().String("output", string(schema.TextOut), "Output format: text or csv or json")
 	rootCmd.PersistentFlags().String("output-file", "", "Optional path to write output to")
 	rootCmd.PersistentFlags().Bool("owner", false, "Print per-target owner")
-	rootCmd.PersistentFlags().Int("precision", internal.DefaultPrecision, "Decimal precision for numeric columns")
+	rootCmd.PersistentFlags().Int("precision", contract.DefaultPrecision, "Decimal precision for numeric columns")
 	rootCmd.PersistentFlags().String("profile", "", "Enable profiling and write profiles to files with this prefix")
 	rootCmd.PersistentFlags().String("start", "", "Start date in ISO8601 or time ago")
-	rootCmd.PersistentFlags().Int("workers", internal.DefaultWorkers, "Number of concurrent workers")
+	rootCmd.PersistentFlags().Int("workers", contract.DefaultWorkers, "Number of concurrent workers")
 	rootCmd.PersistentFlags().Int("width", 0, "Terminal width override (0 = auto-detect)")
 	rootCmd.PersistentFlags().String("cache-backend", string(schema.SQLiteBackend), "Cache backend: sqlite or mysql or postgresql or none")
 	rootCmd.PersistentFlags().String("cache-db-connect", "", "Database connection string for mysql/postgresql (e.g., user:pass@tcp(host:port)/dbname)")
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
-		internal.LogFatal("Error binding root flags", err)
+		contract.LogFatal("Error binding root flags", err)
 	}
 
 	// Bind all flags of filesCmd to Viper
 	filesCmd.Flags().Bool("explain", false, "Print per-file component score breakdown")
 	filesCmd.Flags().Bool("follow", false, "Re-run per-file analysis with --follow")
 	if err := viper.BindPFlags(filesCmd.Flags()); err != nil {
-		internal.LogFatal("Error binding files flags", err)
+		contract.LogFatal("Error binding files flags", err)
 	}
 
 	// Bind all persistent flags of compareCmd to Viper
@@ -399,7 +400,7 @@ func init() {
 	compareCmd.PersistentFlags().String("target-ref", "", "Target Git reference for the AFTER state (required)")
 	compareCmd.PersistentFlags().String("lookback", "6 months", "Time duration to look back from Base/Target ref commit time")
 	if err := viper.BindPFlags(compareCmd.PersistentFlags()); err != nil {
-		internal.LogFatal("Error binding compare flags", err)
+		contract.LogFatal("Error binding compare flags", err)
 	}
 
 	// Bind all flags of timeseriesCmd to Viper
@@ -407,25 +408,25 @@ func init() {
 	timeseriesCmd.Flags().String("interval", "3 months", "Total time interval")
 	timeseriesCmd.Flags().Int("points", 3, "Number of lookback points")
 	if err := viper.BindPFlags(timeseriesCmd.Flags()); err != nil {
-		internal.LogFatal("Error binding timeseries flags", err)
+		contract.LogFatal("Error binding timeseries flags", err)
 	}
 }
 
 // main starts the execution of the logic.
 func main() {
 	// Set the global caching manager (will be initialized in sharedSetup)
-	cacheManager = internal.Manager
+	cacheManager = iocache.Manager
 
 	defer func() {
 		// Close caching on exit
-		internal.CloseCaching()
+		iocache.CloseCaching()
 
 		if err := stopProfiling(); err != nil {
-			internal.LogFatal("Error stopping profiling", err)
+			contract.LogFatal("Error stopping profiling", err)
 		}
 	}()
 
 	if err := rootCmd.Execute(); err != nil {
-		internal.LogFatal("Error starting CLI", err)
+		contract.LogFatal("Error starting CLI", err)
 	}
 }

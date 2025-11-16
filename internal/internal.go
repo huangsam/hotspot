@@ -2,75 +2,43 @@
 package internal
 
 import (
-	"os"
+	"fmt"
+	"path/filepath"
+	"time"
 
-	"github.com/fatih/color"
+	"github.com/huangsam/hotspot/internal/contract"
 )
 
-const (
-	criticalValue = "Critical" // Critical value
-	highValue     = "High"     // High value
-	moderateValue = "Moderate" // Moderate value
-	lowValue      = "Low"      // Low value
-)
-
-var (
-	// criticalColor represents standard danger.
-	criticalColor = color.New(color.FgRed, color.Bold)
-
-	// highColor represents strong, distinct warning.
-	highColor = color.New(color.FgMagenta, color.Bold)
-
-	// moderateColor represents standard caution, not bold.
-	moderateColor = color.New(color.FgYellow)
-
-	// lowColor represents informational / low-priority signal.
-	lowColor = color.New(color.FgCyan)
-)
-
-// getPlainLabel returns a plain text label indicating the criticality level
-// based on the file's importance score. This is the core logic used for
-// CSV, JSON, and table printing.
-// - Critical (>=80)
-// - High (>=60)
-// - Moderate (>=40)
-// - Low (<40)
-func getPlainLabel(score float64) string {
-	switch {
-	case score >= 80:
-		return criticalValue
-	case score >= 60:
-		return highValue
-	case score >= 40:
-		return moderateValue
-	default:
-		return lowValue
+// LogAnalysisHeader prints a concise, 2-line header for each analysis phase.
+func LogAnalysisHeader(cfg *contract.Config) {
+	repoName := filepath.Base(cfg.RepoPath)
+	if repoName == "" || repoName == "." {
+		repoName = "current"
 	}
+
+	// Line 1: The analysis summary (Repo and Mode)
+	fmt.Printf("🔎 Repo: %s (Mode: %s)\n", repoName, cfg.Mode)
+
+	// Line 2: The actual date range being analyzed
+	fmt.Printf("📅 Range: %s → %s\n", cfg.StartTime.Format(contract.DateTimeFormat), cfg.EndTime.Format(contract.DateTimeFormat))
 }
 
-// getColorLabel returns a colored text label for console output (table).
-// It uses getLabelText to determine the string, and then applies the appropriate color.
-func getColorLabel(score float64) string {
-	text := getPlainLabel(score)
-
-	switch text {
-	case criticalValue:
-		return criticalColor.Sprint(text)
-	case highValue:
-		return highColor.Sprint(text)
-	case moderateValue:
-		return moderateColor.Sprint(text)
-	default: // "Low"
-		return lowColor.Sprint(text)
+// LogTimeseriesHeader prints a header for timeseries analysis.
+func LogTimeseriesHeader(cfg *contract.Config, intervalDuration time.Duration, numPoints int) {
+	repoName := filepath.Base(cfg.RepoPath)
+	if repoName == "" || repoName == "." {
+		repoName = "current"
 	}
+	fmt.Printf("🔎 Repo: %s (Mode: %s)\n", repoName, cfg.Mode)
+	fmt.Printf("📅 Timeseries: %d data points (interval: %v)\n", numPoints, intervalDuration)
 }
 
-// selectOutputFile returns the appropriate file handle for output, based on the provided
-// file path and format type. It falls back to os.Stdout on error.
-// This function replaces both selectCSVOutputFile and selectJSONOutputFile.
-func selectOutputFile(filePath string) (*os.File, error) {
-	if filePath == "" {
-		return os.Stdout, nil
+// LogCompareHeader prints a header for comparison analysis.
+func LogCompareHeader(cfg *contract.Config) {
+	repoName := filepath.Base(cfg.RepoPath)
+	if repoName == "" || repoName == "." {
+		repoName = "current"
 	}
-	return os.Create(filePath)
+	fmt.Printf("🔎 Repo: %s (Mode: %s)\n", repoName, cfg.Mode)
+	fmt.Printf("📊 Comparing: %s ↔ %s (lookback: %v)\n", cfg.BaseRef, cfg.TargetRef, cfg.Lookback)
 }

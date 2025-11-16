@@ -34,7 +34,7 @@ func getWeightsForMode(mode schema.ScoringMode, customWeights map[schema.Scoring
 // - hot: Activity hotspots (high commits, churn, contributors)
 // - risk: Knowledge risk/bus factor (few contributors, high inequality)
 // - complexity: Technical debt candidates (large, old, high total churn)
-// - stale: Maintenance debt (important but untouched)
+// - stale: Maintenance debt (important but untouched).
 func computeScore(m *schema.FileResult, mode schema.ScoringMode, customWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64) float64 {
 	// DEFENSIVE CHECK: If the file has no content, its score should be 0.
 	if m.SizeBytes == 0 {
@@ -167,19 +167,4 @@ func gini(values []float64) float64 {
 
 	g := diffSum / (2 * float64(n*n) * mean)
 	return math.Min(math.Max(g, 0), 1) // clamp to [0,1]
-}
-
-// computeFolderScore computes the final score for a folder as a weighted average.
-// The weight for the average is Lines of Code (LOC).
-func computeFolderScore(folderResult *schema.FolderResult) float64 {
-	// Calculate Weighted Average Score
-	if folderResult.TotalLOC == 0 {
-		return 0.0
-	}
-	// Weighted Average Score = SUM(FileScore * FileLOC) / SUM(FileLOC)
-	score := folderResult.WeightedScoreSum / float64(folderResult.TotalLOC)
-
-	// Apply optional debuffs if needed, similar to CalculateFileScore
-	// For simplicity, we just return the raw weighted average here.
-	return score
 }
