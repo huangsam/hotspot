@@ -205,6 +205,36 @@ func ProcessAndValidate(ctx context.Context, cfg *Config, client GitClient, inpu
 	return nil
 }
 
+// ValidateDatabaseConnectionString validates the format of database connection strings
+// for MySQL and PostgreSQL backends.
+func ValidateDatabaseConnectionString(backend schema.CacheBackend, connStr string) error {
+	switch backend {
+	case schema.SQLiteBackend, schema.NoneBackend:
+		return nil
+	case schema.MySQLBackend:
+		if connStr == "" {
+			return fmt.Errorf("cache-db-connect is required when using %s backend", backend)
+		}
+		if !strings.Contains(connStr, "@tcp(") {
+			return fmt.Errorf("MySQL connection string must contain '@tcp(' for host:port specification")
+		}
+		if !strings.Contains(connStr, "/") {
+			return fmt.Errorf("MySQL connection string must contain '/' followed by database name")
+		}
+	case schema.PostgreSQLBackend:
+		if connStr == "" {
+			return fmt.Errorf("cache-db-connect is required when using %s backend", backend)
+		}
+		if !strings.Contains(connStr, "host=") {
+			return fmt.Errorf("PostgreSQL connection string must contain 'host=' parameter")
+		}
+		if !strings.Contains(connStr, "dbname=") {
+			return fmt.Errorf("PostgreSQL connection string must contain 'dbname=' parameter")
+		}
+	}
+	return nil
+}
+
 // validateSimpleInputs processes and validates all non-path related fields.
 func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	// --- 0. Transfer simple non-validated fields from input -> cfg ---
@@ -251,10 +281,8 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 		return fmt.Errorf("invalid cache backend '%s'. must be sqlite, mysql, postgresql, none", input.CacheBackend)
 	}
 	cfg.CacheDBConnect = input.CacheDBConnect
-
-	// Validate connection string for MySQL/PostgreSQL
-	if (cfg.CacheBackend == schema.MySQLBackend || cfg.CacheBackend == schema.PostgreSQLBackend) && cfg.CacheDBConnect == "" {
-		return fmt.Errorf("cache-db-connect is required when using %s backend", cfg.CacheBackend)
+	if err := ValidateDatabaseConnectionString(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
+		return err
 	}
 
 	// --- 6. Excludes Processing ---

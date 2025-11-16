@@ -837,3 +837,120 @@ func TestGetAnalysisStartAndEndTime(t *testing.T) {
 	// Test that the granularity constant is indeed time.Hour
 	assert.Equal(t, time.Hour, CacheGranularity, "CacheGranularity should be time.Hour")
 }
+
+func TestValidateDatabaseConnectionString(t *testing.T) {
+	tests := []struct {
+		name        string
+		backend     schema.CacheBackend
+		connStr     string
+		expectError bool
+	}{
+		// MySQL tests
+		{
+			name:        "mysql empty string",
+			backend:     schema.MySQLBackend,
+			connStr:     "",
+			expectError: true,
+		},
+		{
+			name:        "mysql valid connection string",
+			backend:     schema.MySQLBackend,
+			connStr:     "user:pass@tcp(localhost:3306)/hotspot",
+			expectError: false,
+		},
+		{
+			name:        "mysql missing @tcp(",
+			backend:     schema.MySQLBackend,
+			connStr:     "user:pass@localhost:3306/hotspot",
+			expectError: true,
+		},
+		{
+			name:        "mysql missing database",
+			backend:     schema.MySQLBackend,
+			connStr:     "user:pass@tcp(localhost:3306)",
+			expectError: true,
+		},
+		{
+			name:        "mysql missing both @tcp( and database",
+			backend:     schema.MySQLBackend,
+			connStr:     "user:pass@localhost:3306",
+			expectError: true,
+		},
+
+		// PostgreSQL tests
+		{
+			name:        "postgresql empty string",
+			backend:     schema.PostgreSQLBackend,
+			connStr:     "",
+			expectError: true,
+		},
+		{
+			name:        "postgresql valid connection string",
+			backend:     schema.PostgreSQLBackend,
+			connStr:     "host=localhost port=5432 user=postgres password=secret dbname=hotspot",
+			expectError: false,
+		},
+		{
+			name:        "postgresql missing host=",
+			backend:     schema.PostgreSQLBackend,
+			connStr:     "port=5432 user=postgres password=secret dbname=hotspot",
+			expectError: true,
+		},
+		{
+			name:        "postgresql missing dbname=",
+			backend:     schema.PostgreSQLBackend,
+			connStr:     "host=localhost port=5432 user=postgres password=secret",
+			expectError: true,
+		},
+		{
+			name:        "postgresql missing both host= and dbname=",
+			backend:     schema.PostgreSQLBackend,
+			connStr:     "port=5432 user=postgres password=secret",
+			expectError: true,
+		},
+		{
+			name:        "postgresql valid with minimal params",
+			backend:     schema.PostgreSQLBackend,
+			connStr:     "host=localhost dbname=hotspot",
+			expectError: false,
+		},
+
+		// Other backends
+		{
+			name:        "sqlite backend with empty string",
+			backend:     schema.SQLiteBackend,
+			connStr:     "",
+			expectError: false,
+		},
+		{
+			name:        "sqlite backend with non-empty string",
+			backend:     schema.SQLiteBackend,
+			connStr:     "some.db",
+			expectError: false,
+		},
+		{
+			name:        "none backend with empty string",
+			backend:     schema.NoneBackend,
+			connStr:     "",
+			expectError: false,
+		},
+		{
+			name:        "none backend with non-empty string",
+			backend:     schema.NoneBackend,
+			connStr:     "anything",
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateDatabaseConnectionString(tt.backend, tt.connStr)
+
+			if tt.expectError {
+				assert.Error(t, err, "ValidateDatabaseConnectionString should return an error for %s", tt.name)
+			} else {
+				assert.NoError(t, err, "ValidateDatabaseConnectionString should not return an error for %s", tt.name)
+			}
+		})
+	}
+}

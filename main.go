@@ -190,6 +190,11 @@ func cacheSetup() error {
 	backend := schema.CacheBackend(viper.GetString("cache-backend"))
 	connStr := viper.GetString("cache-db-connect")
 
+	// Basic validation for database backends
+	if err := internal.ValidateDatabaseConnectionString(backend, connStr); err != nil {
+		return err
+	}
+
 	// Initialize caching with the loaded config
 	if err := internal.InitCaching(backend, connStr); err != nil {
 		return fmt.Errorf("failed to initialize cache: %w", err)
