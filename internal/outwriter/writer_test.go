@@ -32,7 +32,7 @@ func TestWriteJSONResults(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err := writeJSONResults(&buf, files)
+	err := writeJSONResultsForFiles(&buf, files)
 	require.NoError(t, err)
 
 	// Parse the JSON to verify structure
@@ -68,7 +68,7 @@ func TestWriteCSVResults(t *testing.T) {
 
 	var buf bytes.Buffer
 	w := csv.NewWriter(&buf)
-	err := writeCSVResults(w, files, fmtFloat, intFmt)
+	err := writeCSVResultsForFiles(w, files, fmtFloat, intFmt)
 	require.NoError(t, err)
 	w.Flush()
 
@@ -337,7 +337,7 @@ func TestWriteCSVResultsEmptyFiles(t *testing.T) {
 
 	var buf bytes.Buffer
 	w := csv.NewWriter(&buf)
-	err := writeCSVResults(w, files, fmtFloat, intFmt)
+	err := writeCSVResultsForFiles(w, files, fmtFloat, intFmt)
 	require.NoError(t, err)
 	w.Flush()
 
@@ -367,7 +367,7 @@ func TestWriteJSONResultsMultipleFiles(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err := writeJSONResults(&buf, files)
+	err := writeJSONResultsForFiles(&buf, files)
 	require.NoError(t, err)
 
 	var result []map[string]any

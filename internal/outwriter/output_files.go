@@ -17,48 +17,48 @@ import (
 	"github.com/olekukonko/tablewriter/tw"
 )
 
-// PrintFileResults outputs the analysis results in a formatted table or exports them as CSV/JSON.
-func PrintFileResults(files []schema.FileResult, cfg *contract.Config, duration time.Duration) error {
+// WriteFileResults outputs the analysis results, dispatching based on the output format configured.
+func WriteFileResults(files []schema.FileResult, cfg *contract.Config, duration time.Duration) error {
 	// Create formatters using helper
 	fmtFloat, intFmt := createFormatters(cfg.Precision)
 
 	// Dispatcher: Handle different output formats
 	switch cfg.Output {
 	case schema.JSONOut:
-		if err := printJSONResults(files, cfg); err != nil {
+		if err := writeFileJSONResults(files, cfg); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
 		}
 	case schema.CSVOut:
-		if err := printCSVResults(files, cfg, fmtFloat, intFmt); err != nil {
+		if err := writeFileCSVResults(files, cfg, fmtFloat, intFmt); err != nil {
 			return fmt.Errorf("error writing CSV output: %w", err)
 		}
 	default:
 		// Default to human-readable table
 		return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-			return printTableResults(files, cfg, fmtFloat, intFmt, duration, w)
+			return writeFileTable(files, cfg, fmtFloat, intFmt, duration, w)
 		}, "Wrote table")
 	}
 	return nil
 }
 
-// printJSONResults handles opening the file and calling the JSON writer.
-func printJSONResults(files []schema.FileResult, cfg *contract.Config) error {
+// writeFileJSONResults handles opening the file and calling the JSON writer.
+func writeFileJSONResults(files []schema.FileResult, cfg *contract.Config) error {
 	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-		return writeJSONResults(w, files)
+		return writeJSONResultsForFiles(w, files)
 	}, "Wrote JSON")
 }
 
-// printCSVResults handles opening the file and calling the CSV writer.
-func printCSVResults(files []schema.FileResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string) error {
+// writeFileCSVResults handles opening the file and calling the CSV writer.
+func writeFileCSVResults(files []schema.FileResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string) error {
 	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
 		csvWriter := csv.NewWriter(w)
 		defer csvWriter.Flush()
-		return writeCSVResults(csvWriter, files, fmtFloat, intFmt)
+		return writeCSVResultsForFiles(csvWriter, files, fmtFloat, intFmt)
 	}, "Wrote CSV")
 }
 
-// printTableResults generates and prints the human-readable table.
-func printTableResults(files []schema.FileResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
+// writeFileTable generates and prints the human-readable table.
+func writeFileTable(files []schema.FileResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
 	table := tablewriter.NewWriter(writer)
 
 	// 1. Define Headers
@@ -187,8 +187,8 @@ func formatTopMetricBreakdown(f *schema.FileResult) string {
 	return strings.Join(parts, " > ")
 }
 
-// writeCSVResults writes the analysis results in CSV format.
-func writeCSVResults(w *csv.Writer, files []schema.FileResult, fmtFloat func(float64) string, intFmt string) error {
+// writeCSVResultsForFiles writes the analysis results in CSV format.
+func writeCSVResultsForFiles(w *csv.Writer, files []schema.FileResult, fmtFloat func(float64) string, intFmt string) error {
 	// CSV header
 	header := []string{
 		"rank",
@@ -231,8 +231,8 @@ func writeCSVResults(w *csv.Writer, files []schema.FileResult, fmtFloat func(flo
 	return nil
 }
 
-// writeJSONResults writes the analysis results in JSON format.
-func writeJSONResults(w io.Writer, files []schema.FileResult) error {
+// writeJSONResultsForFiles writes the analysis results in JSON format.
+func writeJSONResultsForFiles(w io.Writer, files []schema.FileResult) error {
 	// 1. Prepare the data structure for JSON with rank and label added
 	type JSONFileResult struct {
 		Rank  int    `json:"rank"`

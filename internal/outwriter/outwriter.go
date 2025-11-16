@@ -22,27 +22,27 @@ func NewOutWriter() *OutWriter {
 
 // WriteFiles prints file analysis results using the configured output format.
 func (ow *OutWriter) WriteFiles(results []schema.FileResult, cfg *contract.Config, duration time.Duration) error {
-	return PrintFileResults(results, cfg, duration)
+	return WriteFileResults(results, cfg, duration)
 }
 
 // WriteFolders prints folder analysis results using the configured output format.
 func (ow *OutWriter) WriteFolders(results []schema.FolderResult, cfg *contract.Config, duration time.Duration) error {
-	return PrintFolderResults(results, cfg, duration)
+	return WriteFolderResults(results, cfg, duration)
 }
 
 // WriteComparison prints comparison analysis results using the configured output format.
 func (ow *OutWriter) WriteComparison(results schema.ComparisonResult, cfg *contract.Config, duration time.Duration) error {
-	return PrintComparisonResults(results, cfg, duration)
+	return WriteComparisonResults(results, cfg, duration)
 }
 
 // WriteTimeseries prints timeseries analysis results using the configured output format.
 func (ow *OutWriter) WriteTimeseries(result schema.TimeseriesResult, cfg *contract.Config, duration time.Duration) error {
-	return PrintTimeseriesResults(result, cfg, duration)
+	return WriteTimeseriesResults(result, cfg, duration)
 }
 
 // WriteMetrics prints metrics definitions using the configured output format.
 func (ow *OutWriter) WriteMetrics(activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, cfg *contract.Config) error {
-	return PrintMetricsDefinitions(activeWeights, cfg)
+	return WriteMetricsDefinitions(activeWeights, cfg)
 }
 
 // GetMaxTablePathWidth calculates the maximum width for file paths in table output

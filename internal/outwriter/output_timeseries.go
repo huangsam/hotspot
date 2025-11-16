@@ -13,39 +13,39 @@ import (
 	"github.com/olekukonko/tablewriter/tw"
 )
 
-// PrintTimeseriesResults outputs the timeseries results, dispatching based on the output format configured.
-func PrintTimeseriesResults(result schema.TimeseriesResult, cfg *contract.Config, duration time.Duration) error {
+// WriteTimeseriesResults outputs the timeseries results, dispatching based on the output format configured.
+func WriteTimeseriesResults(result schema.TimeseriesResult, cfg *contract.Config, duration time.Duration) error {
 	// Create formatters using helper
 	fmtFloat, _ := createFormatters(cfg.Precision)
 
 	// Dispatcher: Handle different output formats
 	switch cfg.Output {
 	case schema.JSONOut:
-		if err := printJSONResultsForTimeseries(result, cfg); err != nil {
+		if err := writeTimeseriesJSONResults(result, cfg); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
 		}
 	case schema.CSVOut:
-		if err := printCSVResultsForTimeseries(result, cfg, fmtFloat); err != nil {
+		if err := writeTimeseriesCSVResults(result, cfg, fmtFloat); err != nil {
 			return fmt.Errorf("error writing CSV output: %w", err)
 		}
 	default:
 		// Default to human-readable table
 		return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-			return printTimeseriesTable(result, cfg, fmtFloat, duration, w)
+			return writeTimeseriesTable(result, cfg, fmtFloat, duration, w)
 		}, "Wrote timeseries table")
 	}
 	return nil
 }
 
-// printJSONResultsForTimeseries handles opening the file and calling the JSON writer.
-func printJSONResultsForTimeseries(result schema.TimeseriesResult, cfg *contract.Config) error {
+// writeTimeseriesJSONResults handles opening the file and calling the JSON writer.
+func writeTimeseriesJSONResults(result schema.TimeseriesResult, cfg *contract.Config) error {
 	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
 		return writeJSONResultsForTimeseries(w, result)
 	}, "Wrote JSON timeseries results")
 }
 
-// printCSVResultsForTimeseries handles opening the file and calling the CSV writer.
-func printCSVResultsForTimeseries(result schema.TimeseriesResult, cfg *contract.Config, fmtFloat func(float64) string) error {
+// writeTimeseriesCSVResults handles opening the file and calling the CSV writer.
+func writeTimeseriesCSVResults(result schema.TimeseriesResult, cfg *contract.Config, fmtFloat func(float64) string) error {
 	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
 		csvWriter := csv.NewWriter(w)
 		defer csvWriter.Flush()
@@ -53,8 +53,8 @@ func printCSVResultsForTimeseries(result schema.TimeseriesResult, cfg *contract.
 	}, "Wrote CSV timeseries results")
 }
 
-// printTimeseriesTable prints the timeseries in a four-column table.
-func printTimeseriesTable(result schema.TimeseriesResult, cfg *contract.Config, fmtFloat func(float64) string, duration time.Duration, writer io.Writer) error {
+// writeTimeseriesTable prints the timeseries in a four-column table.
+func writeTimeseriesTable(result schema.TimeseriesResult, cfg *contract.Config, fmtFloat func(float64) string, duration time.Duration, writer io.Writer) error {
 	// Use os.Stdout, consistent with existing table printing
 	table := tablewriter.NewWriter(writer)
 

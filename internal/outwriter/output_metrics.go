@@ -63,26 +63,26 @@ func formatWeights(weights map[string]float64, factorKeys []string) string {
 	return strings.Join(parts, "+")
 }
 
-// PrintMetricsDefinitions displays the formal definitions of all scoring modes.
+// WriteMetricsDefinitions displays the formal definitions of all scoring modes.
 // This is a static display that does not require Git analysis.
-func PrintMetricsDefinitions(activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, cfg *contract.Config) error {
+func WriteMetricsDefinitions(activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, cfg *contract.Config) error {
 	// Build the complete render model with all processed data
 	renderModel := buildMetricsRenderModel(activeWeights)
 
 	switch cfg.Output {
 	case schema.JSONOut:
-		return printMetricsJSON(renderModel, cfg)
+		return writeMetricsJSON(renderModel, cfg)
 	case schema.CSVOut:
-		return printMetricsCSV(renderModel, cfg)
+		return writeMetricsCSV(renderModel, cfg)
 	default:
 		return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-			return printMetricsText(w, renderModel, cfg)
+			return writeMetricsText(w, renderModel, cfg)
 		}, "Wrote text")
 	}
 }
 
-// printMetricsText displays metrics in human-readable text format.
-func printMetricsText(w io.Writer, renderModel *schema.MetricsRenderModel, _ *contract.Config) error {
+// writeMetricsText displays metrics in human-readable text format.
+func writeMetricsText(w io.Writer, renderModel *schema.MetricsRenderModel, _ *contract.Config) error {
 	if _, err := fmt.Fprintf(w, "🔥 Hotspot Scoring Modes\n"); err != nil {
 		return err
 	}
@@ -129,15 +129,15 @@ func printMetricsText(w io.Writer, renderModel *schema.MetricsRenderModel, _ *co
 	return nil
 }
 
-// printMetricsJSON displays metrics in JSON format.
-func printMetricsJSON(renderModel *schema.MetricsRenderModel, cfg *contract.Config) error {
+// writeMetricsJSON displays metrics in JSON format.
+func writeMetricsJSON(renderModel *schema.MetricsRenderModel, cfg *contract.Config) error {
 	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
 		return writeJSONMetrics(w, renderModel)
 	}, "Wrote JSON")
 }
 
-// printMetricsCSV displays metrics in CSV format.
-func printMetricsCSV(renderModel *schema.MetricsRenderModel, cfg *contract.Config) error {
+// writeMetricsCSV displays metrics in CSV format.
+func writeMetricsCSV(renderModel *schema.MetricsRenderModel, cfg *contract.Config) error {
 	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
 		writer := csv.NewWriter(w)
 		defer writer.Flush()

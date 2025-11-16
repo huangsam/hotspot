@@ -14,39 +14,39 @@ import (
 	"github.com/olekukonko/tablewriter/tw"
 )
 
-// PrintFolderResults outputs the analysis results, dispatching based on the output format configured.
-func PrintFolderResults(results []schema.FolderResult, cfg *contract.Config, duration time.Duration) error {
+// WriteFolderResults outputs the analysis results, dispatching based on the output format configured.
+func WriteFolderResults(results []schema.FolderResult, cfg *contract.Config, duration time.Duration) error {
 	// Create formatters using helper
 	fmtFloat, intFmt := createFormatters(cfg.Precision)
 
 	// Dispatcher: Handle different output formats
 	switch cfg.Output {
 	case schema.JSONOut:
-		if err := printJSONResultsForFolders(results, cfg); err != nil {
+		if err := writeFolderJSONResults(results, cfg); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
 		}
 	case schema.CSVOut:
-		if err := printCSVResultsForFolders(results, cfg, fmtFloat, intFmt); err != nil {
+		if err := writeFolderCSVResults(results, cfg, fmtFloat, intFmt); err != nil {
 			return fmt.Errorf("error writing CSV output: %w", err)
 		}
 	default:
 		// Default to human-readable table
 		return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-			return printFolderTable(results, cfg, fmtFloat, intFmt, duration, w)
+			return writeFolderTable(results, cfg, fmtFloat, intFmt, duration, w)
 		}, "Wrote table")
 	}
 	return nil
 }
 
-// printJSONResultsForFolders handles opening the file and calling the JSON writer.
-func printJSONResultsForFolders(results []schema.FolderResult, cfg *contract.Config) error {
+// writeFolderJSONResults handles opening the file and calling the JSON writer.
+func writeFolderJSONResults(results []schema.FolderResult, cfg *contract.Config) error {
 	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
 		return writeJSONResultsForFolders(w, results)
 	}, "Wrote JSON")
 }
 
-// printCSVResultsForFolders handles opening the file and calling the CSV writer.
-func printCSVResultsForFolders(results []schema.FolderResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string) error {
+// writeFolderCSVResults handles opening the file and calling the CSV writer.
+func writeFolderCSVResults(results []schema.FolderResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string) error {
 	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
 		csvWriter := csv.NewWriter(w)
 		defer csvWriter.Flush()
@@ -54,9 +54,9 @@ func printCSVResultsForFolders(results []schema.FolderResult, cfg *contract.Conf
 	}, "Wrote CSV")
 }
 
-// printFolderTable prints the results in the custom folder-centric format,
+// writeFolderTable prints the results in the custom folder-centric format,
 // using the tablewriter API.
-func printFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
+func writeFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
 	table := tablewriter.NewWriter(writer)
 
 	// 1. Define Headers (Folder Mode - Custom)
