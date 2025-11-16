@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	_ "github.com/go-sql-driver/mysql" // MySQL driver
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	_ "github.com/jackc/pgx/v5/stdlib" // PostgreSQL driver
 	_ "github.com/mattn/go-sqlite3"    // SQLite driver
@@ -13,17 +14,11 @@ import (
 
 // CacheManager defines the interface for managing cache stores.
 // This allows the cache layer to be mocked for testing.
-type CacheManager interface {
-	GetActivityStore() CacheStore
-}
+type CacheManager = contract.CacheManager
 
 // CacheStore defines the interface for cache data storage.
 // This allows mocking the store for testing.
-type CacheStore interface {
-	Get(key string) ([]byte, int, int64, error)
-	Set(key string, value []byte, version int, timestamp int64) error
-	Close() error
-}
+type CacheStore = contract.CacheStore
 
 // CacheStoreManager manages multiple CacheStore instances.
 type CacheStoreManager struct {

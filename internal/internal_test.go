@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -17,37 +18,37 @@ func TestGetPlainLabel(t *testing.T) {
 		{
 			name:     "smallest value possible",
 			input:    0.0,
-			expected: lowValue,
+			expected: contract.LowValue,
 		},
 		{
 			name:     "just before moderate",
 			input:    39.9,
-			expected: lowValue,
+			expected: contract.LowValue,
 		},
 		{
 			name:     "exactly moderate",
 			input:    40.0,
-			expected: moderateValue,
+			expected: contract.ModerateValue,
 		},
 		{
 			name:     "just before high",
 			input:    59.9,
-			expected: moderateValue,
+			expected: contract.ModerateValue,
 		},
 		{
 			name:     "exactly high",
 			input:    60.0,
-			expected: highValue,
+			expected: contract.HighValue,
 		},
 		{
 			name:     "just before critical",
 			input:    79.9,
-			expected: highValue,
+			expected: contract.HighValue,
 		},
 		{
 			name:     "exactly critical",
 			input:    80.0,
-			expected: criticalValue,
+			expected: contract.CriticalValue,
 		},
 	}
 

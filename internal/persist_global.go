@@ -4,14 +4,11 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
-	"path/filepath"
 	"sync"
 
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 )
-
-// databaseName is the name of the SQLite database file.
-const databaseName = ".hotspot_cache.db"
 
 // activityTable is the name of the table for activity caching.
 const activityTable = "activity_cache"
@@ -25,8 +22,7 @@ var (
 
 // GetDBFilePath returns the path to the SQLite DB file.
 func GetDBFilePath() string {
-	homeDir, _ := os.UserHomeDir()
-	return filepath.Join(homeDir, databaseName)
+	return contract.GetDBFilePath()
 }
 
 // InitCaching uses sync.Once to safely initialize the global stores with the given backend.

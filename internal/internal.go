@@ -4,28 +4,7 @@ package internal
 import (
 	"os"
 
-	"github.com/fatih/color"
-)
-
-const (
-	criticalValue = "Critical" // Critical value
-	highValue     = "High"     // High value
-	moderateValue = "Moderate" // Moderate value
-	lowValue      = "Low"      // Low value
-)
-
-var (
-	// criticalColor represents standard danger.
-	criticalColor = color.New(color.FgRed, color.Bold)
-
-	// highColor represents strong, distinct warning.
-	highColor = color.New(color.FgMagenta, color.Bold)
-
-	// moderateColor represents standard caution, not bold.
-	moderateColor = color.New(color.FgYellow)
-
-	// lowColor represents informational / low-priority signal.
-	lowColor = color.New(color.FgCyan)
+	"github.com/huangsam/hotspot/internal/contract"
 )
 
 // getPlainLabel returns a plain text label indicating the criticality level
@@ -36,41 +15,18 @@ var (
 // - Moderate (>=40)
 // - Low (<40)
 func getPlainLabel(score float64) string {
-	switch {
-	case score >= 80:
-		return criticalValue
-	case score >= 60:
-		return highValue
-	case score >= 40:
-		return moderateValue
-	default:
-		return lowValue
-	}
+	return contract.GetPlainLabel(score)
 }
 
 // getColorLabel returns a colored text label for console output (table).
 // It uses getLabelText to determine the string, and then applies the appropriate color.
 func getColorLabel(score float64) string {
-	text := getPlainLabel(score)
-
-	switch text {
-	case criticalValue:
-		return criticalColor.Sprint(text)
-	case highValue:
-		return highColor.Sprint(text)
-	case moderateValue:
-		return moderateColor.Sprint(text)
-	default: // "Low"
-		return lowColor.Sprint(text)
-	}
+	return contract.GetColorLabel(score)
 }
 
 // selectOutputFile returns the appropriate file handle for output, based on the provided
 // file path and format type. It falls back to os.Stdout on error.
 // This function replaces both selectCSVOutputFile and selectJSONOutputFile.
 func selectOutputFile(filePath string) (*os.File, error) {
-	if filePath == "" {
-		return os.Stdout, nil
-	}
-	return os.Create(filePath)
+	return contract.SelectOutputFile(filePath)
 }
