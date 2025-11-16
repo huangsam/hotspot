@@ -200,6 +200,9 @@ func cacheSetup() error {
 		return fmt.Errorf("failed to initialize cache: %w", err)
 	}
 
+	cfg.CacheBackend = backend
+	cfg.CacheDBConnect = connStr
+
 	return nil
 }
 
@@ -335,7 +338,7 @@ var cacheClearCmd = &cobra.Command{
 	Long:    `The clear subcommand removes all cached data for the current backend configuration.`,
 	PreRunE: cacheSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := internal.ClearCache(schema.CacheBackend(viper.GetString("cache-backend")), internal.GetDBFilePath(), viper.GetString("cache-db-connect")); err != nil {
+		if err := internal.ClearCache(cfg.CacheBackend, internal.GetDBFilePath(), cfg.CacheDBConnect); err != nil {
 			internal.LogFatal("Failed to clear cache", err)
 		}
 		fmt.Println("Cache cleared successfully.")
