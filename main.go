@@ -301,6 +301,9 @@ var cacheClearCmd = &cobra.Command{
 		backend := schema.CacheBackend(viper.GetString("cache-backend"))
 		connStr := viper.GetString("cache-db-connect")
 		dbFilePath := internal.GetDBFilePath()
+		if backend == "" && connStr == "" {
+			internal.LogFatal("Failed to clear cache", errors.New("empty backend and connection string"))
+		}
 
 		if err := internal.ClearCache(backend, dbFilePath, connStr); err != nil {
 			internal.LogFatal("Failed to clear cache", err)
