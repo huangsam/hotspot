@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/contract"
-	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -16,7 +15,7 @@ import (
 const currentCacheVersion = 1
 
 // cachedAggregateActivity - Simplified and validated using DB columns
-func cachedAggregateActivity(ctx context.Context, cfg *contract.Config, client contract.GitClient, mgr iocache.CacheManager) (*schema.AggregateOutput, error) {
+func cachedAggregateActivity(ctx context.Context, cfg *contract.Config, client contract.GitClient, mgr contract.CacheManager) (*schema.AggregateOutput, error) {
 	activity := mgr.GetActivityStore()
 	if activity == nil {
 		// Fallback to direct computation
@@ -35,7 +34,7 @@ func cachedAggregateActivity(ctx context.Context, cfg *contract.Config, client c
 }
 
 // checkCacheHit attempts to retrieve and validate a cached result
-func checkCacheHit(activity iocache.CacheStore, key string) *schema.AggregateOutput {
+func checkCacheHit(activity contract.CacheStore, key string) *schema.AggregateOutput {
 	data, version, ts, err := activity.Get(key)
 	if err != nil {
 		return nil // Cache miss
@@ -56,7 +55,7 @@ func checkCacheHit(activity iocache.CacheStore, key string) *schema.AggregateOut
 }
 
 // computeAndStore computes the result and stores it in cache
-func computeAndStore(ctx context.Context, cfg *contract.Config, client contract.GitClient, activity iocache.CacheStore, key string) (*schema.AggregateOutput, error) {
+func computeAndStore(ctx context.Context, cfg *contract.Config, client contract.GitClient, activity contract.CacheStore, key string) (*schema.AggregateOutput, error) {
 	result, err := aggregateActivity(ctx, cfg, client)
 	if err != nil {
 		return nil, err

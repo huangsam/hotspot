@@ -13,24 +13,16 @@ import (
 	_ "github.com/mattn/go-sqlite3"    // SQLite driver
 )
 
-// CacheManager defines the interface for managing cache stores.
-// This allows the cache layer to be mocked for testing.
-type CacheManager = contract.CacheManager
-
-// CacheStore defines the interface for cache data storage.
-// This allows mocking the store for testing.
-type CacheStore = contract.CacheStore
-
 // CacheStoreManager manages multiple CacheStore instances.
 type CacheStoreManager struct {
 	sync.RWMutex // Protects the store pointers during initialization
-	activity     CacheStore
+	activity     contract.CacheStore
 }
 
-var _ CacheManager = &CacheStoreManager{} // Compile-time check
+var _ contract.CacheManager = &CacheStoreManager{} // Compile-time check
 
 // GetActivityStore returns the activity CacheStore.
-func (mgr *CacheStoreManager) GetActivityStore() CacheStore {
+func (mgr *CacheStoreManager) GetActivityStore() contract.CacheStore {
 	mgr.RLock()
 	defer mgr.RUnlock()
 	return mgr.activity
@@ -44,10 +36,10 @@ type CacheStoreImpl struct {
 	driverName string
 }
 
-var _ CacheStore = &CacheStoreImpl{} // Compile-time check
+var _ contract.CacheStore = &CacheStoreImpl{} // Compile-time check
 
 // NewCacheStore initializes and returns a new CacheStore based on the backend type.
-func NewCacheStore(tableName string, backend schema.CacheBackend, connStr string) (CacheStore, error) {
+func NewCacheStore(tableName string, backend schema.CacheBackend, connStr string) (contract.CacheStore, error) {
 	// Validate table name to prevent SQL injection
 	if err := validateTableName(tableName); err != nil {
 		return nil, err

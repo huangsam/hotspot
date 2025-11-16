@@ -10,7 +10,6 @@ import (
 
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/internal/contract"
-	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -22,7 +21,7 @@ const (
 )
 
 // runSingleAnalysisCore performs the common Aggregation, Filtering, and Analysis steps.
-func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client contract.GitClient, mgr iocache.CacheManager) (*schema.SingleAnalysisOutput, error) {
+func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client contract.GitClient, mgr contract.CacheManager) (*schema.SingleAnalysisOutput, error) {
 	if !shouldSuppressHeader(ctx) {
 		internal.LogAnalysisHeader(cfg)
 	}
@@ -50,7 +49,7 @@ func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client con
 
 // runCompareAnalysisForRef runs the file analysis for a specific Git reference in compare mode.
 // Headers are always suppressed in compare mode.
-func runCompareAnalysisForRef(ctx context.Context, cfg *contract.Config, client contract.GitClient, ref string, mgr iocache.CacheManager) (*schema.CompareAnalysisOutput, error) {
+func runCompareAnalysisForRef(ctx context.Context, cfg *contract.Config, client contract.GitClient, ref string, mgr contract.CacheManager) (*schema.CompareAnalysisOutput, error) {
 	// 1. Resolve the time window for the reference
 	baseStartTime, baseEndTime, err := getAnalysisWindowForRef(ctx, client, cfg.RepoPath, ref, cfg.Lookback)
 	if err != nil {
@@ -77,7 +76,7 @@ func runCompareAnalysisForRef(ctx context.Context, cfg *contract.Config, client 
 
 // analyzeAllFilesAtRef performs file analysis for all files that exist at a specific Git reference.
 // Headers are always suppressed in compare mode.
-func analyzeAllFilesAtRef(ctx context.Context, cfg *contract.Config, client contract.GitClient, ref string, mgr iocache.CacheManager) ([]schema.FileResult, error) {
+func analyzeAllFilesAtRef(ctx context.Context, cfg *contract.Config, client contract.GitClient, ref string, mgr contract.CacheManager) ([]schema.FileResult, error) {
 	// --- 1. Get all files at the reference ---
 	files, err := client.ListFilesAtRef(ctx, cfg.RepoPath, ref)
 	if err != nil {
@@ -238,7 +237,7 @@ func runTimeseriesAnalysis(
 	now time.Time,
 	interval time.Duration,
 	numPoints int,
-	mgr iocache.CacheManager,
+	mgr contract.CacheManager,
 ) []schema.TimeseriesPoint {
 	var timeseriesPoints []schema.TimeseriesPoint
 	currentEnd := now
@@ -313,7 +312,7 @@ func analyzeTimeseriesPoint(
 	client contract.GitClient,
 	path string,
 	isFolder bool,
-	mgr iocache.CacheManager,
+	mgr contract.CacheManager,
 ) (float64, []string) {
 	suppressCtx := withSuppressHeader(ctx)
 	output, err := runSingleAnalysisCore(suppressCtx, cfg, client, mgr)

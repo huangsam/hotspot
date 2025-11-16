@@ -1,6 +1,7 @@
 package iocache
 
 import (
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -9,12 +10,12 @@ type MockCacheManager struct {
 	mock.Mock
 }
 
-var _ CacheManager = &MockCacheManager{} // Compile-time check
+var _ contract.CacheManager = &MockCacheManager{} // Compile-time check
 
 // GetActivityStore implements the CacheManager interface.
-func (m *MockCacheManager) GetActivityStore() CacheStore {
+func (m *MockCacheManager) GetActivityStore() contract.CacheStore {
 	ret := m.Called()
-	store, _ := ret.Get(0).(CacheStore)
+	store, _ := ret.Get(0).(contract.CacheStore)
 	return store
 }
 
@@ -23,7 +24,7 @@ type MockCacheStore struct {
 	mock.Mock
 }
 
-var _ CacheStore = &MockCacheStore{} // Compile-time check
+var _ contract.CacheStore = &MockCacheStore{} // Compile-time check
 
 // Get implements the CacheStore interface.
 func (m *MockCacheStore) Get(key string) ([]byte, int, int64, error) {

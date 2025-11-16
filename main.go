@@ -39,7 +39,7 @@ var input = &contract.ConfigRawInput{}
 var profile = &contract.ProfileConfig{}
 
 // cacheManager is the global persistence manager instance.
-var cacheManager iocache.CacheManager
+var cacheManager contract.CacheManager
 
 // startProfiling starts CPU and memory profiling if enabled
 func startProfiling() error {
