@@ -20,28 +20,28 @@ func NewOutWriter() *OutWriter {
 	return &OutWriter{}
 }
 
-// PrintFiles prints file analysis results using the configured output format.
-func (ow *OutWriter) PrintFiles(results []schema.FileResult, cfg *contract.Config, duration time.Duration) error {
+// WriteFiles prints file analysis results using the configured output format.
+func (ow *OutWriter) WriteFiles(results []schema.FileResult, cfg *contract.Config, duration time.Duration) error {
 	return PrintFileResults(results, cfg, duration)
 }
 
-// PrintFolders prints folder analysis results using the configured output format.
-func (ow *OutWriter) PrintFolders(results []schema.FolderResult, cfg *contract.Config, duration time.Duration) error {
+// WriteFolders prints folder analysis results using the configured output format.
+func (ow *OutWriter) WriteFolders(results []schema.FolderResult, cfg *contract.Config, duration time.Duration) error {
 	return PrintFolderResults(results, cfg, duration)
 }
 
-// PrintComparison prints comparison analysis results using the configured output format.
-func (ow *OutWriter) PrintComparison(results schema.ComparisonResult, cfg *contract.Config, duration time.Duration) error {
+// WriteComparison prints comparison analysis results using the configured output format.
+func (ow *OutWriter) WriteComparison(results schema.ComparisonResult, cfg *contract.Config, duration time.Duration) error {
 	return PrintComparisonResults(results, cfg, duration)
 }
 
-// PrintTimeseries prints timeseries analysis results using the configured output format.
-func (ow *OutWriter) PrintTimeseries(result schema.TimeseriesResult, cfg *contract.Config, duration time.Duration) error {
+// WriteTimeseries prints timeseries analysis results using the configured output format.
+func (ow *OutWriter) WriteTimeseries(result schema.TimeseriesResult, cfg *contract.Config, duration time.Duration) error {
 	return PrintTimeseriesResults(result, cfg, duration)
 }
 
-// PrintMetrics prints metrics definitions using the configured output format.
-func (ow *OutWriter) PrintMetrics(activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, cfg *contract.Config) error {
+// WriteMetrics prints metrics definitions using the configured output format.
+func (ow *OutWriter) WriteMetrics(activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, cfg *contract.Config) error {
 	return PrintMetricsDefinitions(activeWeights, cfg)
 }
 
