@@ -55,8 +55,8 @@ func main() {
 		RepoBase:    repoBase,
 		Timeout:     5 * time.Minute,
 		Workers:     14,
-		NoCacheRuns: 3,
-		CacheRuns:   4,
+		NoCacheRuns: 5,
+		CacheRuns:   5,
 		TestRepos:   []string{"csv-parser", "fd", "git", "kubernetes"},
 		RepoPaths: map[string]string{
 			"csv-parser": "python/csvpy.cpp",
@@ -191,7 +191,13 @@ func runBenchmark(config BenchmarkConfig, repoPath, command, extraArgs, cacheBac
 	}
 
 	var times []float64
-	for run := 1; run <= numRuns; run++ {
+	totalRuns := numRuns
+	if cacheBackend != "none" {
+		// For cached backends, add one warmup run to populate cache
+		totalRuns++
+	}
+
+	for run := 1; run <= totalRuns; run++ {
 		start := time.Now()
 
 		cmd := exec.Command("hotspot", args...)
@@ -209,7 +215,12 @@ func runBenchmark(config BenchmarkConfig, repoPath, command, extraArgs, cacheBac
 		select {
 		case <-done:
 			if cmdErr == nil && isSuccess(output, command) {
-				times = append(times, time.Since(start).Seconds())
+				elapsed := time.Since(start).Seconds()
+				if cacheBackend != "none" && run == 1 {
+					// Skip timing the warmup run
+					continue
+				}
+				times = append(times, elapsed)
 			}
 		case <-time.After(config.Timeout):
 			// Timeout - don't add to times
