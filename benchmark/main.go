@@ -82,10 +82,10 @@ func main() {
 	fmt.Printf("Clearing cache...\n")
 	clearCmd := exec.Command("hotspot", "cache", "clear")
 	if output, err := clearCmd.CombinedOutput(); err != nil {
-		fmt.Printf("Warning: failed to clear cache: %v\nOutput: %s\n", err, string(output))
-	} else {
-		fmt.Printf("Cache cleared successfully\n")
+		fmt.Printf("Failed to clear cache: %v\nOutput: %s\n", err, string(output))
+		os.Exit(1)
 	}
+	fmt.Printf("Cache cleared successfully\n")
 
 	results := runBenchmarks(config)
 
