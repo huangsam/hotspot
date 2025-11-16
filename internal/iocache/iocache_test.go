@@ -488,7 +488,7 @@ func TestGetUpsertQuery(t *testing.T) {
 			}
 			got := store.getUpsertQuery()
 			for _, want := range tt.wantContains {
-				if !contains(got, want) {
+				if !strings.Contains(got, want) {
 					t.Errorf("getUpsertQuery() = %q, should contain %q", got, want)
 				}
 			}
@@ -549,7 +549,7 @@ func TestGetCreateTableQuery(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := getCreateTableQuery(tt.tableName, tt.backend)
 			for _, want := range tt.wantContains {
-				if !contains(got, want) {
+				if !strings.Contains(got, want) {
 					t.Errorf("getCreateTableQuery() = %q, should contain %q", got, want)
 				}
 			}
