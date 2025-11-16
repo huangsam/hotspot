@@ -89,16 +89,14 @@ type Config struct {
 	TargetRef   string
 	Lookback    time.Duration
 
-	// Timeseries parameters
 	TimeseriesPath     string
 	TimeseriesInterval time.Duration
 	TimeseriesPoints   int
 
-	// Cache configuration
 	CacheBackend   schema.CacheBackend
-	CacheDBConnect string // Connection string for MySQL/PostgreSQL
+	CacheDBConnect string // Please use env var as this is plaintext
 
-	// Processed map of custom scoring weights [ModeName][BreakdownKey] = Weight
+	// CustomWeights is a mapping of [ModeName][BreakdownKey] = Weight
 	CustomWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64
 }
 
