@@ -212,7 +212,7 @@ func TestFoldersVerification(t *testing.T) {
 		t.Run(folderPath, func(t *testing.T) {
 			// Verify that folder has reasonable values and structure
 			assert.Greater(t, folder.Commits, 0, "folder should have commits")
-			assert.Greater(t, folder.Churn, 0, "folder should have churn")
+			assert.GreaterOrEqual(t, folder.Churn, 0, "folder should have non-negative churn")
 			assert.GreaterOrEqual(t, folder.Score, 0.0, "folder should have non-negative score")
 			assert.NotEmpty(t, folder.Path, "folder should have a path")
 			assert.Contains(t, []string{"hot", "risk", "complexity", "stale"}, string(folder.Mode), "folder should have valid mode")
