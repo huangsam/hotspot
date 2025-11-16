@@ -1,4 +1,3 @@
-// Package contract provides interfaces and shared utilities for the Hotspot CLI's internal architecture.
 package contract
 
 import (
