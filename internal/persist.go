@@ -52,6 +52,11 @@ var _ CacheStore = &CacheStoreImpl{} // Compile-time check
 
 // NewCacheStore initializes and returns a new CacheStore based on the backend type.
 func NewCacheStore(tableName string, backend schema.CacheBackend, connStr string) (CacheStore, error) {
+	// Validate table name to prevent SQL injection
+	if err := validateTableName(tableName); err != nil {
+		return nil, err
+	}
+
 	var db *sql.DB
 	var err error
 	var driverName string
@@ -119,6 +124,7 @@ func NewCacheStore(tableName string, backend schema.CacheBackend, connStr string
 
 // getCreateTableQuery returns the CREATE TABLE query for the given backend.
 func getCreateTableQuery(tableName string, backend schema.CacheBackend) string {
+	quotedTableName := quoteTableName(tableName, backend)
 	switch backend {
 	case schema.MySQLBackend:
 		return fmt.Sprintf(`
@@ -128,7 +134,7 @@ func getCreateTableQuery(tableName string, backend schema.CacheBackend) string {
 				cache_version INT NOT NULL,
 				cache_timestamp BIGINT NOT NULL
 			);
-		`, tableName)
+		`, quotedTableName)
 
 	case schema.PostgreSQLBackend:
 		return fmt.Sprintf(`
@@ -138,7 +144,7 @@ func getCreateTableQuery(tableName string, backend schema.CacheBackend) string {
 				cache_version INTEGER NOT NULL,
 				cache_timestamp BIGINT NOT NULL
 			);
-		`, tableName)
+		`, quotedTableName)
 
 	default: // SQLite
 		return fmt.Sprintf(`
@@ -148,7 +154,7 @@ func getCreateTableQuery(tableName string, backend schema.CacheBackend) string {
 				cache_version INTEGER NOT NULL,
 				cache_timestamp INTEGER NOT NULL
 			);
-		`, tableName)
+		`, quotedTableName)
 	}
 }
 
@@ -164,8 +170,9 @@ func (ps *CacheStoreImpl) Get(key string) ([]byte, int, int64, error) {
 	var ts int64
 
 	// Use backend-specific placeholder
+	quotedTableName := quoteTableName(ps.tableName, ps.backend)
 	placeholder := ps.getPlaceholder()
-	query := fmt.Sprintf(`SELECT cache_value, cache_version, cache_timestamp FROM %s WHERE cache_key = %s`, ps.tableName, placeholder)
+	query := fmt.Sprintf(`SELECT cache_value, cache_version, cache_timestamp FROM %s WHERE cache_key = %s`, quotedTableName, placeholder)
 	row := ps.db.QueryRow(query, key)
 
 	if err := row.Scan(&value, &version, &ts); err != nil {
@@ -199,17 +206,18 @@ func (ps *CacheStoreImpl) getPlaceholder() string {
 
 // getUpsertQuery returns the UPSERT query for the backend.
 func (ps *CacheStoreImpl) getUpsertQuery() string {
+	quotedTableName := quoteTableName(ps.tableName, ps.backend)
 	switch ps.backend {
 	case schema.MySQLBackend:
 		return fmt.Sprintf(`INSERT INTO %s (cache_key, cache_value, cache_version, cache_timestamp) VALUES (?, ?, ?, ?)
-			ON DUPLICATE KEY UPDATE cache_value = VALUES(cache_value), cache_version = VALUES(cache_version), cache_timestamp = VALUES(cache_timestamp)`, ps.tableName)
+			ON DUPLICATE KEY UPDATE cache_value = VALUES(cache_value), cache_version = VALUES(cache_version), cache_timestamp = VALUES(cache_timestamp)`, quotedTableName)
 
 	case schema.PostgreSQLBackend:
 		return fmt.Sprintf(`INSERT INTO %s (cache_key, cache_value, cache_version, cache_timestamp) VALUES ($1, $2, $3, $4)
-			ON CONFLICT (cache_key) DO UPDATE SET cache_value = EXCLUDED.cache_value, cache_version = EXCLUDED.cache_version, cache_timestamp = EXCLUDED.cache_timestamp`, ps.tableName)
+			ON CONFLICT (cache_key) DO UPDATE SET cache_value = EXCLUDED.cache_value, cache_version = EXCLUDED.cache_version, cache_timestamp = EXCLUDED.cache_timestamp`, quotedTableName)
 
 	default: // SQLite
-		return fmt.Sprintf(`INSERT OR REPLACE INTO %s (cache_key, cache_value, cache_version, cache_timestamp) VALUES (?, ?, ?, ?)`, ps.tableName)
+		return fmt.Sprintf(`INSERT OR REPLACE INTO %s (cache_key, cache_value, cache_version, cache_timestamp) VALUES (?, ?, ?, ?)`, quotedTableName)
 	}
 }
 
