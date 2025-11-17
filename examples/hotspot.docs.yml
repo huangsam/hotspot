@@ -58,6 +58,18 @@
 # PostgreSQL format: host=localhost port=5432 user=postgres password=mysecretpassword dbname=postgres
 # cache-db-connect: ""
 
+# emoji: Enable emojis in output headers.
+# Valid values: yes, no, true, false, 1, 0
+# Corresponds to: --emoji
+# Default: no
+# emoji: no
+
+# color: Enable colored labels in output.
+# Valid values: yes, no, true, false, 1, 0
+# Corresponds to: --color
+# Default: yes
+# color: yes
+
 # filter: Filter analysis to files whose path begins with this prefix (e.g., "src/api/").
 # Corresponds to: --filter, -f
 # filter: ""
