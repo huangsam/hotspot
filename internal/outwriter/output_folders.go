@@ -4,8 +4,8 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/huangsam/hotspot/internal/contract"
@@ -14,39 +14,39 @@ import (
 	"github.com/olekukonko/tablewriter/tw"
 )
 
-// PrintFolderResults outputs the analysis results, dispatching based on the output format configured.
-func PrintFolderResults(results []schema.FolderResult, cfg *contract.Config, duration time.Duration) error {
+// WriteFolderResults outputs the analysis results, dispatching based on the output format configured.
+func WriteFolderResults(results []schema.FolderResult, cfg *contract.Config, duration time.Duration) error {
 	// Create formatters using helper
 	fmtFloat, intFmt := createFormatters(cfg.Precision)
 
 	// Dispatcher: Handle different output formats
 	switch cfg.Output {
 	case schema.JSONOut:
-		if err := printJSONResultsForFolders(results, cfg); err != nil {
+		if err := writeFolderJSONResults(results, cfg); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
 		}
 	case schema.CSVOut:
-		if err := printCSVResultsForFolders(results, cfg, fmtFloat, intFmt); err != nil {
+		if err := writeFolderCSVResults(results, cfg, fmtFloat, intFmt); err != nil {
 			return fmt.Errorf("error writing CSV output: %w", err)
 		}
 	default:
 		// Default to human-readable table
-		if err := printFolderTable(results, cfg, fmtFloat, intFmt, duration); err != nil {
-			return fmt.Errorf("error writing table output: %w", err)
-		}
+		return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
+			return writeFolderTable(results, cfg, fmtFloat, intFmt, duration, w)
+		}, "Wrote table")
 	}
 	return nil
 }
 
-// printJSONResultsForFolders handles opening the file and calling the JSON writer.
-func printJSONResultsForFolders(results []schema.FolderResult, cfg *contract.Config) error {
+// writeFolderJSONResults handles opening the file and calling the JSON writer.
+func writeFolderJSONResults(results []schema.FolderResult, cfg *contract.Config) error {
 	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
 		return writeJSONResultsForFolders(w, results)
 	}, "Wrote JSON")
 }
 
-// printCSVResultsForFolders handles opening the file and calling the CSV writer.
-func printCSVResultsForFolders(results []schema.FolderResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string) error {
+// writeFolderCSVResults handles opening the file and calling the CSV writer.
+func writeFolderCSVResults(results []schema.FolderResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string) error {
 	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
 		csvWriter := csv.NewWriter(w)
 		defer csvWriter.Flush()
@@ -54,10 +54,10 @@ func printCSVResultsForFolders(results []schema.FolderResult, cfg *contract.Conf
 	}, "Wrote CSV")
 }
 
-// printFolderTable prints the results in the custom folder-centric format,
+// writeFolderTable writes the results in the custom folder-centric format,
 // using the tablewriter API.
-func printFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration) error {
-	table := tablewriter.NewWriter(os.Stdout)
+func writeFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
+	table := tablewriter.NewWriter(writer)
 
 	// 1. Define Headers (Folder Mode - Custom)
 	headers := []string{"Rank", "Path", "Score", "Label"}
@@ -80,7 +80,7 @@ func printFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFl
 		// Prepare the row data as a slice of strings
 		row := []string{
 			strconv.Itoa(i + 1), // Rank
-			contract.TruncatePath(r.Path, GetMaxTablePathWidth(cfg)), // Folder Path
+			contract.TruncatePath(r.Path, getMaxTablePathWidth(cfg)), // Folder Path
 			fmtFloat(r.Score),               // Score
 			contract.GetColorLabel(r.Score), // Label
 		}
@@ -114,7 +114,71 @@ func printFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFl
 		totalChurn += r.Churn
 		totalLOC += r.TotalLOC
 	}
-	fmt.Printf("Showing top %d folders (total commits: %d, total churn: %d, total LOC: %d)\n", numFolders, totalCommits, totalChurn, totalLOC)
-	fmt.Printf("Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend)
+	if _, err := fmt.Fprintf(writer, "Showing top %d folders (total commits: %d, total churn: %d, total LOC: %d)\n", numFolders, totalCommits, totalChurn, totalLOC); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(writer, "Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend); err != nil {
+		return err
+	}
+	return nil
+}
+
+// writeJSONResultsForFolders marshals the schema.FolderResults slice to JSON and writes it.
+func writeJSONResultsForFolders(w io.Writer, results []schema.FolderResult) error {
+	// 1. Prepare the data structure for JSON with rank and label added
+	type JSONFolderResult struct {
+		Rank  int    `json:"rank"`
+		Label string `json:"label"`
+		schema.FolderResult
+	}
+
+	output := make([]JSONFolderResult, len(results))
+	for i, r := range results {
+		output[i] = JSONFolderResult{
+			Rank:         i + 1,
+			Label:        contract.GetPlainLabel(r.Score),
+			FolderResult: r,
+		}
+	}
+
+	// 2. Use the generic JSON writer
+	return writeJSON(w, output)
+}
+
+// writeCSVResultsForFolders writes the schema.FolderResults data to a CSV writer.
+func writeCSVResultsForFolders(w *csv.Writer, results []schema.FolderResult, fmtFloat func(float64) string, intFmt string) error {
+	// 1. Write Header Row
+	header := []string{
+		"rank",
+		"folder",
+		"score",
+		"label",
+		"total_commits",
+		"total_churn",
+		"total_loc",
+		"owner",
+		"mode",
+	}
+	if err := w.Write(header); err != nil {
+		return err
+	}
+
+	// 2. Write Data Rows
+	for i, r := range results {
+		row := []string{
+			strconv.Itoa(i + 1),             // Rank
+			r.Path,                          // Folder Path
+			fmtFloat(r.Score),               // Score
+			contract.GetPlainLabel(r.Score), // Label
+			fmt.Sprintf(intFmt, r.Commits),  // Total Commits
+			fmt.Sprintf(intFmt, r.Churn),    // Total Churn
+			fmt.Sprintf(intFmt, r.TotalLOC), // Total LOC
+			strings.Join(r.Owners, "|"),     // Owners
+			string(r.Mode),                  // Mode
+		}
+		if err := w.Write(row); err != nil {
+			return err
+		}
+	}
 	return nil
 }

@@ -4,9 +4,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"math"
-	"os"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -18,49 +15,49 @@ import (
 	"github.com/olekukonko/tablewriter/tw"
 )
 
-// PrintFileResults outputs the analysis results in a formatted table or exports them as CSV/JSON.
-func PrintFileResults(files []schema.FileResult, cfg *contract.Config, duration time.Duration) error {
+// WriteFileResults outputs the analysis results, dispatching based on the output format configured.
+func WriteFileResults(files []schema.FileResult, cfg *contract.Config, duration time.Duration) error {
 	// Create formatters using helper
 	fmtFloat, intFmt := createFormatters(cfg.Precision)
 
 	// Dispatcher: Handle different output formats
 	switch cfg.Output {
 	case schema.JSONOut:
-		if err := printJSONResults(files, cfg); err != nil {
+		if err := writeFileJSONResults(files, cfg); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
 		}
 	case schema.CSVOut:
-		if err := printCSVResults(files, cfg, fmtFloat, intFmt); err != nil {
+		if err := writeFileCSVResults(files, cfg, fmtFloat, intFmt); err != nil {
 			return fmt.Errorf("error writing CSV output: %w", err)
 		}
 	default:
 		// Default to human-readable table
-		if err := printTableResults(files, cfg, fmtFloat, intFmt, duration); err != nil {
-			return fmt.Errorf("error writing table output: %w", err)
-		}
+		return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
+			return writeFileTable(files, cfg, fmtFloat, intFmt, duration, w)
+		}, "Wrote table")
 	}
 	return nil
 }
 
-// printJSONResults handles opening the file and calling the JSON writer.
-func printJSONResults(files []schema.FileResult, cfg *contract.Config) error {
+// writeFileJSONResults handles opening the file and calling the JSON writer.
+func writeFileJSONResults(files []schema.FileResult, cfg *contract.Config) error {
 	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-		return writeJSONResults(w, files)
+		return writeJSONResultsForFiles(w, files)
 	}, "Wrote JSON")
 }
 
-// printCSVResults handles opening the file and calling the CSV writer.
-func printCSVResults(files []schema.FileResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string) error {
+// writeFileCSVResults handles opening the file and calling the CSV writer.
+func writeFileCSVResults(files []schema.FileResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string) error {
 	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
 		csvWriter := csv.NewWriter(w)
 		defer csvWriter.Flush()
-		return writeCSVResults(csvWriter, files, fmtFloat, intFmt)
+		return writeCSVResultsForFiles(csvWriter, files, fmtFloat, intFmt)
 	}, "Wrote CSV")
 }
 
-// printTableResults generates and prints the human-readable table.
-func printTableResults(files []schema.FileResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration) error {
-	table := tablewriter.NewWriter(os.Stdout)
+// writeFileTable generates and writes the human-readable table.
+func writeFileTable(files []schema.FileResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
+	table := tablewriter.NewWriter(writer)
 
 	// 1. Define Headers
 	headers := []string{"Rank", "Path", "Score", "Label"}
@@ -86,7 +83,7 @@ func printTableResults(files []schema.FileResult, cfg *contract.Config, fmtFloat
 		// Prepare the row data as a slice of strings
 		row := []string{
 			strconv.Itoa(i + 1), // Rank
-			contract.TruncatePath(f.Path, GetMaxTablePathWidth(cfg)), // File
+			contract.TruncatePath(f.Path, getMaxTablePathWidth(cfg)), // File
 			fmtFloat(f.Score),               // Score
 			contract.GetColorLabel(f.Score), // Label
 		}
@@ -126,60 +123,77 @@ func printTableResults(files []schema.FileResult, cfg *contract.Config, fmtFloat
 		totalCommits += f.Commits
 		totalChurn += f.Churn
 	}
-	fmt.Printf("Showing top %d files (total commits: %d, total churn: %d)\n", numFiles, totalCommits, totalChurn)
-	fmt.Printf("Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend)
+	if _, err := fmt.Fprintf(writer, "Showing top %d files (total commits: %d, total churn: %d)\n", numFiles, totalCommits, totalChurn); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(writer, "Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend); err != nil {
+		return err
+	}
 	return nil
 }
 
-// metricBreakdown holds a key-value pair from the Breakdown map representing a metric's contribution.
-type metricBreakdown struct {
-	Name  string  // e.g., "commits", "churn", "size"
-	Value float64 // The percentage contribution to the score
+// writeCSVResultsForFiles writes the analysis results in CSV format.
+func writeCSVResultsForFiles(w *csv.Writer, files []schema.FileResult, fmtFloat func(float64) string, intFmt string) error {
+	// CSV header
+	header := []string{
+		"rank",
+		"file",
+		"score",
+		"label",
+		"contributors",
+		"commits",
+		"size_kb",
+		"age_days",
+		"churn",
+		"gini",
+		"first_commit",
+		"owner",
+		"mode",
+	}
+	if err := w.Write(header); err != nil {
+		return err
+	}
+	for i, f := range files {
+		rec := []string{
+			strconv.Itoa(i + 1),             // Rank
+			f.Path,                          // File Path
+			fmtFloat(f.Score),               // Score
+			contract.GetPlainLabel(f.Score), // Label
+			fmt.Sprintf(intFmt, f.UniqueContributors),     // Contributors
+			fmt.Sprintf(intFmt, f.Commits),                // Commits
+			fmtFloat(float64(f.SizeBytes) / 1024.0),       // Size in KB
+			fmt.Sprintf(intFmt, f.AgeDays),                // Age in Days
+			fmt.Sprintf(intFmt, f.Churn),                  // Churn
+			fmtFloat(f.Gini),                              // Gini Coefficient
+			f.FirstCommit.Format(contract.DateTimeFormat), // First Commit Date
+			strings.Join(f.Owners, "|"),                   // Owners
+			string(f.Mode),                                // Mode
+		}
+		if err := w.Write(rec); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-const (
-	topNMetrics          = 3
-	metricContribMinimum = 0.5
-)
+// writeJSONResultsForFiles writes the analysis results in JSON format.
+func writeJSONResultsForFiles(w io.Writer, files []schema.FileResult) error {
+	// 1. Prepare the data structure for JSON with rank and label added
+	type JSONFileResult struct {
+		Rank  int    `json:"rank"`
+		Label string `json:"label"`
+		schema.FileResult
+	}
 
-// formatTopMetricBreakdown computes the top 3 metric components that contribute to the final score.
-func formatTopMetricBreakdown(f *schema.FileResult) string {
-	var metrics []metricBreakdown
-
-	// 1. Filter and Convert Map to Slice
-	for k, v := range f.Breakdown {
-		// Only include meaningful metrics
-		if v >= metricContribMinimum {
-			metrics = append(metrics, metricBreakdown{
-				Name:  string(k),
-				Value: v, // This is the percentage contribution
-			})
+	output := make([]JSONFileResult, len(files))
+	for i, f := range files {
+		output[i] = JSONFileResult{
+			Rank:       i + 1,
+			Label:      contract.GetPlainLabel(f.Score),
+			FileResult: f,
 		}
 	}
 
-	if len(metrics) == 0 {
-		return "Not applicable"
-	}
-
-	// 2. Sort the Slice by Value (Contribution %) in Descending Order
-	// Metrics with the highest absolute percentage contribution come first.
-	sort.Slice(metrics, func(i, j int) bool {
-		// We compare the absolute value since some contributions might be negative
-		// if the model is set up to penalize certain metrics.
-		return math.Abs(metrics[i].Value) > math.Abs(metrics[j].Value)
-	})
-
-	// 3. Limit to Top 3 and Format the Output
-	var parts []string
-	limit := min(len(metrics), topNMetrics)
-
-	for i := range limit {
-		m := metrics[i]
-		parts = append(parts, m.Name)
-	}
-
-	if len(parts) == 0 {
-		return "No meaningful contributors"
-	}
-	return strings.Join(parts, " > ")
+	// 2. Use the generic JSON writer
+	return writeJSON(w, output)
 }

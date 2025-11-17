@@ -4,8 +4,8 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -15,39 +15,39 @@ import (
 	"github.com/olekukonko/tablewriter/tw"
 )
 
-// PrintComparisonResults outputs the analysis results, dispatching based on the output format configured.
-func PrintComparisonResults(comparisonResult schema.ComparisonResult, cfg *contract.Config, duration time.Duration) error {
+// WriteComparisonResults outputs the analysis results, dispatching based on the output format configured.
+func WriteComparisonResults(comparisonResult schema.ComparisonResult, cfg *contract.Config, duration time.Duration) error {
 	// Create formatters using helper
 	fmtFloat, intFmt := createFormatters(cfg.Precision)
 
 	// Dispatcher: Handle different output formats
 	switch cfg.Output {
 	case schema.JSONOut:
-		if err := printJSONResultsForComparison(comparisonResult, cfg); err != nil {
+		if err := writeComparisonJSONResults(comparisonResult, cfg); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
 		}
 	case schema.CSVOut:
-		if err := printCSVResultsForComparison(comparisonResult, cfg, fmtFloat, intFmt); err != nil {
+		if err := writeComparisonCSVResults(comparisonResult, cfg, fmtFloat, intFmt); err != nil {
 			return fmt.Errorf("error writing CSV output: %w", err)
 		}
 	default:
 		// Default to human-readable table
-		if err := printComparisonTable(comparisonResult, cfg, fmtFloat, intFmt, duration); err != nil {
-			return fmt.Errorf("error writing comparison table output: %w", err)
-		}
+		return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
+			return writeComparisonTable(comparisonResult, cfg, fmtFloat, intFmt, duration, w)
+		}, "Wrote comparison table")
 	}
 	return nil
 }
 
-// printJSONResultsForComparison handles opening the file and calling the JSON writer.
-func printJSONResultsForComparison(comparisonResult schema.ComparisonResult, cfg *contract.Config) error {
+// writeComparisonJSONResults handles opening the file and calling the JSON writer.
+func writeComparisonJSONResults(comparisonResult schema.ComparisonResult, cfg *contract.Config) error {
 	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
 		return writeJSONResultsForComparison(w, comparisonResult)
 	}, "Wrote JSON comparison results")
 }
 
-// printCSVResultsForComparison handles opening the file and calling the CSV writer.
-func printCSVResultsForComparison(comparisonResult schema.ComparisonResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string) error {
+// writeComparisonCSVResults handles opening the file and calling the CSV writer.
+func writeComparisonCSVResults(comparisonResult schema.ComparisonResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string) error {
 	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
 		csvWriter := csv.NewWriter(w)
 		defer csvWriter.Flush()
@@ -55,10 +55,10 @@ func printCSVResultsForComparison(comparisonResult schema.ComparisonResult, cfg 
 	}, "Wrote CSV comparison results")
 }
 
-// printComparisonTable prints the metrics in a custom comparison format.
-func printComparisonTable(comparisonResult schema.ComparisonResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration) error {
+// writeComparisonTable writes the metrics in a custom comparison format.
+func writeComparisonTable(comparisonResult schema.ComparisonResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
 	// Use os.Stdout, consistent with existing table printing
-	table := tablewriter.NewWriter(os.Stdout)
+	table := tablewriter.NewWriter(writer)
 
 	// --- 1. Define Headers (Comparison Mode) ---
 	// Note: Use clear headers for base, comparison, and the change (Delta)
@@ -106,7 +106,7 @@ func printComparisonTable(comparisonResult schema.ComparisonResult, cfg *contrac
 		// Prepare the row data as a slice of strings
 		row := []string{
 			strconv.Itoa(i + 1), // Rank
-			contract.TruncatePath(r.Path, GetMaxTablePathWidth(cfg)), // File Path
+			contract.TruncatePath(r.Path, getMaxTablePathWidth(cfg)), // File Path
 			fmtFloat(r.BeforeScore),                                  // Base Score
 			fmtFloat(r.AfterScore),                                   // Comparison Score
 			deltaStr,                                                 // Delta Score
@@ -130,9 +130,62 @@ func printComparisonTable(comparisonResult schema.ComparisonResult, cfg *contrac
 	}
 	// Compute summary stats
 	numItems := len(comparisonResult.Results)
-	fmt.Printf("Showing top %d changes\n", numItems)
-	fmt.Printf("Net score delta: %.*f, Net churn delta: %d\n", cfg.Precision, comparisonResult.Summary.NetScoreDelta, comparisonResult.Summary.NetChurnDelta)
-	fmt.Printf("New files: %d, Inactive files: %d, Modified files: %d, Ownership changes: %d\n", comparisonResult.Summary.TotalNewFiles, comparisonResult.Summary.TotalInactiveFiles, comparisonResult.Summary.TotalModifiedFiles, comparisonResult.Summary.TotalOwnershipChanges)
-	fmt.Printf("Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend)
+	if _, err := fmt.Fprintf(writer, "Showing top %d changes\n", numItems); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(writer, "Net score delta: %.*f, Net churn delta: %d\n", cfg.Precision, comparisonResult.Summary.NetScoreDelta, comparisonResult.Summary.NetChurnDelta); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(writer, "New files: %d, Inactive files: %d, Modified files: %d, Ownership changes: %d\n", comparisonResult.Summary.TotalNewFiles, comparisonResult.Summary.TotalInactiveFiles, comparisonResult.Summary.TotalModifiedFiles, comparisonResult.Summary.TotalOwnershipChanges); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(writer, "Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend); err != nil {
+		return err
+	}
+	return nil
+}
+
+// writeJSONResultsForComparison marshals the schema.ComparisonResult to JSON and writes it.
+func writeJSONResultsForComparison(w io.Writer, comparisonResult schema.ComparisonResult) error {
+	return writeJSON(w, comparisonResult)
+}
+
+// writeCSVResultsForComparison writes the schema.ComparisonResult data to a CSV writer.
+func writeCSVResultsForComparison(w *csv.Writer, comparisonResult schema.ComparisonResult, fmtFloat func(float64) string, intFmt string) error {
+	// 1. Write Header Row
+	header := []string{
+		"rank",
+		"path",
+		"base_score",
+		"comp_score",
+		"delta_score",
+		"delta_commits",
+		"delta_churn",
+		"before_owners",
+		"after_owners",
+		"mode",
+	}
+	if err := w.Write(header); err != nil {
+		return err
+	}
+
+	// 2. Write Data Rows
+	for i, r := range comparisonResult.Results {
+		row := []string{
+			strconv.Itoa(i + 1),                 // Rank
+			r.Path,                              // Path
+			fmtFloat(r.BeforeScore),             // Base Score
+			fmtFloat(r.AfterScore),              // Current Score
+			fmtFloat(r.Delta),                   // Delta Score (Current - Base)
+			fmt.Sprintf(intFmt, r.DeltaCommits), // Delta Commits
+			fmt.Sprintf(intFmt, r.DeltaChurn),   // Delta Churn
+			strings.Join(r.BeforeOwners, "|"),   // Base Owners
+			strings.Join(r.AfterOwners, "|"),    // Current Owners
+			string(r.Mode),                      // Mode
+		}
+		if err := w.Write(row); err != nil {
+			return err
+		}
+	}
 	return nil
 }
