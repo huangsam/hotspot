@@ -16,43 +16,27 @@ import (
 )
 
 // WriteFileResults outputs the analysis results, dispatching based on the output format configured.
-func WriteFileResults(files []schema.FileResult, cfg *contract.Config, duration time.Duration) error {
+func WriteFileResults(w io.Writer, files []schema.FileResult, cfg *contract.Config, duration time.Duration) error {
 	// Create formatters using helper
 	fmtFloat, intFmt := createFormatters(cfg.Precision)
 
 	// Dispatcher: Handle different output formats
 	switch cfg.Output {
 	case schema.JSONOut:
-		if err := writeFileJSONResults(files, cfg); err != nil {
+		if err := writeJSONResultsForFiles(w, files); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
 		}
 	case schema.CSVOut:
-		if err := writeFileCSVResults(files, cfg, fmtFloat, intFmt); err != nil {
+		csvWriter := csv.NewWriter(w)
+		defer csvWriter.Flush()
+		if err := writeCSVResultsForFiles(csvWriter, files, fmtFloat, intFmt); err != nil {
 			return fmt.Errorf("error writing CSV output: %w", err)
 		}
 	default:
 		// Default to human-readable table
-		return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-			return writeFileTable(files, cfg, fmtFloat, intFmt, duration, w)
-		}, "Wrote table")
+		return writeFileTable(files, cfg, fmtFloat, intFmt, duration, w)
 	}
 	return nil
-}
-
-// writeFileJSONResults handles opening the file and calling the JSON writer.
-func writeFileJSONResults(files []schema.FileResult, cfg *contract.Config) error {
-	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-		return writeJSONResultsForFiles(w, files)
-	}, "Wrote JSON")
-}
-
-// writeFileCSVResults handles opening the file and calling the CSV writer.
-func writeFileCSVResults(files []schema.FileResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string) error {
-	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-		csvWriter := csv.NewWriter(w)
-		defer csvWriter.Flush()
-		return writeCSVResultsForFiles(csvWriter, files, fmtFloat, intFmt)
-	}, "Wrote CSV")
 }
 
 // writeFileTable generates and writes the human-readable table.

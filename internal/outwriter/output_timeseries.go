@@ -14,43 +14,27 @@ import (
 )
 
 // WriteTimeseriesResults outputs the timeseries results, dispatching based on the output format configured.
-func WriteTimeseriesResults(result schema.TimeseriesResult, cfg *contract.Config, duration time.Duration) error {
+func WriteTimeseriesResults(w io.Writer, result schema.TimeseriesResult, cfg *contract.Config, duration time.Duration) error {
 	// Create formatters using helper
 	fmtFloat, _ := createFormatters(cfg.Precision)
 
 	// Dispatcher: Handle different output formats
 	switch cfg.Output {
 	case schema.JSONOut:
-		if err := writeTimeseriesJSONResults(result, cfg); err != nil {
+		if err := writeJSONResultsForTimeseries(w, result); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
 		}
 	case schema.CSVOut:
-		if err := writeTimeseriesCSVResults(result, cfg, fmtFloat); err != nil {
+		csvWriter := csv.NewWriter(w)
+		defer csvWriter.Flush()
+		if err := writeCSVResultsForTimeseries(csvWriter, result, fmtFloat); err != nil {
 			return fmt.Errorf("error writing CSV output: %w", err)
 		}
 	default:
 		// Default to human-readable table
-		return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-			return writeTimeseriesTable(result, cfg, fmtFloat, duration, w)
-		}, "Wrote timeseries table")
+		return writeTimeseriesTable(result, cfg, fmtFloat, duration, w)
 	}
 	return nil
-}
-
-// writeTimeseriesJSONResults handles opening the file and calling the JSON writer.
-func writeTimeseriesJSONResults(result schema.TimeseriesResult, cfg *contract.Config) error {
-	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-		return writeJSONResultsForTimeseries(w, result)
-	}, "Wrote JSON timeseries results")
-}
-
-// writeTimeseriesCSVResults handles opening the file and calling the CSV writer.
-func writeTimeseriesCSVResults(result schema.TimeseriesResult, cfg *contract.Config, fmtFloat func(float64) string) error {
-	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-		csvWriter := csv.NewWriter(w)
-		defer csvWriter.Flush()
-		return writeCSVResultsForTimeseries(csvWriter, result, fmtFloat)
-	}, "Wrote CSV timeseries results")
 }
 
 // writeTimeseriesTable writes the timeseries in a four-column table.

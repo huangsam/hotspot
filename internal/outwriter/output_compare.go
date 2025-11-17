@@ -16,43 +16,27 @@ import (
 )
 
 // WriteComparisonResults outputs the analysis results, dispatching based on the output format configured.
-func WriteComparisonResults(comparisonResult schema.ComparisonResult, cfg *contract.Config, duration time.Duration) error {
+func WriteComparisonResults(w io.Writer, comparisonResult schema.ComparisonResult, cfg *contract.Config, duration time.Duration) error {
 	// Create formatters using helper
 	fmtFloat, intFmt := createFormatters(cfg.Precision)
 
 	// Dispatcher: Handle different output formats
 	switch cfg.Output {
 	case schema.JSONOut:
-		if err := writeComparisonJSONResults(comparisonResult, cfg); err != nil {
+		if err := writeJSONResultsForComparison(w, comparisonResult); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
 		}
 	case schema.CSVOut:
-		if err := writeComparisonCSVResults(comparisonResult, cfg, fmtFloat, intFmt); err != nil {
+		csvWriter := csv.NewWriter(w)
+		defer csvWriter.Flush()
+		if err := writeCSVResultsForComparison(csvWriter, comparisonResult, fmtFloat, intFmt); err != nil {
 			return fmt.Errorf("error writing CSV output: %w", err)
 		}
 	default:
 		// Default to human-readable table
-		return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-			return writeComparisonTable(comparisonResult, cfg, fmtFloat, intFmt, duration, w)
-		}, "Wrote comparison table")
+		return writeComparisonTable(comparisonResult, cfg, fmtFloat, intFmt, duration, w)
 	}
 	return nil
-}
-
-// writeComparisonJSONResults handles opening the file and calling the JSON writer.
-func writeComparisonJSONResults(comparisonResult schema.ComparisonResult, cfg *contract.Config) error {
-	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-		return writeJSONResultsForComparison(w, comparisonResult)
-	}, "Wrote JSON comparison results")
-}
-
-// writeComparisonCSVResults handles opening the file and calling the CSV writer.
-func writeComparisonCSVResults(comparisonResult schema.ComparisonResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string) error {
-	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-		csvWriter := csv.NewWriter(w)
-		defer csvWriter.Flush()
-		return writeCSVResultsForComparison(csvWriter, comparisonResult, fmtFloat, intFmt)
-	}, "Wrote CSV comparison results")
 }
 
 // writeComparisonTable writes the metrics in a custom comparison format.

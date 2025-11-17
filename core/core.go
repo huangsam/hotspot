@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -37,7 +38,9 @@ func ExecuteHotspotFiles(ctx context.Context, cfg *contract.Config, mgr contract
 	ranked := rankFiles(resultsToRank, cfg.ResultLimit)
 	duration := time.Since(start)
 	writer := outwriter.NewOutWriter()
-	return writer.WriteFiles(ranked, cfg, duration)
+	return outwriter.WriteWithOutputFile(cfg, func(w io.Writer) error {
+		return writer.WriteFiles(w, ranked, cfg, duration)
+	}, "Wrote files table")
 }
 
 // ExecuteHotspotFolders runs the folder-level analysis and prints results to stdout.
@@ -53,7 +56,9 @@ func ExecuteHotspotFolders(ctx context.Context, cfg *contract.Config, mgr contra
 	ranked := rankFolders(folderResults, cfg.ResultLimit)
 	duration := time.Since(start)
 	writer := outwriter.NewOutWriter()
-	return writer.WriteFolders(ranked, cfg, duration)
+	return outwriter.WriteWithOutputFile(cfg, func(w io.Writer) error {
+		return writer.WriteFolders(w, ranked, cfg, duration)
+	}, "Wrote folders table")
 }
 
 // ExecuteHotspotCompare runs two file-level analyses (Base and Target)
@@ -76,7 +81,9 @@ func ExecuteHotspotCompare(ctx context.Context, cfg *contract.Config, mgr contra
 	comparisonResult := compareFileResults(baseOutput.FileResults, targetOutput.FileResults, cfg.ResultLimit, string(cfg.Mode))
 	duration := time.Since(start)
 	writer := outwriter.NewOutWriter()
-	return writer.WriteComparison(comparisonResult, cfg, duration)
+	return outwriter.WriteWithOutputFile(cfg, func(w io.Writer) error {
+		return writer.WriteComparison(w, comparisonResult, cfg, duration)
+	}, "Wrote file comparison table")
 }
 
 // ExecuteHotspotCompareFolders runs two folder-level analyses (Base and Target)
@@ -101,7 +108,9 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *contract.Config, mgr
 	comparisonResult := compareFolderMetrics(baseOutput.FolderResults, targetOutput.FolderResults, cfg.ResultLimit, string(cfg.Mode))
 	duration := time.Since(start)
 	writer := outwriter.NewOutWriter()
-	return writer.WriteComparison(comparisonResult, cfg, duration)
+	return outwriter.WriteWithOutputFile(cfg, func(w io.Writer) error {
+		return writer.WriteComparison(w, comparisonResult, cfg, duration)
+	}, "Wrote folder comparison table")
 }
 
 // ExecuteHotspotTimeseries runs multiple analyses over overlapping, dynamic-lookback time windows.
@@ -151,12 +160,16 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *contract.Config, mgr con
 	result := schema.TimeseriesResult{Points: timeseriesPoints}
 	duration := time.Since(start)
 	writer := outwriter.NewOutWriter()
-	return writer.WriteTimeseries(result, cfg, duration)
+	return outwriter.WriteWithOutputFile(cfg, func(w io.Writer) error {
+		return writer.WriteTimeseries(w, result, cfg, duration)
+	}, "Wrote timeseries table")
 }
 
 // ExecuteHotspotMetrics displays the formal definitions of all scoring modes.
 // This is a static display that does not require Git analysis.
 func ExecuteHotspotMetrics(_ context.Context, cfg *contract.Config, _ contract.CacheManager) error {
 	writer := outwriter.NewOutWriter()
-	return writer.WriteMetrics(cfg.CustomWeights, cfg)
+	return outwriter.WriteWithOutputFile(cfg, func(w io.Writer) error {
+		return writer.WriteMetrics(w, cfg.CustomWeights, cfg)
+	}, "Wrote metrics info")
 }

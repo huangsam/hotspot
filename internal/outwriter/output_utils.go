@@ -15,10 +15,10 @@ import (
 	"golang.org/x/term"
 )
 
-// writeWithFile handles the common pattern of opening a file, writing to it, and cleaning up.
+// WriteWithOutputFile handles the common pattern of opening a file, writing to it, and cleaning up.
 // It accepts a writer function that takes an io.Writer and returns an error.
-func writeWithFile(outputFile string, writer func(io.Writer) error, successMsg string) error {
-	file, err := contract.SelectOutputFile(outputFile)
+func WriteWithOutputFile(cfg *contract.Config, writer func(io.Writer) error, successMsg string) error {
+	file, err := contract.SelectOutputFile(cfg.OutputFile)
 	if err != nil {
 		return err
 	}
@@ -32,7 +32,11 @@ func writeWithFile(outputFile string, writer func(io.Writer) error, successMsg s
 	}
 
 	if file != os.Stdout {
-		_, _ = fmt.Fprintf(os.Stderr, "💾 %s to %s\n", successMsg, outputFile)
+		if cfg.UseEmojis {
+			_, _ = fmt.Fprintf(os.Stderr, "💾 %s to %s\n", successMsg, cfg.OutputFile)
+		} else {
+			_, _ = fmt.Fprintf(os.Stderr, "%s to %s\n", successMsg, cfg.OutputFile)
+		}
 	}
 	return nil
 }

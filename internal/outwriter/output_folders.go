@@ -15,43 +15,27 @@ import (
 )
 
 // WriteFolderResults outputs the analysis results, dispatching based on the output format configured.
-func WriteFolderResults(results []schema.FolderResult, cfg *contract.Config, duration time.Duration) error {
+func WriteFolderResults(w io.Writer, results []schema.FolderResult, cfg *contract.Config, duration time.Duration) error {
 	// Create formatters using helper
 	fmtFloat, intFmt := createFormatters(cfg.Precision)
 
 	// Dispatcher: Handle different output formats
 	switch cfg.Output {
 	case schema.JSONOut:
-		if err := writeFolderJSONResults(results, cfg); err != nil {
+		if err := writeJSONResultsForFolders(w, results); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
 		}
 	case schema.CSVOut:
-		if err := writeFolderCSVResults(results, cfg, fmtFloat, intFmt); err != nil {
+		csvWriter := csv.NewWriter(w)
+		defer csvWriter.Flush()
+		if err := writeCSVResultsForFolders(csvWriter, results, fmtFloat, intFmt); err != nil {
 			return fmt.Errorf("error writing CSV output: %w", err)
 		}
 	default:
 		// Default to human-readable table
-		return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-			return writeFolderTable(results, cfg, fmtFloat, intFmt, duration, w)
-		}, "Wrote table")
+		return writeFolderTable(results, cfg, fmtFloat, intFmt, duration, w)
 	}
 	return nil
-}
-
-// writeFolderJSONResults handles opening the file and calling the JSON writer.
-func writeFolderJSONResults(results []schema.FolderResult, cfg *contract.Config) error {
-	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-		return writeJSONResultsForFolders(w, results)
-	}, "Wrote JSON")
-}
-
-// writeFolderCSVResults handles opening the file and calling the CSV writer.
-func writeFolderCSVResults(results []schema.FolderResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string) error {
-	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-		csvWriter := csv.NewWriter(w)
-		defer csvWriter.Flush()
-		return writeCSVResultsForFolders(csvWriter, results, fmtFloat, intFmt)
-	}, "Wrote CSV")
 }
 
 // writeFolderTable writes the results in the custom folder-centric format,

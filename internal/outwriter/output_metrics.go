@@ -12,19 +12,19 @@ import (
 
 // WriteMetricsDefinitions displays the formal definitions of all scoring modes.
 // This is a static display that does not require Git analysis.
-func WriteMetricsDefinitions(activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, cfg *contract.Config) error {
+func WriteMetricsDefinitions(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, cfg *contract.Config) error {
 	// Build the complete render model with all processed data
 	renderModel := buildMetricsRenderModel(activeWeights)
 
 	switch cfg.Output {
 	case schema.JSONOut:
-		return writeMetricsJSON(renderModel, cfg)
+		return writeJSONMetrics(w, renderModel)
 	case schema.CSVOut:
-		return writeMetricsCSV(renderModel, cfg)
+		csvWriter := csv.NewWriter(w)
+		defer csvWriter.Flush()
+		return writeCSVMetrics(csvWriter, renderModel)
 	default:
-		return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-			return writeMetricsText(w, renderModel, cfg)
-		}, "Wrote text")
+		return writeMetricsText(w, renderModel, cfg)
 	}
 }
 
@@ -61,22 +61,6 @@ func writeMetricsText(w io.Writer, renderModel *schema.MetricsRenderModel, _ *co
 	}
 
 	return nil
-}
-
-// writeMetricsJSON displays metrics in JSON format.
-func writeMetricsJSON(renderModel *schema.MetricsRenderModel, cfg *contract.Config) error {
-	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-		return writeJSONMetrics(w, renderModel)
-	}, "Wrote JSON")
-}
-
-// writeMetricsCSV displays metrics in CSV format.
-func writeMetricsCSV(renderModel *schema.MetricsRenderModel, cfg *contract.Config) error {
-	return writeWithFile(cfg.OutputFile, func(w io.Writer) error {
-		writer := csv.NewWriter(w)
-		defer writer.Flush()
-		return writeCSVMetrics(writer, renderModel)
-	}, "Wrote CSV")
 }
 
 // writeJSONMetrics writes the metrics definitions in JSON format.

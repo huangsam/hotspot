@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -172,10 +173,11 @@ func TestWriteCSVWithHeaderError(t *testing.T) {
 	assert.Equal(t, assert.AnError, err)
 }
 
-func TestWriteWithFileStdout(t *testing.T) {
+func TestWriteWithOutputFileStdout(t *testing.T) {
 	// Test writing to stdout (empty string means stdout)
+	cfg := &contract.Config{UseEmojis: false, OutputFile: ""}
 	called := false
-	err := writeWithFile("", func(w io.Writer) error {
+	err := WriteWithOutputFile(cfg, func(w io.Writer) error {
 		called = true
 		_, err := w.Write([]byte("test"))
 		return err
@@ -185,14 +187,15 @@ func TestWriteWithFileStdout(t *testing.T) {
 	assert.True(t, called, "Writer function should have been called")
 }
 
-func TestWriteWithFileActualFile(t *testing.T) {
+func TestWriteWithOutputFileActualFile(t *testing.T) {
 	// Create a temporary file for testing
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test.txt")
 
 	// Test writing to an actual file
 	testContent := "test content"
-	err := writeWithFile(tmpFile, func(w io.Writer) error {
+	cfg := &contract.Config{UseEmojis: false, OutputFile: tmpFile}
+	err := WriteWithOutputFile(cfg, func(w io.Writer) error {
 		_, err := w.Write([]byte(testContent))
 		return err
 	}, "Test message")
@@ -205,12 +208,13 @@ func TestWriteWithFileActualFile(t *testing.T) {
 	assert.Equal(t, testContent, string(content))
 }
 
-func TestWriteWithFileError(t *testing.T) {
+func TestWriteWithOutputFileError(t *testing.T) {
 	// Test error propagation from writer function
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test.txt")
 
-	err := writeWithFile(tmpFile, func(io.Writer) error {
+	cfg := &contract.Config{UseEmojis: false, OutputFile: tmpFile}
+	err := WriteWithOutputFile(cfg, func(io.Writer) error {
 		return assert.AnError
 	}, "Test message")
 
@@ -218,9 +222,10 @@ func TestWriteWithFileError(t *testing.T) {
 	assert.Equal(t, assert.AnError, err)
 }
 
-func TestWriteWithFileInvalidPath(t *testing.T) {
+func TestWriteWithOutputFileInvalidPath(t *testing.T) {
 	// Test with an invalid file path (should fail on file open)
-	err := writeWithFile("/nonexistent/path/file.txt", func(io.Writer) error {
+	cfg := &contract.Config{UseEmojis: false, OutputFile: "/nonexistent/path/file.txt"}
+	err := WriteWithOutputFile(cfg, func(io.Writer) error {
 		return nil
 	}, "Test message")
 
@@ -237,7 +242,8 @@ func TestWriteJSONIntegration(t *testing.T) {
 		"count": 123,
 	}
 
-	err := writeWithFile(tmpFile, func(w io.Writer) error {
+	cfg := &contract.Config{UseEmojis: false, OutputFile: tmpFile}
+	err := WriteWithOutputFile(cfg, func(w io.Writer) error {
 		return writeJSON(w, testData)
 	}, "Wrote JSON")
 
@@ -266,7 +272,8 @@ func TestWriteCSVIntegration(t *testing.T) {
 		{"Bob", "87"},
 	}
 
-	err := writeWithFile(tmpFile, func(w io.Writer) error {
+	cfg := &contract.Config{UseEmojis: false, OutputFile: tmpFile}
+	err := WriteWithOutputFile(cfg, func(w io.Writer) error {
 		return writeCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {
 			for _, row := range rows {
 				if err := csvWriter.Write(row); err != nil {
@@ -898,146 +905,325 @@ func TestBuildMetricsRenderModel(t *testing.T) {
 	}
 }
 
-func TestFormatOwnershipDiff(t *testing.T) {
-	tests := []struct {
-		name     string
-		details  schema.ComparisonDetails
-		expected string
-	}{
+func TestWriteFileResultsTable(t *testing.T) {
+	files := []schema.FileResult{
 		{
-			name: "new file with single owner",
-			details: schema.ComparisonDetails{
-				Status:       schema.NewStatus,
-				BeforeOwners: []string{},
-				AfterOwners:  []string{"Alice"},
-			},
-			expected: "New: Alice",
-		},
-		{
-			name: "new file with multiple owners",
-			details: schema.ComparisonDetails{
-				Status:       schema.NewStatus,
-				BeforeOwners: []string{},
-				AfterOwners:  []string{"Alice", "Bob"},
-			},
-			expected: "New: Alice, Bob",
-		},
-		{
-			name: "new file with no owners",
-			details: schema.ComparisonDetails{
-				Status:       schema.NewStatus,
-				BeforeOwners: []string{},
-				AfterOwners:  []string{},
-			},
-			expected: "New",
-		},
-		{
-			name: "removed file with single owner",
-			details: schema.ComparisonDetails{
-				Status:       schema.InactiveStatus,
-				BeforeOwners: []string{"Alice"},
-				AfterOwners:  []string{},
-			},
-			expected: "Removed: Alice",
-		},
-		{
-			name: "removed file with multiple owners",
-			details: schema.ComparisonDetails{
-				Status:       schema.InactiveStatus,
-				BeforeOwners: []string{"Alice", "Bob"},
-				AfterOwners:  []string{},
-			},
-			expected: "Removed: Alice, Bob",
-		},
-		{
-			name: "removed file with no previous owners",
-			details: schema.ComparisonDetails{
-				Status:       schema.InactiveStatus,
-				BeforeOwners: []string{},
-				AfterOwners:  []string{},
-			},
-			expected: "Removed",
-		},
-		{
-			name: "active file with stable single owner",
-			details: schema.ComparisonDetails{
-				Status:       schema.ActiveStatus,
-				BeforeOwners: []string{"Alice"},
-				AfterOwners:  []string{"Alice"},
-			},
-			expected: "Alice (stable)",
-		},
-		{
-			name: "active file with stable multiple owners same order",
-			details: schema.ComparisonDetails{
-				Status:       schema.ActiveStatus,
-				BeforeOwners: []string{"Alice", "Bob"},
-				AfterOwners:  []string{"Alice", "Bob"},
-			},
-			expected: "Alice, Bob (stable)",
-		},
-		{
-			name: "active file with stable multiple owners different order",
-			details: schema.ComparisonDetails{
-				Status:       schema.ActiveStatus,
-				BeforeOwners: []string{"Alice", "Bob"},
-				AfterOwners:  []string{"Bob", "Alice"},
-			},
-			expected: "Bob, Alice (stable)",
-		},
-		{
-			name: "active file with changed ownership",
-			details: schema.ComparisonDetails{
-				Status:       schema.ActiveStatus,
-				BeforeOwners: []string{"Alice"},
-				AfterOwners:  []string{"Bob"},
-			},
-			expected: "Bob",
-		},
-		{
-			name: "active file with no current owners but had previous",
-			details: schema.ComparisonDetails{
-				Status:       schema.ActiveStatus,
-				BeforeOwners: []string{"Alice"},
-				AfterOwners:  []string{},
-			},
-			expected: "No owners (was: Alice)",
-		},
-		{
-			name: "active file with current owners but no previous",
-			details: schema.ComparisonDetails{
-				Status:       schema.ActiveStatus,
-				BeforeOwners: []string{},
-				AfterOwners:  []string{"Bob"},
-			},
-			expected: "Bob",
-		},
-		{
-			name: "active file with no owners before or after",
-			details: schema.ComparisonDetails{
-				Status:       schema.ActiveStatus,
-				BeforeOwners: []string{},
-				AfterOwners:  []string{},
-			},
-			expected: "No owners",
-		},
-		{
-			name: "active file with multiple current owners",
-			details: schema.ComparisonDetails{
-				Status:       schema.ActiveStatus,
-				BeforeOwners: []string{"Alice"},
-				AfterOwners:  []string{"Bob", "Charlie"},
-			},
-			expected: "Bob, Charlie",
+			Path:               "main.go",
+			Score:              85.5,
+			UniqueContributors: 3,
+			Commits:            10,
+			SizeBytes:          1024,
+			AgeDays:            30,
+			Churn:              500,
+			Gini:               0.6,
+			LinesOfCode:        100,
+			FirstCommit:        time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			Owners:             []string{"Alice", "Bob"},
+			Mode:               schema.HotMode,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := formatOwnershipDiff(tt.details)
-			if result != tt.expected {
-				t.Errorf("formatOwnershipDiff() = %q, expected %q", result, tt.expected)
-			}
-		})
+	cfg := &contract.Config{
+		Output:    schema.TextOut,
+		Precision: 2,
+		Detail:    true,
+		Explain:   true,
+		Owner:     true,
+		UseColors: false,
+		Width:     120,
 	}
+
+	var buf bytes.Buffer
+	duration := 100 * time.Millisecond
+	err := WriteFileResults(&buf, files, cfg, duration)
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "main.go")
+	assert.Contains(t, output, "85.50")
+	assert.Contains(t, output, "3")
+	assert.Contains(t, output, "10")
+	assert.Contains(t, output, "100")
+	assert.Contains(t, output, "500")
+	assert.Contains(t, output, "30")
+	assert.Contains(t, output, "0.60")
+	assert.Contains(t, output, "Alice, Bob")
+	assert.Contains(t, output, "Analysis completed in 100ms")
+}
+
+func TestWriteFileResultsJSON(t *testing.T) {
+	files := []schema.FileResult{
+		{
+			Path:  "test.go",
+			Score: 75.0,
+			Mode:  schema.RiskMode,
+		},
+	}
+
+	cfg := &contract.Config{
+		Output:    schema.JSONOut,
+		Precision: 2,
+	}
+
+	var buf bytes.Buffer
+	duration := 50 * time.Millisecond
+	err := WriteFileResults(&buf, files, cfg, duration)
+	require.NoError(t, err)
+
+	var result []map[string]any
+	err = json.Unmarshal(buf.Bytes(), &result)
+	require.NoError(t, err)
+	require.Len(t, result, 1)
+
+	assert.Equal(t, "test.go", result[0]["path"])
+	assert.Equal(t, 75.0, result[0]["score"])
+	assert.Equal(t, "High", result[0]["label"])
+}
+
+func TestWriteFileResultsCSV(t *testing.T) {
+	files := []schema.FileResult{
+		{
+			Path:               "example.go",
+			Score:              65.25,
+			UniqueContributors: 2,
+			Commits:            5,
+			SizeBytes:          2048,
+			AgeDays:            60,
+			Churn:              300,
+			Gini:               0.5,
+			LinesOfCode:        200,
+			FirstCommit:        time.Date(2023, 2, 1, 0, 0, 0, 0, time.UTC),
+			Owners:             []string{"Charlie"},
+			Mode:               schema.ComplexityMode,
+		},
+	}
+
+	cfg := &contract.Config{
+		Output:    schema.CSVOut,
+		Precision: 2,
+	}
+
+	var buf bytes.Buffer
+	duration := 75 * time.Millisecond
+	err := WriteFileResults(&buf, files, cfg, duration)
+	require.NoError(t, err)
+
+	lines := strings.Split(strings.TrimSpace(buf.String()), "\n")
+	require.Len(t, lines, 2)
+
+	assert.Contains(t, lines[0], "rank")
+	assert.Contains(t, lines[0], "file")
+	assert.Contains(t, lines[0], "score")
+	assert.Contains(t, lines[1], "example.go")
+	assert.Contains(t, lines[1], "65.25")
+	assert.Contains(t, lines[1], "complexity")
+}
+
+func TestOutWriter_WriteFiles(t *testing.T) {
+	ow := NewOutWriter()
+	files := []schema.FileResult{
+		{
+			Path:  "file.go",
+			Score: 90.0,
+			Mode:  schema.HotMode,
+		},
+	}
+
+	cfg := &contract.Config{
+		Output:    schema.TextOut,
+		Precision: 2,
+	}
+
+	var buf bytes.Buffer
+	duration := 10 * time.Millisecond
+	err := ow.WriteFiles(&buf, files, cfg, duration)
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "file.go")
+	assert.Contains(t, output, "90.00")
+}
+
+func TestOutWriter_WriteFolders(t *testing.T) {
+	ow := NewOutWriter()
+	folders := []schema.FolderResult{
+		{
+			Path:     "src/",
+			Score:    80.0,
+			Commits:  20,
+			Churn:    1000,
+			TotalLOC: 5000,
+			Owners:   []string{"Alice"},
+			Mode:     schema.HotMode,
+		},
+	}
+
+	cfg := &contract.Config{
+		Output:    schema.TextOut,
+		Precision: 2,
+		Detail:    true,
+	}
+
+	var buf bytes.Buffer
+	duration := 20 * time.Millisecond
+	err := ow.WriteFolders(&buf, folders, cfg, duration)
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "src/")
+	assert.Contains(t, output, "80.00")
+	assert.Contains(t, output, "20")
+	assert.Contains(t, output, "1000")
+	assert.Contains(t, output, "5000")
+}
+
+func TestOutWriter_WriteComparison(t *testing.T) {
+	ow := NewOutWriter()
+	comparison := schema.ComparisonResult{
+		Results: []schema.ComparisonDetails{
+			{
+				Path:         "main.go",
+				BeforeScore:  70.0,
+				AfterScore:   80.0,
+				Delta:        10.0,
+				DeltaCommits: 5,
+				DeltaChurn:   100,
+				Status:       schema.ActiveStatus,
+				BeforeOwners: []string{"Alice"},
+				AfterOwners:  []string{"Alice", "Bob"},
+				Mode:         schema.HotMode,
+			},
+		},
+		Summary: schema.ComparisonSummary{
+			NetScoreDelta:         10.0,
+			NetChurnDelta:         100,
+			TotalNewFiles:         0,
+			TotalInactiveFiles:    0,
+			TotalModifiedFiles:    1,
+			TotalOwnershipChanges: 1,
+		},
+	}
+
+	cfg := &contract.Config{
+		Output:    schema.TextOut,
+		Precision: 2,
+		Detail:    true,
+		Owner:     true,
+	}
+
+	var buf bytes.Buffer
+	duration := 30 * time.Millisecond
+	err := ow.WriteComparison(&buf, comparison, cfg, duration)
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "main.go")
+	assert.Contains(t, output, "70.00")
+	assert.Contains(t, output, "80.00")
+	assert.Contains(t, output, "+10.00")
+	assert.Contains(t, output, "Net score delta: 10.00")
+}
+
+func TestOutWriter_WriteTimeseries(t *testing.T) {
+	ow := NewOutWriter()
+	result := schema.TimeseriesResult{
+		Points: []schema.TimeseriesPoint{
+			{
+				Path:   "main.go",
+				Period: "Current (30d)",
+				Start:  time.Date(2023, 11, 1, 0, 0, 0, 0, time.UTC),
+				End:    time.Date(2023, 12, 1, 0, 0, 0, 0, time.UTC),
+				Score:  85.5,
+				Owners: []string{"Alice"},
+				Mode:   schema.HotMode,
+			},
+		},
+	}
+
+	cfg := &contract.Config{
+		Output:    schema.TextOut,
+		Precision: 2,
+	}
+
+	var buf bytes.Buffer
+	duration := 40 * time.Millisecond
+	err := ow.WriteTimeseries(&buf, result, cfg, duration)
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "main.go")
+	assert.Contains(t, output, "Current (30d)")
+	assert.Contains(t, output, "85.50")
+	assert.Contains(t, output, "Alice")
+}
+
+func TestWriteFileResultsEmpty(t *testing.T) {
+	var files []schema.FileResult
+
+	cfg := &contract.Config{
+		Output:    schema.TextOut,
+		Precision: 2,
+	}
+
+	var buf bytes.Buffer
+	duration := 5 * time.Millisecond
+	err := WriteFileResults(&buf, files, cfg, duration)
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "Showing top 0 files")
+	assert.Contains(t, output, "Analysis completed in 5ms")
+}
+
+func TestWriteFoldersResultsEmpty(t *testing.T) {
+	var folders []schema.FolderResult
+
+	cfg := &contract.Config{
+		Output: schema.TextOut,
+	}
+
+	var buf bytes.Buffer
+	duration := 10 * time.Millisecond
+	err := WriteFolderResults(&buf, folders, cfg, duration)
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "Showing top 0 folders")
+}
+
+func TestWriteComparisonResultsEmpty(t *testing.T) {
+	comparison := schema.ComparisonResult{
+		Results: []schema.ComparisonDetails{},
+		Summary: schema.ComparisonSummary{},
+	}
+
+	cfg := &contract.Config{
+		Output: schema.TextOut,
+	}
+
+	var buf bytes.Buffer
+	duration := 15 * time.Millisecond
+	err := WriteComparisonResults(&buf, comparison, cfg, duration)
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "Showing top 0 changes")
+}
+
+func TestWriteTimeseriesResultsEmpty(t *testing.T) {
+	result := schema.TimeseriesResult{
+		Points: []schema.TimeseriesPoint{},
+	}
+
+	cfg := &contract.Config{
+		Output: schema.TextOut,
+	}
+
+	var buf bytes.Buffer
+	duration := 20 * time.Millisecond
+	err := WriteTimeseriesResults(&buf, result, cfg, duration)
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "Timeseries analysis completed in 20ms")
 }
