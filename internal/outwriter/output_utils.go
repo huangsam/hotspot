@@ -32,7 +32,7 @@ func writeWithFile(outputFile string, writer func(io.Writer) error, successMsg s
 	}
 
 	if file != os.Stdout {
-		fmt.Fprintf(os.Stderr, "💾 %s to %s\n", successMsg, outputFile)
+		_, _ = fmt.Fprintf(os.Stderr, "💾 %s to %s\n", successMsg, outputFile)
 	}
 	return nil
 }

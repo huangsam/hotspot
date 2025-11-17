@@ -337,7 +337,7 @@ func FuzzGini(f *testing.F) {
 
 	f.Fuzz(func(_ *testing.T, valuesJSON string) {
 		// Simple parsing, may fail but that's ok for fuzzing
-		values := []float64{}
+		var values []float64
 		if valuesJSON != "" && valuesJSON[0] == '[' && valuesJSON[len(valuesJSON)-1] == ']' {
 			// Very basic parsing, just for fuzzing
 			inner := valuesJSON[1 : len(valuesJSON)-1]

@@ -32,9 +32,6 @@ var DefaultWorkers = runtime.GOMAXPROCS(0)
 // DateTimeFormat is the default date time representation.
 var DateTimeFormat = time.RFC3339
 
-// DateFormat is the default date representation.
-var DateFormat = time.DateOnly
-
 // ProfileConfig holds profiling settings.
 type ProfileConfig struct {
 	Enabled bool

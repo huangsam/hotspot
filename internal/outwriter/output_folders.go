@@ -58,6 +58,7 @@ func writeFolderCSVResults(results []schema.FolderResult, cfg *contract.Config, 
 // using the tablewriter API.
 func writeFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
 	table := tablewriter.NewWriter(writer)
+	defer func() { _ = table.Close() }()
 
 	// 1. Define Headers (Folder Mode - Custom)
 	headers := []string{"Rank", "Path", "Score", "Label"}

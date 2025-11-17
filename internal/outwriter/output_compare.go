@@ -57,8 +57,8 @@ func writeComparisonCSVResults(comparisonResult schema.ComparisonResult, cfg *co
 
 // writeComparisonTable writes the metrics in a custom comparison format.
 func writeComparisonTable(comparisonResult schema.ComparisonResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
-	// Use os.Stdout, consistent with existing table printing
 	table := tablewriter.NewWriter(writer)
+	defer func() { _ = table.Close() }()
 
 	// --- 1. Define Headers (Comparison Mode) ---
 	// Note: Use clear headers for base, comparison, and the change (Delta)

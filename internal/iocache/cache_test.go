@@ -494,7 +494,7 @@ func TestNewCacheStoreErrors(t *testing.T) {
 	})
 
 	t.Run("unsupported backend", func(t *testing.T) {
-		_, err := NewCacheStore("test_table", schema.CacheBackend("unsupported"), "")
+		_, err := NewCacheStore("test_table", "unsupported", "")
 		assert.Error(t, err, "Expected error for unsupported backend")
 	})
 }
@@ -548,7 +548,7 @@ func TestClearCache(t *testing.T) {
 	})
 
 	t.Run("unsupported backend", func(t *testing.T) {
-		err := ClearCache(schema.CacheBackend("unsupported"), "", "")
+		err := ClearCache("unsupported", "", "")
 		assert.Error(t, err, "Expected error for unsupported backend")
 	})
 }

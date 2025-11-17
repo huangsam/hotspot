@@ -274,7 +274,7 @@ func TestRunFollowPass_EmptyInput(t *testing.T) {
 	ctx := withSuppressHeader(context.Background())
 	mockClient := &contract.MockGitClient{}
 
-	ranked := []schema.FileResult{}
+	var ranked []schema.FileResult
 	output := &schema.AggregateOutput{}
 
 	cfg := &contract.Config{

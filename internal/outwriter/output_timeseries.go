@@ -55,8 +55,8 @@ func writeTimeseriesCSVResults(result schema.TimeseriesResult, cfg *contract.Con
 
 // writeTimeseriesTable writes the timeseries in a four-column table.
 func writeTimeseriesTable(result schema.TimeseriesResult, cfg *contract.Config, fmtFloat func(float64) string, duration time.Duration, writer io.Writer) error {
-	// Use os.Stdout, consistent with existing table printing
 	table := tablewriter.NewWriter(writer)
+	defer func() { _ = table.Close() }()
 
 	// --- 1. Define Headers ---
 	headers := []string{"Path", "Period", "Score", "Mode", "Owners"}

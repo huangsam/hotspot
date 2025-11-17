@@ -58,6 +58,7 @@ func writeFileCSVResults(files []schema.FileResult, cfg *contract.Config, fmtFlo
 // writeFileTable generates and writes the human-readable table.
 func writeFileTable(files []schema.FileResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
 	table := tablewriter.NewWriter(writer)
+	defer func() { _ = table.Close() }()
 
 	// 1. Define Headers
 	headers := []string{"Rank", "Path", "Score", "Label"}

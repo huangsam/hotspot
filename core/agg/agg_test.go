@@ -185,6 +185,6 @@ func TestComputeFolderScore(t *testing.T) {
 			WeightedScoreSum: 92.0,
 		}
 		score := computeFolderScore(results)
-		assert.InEpsilon(t, float64(.92), score, 0.01)
+		assert.InEpsilon(t, .92, score, 0.01)
 	})
 }

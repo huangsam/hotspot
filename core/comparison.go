@@ -90,11 +90,11 @@ func compareResults[T ComparableResult](baseResults, targetResults []T, limit in
 		}
 
 		// Get owners (default to empty if not exists)
-		beforeOwners := []string{}
+		var beforeOwners []string
 		if baseExists {
 			beforeOwners = baseR.GetOwners()
 		}
-		afterOwners := []string{}
+		var afterOwners []string
 		if targetExists {
 			afterOwners = targetR.GetOwners()
 		}
@@ -159,7 +159,7 @@ func determineStatus(baseExists, targetExists bool) schema.Status {
 		return schema.NewStatus
 	case baseExists && targetExists:
 		return schema.ActiveStatus
-	case baseExists && !targetExists:
+	case baseExists: // Target does not exist in this case
 		return schema.InactiveStatus
 	default:
 		return schema.UnknownStatus

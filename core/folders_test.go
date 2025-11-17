@@ -7,6 +7,7 @@ import (
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAggregateAndScoreFolders(t *testing.T) {
@@ -67,7 +68,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 	}
 
 	// Check src/ folder
-	assert.NotNil(t, srcFolder)
+	require.NotNil(t, srcFolder)
 	assert.Equal(t, "src", srcFolder.Path)
 	assert.Equal(t, schema.HotMode, srcFolder.Mode)
 	assert.Equal(t, 15, srcFolder.Commits)        // 10 + 5
@@ -77,7 +78,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 	assert.Contains(t, srcFolder.Owners, "Alice") // Most commits by Alice
 
 	// Check tests/ folder
-	assert.NotNil(t, testsFolder)
+	require.NotNil(t, testsFolder)
 	assert.Equal(t, "tests", testsFolder.Path)
 	assert.Equal(t, 8, testsFolder.Commits)
 	assert.Equal(t, 40, testsFolder.Churn)
@@ -126,7 +127,7 @@ func TestAggregateAndScoreFolders_WithPathFilter(t *testing.T) {
 }
 
 func TestAggregateAndScoreFolders_EmptyInput(t *testing.T) {
-	fileResults := []schema.FileResult{}
+	var fileResults []schema.FileResult
 	cfg := &contract.Config{Mode: schema.HotMode}
 
 	result := agg.AggregateAndScoreFolders(cfg, fileResults)
@@ -268,7 +269,7 @@ func TestRankFolders_WithLimit(t *testing.T) {
 }
 
 func TestRankFolders_EmptyInput(t *testing.T) {
-	folders := []schema.FolderResult{}
+	var folders []schema.FolderResult
 
 	result := rankFolders(folders, 10)
 
@@ -355,7 +356,7 @@ func TestCompareFolderMetrics_NoChanges(t *testing.T) {
 }
 
 func TestCompareFolderMetrics_EmptyBase(t *testing.T) {
-	baseFolders := []schema.FolderResult{}
+	var baseFolders []schema.FolderResult
 	targetFolders := []schema.FolderResult{
 		{Path: "src", Score: 20.0, Commits: 50, Churn: 100, Owners: []string{"Alice"}},
 	}
@@ -372,7 +373,7 @@ func TestCompareFolderMetrics_EmptyTarget(t *testing.T) {
 	baseFolders := []schema.FolderResult{
 		{Path: "src", Score: 20.0, Commits: 50, Churn: 100, Owners: []string{"Alice"}},
 	}
-	targetFolders := []schema.FolderResult{}
+	var targetFolders []schema.FolderResult
 
 	result := compareFolderMetrics(baseFolders, targetFolders, 10, "hot")
 

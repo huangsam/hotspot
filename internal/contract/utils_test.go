@@ -271,7 +271,7 @@ func FuzzShouldIgnore(f *testing.F) {
 	}
 
 	f.Fuzz(func(_ *testing.T, path string, excludesStr string) {
-		excludes := []string{}
+		var excludes []string
 		if excludesStr != "" {
 			// Simple split, may not handle complex cases but good for fuzzing
 			for ex := range strings.SplitSeq(excludesStr, ",") {

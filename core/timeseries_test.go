@@ -116,7 +116,6 @@ func TestAnalyzeTimeseriesPoint_File(t *testing.T) {
 	mockMgr := &iocache.MockCacheManager{}
 
 	path := "main.go"
-	isFolder := false
 
 	// Setup mock expectations
 	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
@@ -133,7 +132,7 @@ func TestAnalyzeTimeseriesPoint_File(t *testing.T) {
 		ResultLimit: 10,
 	}
 
-	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, isFolder, mockMgr)
+	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, false, mockMgr)
 
 	assert.True(t, score >= 0 && score <= 100)
 	assert.NotNil(t, owners)
@@ -148,7 +147,6 @@ func TestAnalyzeTimeseriesPoint_Folder(t *testing.T) {
 	mockMgr := &iocache.MockCacheManager{}
 
 	path := "src/"
-	isFolder := true
 
 	// Setup mock expectations
 	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
@@ -166,7 +164,7 @@ func TestAnalyzeTimeseriesPoint_Folder(t *testing.T) {
 		PathFilter:  "src/", // Only analyze files in src/
 	}
 
-	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, isFolder, mockMgr)
+	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, true, mockMgr)
 
 	assert.True(t, score >= 0 && score <= 100)
 	assert.NotNil(t, owners)
@@ -181,7 +179,6 @@ func TestAnalyzeTimeseriesPoint_NoData(t *testing.T) {
 	mockMgr := &iocache.MockCacheManager{}
 
 	path := "nonexistent.go"
-	isFolder := false
 
 	// Setup mock expectations - no files found
 	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
@@ -197,7 +194,7 @@ func TestAnalyzeTimeseriesPoint_NoData(t *testing.T) {
 		Workers:   1,
 	}
 
-	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, isFolder, mockMgr)
+	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, false, mockMgr)
 
 	assert.Equal(t, 0.0, score)
 	assert.Empty(t, owners)
@@ -212,7 +209,6 @@ func TestAnalyzeTimeseriesPoint_PathNotFound(t *testing.T) {
 	mockMgr := &iocache.MockCacheManager{}
 
 	path := "missing.go"
-	isFolder := false
 
 	// Setup mock expectations - file exists but path not found in results
 	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
@@ -228,7 +224,7 @@ func TestAnalyzeTimeseriesPoint_PathNotFound(t *testing.T) {
 		Workers:   1,
 	}
 
-	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, isFolder, mockMgr)
+	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, false, mockMgr)
 
 	assert.Equal(t, 0.0, score)
 	assert.Empty(t, owners)

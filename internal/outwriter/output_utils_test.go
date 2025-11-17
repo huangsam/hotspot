@@ -610,7 +610,7 @@ func TestWriteCSVMetrics(t *testing.T) {
 
 func TestWriteCSVResultsEmptyFiles(t *testing.T) {
 	fmtFloat, intFmt := createFormatters(2)
-	files := []schema.FileResult{}
+	var files []schema.FileResult
 
 	var buf bytes.Buffer
 	w := csv.NewWriter(&buf)
