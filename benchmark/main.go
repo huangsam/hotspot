@@ -170,7 +170,7 @@ func runBenchmarkSuite(config BenchmarkConfig, repo, repoPath, command, descript
 	noCacheAvg := runPhase("none", config.NoCacheRuns, "Cold")
 
 	// Phase 2: Cache runs
-	warmAvg := runPhase("sqlite", config.CacheRuns, "Cache")
+	warmAvg := runPhase("sqlite", config.CacheRuns, "Warm")
 
 	fmt.Printf("  Cold average: %s, Warm average: %s\n", noCacheAvg, warmAvg)
 
