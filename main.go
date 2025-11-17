@@ -57,8 +57,8 @@ func startProfiling() error {
 	}
 
 	// Memory profiling will be captured at the end
-	fmt.Fprintf(os.Stderr, "Profiling enabled. CPU profile: %s.cpu.prof, Memory profile: %s.mem.prof\n", profile.Prefix, profile.Prefix)
-	return nil
+	_, err = fmt.Fprintf(os.Stderr, "Profiling enabled. CPU profile: %s.cpu.prof, Memory profile: %s.mem.prof\n", profile.Prefix, profile.Prefix)
+	return err
 }
 
 // stopProfiling stops profiling and writes memory profile.
@@ -80,8 +80,8 @@ func stopProfiling() error {
 		return fmt.Errorf("could not write memory profile: %w", err)
 	}
 
-	fmt.Fprintf(os.Stderr, "Profiling complete. Use 'go tool pprof %s.cpu.prof' to analyze.\n", profile.Prefix)
-	return nil
+	_, err = fmt.Fprintf(os.Stderr, "Profiling complete. Use 'go tool pprof %s.cpu.prof' to analyze.\n", profile.Prefix)
+	return err
 }
 
 // rootCmd is the command-line entrypoint for all other commands.
