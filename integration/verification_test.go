@@ -38,7 +38,7 @@ var (
 	tempDir string
 )
 
-// TestMain handles setup and cleanup for all integration tests
+// TestMain handles setup and cleanup for all integration tests.
 func TestMain(m *testing.M) {
 	// Run all tests
 	code := m.Run()
@@ -51,7 +51,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// getHotspotBinary returns the path to the hotspot binary, building it once if needed
+// getHotspotBinary returns the path to the hotspot binary, building it once if needed.
 func getHotspotBinary() string {
 	buildMutex.Lock()
 	defer buildMutex.Unlock()
@@ -78,7 +78,7 @@ func getHotspotBinary() string {
 	return sharedHotspotPath
 }
 
-// TestFilesVerification runs hotspot files with time filters and verifies both commit counts and age calculations
+// TestFilesVerification runs hotspot files with time filters and verifies both commit counts and age calculations.
 func TestFilesVerification(t *testing.T) {
 	// Skip if not in a git repo
 	if _, err := exec.LookPath("git"); err != nil {
@@ -156,7 +156,7 @@ func TestFilesVerification(t *testing.T) {
 }
 
 // parseHotspotDetailOutput extracts file details from hotspot JSON output
-// Works with both basic and detailed output formats
+// Works with both basic and detailed output formats.
 func parseHotspotDetailOutput(output string) map[string]schema.FileResult {
 	var files []schema.FileResult
 	lines := strings.Split(output, "\n")
@@ -177,7 +177,7 @@ func parseHotspotDetailOutput(output string) map[string]schema.FileResult {
 	return fileDetails
 }
 
-// TestFoldersVerification runs hotspot folders with time filters and verifies folder aggregation
+// TestFoldersVerification runs hotspot folders with time filters and verifies folder aggregation.
 func TestFoldersVerification(t *testing.T) {
 	// Skip if not in a git repo
 	if _, err := exec.LookPath("git"); err != nil {
@@ -220,7 +220,7 @@ func TestFoldersVerification(t *testing.T) {
 	}
 }
 
-// TestCompareFilesVerification runs hotspot compare files and verifies comparison deltas
+// TestCompareFilesVerification runs hotspot compare files and verifies comparison deltas.
 func TestCompareFilesVerification(t *testing.T) {
 	// Skip if not in a git repo
 	if _, err := exec.LookPath("git"); err != nil {
@@ -282,7 +282,7 @@ func TestCompareFilesVerification(t *testing.T) {
 	assert.GreaterOrEqual(t, result.Summary.TotalInactiveFiles, 0, "total inactive files should be non-negative")
 }
 
-// TestCompareFoldersVerification runs hotspot compare folders and verifies comparison deltas
+// TestCompareFoldersVerification runs hotspot compare folders and verifies comparison deltas.
 func TestCompareFoldersVerification(t *testing.T) {
 	// Skip if not in a git repo
 	if _, err := exec.LookPath("git"); err != nil {
@@ -344,7 +344,7 @@ func TestCompareFoldersVerification(t *testing.T) {
 	assert.GreaterOrEqual(t, result.Summary.TotalInactiveFiles, 0, "total inactive files should be non-negative")
 }
 
-// parseHotspotFolderOutput extracts folder details from hotspot JSON output
+// parseHotspotFolderOutput extracts folder details from hotspot JSON output.
 func parseHotspotFolderOutput(output string) map[string]schema.FolderResult {
 	var folders []schema.FolderResult
 	lines := strings.Split(output, "\n")
@@ -365,7 +365,7 @@ func parseHotspotFolderOutput(output string) map[string]schema.FolderResult {
 	return folderDetails
 }
 
-// TestExternalRepoVerification clones multiple small public repos and runs verification
+// TestExternalRepoVerification clones multiple small public repos and runs verification.
 func TestExternalRepoVerification(t *testing.T) {
 	// Test repos with different characteristics for better coverage
 	testRepos := []struct {
@@ -402,7 +402,7 @@ func TestExternalRepoVerification(t *testing.T) {
 	}
 }
 
-// verifyRepo runs hotspot and verifies against git for a given repo
+// verifyRepo runs hotspot and verifies against git for a given repo.
 func verifyRepo(t *testing.T, repoDir, hotspotPath string) {
 	// Run hotspot files --output json --start 2000-01-01T00:00:00Z
 	cmd := exec.Command(hotspotPath, "files", "--output", "json", "--start", "2000-01-01T00:00:00Z")
@@ -440,7 +440,7 @@ func verifyRepo(t *testing.T, repoDir, hotspotPath string) {
 	}
 }
 
-// TestTimeseriesVerification tests the timeseries command functionality
+// TestTimeseriesVerification tests the timeseries command functionality.
 func TestTimeseriesVerification(t *testing.T) {
 	// Skip if not in a git repo
 	if _, err := exec.LookPath("git"); err != nil {
@@ -549,7 +549,7 @@ func TestTimeseriesVerification(t *testing.T) {
 	})
 }
 
-// extractJSONFromOutput extracts the JSON part from hotspot output that includes log lines
+// extractJSONFromOutput extracts the JSON part from hotspot output that includes log lines.
 func extractJSONFromOutput(output string) string {
 	lines := strings.Split(output, "\n")
 	for i, line := range lines {
@@ -561,7 +561,7 @@ func extractJSONFromOutput(output string) string {
 	return output // Fallback to original output
 }
 
-// TestMetricsVerification tests the metrics command and custom weights handling
+// TestMetricsVerification tests the metrics command and custom weights handling.
 func TestMetricsVerification(t *testing.T) {
 	// Skip if not in a git repo
 	if _, err := exec.LookPath("git"); err != nil {

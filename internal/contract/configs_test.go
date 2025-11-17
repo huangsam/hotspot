@@ -775,7 +775,7 @@ func TestProcessProfilingConfig(t *testing.T) {
 	}
 }
 
-// TestGetAnalysisStartAndEndTime tests the canonical time truncation methods
+// TestGetAnalysisStartAndEndTime tests the canonical time truncation methods.
 func TestGetAnalysisStartAndEndTime(t *testing.T) {
 	// Create a time with minutes, seconds, and nanoseconds
 	now := time.Date(2024, 1, 15, 14, 30, 45, 123456789, time.UTC)
