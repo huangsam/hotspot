@@ -80,7 +80,7 @@ func writeFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFl
 		// Prepare the row data as a slice of strings
 		row := []string{
 			strconv.Itoa(i + 1), // Rank
-			contract.TruncatePath(r.Path, GetMaxTablePathWidth(cfg)), // Folder Path
+			contract.TruncatePath(r.Path, getMaxTablePathWidth(cfg)), // Folder Path
 			fmtFloat(r.Score),               // Score
 			contract.GetColorLabel(r.Score), // Label
 		}

@@ -106,7 +106,7 @@ func writeComparisonTable(comparisonResult schema.ComparisonResult, cfg *contrac
 		// Prepare the row data as a slice of strings
 		row := []string{
 			strconv.Itoa(i + 1), // Rank
-			contract.TruncatePath(r.Path, GetMaxTablePathWidth(cfg)), // File Path
+			contract.TruncatePath(r.Path, getMaxTablePathWidth(cfg)), // File Path
 			fmtFloat(r.BeforeScore),                                  // Base Score
 			fmtFloat(r.AfterScore),                                   // Comparison Score
 			deltaStr,                                                 // Delta Score

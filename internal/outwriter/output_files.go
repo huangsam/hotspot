@@ -4,8 +4,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"math"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -85,7 +83,7 @@ func writeFileTable(files []schema.FileResult, cfg *contract.Config, fmtFloat fu
 		// Prepare the row data as a slice of strings
 		row := []string{
 			strconv.Itoa(i + 1), // Rank
-			contract.TruncatePath(f.Path, GetMaxTablePathWidth(cfg)), // File
+			contract.TruncatePath(f.Path, getMaxTablePathWidth(cfg)), // File
 			fmtFloat(f.Score),               // Score
 			contract.GetColorLabel(f.Score), // Label
 		}
@@ -134,58 +132,7 @@ func writeFileTable(files []schema.FileResult, cfg *contract.Config, fmtFloat fu
 	return nil
 }
 
-// metricBreakdown holds a key-value pair from the Breakdown map representing a metric's contribution.
-type metricBreakdown struct {
-	Name  string  // e.g., "commits", "churn", "size"
-	Value float64 // The percentage contribution to the score
-}
-
-const (
-	topNMetrics          = 3
-	metricContribMinimum = 0.5
-)
-
 // formatTopMetricBreakdown computes the top 3 metric components that contribute to the final score.
-func formatTopMetricBreakdown(f *schema.FileResult) string {
-	var metrics []metricBreakdown
-
-	// 1. Filter and Convert Map to Slice
-	for k, v := range f.Breakdown {
-		// Only include meaningful metrics
-		if v >= metricContribMinimum {
-			metrics = append(metrics, metricBreakdown{
-				Name:  string(k),
-				Value: v, // This is the percentage contribution
-			})
-		}
-	}
-
-	if len(metrics) == 0 {
-		return "Not applicable"
-	}
-
-	// 2. Sort the Slice by Value (Contribution %) in Descending Order
-	// Metrics with the highest absolute percentage contribution come first.
-	sort.Slice(metrics, func(i, j int) bool {
-		// We compare the absolute value since some contributions might be negative
-		// if the model is set up to penalize certain metrics.
-		return math.Abs(metrics[i].Value) > math.Abs(metrics[j].Value)
-	})
-
-	// 3. Limit to Top 3 and Format the Output
-	var parts []string
-	limit := min(len(metrics), topNMetrics)
-
-	for i := range limit {
-		m := metrics[i]
-		parts = append(parts, m.Name)
-	}
-
-	if len(parts) == 0 {
-		return "No meaningful contributors"
-	}
-	return strings.Join(parts, " > ")
-}
 
 // writeCSVResultsForFiles writes the analysis results in CSV format.
 func writeCSVResultsForFiles(w *csv.Writer, files []schema.FileResult, fmtFloat func(float64) string, intFmt string) error {

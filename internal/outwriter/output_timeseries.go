@@ -77,7 +77,7 @@ func writeTimeseriesTable(result schema.TimeseriesResult, cfg *contract.Config, 
 			ownersStr = "No owners"
 		}
 		row := []string{
-			contract.TruncatePath(p.Path, GetMaxTablePathWidth(cfg)),
+			contract.TruncatePath(p.Path, getMaxTablePathWidth(cfg)),
 			p.Period,
 			fmtFloat(p.Score),
 			string(p.Mode),
