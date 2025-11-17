@@ -54,7 +54,7 @@ func writeFolderCSVResults(results []schema.FolderResult, cfg *contract.Config, 
 	}, "Wrote CSV")
 }
 
-// writeFolderTable prints the results in the custom folder-centric format,
+// writeFolderTable writes the results in the custom folder-centric format,
 // using the tablewriter API.
 func writeFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
 	table := tablewriter.NewWriter(writer)

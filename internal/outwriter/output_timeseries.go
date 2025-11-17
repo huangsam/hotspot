@@ -53,7 +53,7 @@ func writeTimeseriesCSVResults(result schema.TimeseriesResult, cfg *contract.Con
 	}, "Wrote CSV timeseries results")
 }
 
-// writeTimeseriesTable prints the timeseries in a four-column table.
+// writeTimeseriesTable writes the timeseries in a four-column table.
 func writeTimeseriesTable(result schema.TimeseriesResult, cfg *contract.Config, fmtFloat func(float64) string, duration time.Duration, writer io.Writer) error {
 	// Use os.Stdout, consistent with existing table printing
 	table := tablewriter.NewWriter(writer)

@@ -55,7 +55,7 @@ func writeFileCSVResults(files []schema.FileResult, cfg *contract.Config, fmtFlo
 	}, "Wrote CSV")
 }
 
-// writeFileTable generates and prints the human-readable table.
+// writeFileTable generates and writes the human-readable table.
 func writeFileTable(files []schema.FileResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
 	table := tablewriter.NewWriter(writer)
 
@@ -131,8 +131,6 @@ func writeFileTable(files []schema.FileResult, cfg *contract.Config, fmtFloat fu
 	}
 	return nil
 }
-
-// formatTopMetricBreakdown computes the top 3 metric components that contribute to the final score.
 
 // writeCSVResultsForFiles writes the analysis results in CSV format.
 func writeCSVResultsForFiles(w *csv.Writer, files []schema.FileResult, fmtFloat func(float64) string, intFmt string) error {

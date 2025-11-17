@@ -55,7 +55,7 @@ func writeComparisonCSVResults(comparisonResult schema.ComparisonResult, cfg *co
 	}, "Wrote CSV comparison results")
 }
 
-// writeComparisonTable prints the metrics in a custom comparison format.
+// writeComparisonTable writes the metrics in a custom comparison format.
 func writeComparisonTable(comparisonResult schema.ComparisonResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
 	// Use os.Stdout, consistent with existing table printing
 	table := tablewriter.NewWriter(writer)

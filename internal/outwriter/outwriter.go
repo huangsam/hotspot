@@ -17,27 +17,27 @@ func NewOutWriter() *OutWriter {
 	return &OutWriter{}
 }
 
-// WriteFiles prints file analysis results using the configured output format.
+// WriteFiles writes file analysis results using the configured output format.
 func (ow *OutWriter) WriteFiles(results []schema.FileResult, cfg *contract.Config, duration time.Duration) error {
 	return WriteFileResults(results, cfg, duration)
 }
 
-// WriteFolders prints folder analysis results using the configured output format.
+// WriteFolders writes folder analysis results using the configured output format.
 func (ow *OutWriter) WriteFolders(results []schema.FolderResult, cfg *contract.Config, duration time.Duration) error {
 	return WriteFolderResults(results, cfg, duration)
 }
 
-// WriteComparison prints comparison analysis results using the configured output format.
+// WriteComparison writes comparison analysis results using the configured output format.
 func (ow *OutWriter) WriteComparison(results schema.ComparisonResult, cfg *contract.Config, duration time.Duration) error {
 	return WriteComparisonResults(results, cfg, duration)
 }
 
-// WriteTimeseries prints timeseries analysis results using the configured output format.
+// WriteTimeseries writes timeseries analysis results using the configured output format.
 func (ow *OutWriter) WriteTimeseries(result schema.TimeseriesResult, cfg *contract.Config, duration time.Duration) error {
 	return WriteTimeseriesResults(result, cfg, duration)
 }
 
-// WriteMetrics prints metrics definitions using the configured output format.
+// WriteMetrics writes metrics definitions using the configured output format.
 func (ow *OutWriter) WriteMetrics(activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, cfg *contract.Config) error {
 	return WriteMetricsDefinitions(activeWeights, cfg)
 }
