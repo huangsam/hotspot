@@ -18,9 +18,9 @@ This tool operates as a **data-driven development intelligence.** While traditio
 
 For years, I've managed projects where everyone *knew* which files were the maintenance nightmares—the ones where a small change led to a two-day debugging session. As engineers, we invest heavily in **Code Correctness** - we run linters, use SCA tools, and write comprehensive unit tests.
 
-However, these traditional QA methods often fail against **System Resilience**. Outages are rarely caused by simple syntax errors; they stem from concurrency issues, unexpected external inputs, or dependency failures - all traced back to code that is too complex, too fragile, or owned by too few people.
+However, these traditional QA methods often fail against **System Resilience**. Outages rarely stem from syntax errors; they're caused by code that's too complex, too fragile, or owned by too few people.
 
-Hotspot was born out of the desire to fix that: to provide a transparent, auditable, and quantifiable tool for engineering teams to diagnose the **technical debt** and **knowledge risk** that truly cause production instability.
+Hotspot was born to fix that: providing a transparent, auditable tool for teams to diagnose the **technical debt** and **knowledge risk** that truly drive production instability.
 
 ### Key features
 
