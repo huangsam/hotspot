@@ -1,5 +1,22 @@
 # 🚀 Changelog
 
+## v1.5.1
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.5.0...v1.5.1)
+
+### Improvements
+
+- **Makefile Help**: Update make help formatting for better readability
+- **Output Emoji Guards**: Add emoji guard for file output success
+
+### Development
+
+- **Test Coverage**: Add coverage command to Makefile
+- **Output Tests**: Split output tests into multiple files
+- **Cache Tests**: Add comprehensive cache tests
+- **Folder Aggregation Tests**: Add folder aggregation tests
+- **Outwriter Refactor**: Refactor outwriter for testability
+
 ## v1.5.0
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.4.0...v1.5.0)
