@@ -191,25 +191,31 @@ help:
 	@echo
 	@echo "✨ $(BINARY_NAME) Development Makefile Targets ✨"
 	@echo
+
 	@echo "  make build (default)     - Builds the binary into $(BIN_DIR)/$(BINARY_NAME)."
 	@echo "  make clean               - Removes build artifacts ($(BIN_DIR)) and release files (dist)."
 	@echo "  make install             - Installs the built binary to $$(go env GOPATH)/bin."
 	@echo "  make reinstall           - Reinstalls the built binary."
+
 	@echo "  make test                - Runs unit tests."
 	@echo "  make test-force          - Force runs unit tests (bypasses cache)."
 	@echo "  make test-all            - Runs unit + integration tests."
 	@echo "  make test-all-force      - Force runs all tests (bypasses cache)."
 	@echo "  make bench               - Runs Go benchmarks."
 	@echo "  make coverage            - Runs unit tests with coverage."
+
+	@echo "  make format              - Runs code formatting."
+	@echo "  make lint                - Runs static analysis and checks."
+	@echo "  make check               - Executes format, lint, and test sequentially."
+
 	@echo "  make fuzz                - Runs fuzz tests (default 10s, use FUZZTIME=30s)."
 	@echo "  make fuzz-quick          - Runs fuzz tests for 5 seconds."
 	@echo "  make fuzz-long           - Runs fuzz tests for 60 seconds."
 	@echo "  make profile             - Run full profiling workflow and show top functions."
+
 	@echo "  make demo                - Runs the VHS demo script to generate a demo GIF."
-	@echo "  make format              - Runs code formatting."
-	@echo "  make lint                - Runs static analysis and checks."
-	@echo "  make check               - Executes format, lint, and test sequentially."
 	@echo "  make snapshot            - Runs a snapshot release via $(GORELEASER)."
 	@echo "  make release             - Runs a full release via $(GORELEASER)."
+
 	@echo "  make help                - Shows this help message."
 	@echo
