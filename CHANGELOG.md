@@ -7,6 +7,7 @@
 ### Features
 
 - **Database Cache Backends**: Add MySQL and PostgreSQL support for result caching
+- **Output Formatting Controls**: Add `--color` and `--emoji` flags for output formatting
 
 ### Improvements
 
@@ -14,11 +15,15 @@
 - **Benchmark Script**: Simplify benchmark report generation
 - **Benchmark Timings**: Fix timing calculations in benchmark logic for accuracy
 - **Documentation**: Update README with new findings and make use cases section more focused
+- **Metrics Output**: Simplify metrics command output for better readability
 
 ### Development
 
 - **Package Refactor**: Restructure core and internal packages for better organization
 - **Test Coverage**: Significantly improve test coverage for iocache and outwriter
+- **Code Style**: Refine code style across core, internal, and main.go
+- **Output Refactoring**: Refactor output handling in outwriter package
+- **File Organization**: Rename iocache to cache for better naming consistency
 - **Output Refactor**: Reduce duplication in outwriter package for better maintainability
 
 ## v1.4.0
