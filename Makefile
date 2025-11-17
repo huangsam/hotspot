@@ -20,7 +20,7 @@ INTEGRATION   ?= 0
 
 # --- Phony Targets ---
 # .PHONY: explicitly declares targets that do not represent files
-.PHONY: all build clean install test bench format lint check snapshot release fuzz fuzz-quick fuzz-long profile demo help
+.PHONY: all bench build check clean coverage demo format fuzz fuzz-long fuzz-quick help install lint profile release snapshot test
 
 # --- Targets ---
 
@@ -90,6 +90,12 @@ test-all-force: test
 bench:
 	@echo "⏱ Running benchmarks..."
 	@$(GO) test -bench=. ./...
+
+# Run unit tests with coverage and generate output file
+coverage:
+	@echo "🧪 Running unit tests with coverage..."
+	@$(GO) test -coverprofile=coverage.out ./core/... ./internal/... ./schema/...
+	@$(GO) tool cover -func=coverage.out
 
 # Run fuzz tests
 # FUZZTIME: Duration to run fuzz tests (default: 10s)
@@ -194,6 +200,7 @@ help:
 	@echo "  make test-all            - Runs unit + integration tests."
 	@echo "  make test-all-force      - Force runs all tests (bypasses cache)."
 	@echo "  make bench               - Runs Go benchmarks."
+	@echo "  make coverage            - Runs unit tests with coverage."
 	@echo "  make fuzz                - Runs fuzz tests (default 10s, use FUZZTIME=30s)."
 	@echo "  make fuzz-quick          - Runs fuzz tests for 5 seconds."
 	@echo "  make fuzz-long           - Runs fuzz tests for 60 seconds."
