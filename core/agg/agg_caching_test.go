@@ -3,6 +3,7 @@ package agg
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -15,6 +16,20 @@ import (
 
 // MockCacheStore for testing (alias for MockCacheStore).
 type MockCacheStore = iocache.MockCacheStore
+
+// MockCacheManager for testing CachedAggregateActivity.
+type MockCacheManager struct {
+	mock.Mock
+}
+
+func (m *MockCacheManager) GetActivityStore() contract.CacheStore {
+	ret := m.Called()
+	val := ret.Get(0)
+	if val == nil {
+		return nil
+	}
+	return val.(contract.CacheStore)
+}
 
 func TestCheckCacheHit_CacheHit(t *testing.T) {
 	mockStore := &MockCacheStore{}
@@ -126,5 +141,131 @@ func TestGenerateCacheKey_RepoHashError(t *testing.T) {
 	assert.NotEmpty(t, key)
 	assert.Len(t, key, 64) // SHA256 hash length
 
+	mockClient.AssertExpectations(t)
+}
+
+func TestCachedAggregateActivity_CacheHit(t *testing.T) {
+	ctx := context.Background()
+	mockClient := &contract.MockGitClient{}
+	mockMgr := &MockCacheManager{}
+	mockStore := &MockCacheStore{}
+
+	// Expected cached result
+	expected := &schema.AggregateOutput{
+		CommitMap: map[string]int{"test.go": 5},
+	}
+
+	data, _ := json.Marshal(expected)
+
+	// Setup mocks
+	mockMgr.On("GetActivityStore").Return(mockStore)
+	mockStore.On("Get", mock.AnythingOfType("string")).Return(data, currentCacheVersion, time.Now().Unix(), nil)
+	mockClient.On("GetRepoHash", ctx, "/test/repo").Return("abcd1234", nil)
+
+	cfg := &contract.Config{
+		RepoPath:  "/test/repo",
+		StartTime: time.Unix(1000000, 0),
+		EndTime:   time.Unix(2000000, 0),
+	}
+
+	result, err := CachedAggregateActivity(ctx, cfg, mockClient, mockMgr)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, expected, result)
+
+	mockMgr.AssertExpectations(t)
+	mockStore.AssertExpectations(t)
+	mockClient.AssertExpectations(t)
+}
+
+func TestCachedAggregateActivity_CacheMiss(t *testing.T) {
+	ctx := context.Background()
+	mockClient := &contract.MockGitClient{}
+	mockMgr := &MockCacheManager{}
+	mockStore := &MockCacheStore{}
+
+	// Setup for aggregateActivity
+	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return(strings.Split(strings.TrimSpace(fileListFixture), "\n"), nil)
+	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(gitLogBasicFixture, nil)
+	mockClient.On("GetRepoHash", ctx, "/test/repo").Return("abcd1234", nil)
+
+	// Cache miss
+	mockMgr.On("GetActivityStore").Return(mockStore)
+	mockStore.On("Get", mock.AnythingOfType("string")).Return([]byte{}, 0, int64(0), assert.AnError)
+	mockStore.On("Set", mock.AnythingOfType("string"), mock.AnythingOfType("[]uint8"), currentCacheVersion, mock.AnythingOfType("int64")).Return(nil)
+
+	cfg := &contract.Config{
+		RepoPath:  "/test/repo",
+		StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+	}
+
+	result, err := CachedAggregateActivity(ctx, cfg, mockClient, mockMgr)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, 1, result.CommitMap["AGENTS.md"])
+
+	mockMgr.AssertExpectations(t)
+	mockStore.AssertExpectations(t)
+	mockClient.AssertExpectations(t)
+}
+
+func TestCachedAggregateActivity_NoCacheManager(t *testing.T) {
+	ctx := context.Background()
+	mockClient := &contract.MockGitClient{}
+	mockMgr := &MockCacheManager{}
+
+	// Setup for aggregateActivity
+	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return(strings.Split(strings.TrimSpace(fileListFixture), "\n"), nil)
+	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(gitLogBasicFixture, nil)
+
+	// No cache manager
+	mockMgr.On("GetActivityStore").Return(nil)
+
+	cfg := &contract.Config{
+		RepoPath:  "/test/repo",
+		StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+	}
+
+	result, err := CachedAggregateActivity(ctx, cfg, mockClient, mockMgr)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, 1, result.CommitMap["AGENTS.md"])
+
+	mockMgr.AssertExpectations(t)
+	mockClient.AssertExpectations(t)
+}
+
+func TestCachedAggregateActivity_AggregateError(t *testing.T) {
+	ctx := context.Background()
+	mockClient := &contract.MockGitClient{}
+	mockMgr := &MockCacheManager{}
+	mockStore := &MockCacheStore{}
+
+	// Setup for error in aggregateActivity
+	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return(nil, assert.AnError)
+	mockClient.On("GetRepoHash", ctx, "/test/repo").Return("abcd1234", nil)
+
+	// Cache miss
+	mockMgr.On("GetActivityStore").Return(mockStore)
+	mockStore.On("Get", mock.AnythingOfType("string")).Return([]byte{}, 0, int64(0), assert.AnError)
+
+	cfg := &contract.Config{
+		RepoPath:  "/test/repo",
+		StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+	}
+
+	result, err := CachedAggregateActivity(ctx, cfg, mockClient, mockMgr)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+
+	mockMgr.AssertExpectations(t)
+	mockStore.AssertExpectations(t)
 	mockClient.AssertExpectations(t)
 }

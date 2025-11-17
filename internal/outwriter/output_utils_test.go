@@ -1227,3 +1227,140 @@ func TestWriteTimeseriesResultsEmpty(t *testing.T) {
 	output := buf.String()
 	assert.Contains(t, output, "Timeseries analysis completed in 20ms")
 }
+
+func TestOutWriter_WriteMetrics(t *testing.T) {
+	ow := NewOutWriter()
+	activeWeights := map[schema.ScoringMode]map[schema.BreakdownKey]float64{
+		schema.HotMode: {
+			schema.BreakdownCommits: 0.5,
+			schema.BreakdownChurn:   0.5,
+		},
+	}
+
+	cfg := &contract.Config{
+		Output: schema.TextOut,
+	}
+
+	var buf bytes.Buffer
+	err := ow.WriteMetrics(&buf, activeWeights, cfg)
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "Hotspot Scoring Modes")
+	assert.Contains(t, output, "Activity hotspots")
+	assert.Contains(t, output, "Knowledge risk")
+	assert.Contains(t, output, "Technical debt")
+	assert.Contains(t, output, "Maintenance debt")
+}
+
+func TestWriteMetricsDefinitions_Text(t *testing.T) {
+	activeWeights := map[schema.ScoringMode]map[schema.BreakdownKey]float64{
+		schema.HotMode: {
+			schema.BreakdownCommits: 0.6,
+			schema.BreakdownChurn:   0.4,
+		},
+	}
+
+	cfg := &contract.Config{
+		Output: schema.TextOut,
+	}
+
+	var buf bytes.Buffer
+	err := WriteMetricsDefinitions(&buf, activeWeights, cfg)
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "Hotspot Scoring Modes")
+	assert.Contains(t, output, "Activity hotspots")
+	assert.Contains(t, output, "Factors:")
+	assert.Contains(t, output, "Formula:")
+}
+
+func TestWriteMetricsDefinitions_JSON(t *testing.T) {
+	activeWeights := map[schema.ScoringMode]map[schema.BreakdownKey]float64{
+		schema.RiskMode: {
+			schema.BreakdownInvContrib: 0.7,
+			schema.BreakdownGini:       0.3,
+		},
+	}
+
+	cfg := &contract.Config{
+		Output: schema.JSONOut,
+	}
+
+	var buf bytes.Buffer
+	err := WriteMetricsDefinitions(&buf, activeWeights, cfg)
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, `"title"`)
+	assert.Contains(t, output, `"modes"`)
+	assert.Contains(t, output, `"hot"`)
+	assert.Contains(t, output, `"risk"`)
+	assert.Contains(t, output, `"complexity"`)
+	assert.Contains(t, output, `"stale"`)
+
+	// Verify it's valid JSON
+	var result map[string]any
+	err = json.Unmarshal([]byte(output), &result)
+	require.NoError(t, err)
+}
+
+func TestWriteMetricsDefinitions_CSV(t *testing.T) {
+	activeWeights := map[schema.ScoringMode]map[schema.BreakdownKey]float64{
+		schema.ComplexityMode: {
+			schema.BreakdownSize: 0.5,
+			schema.BreakdownAge:  0.5,
+		},
+	}
+
+	cfg := &contract.Config{
+		Output: schema.CSVOut,
+	}
+
+	var buf bytes.Buffer
+	err := WriteMetricsDefinitions(&buf, activeWeights, cfg)
+	require.NoError(t, err)
+
+	output := buf.String()
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	require.Greater(t, len(lines), 1)
+
+	// Check header
+	assert.Contains(t, lines[0], "Mode")
+	assert.Contains(t, lines[0], "Purpose")
+	assert.Contains(t, lines[0], "Factors")
+	assert.Contains(t, lines[0], "Formula")
+
+	// Check that all modes are present
+	foundModes := make(map[string]bool)
+	for i := 1; i < len(lines); i++ {
+		parts := strings.Split(lines[i], ",")
+		if len(parts) >= 1 {
+			foundModes[parts[0]] = true
+		}
+	}
+
+	assert.True(t, foundModes["hot"])
+	assert.True(t, foundModes["risk"])
+	assert.True(t, foundModes["complexity"])
+	assert.True(t, foundModes["stale"])
+}
+
+func TestWriteMetricsDefinitions_EmptyWeights(t *testing.T) {
+	// Test with nil active weights (should use defaults)
+	var activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64
+
+	cfg := &contract.Config{
+		Output: schema.TextOut,
+	}
+
+	var buf bytes.Buffer
+	err := WriteMetricsDefinitions(&buf, activeWeights, cfg)
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "Hotspot Scoring Modes")
+	assert.Contains(t, output, "Activity hotspots")
+	assert.Contains(t, output, "Knowledge risk")
+}
