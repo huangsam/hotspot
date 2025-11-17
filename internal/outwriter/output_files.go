@@ -82,11 +82,15 @@ func writeFileTable(files []schema.FileResult, cfg *contract.Config, fmtFloat fu
 	var data [][]string
 	for i, f := range files {
 		// Prepare the row data as a slice of strings
+		label := contract.GetPlainLabel(f.Score)
+		if cfg.UseColors {
+			label = contract.GetColorLabel(f.Score)
+		}
 		row := []string{
 			strconv.Itoa(i + 1), // Rank
 			contract.TruncatePath(f.Path, getMaxTablePathWidth(cfg)), // File
-			fmtFloat(f.Score),               // Score
-			contract.GetColorLabel(f.Score), // Label
+			fmtFloat(f.Score), // Score
+			label,             // Label
 		}
 		if cfg.Detail {
 			row = append(

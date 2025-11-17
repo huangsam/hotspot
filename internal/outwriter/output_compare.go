@@ -85,9 +85,16 @@ func writeComparisonTable(comparisonResult schema.ComparisonResult, cfg *contrac
 
 	// --- 3. Prepare Data Rows ---
 	var data [][]string
-	red := color.New(color.FgRed).SprintFunc()
-	green := color.New(color.FgGreen).SprintFunc()
-	yellow := color.New(color.FgYellow).SprintFunc()
+	var red, green, yellow func(...any) string
+	if cfg.UseColors {
+		red = color.New(color.FgRed).SprintFunc()
+		green = color.New(color.FgGreen).SprintFunc()
+		yellow = color.New(color.FgYellow).SprintFunc()
+	} else {
+		red = fmt.Sprint
+		green = fmt.Sprint
+		yellow = fmt.Sprint
+	}
 	for i, r := range comparisonResult.Results {
 		var deltaStr string
 		deltaValue := r.Delta

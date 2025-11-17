@@ -97,6 +97,7 @@ type Config struct {
 	CustomWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64
 
 	UseEmojis bool // Enable emojis in output headers
+	UseColors bool // Enable colored labels in table output
 }
 
 // ConfigRawInput holds the raw inputs from all sources (flags, env, config file).
@@ -121,7 +122,8 @@ type ConfigRawInput struct {
 	Width          int    `mapstructure:"width"`
 	CacheBackend   string `mapstructure:"cache-backend"`
 	CacheDBConnect string `mapstructure:"cache-db-connect"`
-	Emoji          bool   `mapstructure:"emoji"`
+	Emoji          string `mapstructure:"emoji"`
+	Color          string `mapstructure:"color"`
 
 	// --- Fields from filesCmd.Flags() ---
 	Explain bool `mapstructure:"explain"`
@@ -245,7 +247,20 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	cfg.Owner = input.Owner
 	cfg.Follow = input.Follow
 	cfg.Width = input.Width
-	cfg.UseEmojis = input.Emoji
+
+	// Parse emoji flag
+	emojis, err := ParseBoolString(input.Emoji)
+	if err != nil {
+		return fmt.Errorf("invalid --emoji value: %w", err)
+	}
+	cfg.UseEmojis = emojis
+
+	// Parse color flag
+	colors, err := ParseBoolString(input.Color)
+	if err != nil {
+		return fmt.Errorf("invalid --color value: %w", err)
+	}
+	cfg.UseColors = colors
 
 	// --- 1. ResultLimit Validation ---
 	if input.Limit <= 0 || input.Limit > MaxResultLimit {

@@ -120,6 +120,8 @@ func initConfig() {
 	viper.SetDefault("lookback", "6 months")
 	viper.SetDefault("cache-backend", schema.SQLiteBackend)
 	viper.SetDefault("cache-db-connect", "")
+	viper.SetDefault("emoji", "no")
+	viper.SetDefault("color", "yes")
 }
 
 // sharedSetup unmarshals config and runs validation.
@@ -370,7 +372,6 @@ func init() {
 	// Bind all persistent flags of rootCmd to Viper
 	rootCmd.PersistentFlags().Bool("detail", false, "Print per-target metadata (lines of code, size, age)")
 	rootCmd.PersistentFlags().String("end", "", "End date in ISO8601 or time ago")
-	rootCmd.PersistentFlags().Bool("emoji", false, "Enable emojis in output headers")
 	rootCmd.PersistentFlags().String("exclude", "", "Comma-separated list of path prefixes or patterns to ignore")
 	rootCmd.PersistentFlags().StringP("filter", "f", "", "Filter targets by path prefix")
 	rootCmd.PersistentFlags().IntP("limit", "l", contract.DefaultResultLimit, "Number of results to display")
@@ -385,6 +386,8 @@ func init() {
 	rootCmd.PersistentFlags().Int("width", 0, "Terminal width override (0 = auto-detect)")
 	rootCmd.PersistentFlags().String("cache-backend", string(schema.SQLiteBackend), "Cache backend: sqlite or mysql or postgresql or none")
 	rootCmd.PersistentFlags().String("cache-db-connect", "", "Database connection string for mysql/postgresql (e.g., user:pass@tcp(host:port)/dbname)")
+	rootCmd.PersistentFlags().String("color", "yes", "Enable colored labels in output (yes/no/true/false/1/0)")
+	rootCmd.PersistentFlags().String("emoji", "no", "Enable emojis in output headers (yes/no/true/false/1/0)")
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
 		contract.LogFatal("Error binding root flags", err)
 	}

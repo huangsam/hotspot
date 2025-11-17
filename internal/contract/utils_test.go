@@ -283,3 +283,117 @@ func FuzzShouldIgnore(f *testing.F) {
 		_ = ShouldIgnore(path, excludes)
 	})
 }
+
+func TestParseBoolString(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected bool
+		hasError bool
+	}{
+		{
+			name:     "yes lowercase",
+			input:    "yes",
+			expected: true,
+			hasError: false,
+		},
+		{
+			name:     "YES uppercase",
+			input:    "YES",
+			expected: true,
+			hasError: false,
+		},
+		{
+			name:     "YeS mixed case",
+			input:    "YeS",
+			expected: true,
+			hasError: false,
+		},
+		{
+			name:     "no lowercase",
+			input:    "no",
+			expected: false,
+			hasError: false,
+		},
+		{
+			name:     "NO uppercase",
+			input:    "NO",
+			expected: false,
+			hasError: false,
+		},
+		{
+			name:     "true lowercase",
+			input:    "true",
+			expected: true,
+			hasError: false,
+		},
+		{
+			name:     "TRUE uppercase",
+			input:    "TRUE",
+			expected: true,
+			hasError: false,
+		},
+		{
+			name:     "false lowercase",
+			input:    "false",
+			expected: false,
+			hasError: false,
+		},
+		{
+			name:     "FALSE uppercase",
+			input:    "FALSE",
+			expected: false,
+			hasError: false,
+		},
+		{
+			name:     "1 as string",
+			input:    "1",
+			expected: true,
+			hasError: false,
+		},
+		{
+			name:     "0 as string",
+			input:    "0",
+			expected: false,
+			hasError: false,
+		},
+		{
+			name:     "empty string",
+			input:    "",
+			expected: false,
+			hasError: true,
+		},
+		{
+			name:     "invalid string",
+			input:    "maybe",
+			expected: false,
+			hasError: true,
+		},
+		{
+			name:     "number 2",
+			input:    "2",
+			expected: false,
+			hasError: true,
+		},
+		{
+			name:     "random text",
+			input:    "enabled",
+			expected: false,
+			hasError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := ParseBoolString(tt.input)
+
+			if tt.hasError {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "invalid boolean string")
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, result)
+			}
+		})
+	}
+}

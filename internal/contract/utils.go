@@ -165,3 +165,17 @@ func TruncatePath(path string, maxWidth int) string {
 	}
 	return path
 }
+
+// ParseBoolString parses a string value into a boolean.
+// Accepts "yes", "no", "true", "false", "1", "0" (case-insensitive).
+// Returns an error for invalid values.
+func ParseBoolString(s string) (bool, error) {
+	switch strings.ToLower(s) {
+	case "yes", "true", "1":
+		return true, nil
+	case "no", "false", "0":
+		return false, nil
+	default:
+		return false, fmt.Errorf("invalid boolean string: %s (expected yes/no/true/false/1/0)", s)
+	}
+}
