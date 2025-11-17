@@ -17,10 +17,18 @@ func LogAnalysisHeader(cfg *contract.Config) {
 	}
 
 	// Line 1: The analysis summary (Repo and Mode)
-	fmt.Printf("🔎 Repo: %s (Mode: %s)\n", repoName, cfg.Mode)
+	if cfg.UseEmojis {
+		fmt.Printf("🔎 Repo: %s (Mode: %s)\n", repoName, cfg.Mode)
+	} else {
+		fmt.Printf("Repo: %s (Mode: %s)\n", repoName, cfg.Mode)
+	}
 
 	// Line 2: The actual date range being analyzed
-	fmt.Printf("📅 Range: %s → %s\n", cfg.StartTime.Format(contract.DateTimeFormat), cfg.EndTime.Format(contract.DateTimeFormat))
+	if cfg.UseEmojis {
+		fmt.Printf("📅 Range: %s → %s\n", cfg.StartTime.Format(contract.DateTimeFormat), cfg.EndTime.Format(contract.DateTimeFormat))
+	} else {
+		fmt.Printf("Range: %s → %s\n", cfg.StartTime.Format(contract.DateTimeFormat), cfg.EndTime.Format(contract.DateTimeFormat))
+	}
 }
 
 // LogTimeseriesHeader prints a header for timeseries analysis.
@@ -29,8 +37,13 @@ func LogTimeseriesHeader(cfg *contract.Config, intervalDuration time.Duration, n
 	if repoName == "" || repoName == "." {
 		repoName = "current"
 	}
-	fmt.Printf("🔎 Repo: %s (Mode: %s)\n", repoName, cfg.Mode)
-	fmt.Printf("📅 Timeseries: %d data points (interval: %v)\n", numPoints, intervalDuration)
+	if cfg.UseEmojis {
+		fmt.Printf("🔎 Repo: %s (Mode: %s)\n", repoName, cfg.Mode)
+		fmt.Printf("📅 Timeseries: %d data points (interval: %v)\n", numPoints, intervalDuration)
+	} else {
+		fmt.Printf("Repo: %s (Mode: %s)\n", repoName, cfg.Mode)
+		fmt.Printf("Timeseries: %d data points (interval: %v)\n", numPoints, intervalDuration)
+	}
 }
 
 // LogCompareHeader prints a header for comparison analysis.
@@ -39,6 +52,11 @@ func LogCompareHeader(cfg *contract.Config) {
 	if repoName == "" || repoName == "." {
 		repoName = "current"
 	}
-	fmt.Printf("🔎 Repo: %s (Mode: %s)\n", repoName, cfg.Mode)
-	fmt.Printf("📊 Comparing: %s ↔ %s (lookback: %v)\n", cfg.BaseRef, cfg.TargetRef, cfg.Lookback)
+	if cfg.UseEmojis {
+		fmt.Printf("🔎 Repo: %s (Mode: %s)\n", repoName, cfg.Mode)
+		fmt.Printf("📊 Comparing: %s ↔ %s (lookback: %v)\n", cfg.BaseRef, cfg.TargetRef, cfg.Lookback)
+	} else {
+		fmt.Printf("Repo: %s (Mode: %s)\n", repoName, cfg.Mode)
+		fmt.Printf("Comparing: %s ↔ %s (lookback: %v)\n", cfg.BaseRef, cfg.TargetRef, cfg.Lookback)
+	}
 }

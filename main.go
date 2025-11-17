@@ -370,6 +370,7 @@ func init() {
 	// Bind all persistent flags of rootCmd to Viper
 	rootCmd.PersistentFlags().Bool("detail", false, "Print per-target metadata (lines of code, size, age)")
 	rootCmd.PersistentFlags().String("end", "", "End date in ISO8601 or time ago")
+	rootCmd.PersistentFlags().Bool("emoji", false, "Enable emojis in output headers")
 	rootCmd.PersistentFlags().String("exclude", "", "Comma-separated list of path prefixes or patterns to ignore")
 	rootCmd.PersistentFlags().StringP("filter", "f", "", "Filter targets by path prefix")
 	rootCmd.PersistentFlags().IntP("limit", "l", contract.DefaultResultLimit, "Number of results to display")

@@ -95,6 +95,8 @@ type Config struct {
 
 	// CustomWeights is a mapping of [ModeName][BreakdownKey] = Weight
 	CustomWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64
+
+	UseEmojis bool // Enable emojis in output headers
 }
 
 // ConfigRawInput holds the raw inputs from all sources (flags, env, config file).
@@ -119,6 +121,7 @@ type ConfigRawInput struct {
 	Width          int    `mapstructure:"width"`
 	CacheBackend   string `mapstructure:"cache-backend"`
 	CacheDBConnect string `mapstructure:"cache-db-connect"`
+	Emoji          bool   `mapstructure:"emoji"`
 
 	// --- Fields from filesCmd.Flags() ---
 	Explain bool `mapstructure:"explain"`
@@ -242,6 +245,7 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	cfg.Owner = input.Owner
 	cfg.Follow = input.Follow
 	cfg.Width = input.Width
+	cfg.UseEmojis = input.Emoji
 
 	// --- 1. ResultLimit Validation ---
 	if input.Limit <= 0 || input.Limit > MaxResultLimit {
