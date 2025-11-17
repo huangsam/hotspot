@@ -76,7 +76,7 @@ Here's a demo of Hotspot in action:
 
 Here is what the tool shows for [kubernetes/kubernetes](https://github.com/kubernetes/kubernetes):
 
-<img src="./images/ranking.png" alt="Hotspot" width="700px" />
+<img src="./images/ranking.png" alt="Hotspot" width="800px" />
 
 This ranking displays the **complexity score** and a colored label based on:
 
