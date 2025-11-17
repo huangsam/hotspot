@@ -672,22 +672,22 @@ func TestGetDisplayNameForMode(t *testing.T) {
 		{
 			name:     "hot mode",
 			modeName: "hot",
-			expected: "🔥 HOT",
+			expected: "Hot",
 		},
 		{
 			name:     "risk mode",
 			modeName: "risk",
-			expected: "⚠️  RISK",
+			expected: "Risk",
 		},
 		{
 			name:     "complexity mode",
 			modeName: "complexity",
-			expected: "🧩 COMPLEXITY",
+			expected: "Complexity",
 		},
 		{
 			name:     "stale mode",
 			modeName: "stale",
-			expected: "🕰️  STALE",
+			expected: "Stale",
 		},
 		{
 			name:     "unknown mode",

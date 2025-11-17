@@ -30,10 +30,10 @@ func WriteMetricsDefinitions(activeWeights map[schema.ScoringMode]map[schema.Bre
 
 // writeMetricsText displays metrics in human-readable text format.
 func writeMetricsText(w io.Writer, renderModel *schema.MetricsRenderModel, _ *contract.Config) error {
-	if _, err := fmt.Fprintf(w, "🔥 Hotspot Scoring Modes\n"); err != nil {
+	if _, err := fmt.Fprintf(w, "Hotspot Scoring Modes\n"); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(w, "========================\n"); err != nil {
+	if _, err := fmt.Fprintf(w, "=====================\n"); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintf(w, "\n"); err != nil {
@@ -58,19 +58,6 @@ func writeMetricsText(w io.Writer, renderModel *schema.MetricsRenderModel, _ *co
 		if _, err := fmt.Fprintf(w, "   Formula: Score = %s\n", mode.Formula); err != nil {
 			return err
 		}
-		if _, err := fmt.Fprintf(w, "\n"); err != nil {
-			return err
-		}
-	}
-
-	if _, err := fmt.Fprintf(w, "🔗 Special Relationship\n"); err != nil {
-		return err
-	}
-	if _, err := fmt.Fprintf(w, "%s\n", renderModel.SpecialRelationship["description"]); err != nil {
-		return err
-	}
-	if _, err := fmt.Fprintf(w, "%s\n", renderModel.SpecialRelationship["note"]); err != nil {
-		return err
 	}
 
 	return nil

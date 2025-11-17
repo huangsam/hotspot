@@ -90,13 +90,13 @@ func formatWeights(weights map[string]float64, factorKeys []string) string {
 func getDisplayNameForMode(modeName string) string {
 	switch modeName {
 	case "hot":
-		return "🔥 HOT"
+		return "Hot"
 	case "risk":
-		return "⚠️  RISK"
+		return "Risk"
 	case "complexity":
-		return "🧩 COMPLEXITY"
+		return "Complexity"
 	case "stale":
-		return "🕰️  STALE"
+		return "Stale"
 	default:
 		return strings.ToUpper(modeName)
 	}
