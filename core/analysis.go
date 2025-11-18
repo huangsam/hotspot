@@ -298,20 +298,12 @@ func recordFileAnalysis(_ context.Context, cfg *contract.Config, analysisID int6
 func computeAllScores(m *schema.FileResult, customWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64) map[schema.ScoringMode]float64 {
 	scores := make(map[schema.ScoringMode]float64)
 
-	// Save the current mode and breakdown
-	originalMode := m.Mode
-	originalBreakdown := m.Breakdown
-
-	// Compute score for each mode
+	// Compute score for each mode without mutating the input
 	for _, mode := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode} {
-		m.Mode = mode
-		scores[mode] = computeScore(m, mode, customWeights)
+		mCopy := *m
+		mCopy.Mode = mode
+		scores[mode] = computeScore(&mCopy, mode, customWeights)
 	}
-
-	// Restore original mode and breakdown
-	m.Mode = originalMode
-	m.Breakdown = originalBreakdown
-
 	return scores
 }
 
