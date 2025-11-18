@@ -41,7 +41,9 @@ func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client con
 		}
 		var err error
 		analysisID, err = analysisStore.BeginAnalysis(startTime, configParams)
-		if err == nil && analysisID > 0 {
+		if err != nil {
+			internal.LogInfo(fmt.Sprintf("Analysis tracking could not be initialized: %v (tracking will be skipped)", err))
+		} else if analysisID > 0 {
 			// Add analysis ID to context for use in file analysis
 			ctx = withAnalysisID(ctx, analysisID)
 		}
