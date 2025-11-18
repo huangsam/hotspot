@@ -275,7 +275,7 @@ func (as *AnalysisStoreImpl) BeginAnalysis(startTime time.Time, configParams map
 	switch as.backend {
 	case schema.PostgreSQLBackend:
 		query := fmt.Sprintf(`INSERT INTO %s (start_time, config_params) VALUES ($1, $2) RETURNING analysis_id`, quotedTableName)
-		err = as.db.QueryRow(query, formatTime(startTime, as.backend), configJSON).Scan(&analysisID)
+		err = as.db.QueryRow(query, formatTime(startTime, as.backend), string(configJSON)).Scan(&analysisID)
 	default: // SQLite and MySQL
 		query := fmt.Sprintf(`INSERT INTO %s (start_time, config_params) VALUES (?, ?)`, quotedTableName)
 		var result sql.Result

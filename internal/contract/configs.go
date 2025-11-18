@@ -92,6 +92,7 @@ type Config struct {
 
 	CacheBackend   schema.CacheBackend
 	CacheDBConnect string // Please use env var as this is plaintext
+	TrackAnalysis  bool   // Enable analysis tracking to database
 
 	// CustomWeights is a mapping of [ModeName][BreakdownKey] = Weight
 	CustomWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64
@@ -122,6 +123,7 @@ type ConfigRawInput struct {
 	Width          int    `mapstructure:"width"`
 	CacheBackend   string `mapstructure:"cache-backend"`
 	CacheDBConnect string `mapstructure:"cache-db-connect"`
+	TrackAnalysis  bool   `mapstructure:"track-analysis"`
 	Emoji          string `mapstructure:"emoji"`
 	Color          string `mapstructure:"color"`
 
@@ -300,6 +302,7 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	if err := ValidateDatabaseConnectionString(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
 		return err
 	}
+	cfg.TrackAnalysis = input.TrackAnalysis
 
 	// --- 6. Excludes Processing ---
 	defaults := []string{
