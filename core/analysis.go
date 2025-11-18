@@ -280,7 +280,7 @@ func recordFileAnalysis(ctx context.Context, cfg *contract.Config, analysisID in
 		TotalCommits:     result.Commits,
 		TotalChurn:       result.Churn,
 		ContributorCount: result.UniqueContributors,
-		AgeDays:          float64(result.AgeDays), // Convert int to float64 for database storage precision
+		AgeDays:          float64(result.AgeDays), // Convert int to float64 for type compatibility with FileMetrics struct
 		GiniCoefficient:  result.Gini,
 		FileOwner:        getOwnerString(result.Owners),
 	}
