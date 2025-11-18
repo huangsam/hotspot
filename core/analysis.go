@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -27,6 +28,9 @@ func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client con
 		internal.LogAnalysisHeader(cfg)
 	}
 
+	// Add cache manager to context for use in worker goroutines
+	ctx = contextWithCacheManager(ctx, mgr)
+
 	// --- 0. Begin Analysis Tracking (if available) ---
 	var analysisID int64
 	analysisStore := mgr.GetAnalysisStore()
@@ -42,7 +46,7 @@ func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client con
 		var err error
 		analysisID, err = analysisStore.BeginAnalysis(startTime, configParams)
 		if err != nil {
-			internal.LogInfo(fmt.Sprintf("Analysis tracking could not be initialized: %v (tracking will be skipped)", err))
+			fmt.Fprintf(os.Stderr, "Warning: Analysis tracking could not be initialized: %v (tracking will be skipped)\n", err)
 		} else if analysisID > 0 {
 			// Add analysis ID to context for use in file analysis
 			ctx = withAnalysisID(ctx, analysisID)
@@ -67,7 +71,9 @@ func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client con
 	// --- 4. End Analysis Tracking ---
 	if analysisStore != nil && analysisID > 0 {
 		endTime := time.Now()
-		_ = analysisStore.EndAnalysis(analysisID, endTime, len(fileResults))
+		if err := analysisStore.EndAnalysis(analysisID, endTime, len(fileResults)); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Failed to finalize analysis tracking: %v\n", err)
+		}
 	}
 
 	return &schema.SingleAnalysisOutput{
@@ -254,10 +260,9 @@ func analyzeFileCommon(ctx context.Context, cfg *contract.Config, client contrac
 }
 
 // recordFileAnalysis records file metrics and scores to the database.
-func recordFileAnalysis(_ context.Context, cfg *contract.Config, analysisID int64, path string, result *schema.FileResult) {
-	// Get the cache manager from global state
-	// This is a temporary solution - ideally we'd pass it through context
-	mgr := getGlobalCacheManager()
+func recordFileAnalysis(ctx context.Context, cfg *contract.Config, analysisID int64, path string, result *schema.FileResult) {
+	// Get the cache manager from context
+	mgr := cacheManagerFromContext(ctx)
 	if mgr == nil {
 		return
 	}
@@ -279,7 +284,9 @@ func recordFileAnalysis(_ context.Context, cfg *contract.Config, analysisID int6
 		GiniCoefficient:  result.Gini,
 		FileOwner:        getOwnerString(result.Owners),
 	}
-	_ = analysisStore.RecordFileMetrics(analysisID, path, metrics)
+	if err := analysisStore.RecordFileMetrics(analysisID, path, metrics); err != nil {
+		logTrackingError("RecordFileMetrics", path, err)
+	}
 
 	// Compute all four scoring modes
 	allScores := computeAllScores(result, cfg.CustomWeights)
@@ -293,7 +300,9 @@ func recordFileAnalysis(_ context.Context, cfg *contract.Config, analysisID int6
 		ScoreModeD:   allScores[schema.StaleMode],
 		ScoreLabel:   string(cfg.Mode),
 	}
-	_ = analysisStore.RecordFileScores(analysisID, path, scores)
+	if err := analysisStore.RecordFileScores(analysisID, path, scores); err != nil {
+		logTrackingError("RecordFileScores", path, err)
+	}
 }
 
 // computeAllScores computes scores for all four modes.
@@ -315,6 +324,11 @@ func getOwnerString(owners []string) string {
 		return ""
 	}
 	return owners[0] // Return the primary owner
+}
+
+// logTrackingError logs database tracking errors to stderr without disrupting analysis.
+func logTrackingError(operation, path string, err error) {
+	fmt.Fprintf(os.Stderr, "Warning: Analysis tracking failed for %s on %s: %v\n", operation, path, err)
 }
 
 // cacheManagerKey is the context key for the cache manager.

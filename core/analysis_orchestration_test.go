@@ -20,8 +20,8 @@ func TestRunSingleAnalysisCore_Success(t *testing.T) {
 	// Setup mock expectations
 	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
 	mockMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
-	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return([]string{"main.go", "core/agg.go"}, nil)
-	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
+	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{"main.go", "core/agg.go"}, nil)
+	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
 
 	cfg := &contract.Config{
 		RepoPath:    "/test/repo",
@@ -52,8 +52,8 @@ func TestRunSingleAnalysisCore_NoFilesFound(t *testing.T) {
 	// Setup mock expectations - return empty file list
 	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
 	mockMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
-	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return([]string{}, nil)
-	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte(""), nil)
+	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{}, nil)
+	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte(""), nil)
 
 	cfg := &contract.Config{
 		RepoPath:  "/test/repo",
@@ -81,8 +81,8 @@ func TestRunSingleAnalysisCore_AggregationError(t *testing.T) {
 	// Setup mock expectations - aggregation fails
 	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
 	mockMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
-	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return([]string{"main.go"}, nil)
-	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(nil, assert.AnError)
+	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{"main.go"}, nil)
+	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(nil, assert.AnError)
 
 	cfg := &contract.Config{
 		RepoPath:  "/test/repo",
