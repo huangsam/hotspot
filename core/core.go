@@ -26,10 +26,10 @@ type ExecutorFunc func(ctx context.Context, cfg *contract.Config, mgr contract.C
 func ExecuteHotspotFiles(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) error {
 	start := time.Now()
 	client := contract.NewLocalGitClient()
-	
+
 	// Set global cache manager for analysis tracking
 	setGlobalCacheManager(mgr)
-	
+
 	output, err := runSingleAnalysisCore(ctx, cfg, client, mgr)
 	if err != nil {
 		return err
@@ -52,10 +52,10 @@ func ExecuteHotspotFiles(ctx context.Context, cfg *contract.Config, mgr contract
 func ExecuteHotspotFolders(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) error {
 	start := time.Now()
 	client := contract.NewLocalGitClient()
-	
+
 	// Set global cache manager for analysis tracking
 	setGlobalCacheManager(mgr)
-	
+
 	output, err := runSingleAnalysisCore(ctx, cfg, client, mgr)
 	if err != nil {
 		return err

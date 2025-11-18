@@ -32,7 +32,7 @@ func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client con
 	analysisStore := mgr.GetAnalysisStore()
 	if analysisStore != nil {
 		startTime := time.Now()
-		configParams := map[string]interface{}{
+		configParams := map[string]any{
 			"mode":         string(cfg.Mode),
 			"lookback":     cfg.Lookback.String(),
 			"repo_path":    cfg.RepoPath,
@@ -251,8 +251,8 @@ func analyzeFileCommon(ctx context.Context, cfg *contract.Config, client contrac
 	return result
 }
 
-// recordFileAnalysis records file metrics and scores to the database
-func recordFileAnalysis(ctx context.Context, cfg *contract.Config, analysisID int64, path string, result *schema.FileResult) {
+// recordFileAnalysis records file metrics and scores to the database.
+func recordFileAnalysis(_ context.Context, cfg *contract.Config, analysisID int64, path string, result *schema.FileResult) {
 	// Get the cache manager from global state
 	// This is a temporary solution - ideally we'd pass it through context
 	mgr := getGlobalCacheManager()
@@ -294,28 +294,28 @@ func recordFileAnalysis(ctx context.Context, cfg *contract.Config, analysisID in
 	_ = analysisStore.RecordFileScores(analysisID, path, scores)
 }
 
-// computeAllScores computes scores for all four modes
+// computeAllScores computes scores for all four modes.
 func computeAllScores(m *schema.FileResult, customWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64) map[schema.ScoringMode]float64 {
 	scores := make(map[schema.ScoringMode]float64)
-	
+
 	// Save the current mode and breakdown
 	originalMode := m.Mode
 	originalBreakdown := m.Breakdown
-	
+
 	// Compute score for each mode
 	for _, mode := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode} {
 		m.Mode = mode
 		scores[mode] = computeScore(m, mode, customWeights)
 	}
-	
+
 	// Restore original mode and breakdown
 	m.Mode = originalMode
 	m.Breakdown = originalBreakdown
-	
+
 	return scores
 }
 
-// getOwnerString converts the owners slice to a string
+// getOwnerString converts the owners slice to a string.
 func getOwnerString(owners []string) string {
 	if len(owners) == 0 {
 		return ""
@@ -323,8 +323,8 @@ func getOwnerString(owners []string) string {
 	return owners[0] // Return the primary owner
 }
 
-// getGlobalCacheManager returns the global cache manager
-// This is a temporary solution - ideally we'd pass it through context
+// getGlobalCacheManager returns the global cache manager.
+// This is a temporary solution - ideally we'd pass it through context.
 var globalCacheMgr contract.CacheManager
 
 func setGlobalCacheManager(mgr contract.CacheManager) {

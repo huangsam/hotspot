@@ -31,6 +31,15 @@ func (m *MockCacheManager) GetActivityStore() contract.CacheStore {
 	return val.(contract.CacheStore)
 }
 
+func (m *MockCacheManager) GetAnalysisStore() contract.AnalysisStore {
+	ret := m.Called()
+	val := ret.Get(0)
+	if val == nil {
+		return nil
+	}
+	return val.(contract.AnalysisStore)
+}
+
 func TestCheckCacheHit_CacheHit(t *testing.T) {
 	mockStore := &MockCacheStore{}
 	result := &schema.AggregateOutput{

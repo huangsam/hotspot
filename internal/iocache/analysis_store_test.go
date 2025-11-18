@@ -16,7 +16,7 @@ func TestAnalysisStore_NoneBackend(t *testing.T) {
 	require.NotNil(t, store)
 
 	// BeginAnalysis should return 0 for NoneBackend
-	analysisID, err := store.BeginAnalysis(time.Now(), map[string]interface{}{"test": "value"})
+	analysisID, err := store.BeginAnalysis(time.Now(), map[string]any{"test": "value"})
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), analysisID)
 
@@ -43,7 +43,7 @@ func TestAnalysisStore_SQLite(t *testing.T) {
 
 	// Test BeginAnalysis
 	startTime := time.Now()
-	configParams := map[string]interface{}{
+	configParams := map[string]any{
 		"mode":      "hot",
 		"lookback":  "30d",
 		"repo_path": "/test/repo",
@@ -90,7 +90,7 @@ func TestAnalysisStore_MultipleFiles(t *testing.T) {
 	defer func() { _ = store.Close() }()
 
 	// Begin analysis
-	analysisID, err := store.BeginAnalysis(time.Now(), map[string]interface{}{"test": "multi-file"})
+	analysisID, err := store.BeginAnalysis(time.Now(), map[string]any{"test": "multi-file"})
 	require.NoError(t, err)
 
 	// Record multiple files
@@ -133,8 +133,8 @@ func TestAnalysisStore_MultipleRuns(t *testing.T) {
 
 	// Create multiple analysis runs
 	var analysisIDs []int64
-	for i := 0; i < 3; i++ {
-		id, err := store.BeginAnalysis(time.Now(), map[string]interface{}{"run": i})
+	for i := range 3 {
+		id, err := store.BeginAnalysis(time.Now(), map[string]any{"run": i})
 		require.NoError(t, err)
 		analysisIDs = append(analysisIDs, id)
 

@@ -10,14 +10,14 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// Table names for analysis tracking
+// Table names for analysis tracking.
 const (
-	analysisRunsTable      = "hotspot_analysis_runs"
-	rawGitMetricsTable     = "hotspot_raw_git_metrics"
-	finalScoresTable       = "hotspot_final_scores"
+	analysisRunsTable  = "hotspot_analysis_runs"
+	rawGitMetricsTable = "hotspot_raw_git_metrics"
+	finalScoresTable   = "hotspot_final_scores"
 )
 
-// AnalysisStoreImpl implements the AnalysisStore interface
+// AnalysisStoreImpl implements the AnalysisStore interface.
 type AnalysisStoreImpl struct {
 	db         *sql.DB
 	backend    schema.CacheBackend
@@ -26,7 +26,7 @@ type AnalysisStoreImpl struct {
 
 var _ contract.AnalysisStore = &AnalysisStoreImpl{} // Compile-time check
 
-// NewAnalysisStore creates a new AnalysisStore with the specified backend
+// NewAnalysisStore creates a new AnalysisStore with the specified backend.
 func NewAnalysisStore(backend schema.CacheBackend, connStr string) (contract.AnalysisStore, error) {
 	var db *sql.DB
 	var err error
@@ -86,7 +86,7 @@ func NewAnalysisStore(backend schema.CacheBackend, connStr string) (contract.Ana
 	}, nil
 }
 
-// createAnalysisTables creates all three analysis tracking tables
+// createAnalysisTables creates all three analysis tracking tables.
 func createAnalysisTables(db *sql.DB, backend schema.CacheBackend) error {
 	tables := []struct {
 		name  string
@@ -106,10 +106,10 @@ func createAnalysisTables(db *sql.DB, backend schema.CacheBackend) error {
 	return nil
 }
 
-// getCreateAnalysisRunsQuery returns the CREATE TABLE query for hotspot_analysis_runs
+// getCreateAnalysisRunsQuery returns the CREATE TABLE query for hotspot_analysis_runs.
 func getCreateAnalysisRunsQuery(backend schema.CacheBackend) string {
 	quotedTableName := quoteTableName(analysisRunsTable, backend)
-	
+
 	switch backend {
 	case schema.MySQLBackend:
 		return fmt.Sprintf(`
@@ -149,10 +149,10 @@ func getCreateAnalysisRunsQuery(backend schema.CacheBackend) string {
 	}
 }
 
-// getCreateRawGitMetricsQuery returns the CREATE TABLE query for hotspot_raw_git_metrics
+// getCreateRawGitMetricsQuery returns the CREATE TABLE query for hotspot_raw_git_metrics.
 func getCreateRawGitMetricsQuery(backend schema.CacheBackend) string {
 	quotedTableName := quoteTableName(rawGitMetricsTable, backend)
-	
+
 	switch backend {
 	case schema.MySQLBackend:
 		return fmt.Sprintf(`
@@ -204,10 +204,10 @@ func getCreateRawGitMetricsQuery(backend schema.CacheBackend) string {
 	}
 }
 
-// getCreateFinalScoresQuery returns the CREATE TABLE query for hotspot_final_scores
+// getCreateFinalScoresQuery returns the CREATE TABLE query for hotspot_final_scores.
 func getCreateFinalScoresQuery(backend schema.CacheBackend) string {
 	quotedTableName := quoteTableName(finalScoresTable, backend)
-	
+
 	switch backend {
 	case schema.MySQLBackend:
 		return fmt.Sprintf(`
@@ -256,8 +256,8 @@ func getCreateFinalScoresQuery(backend schema.CacheBackend) string {
 	}
 }
 
-// BeginAnalysis creates a new analysis run and returns its unique ID
-func (as *AnalysisStoreImpl) BeginAnalysis(startTime time.Time, configParams map[string]interface{}) (int64, error) {
+// BeginAnalysis creates a new analysis run and returns its unique ID.
+func (as *AnalysisStoreImpl) BeginAnalysis(startTime time.Time, configParams map[string]any) (int64, error) {
 	// Skip for NoneBackend
 	if as.backend == schema.NoneBackend || as.db == nil {
 		return 0, nil
@@ -270,7 +270,7 @@ func (as *AnalysisStoreImpl) BeginAnalysis(startTime time.Time, configParams map
 	}
 
 	quotedTableName := quoteTableName(analysisRunsTable, as.backend)
-	
+
 	var analysisID int64
 	switch as.backend {
 	case schema.PostgreSQLBackend:
@@ -278,7 +278,8 @@ func (as *AnalysisStoreImpl) BeginAnalysis(startTime time.Time, configParams map
 		err = as.db.QueryRow(query, startTime, configJSON).Scan(&analysisID)
 	default: // SQLite and MySQL
 		query := fmt.Sprintf(`INSERT INTO %s (start_time, config_params) VALUES (?, ?)`, quotedTableName)
-		result, err := as.db.Exec(query, formatTime(startTime, as.backend), string(configJSON))
+		var result sql.Result
+		result, err = as.db.Exec(query, formatTime(startTime, as.backend), string(configJSON))
 		if err != nil {
 			return 0, err
 		}
@@ -292,7 +293,7 @@ func (as *AnalysisStoreImpl) BeginAnalysis(startTime time.Time, configParams map
 	return analysisID, nil
 }
 
-// EndAnalysis updates the analysis run with completion data
+// EndAnalysis updates the analysis run with completion data.
 func (as *AnalysisStoreImpl) EndAnalysis(analysisID int64, endTime time.Time, totalFiles int) error {
 	// Skip for NoneBackend
 	if as.backend == schema.NoneBackend || as.db == nil {
@@ -300,17 +301,17 @@ func (as *AnalysisStoreImpl) EndAnalysis(analysisID int64, endTime time.Time, to
 	}
 
 	quotedTableName := quoteTableName(analysisRunsTable, as.backend)
-	
+
 	var query string
-	var args []interface{}
-	
+	var args []any
+
 	switch as.backend {
 	case schema.PostgreSQLBackend:
 		query = fmt.Sprintf(`UPDATE %s SET end_time = $1, total_files_analyzed = $2 WHERE analysis_id = $3`, quotedTableName)
-		args = []interface{}{endTime, totalFiles, analysisID}
+		args = []any{endTime, totalFiles, analysisID}
 	default: // SQLite and MySQL
 		query = fmt.Sprintf(`UPDATE %s SET end_time = ?, total_files_analyzed = ? WHERE analysis_id = ?`, quotedTableName)
-		args = []interface{}{formatTime(endTime, as.backend), totalFiles, analysisID}
+		args = []any{formatTime(endTime, as.backend), totalFiles, analysisID}
 	}
 
 	_, err := as.db.Exec(query, args...)
@@ -321,7 +322,7 @@ func (as *AnalysisStoreImpl) EndAnalysis(analysisID int64, endTime time.Time, to
 	return nil
 }
 
-// RecordFileMetrics stores raw git metrics for a file
+// RecordFileMetrics stores raw git metrics for a file.
 func (as *AnalysisStoreImpl) RecordFileMetrics(analysisID int64, filePath string, metrics contract.FileMetrics) error {
 	// Skip for NoneBackend
 	if as.backend == schema.NoneBackend || as.db == nil {
@@ -329,10 +330,10 @@ func (as *AnalysisStoreImpl) RecordFileMetrics(analysisID int64, filePath string
 	}
 
 	quotedTableName := quoteTableName(rawGitMetricsTable, as.backend)
-	
+
 	var query string
-	var args []interface{}
-	
+	var args []any
+
 	switch as.backend {
 	case schema.PostgreSQLBackend:
 		query = fmt.Sprintf(`
@@ -340,7 +341,7 @@ func (as *AnalysisStoreImpl) RecordFileMetrics(analysisID int64, filePath string
 			                 contributor_count, age_days, gini_coefficient, file_owner)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		`, quotedTableName)
-		args = []interface{}{
+		args = []any{
 			analysisID, filePath, metrics.AnalysisTime, metrics.TotalCommits, metrics.TotalChurn,
 			metrics.ContributorCount, metrics.AgeDays, metrics.GiniCoefficient, metrics.FileOwner,
 		}
@@ -350,7 +351,7 @@ func (as *AnalysisStoreImpl) RecordFileMetrics(analysisID int64, filePath string
 			                 contributor_count, age_days, gini_coefficient, file_owner)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`, quotedTableName)
-		args = []interface{}{
+		args = []any{
 			analysisID, filePath, formatTime(metrics.AnalysisTime, as.backend), metrics.TotalCommits, metrics.TotalChurn,
 			metrics.ContributorCount, metrics.AgeDays, metrics.GiniCoefficient, metrics.FileOwner,
 		}
@@ -364,7 +365,7 @@ func (as *AnalysisStoreImpl) RecordFileMetrics(analysisID int64, filePath string
 	return nil
 }
 
-// RecordFileScores stores final scores for a file
+// RecordFileScores stores final scores for a file.
 func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string, scores contract.FileScores) error {
 	// Skip for NoneBackend
 	if as.backend == schema.NoneBackend || as.db == nil {
@@ -372,10 +373,10 @@ func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string,
 	}
 
 	quotedTableName := quoteTableName(finalScoresTable, as.backend)
-	
+
 	var query string
-	var args []interface{}
-	
+	var args []any
+
 	switch as.backend {
 	case schema.PostgreSQLBackend:
 		query = fmt.Sprintf(`
@@ -383,7 +384,7 @@ func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string,
 			                 score_mode_c, score_mode_d, score_label)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		`, quotedTableName)
-		args = []interface{}{
+		args = []any{
 			analysisID, filePath, scores.AnalysisTime, scores.ScoreModeA, scores.ScoreModeB,
 			scores.ScoreModeC, scores.ScoreModeD, scores.ScoreLabel,
 		}
@@ -393,7 +394,7 @@ func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string,
 			                 score_mode_c, score_mode_d, score_label)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 		`, quotedTableName)
-		args = []interface{}{
+		args = []any{
 			analysisID, filePath, formatTime(scores.AnalysisTime, as.backend), scores.ScoreModeA, scores.ScoreModeB,
 			scores.ScoreModeC, scores.ScoreModeD, scores.ScoreLabel,
 		}
@@ -407,7 +408,7 @@ func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string,
 	return nil
 }
 
-// Close closes the underlying connection
+// Close closes the underlying connection.
 func (as *AnalysisStoreImpl) Close() error {
 	if as.db != nil {
 		return as.db.Close()
@@ -415,8 +416,8 @@ func (as *AnalysisStoreImpl) Close() error {
 	return nil
 }
 
-// formatTime converts a time.Time to the appropriate format for the backend
-func formatTime(t time.Time, backend schema.CacheBackend) interface{} {
+// formatTime converts a time.Time to the appropriate format for the backend.
+func formatTime(t time.Time, backend schema.CacheBackend) any {
 	switch backend {
 	case schema.SQLiteBackend:
 		return t.Format(time.RFC3339Nano)

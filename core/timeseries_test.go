@@ -38,7 +38,9 @@ func TestRunTimeseriesAnalysis_Success(t *testing.T) {
 		Return(point2End.Add(-30*24*time.Hour), nil) // 30 days before point2End
 
 	// Mock the analysis calls for each point (simplified - just return success)
-	mockMgr.On("GetActivityStore").Return(nil).Maybe() // No caching for test
+	mockMgr.On("GetActivityStore").Return(nil).Maybe()  // No caching for test
+mockMgr.On("GetAnalysisStore").Return(nil).Maybe() // No analysis tracking for test
+	mockMgr.On("GetAnalysisStore").Return(nil).Maybe() // No analysis tracking for test
 	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{path}, nil).Maybe()
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil).Maybe()
@@ -83,6 +85,7 @@ func TestRunTimeseriesAnalysis_GetOldestCommitError(t *testing.T) {
 
 	// Setup mock expectations - GetOldestCommitDateForPath fails
 	mockMgr.On("GetActivityStore").Return(nil).Maybe() // No caching for test
+mockMgr.On("GetAnalysisStore").Return(nil).Maybe() // No analysis tracking for test
 	mockClient.On("GetOldestCommitDateForPath", ctx, "/test/repo", path, mock.AnythingOfType("time.Time"), minCommits, maxSearchDuration).
 		Return(time.Time{}, assert.AnError).Maybe()
 	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{path}, nil).Maybe()
@@ -119,6 +122,7 @@ func TestAnalyzeTimeseriesPoint_File(t *testing.T) {
 
 	// Setup mock expectations
 	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
+mockMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
 	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{path}, nil)
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
@@ -150,6 +154,7 @@ func TestAnalyzeTimeseriesPoint_Folder(t *testing.T) {
 
 	// Setup mock expectations
 	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
+mockMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
 	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{"src/main.go", "src/utils.go"}, nil)
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tsrc/main.go\n2\t1\tsrc/utils.go\n"), nil)
@@ -182,6 +187,7 @@ func TestAnalyzeTimeseriesPoint_NoData(t *testing.T) {
 
 	// Setup mock expectations - no files found
 	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
+mockMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
 	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{}, nil)
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte(""), nil)
@@ -212,6 +218,7 @@ func TestAnalyzeTimeseriesPoint_PathNotFound(t *testing.T) {
 
 	// Setup mock expectations - file exists but path not found in results
 	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
+mockMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
 	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{"other.go"}, nil)
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tother.go\n"), nil)

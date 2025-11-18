@@ -62,33 +62,33 @@ type CacheStore interface {
 // AnalysisStore defines the interface for tracking analysis runs and storing metrics.
 type AnalysisStore interface {
 	// BeginAnalysis creates a new analysis run and returns its unique ID
-	BeginAnalysis(startTime time.Time, configParams map[string]interface{}) (int64, error)
-	
+	BeginAnalysis(startTime time.Time, configParams map[string]any) (int64, error)
+
 	// EndAnalysis updates the analysis run with completion data
 	EndAnalysis(analysisID int64, endTime time.Time, totalFiles int) error
-	
+
 	// RecordFileMetrics stores raw git metrics for a file
 	RecordFileMetrics(analysisID int64, filePath string, metrics FileMetrics) error
-	
+
 	// RecordFileScores stores final scores for a file
 	RecordFileScores(analysisID int64, filePath string, scores FileScores) error
-	
+
 	// Close closes the underlying connection
 	Close() error
 }
 
-// FileMetrics represents raw git metrics for a single file
+// FileMetrics represents raw git metrics for a single file.
 type FileMetrics struct {
-	AnalysisTime      time.Time
-	TotalCommits      int
-	TotalChurn        int
-	ContributorCount  int
-	AgeDays           float64
-	GiniCoefficient   float64
-	FileOwner         string
+	AnalysisTime     time.Time
+	TotalCommits     int
+	TotalChurn       int
+	ContributorCount int
+	AgeDays          float64
+	GiniCoefficient  float64
+	FileOwner        string
 }
 
-// FileScores represents final computed scores for a single file
+// FileScores represents final computed scores for a single file.
 type FileScores struct {
 	AnalysisTime time.Time
 	ScoreModeA   float64 // hot mode score
