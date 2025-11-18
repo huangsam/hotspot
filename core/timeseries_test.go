@@ -40,7 +40,6 @@ func TestRunTimeseriesAnalysis_Success(t *testing.T) {
 	// Mock the analysis calls for each point (simplified - just return success)
 	mockMgr.On("GetActivityStore").Return(nil).Maybe() // No caching for test
 	mockMgr.On("GetAnalysisStore").Return(nil).Maybe() // No analysis tracking for test
-	mockMgr.On("GetAnalysisStore").Return(nil).Maybe() // No analysis tracking for test
 	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{path}, nil).Maybe()
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil).Maybe()
