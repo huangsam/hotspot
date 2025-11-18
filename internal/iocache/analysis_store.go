@@ -308,7 +308,7 @@ func (as *AnalysisStoreImpl) EndAnalysis(analysisID int64, endTime time.Time, to
 	switch as.backend {
 	case schema.PostgreSQLBackend:
 		query = fmt.Sprintf(`UPDATE %s SET end_time = $1, total_files_analyzed = $2 WHERE analysis_id = $3`, quotedTableName)
-		args = []any{endTime, totalFiles, analysisID}
+		args = []any{formatTime(endTime, as.backend), totalFiles, analysisID}
 	default: // SQLite and MySQL
 		query = fmt.Sprintf(`UPDATE %s SET end_time = ?, total_files_analyzed = ? WHERE analysis_id = ?`, quotedTableName)
 		args = []any{formatTime(endTime, as.backend), totalFiles, analysisID}
