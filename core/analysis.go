@@ -315,16 +315,19 @@ func getOwnerString(owners []string) string {
 	return owners[0] // Return the primary owner
 }
 
-// getGlobalCacheManager returns the global cache manager.
-// This is a temporary solution - ideally we'd pass it through context.
-var globalCacheMgr contract.CacheManager
+// cacheManagerKey is the context key for the cache manager.
+type cacheManagerKeyType struct{}
 
-func setGlobalCacheManager(mgr contract.CacheManager) {
-	globalCacheMgr = mgr
+func contextWithCacheManager(ctx context.Context, mgr contract.CacheManager) context.Context {
+	return context.WithValue(ctx, cacheManagerKeyType{}, mgr)
 }
 
-func getGlobalCacheManager() contract.CacheManager {
-	return globalCacheMgr
+func cacheManagerFromContext(ctx context.Context) contract.CacheManager {
+	val := ctx.Value(cacheManagerKeyType{})
+	if mgr, ok := val.(contract.CacheManager); ok {
+		return mgr
+	}
+	return nil
 }
 
 // getAnalysisWindowForRef queries Git for the exact commit time of the given reference
