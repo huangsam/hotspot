@@ -26,6 +26,10 @@ type ExecutorFunc func(ctx context.Context, cfg *contract.Config, mgr contract.C
 func ExecuteHotspotFiles(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) error {
 	start := time.Now()
 	client := contract.NewLocalGitClient()
+	
+	// Set global cache manager for analysis tracking
+	setGlobalCacheManager(mgr)
+	
 	output, err := runSingleAnalysisCore(ctx, cfg, client, mgr)
 	if err != nil {
 		return err
@@ -48,6 +52,10 @@ func ExecuteHotspotFiles(ctx context.Context, cfg *contract.Config, mgr contract
 func ExecuteHotspotFolders(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) error {
 	start := time.Now()
 	client := contract.NewLocalGitClient()
+	
+	// Set global cache manager for analysis tracking
+	setGlobalCacheManager(mgr)
+	
 	output, err := runSingleAnalysisCore(ctx, cfg, client, mgr)
 	if err != nil {
 		return err
@@ -66,6 +74,9 @@ func ExecuteHotspotFolders(ctx context.Context, cfg *contract.Config, mgr contra
 func ExecuteHotspotCompare(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) error {
 	start := time.Now()
 	client := contract.NewLocalGitClient()
+
+	// Set global cache manager for analysis tracking
+	setGlobalCacheManager(mgr)
 
 	// Print single header for the comparison
 	internal.LogCompareHeader(cfg)
@@ -94,6 +105,9 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *contract.Config, mgr
 	start := time.Now()
 	client := contract.NewLocalGitClient()
 
+	// Set global cache manager for analysis tracking
+	setGlobalCacheManager(mgr)
+
 	// Print single header for the comparison
 	internal.LogCompareHeader(cfg)
 
@@ -118,6 +132,9 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *contract.Config, mgr
 // is capped by maxSearchDuration to prevent slow full-history traversal on large repos.
 func ExecuteHotspotTimeseries(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) error {
 	start := time.Now()
+
+	// Set global cache manager for analysis tracking
+	setGlobalCacheManager(mgr)
 
 	// Get timeseries-specific parameters from config
 	path := cfg.TimeseriesPath

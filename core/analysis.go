@@ -27,6 +27,26 @@ func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client con
 		internal.LogAnalysisHeader(cfg)
 	}
 
+	// --- 0. Begin Analysis Tracking (if available) ---
+	var analysisID int64
+	analysisStore := mgr.GetAnalysisStore()
+	if analysisStore != nil {
+		startTime := time.Now()
+		configParams := map[string]interface{}{
+			"mode":         string(cfg.Mode),
+			"lookback":     cfg.Lookback.String(),
+			"repo_path":    cfg.RepoPath,
+			"workers":      cfg.Workers,
+			"result_limit": cfg.ResultLimit,
+		}
+		var err error
+		analysisID, err = analysisStore.BeginAnalysis(startTime, configParams)
+		if err == nil && analysisID > 0 {
+			// Add analysis ID to context for use in file analysis
+			ctx = withAnalysisID(ctx, analysisID)
+		}
+	}
+
 	// --- 1. Aggregation Phase (with caching) ---
 	output, err := agg.CachedAggregateActivity(ctx, cfg, client, mgr)
 	if err != nil {
@@ -41,6 +61,12 @@ func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client con
 
 	// --- 3. Core Analysis ---
 	fileResults := analyzeRepo(ctx, cfg, client, output, files)
+
+	// --- 4. End Analysis Tracking ---
+	if analysisStore != nil && analysisID > 0 {
+		endTime := time.Now()
+		_ = analysisStore.EndAnalysis(analysisID, endTime, len(fileResults))
+	}
 
 	return &schema.SingleAnalysisOutput{
 		FileResults:     fileResults,
@@ -211,8 +237,102 @@ func analyzeFileCommon(ctx context.Context, cfg *contract.Config, client contrac
 		CalculateOwner().          // Calculates file owner
 		CalculateScore()           // Computes the final composite score
 
-	// 3. Return the final product
-	return builder.Build()
+	// 3. Build the final result
+	result := builder.Build()
+
+	// 4. Record metrics and scores to database (if analysis tracking is enabled)
+	if analysisID, ok := getAnalysisID(ctx); ok && analysisID > 0 {
+		// Get the analysis store from the context via the cache manager
+		// Note: We need to pass the cache manager through the context or another mechanism
+		// For now, we'll use a global reference (to be improved)
+		recordFileAnalysis(ctx, cfg, analysisID, path, &result)
+	}
+
+	return result
+}
+
+// recordFileAnalysis records file metrics and scores to the database
+func recordFileAnalysis(ctx context.Context, cfg *contract.Config, analysisID int64, path string, result *schema.FileResult) {
+	// Get the cache manager from global state
+	// This is a temporary solution - ideally we'd pass it through context
+	mgr := getGlobalCacheManager()
+	if mgr == nil {
+		return
+	}
+
+	analysisStore := mgr.GetAnalysisStore()
+	if analysisStore == nil {
+		return
+	}
+
+	now := time.Now()
+
+	// Record raw git metrics
+	metrics := contract.FileMetrics{
+		AnalysisTime:     now,
+		TotalCommits:     result.Commits,
+		TotalChurn:       result.Churn,
+		ContributorCount: result.UniqueContributors,
+		AgeDays:          float64(result.AgeDays),
+		GiniCoefficient:  result.Gini,
+		FileOwner:        getOwnerString(result.Owners),
+	}
+	_ = analysisStore.RecordFileMetrics(analysisID, path, metrics)
+
+	// Compute all four scoring modes
+	allScores := computeAllScores(result, cfg.CustomWeights)
+
+	// Record final scores
+	scores := contract.FileScores{
+		AnalysisTime: now,
+		ScoreModeA:   allScores[schema.HotMode],
+		ScoreModeB:   allScores[schema.RiskMode],
+		ScoreModeC:   allScores[schema.ComplexityMode],
+		ScoreModeD:   allScores[schema.StaleMode],
+		ScoreLabel:   string(cfg.Mode),
+	}
+	_ = analysisStore.RecordFileScores(analysisID, path, scores)
+}
+
+// computeAllScores computes scores for all four modes
+func computeAllScores(m *schema.FileResult, customWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64) map[schema.ScoringMode]float64 {
+	scores := make(map[schema.ScoringMode]float64)
+	
+	// Save the current mode and breakdown
+	originalMode := m.Mode
+	originalBreakdown := m.Breakdown
+	
+	// Compute score for each mode
+	for _, mode := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode} {
+		m.Mode = mode
+		scores[mode] = computeScore(m, mode, customWeights)
+	}
+	
+	// Restore original mode and breakdown
+	m.Mode = originalMode
+	m.Breakdown = originalBreakdown
+	
+	return scores
+}
+
+// getOwnerString converts the owners slice to a string
+func getOwnerString(owners []string) string {
+	if len(owners) == 0 {
+		return ""
+	}
+	return owners[0] // Return the primary owner
+}
+
+// getGlobalCacheManager returns the global cache manager
+// This is a temporary solution - ideally we'd pass it through context
+var globalCacheMgr contract.CacheManager
+
+func setGlobalCacheManager(mgr contract.CacheManager) {
+	globalCacheMgr = mgr
+}
+
+func getGlobalCacheManager() contract.CacheManager {
+	return globalCacheMgr
 }
 
 // getAnalysisWindowForRef queries Git for the exact commit time of the given reference

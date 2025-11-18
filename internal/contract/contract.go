@@ -48,6 +48,7 @@ type GitClient interface {
 // This allows the cache layer to be mocked for testing.
 type CacheManager interface {
 	GetActivityStore() CacheStore
+	GetAnalysisStore() AnalysisStore
 }
 
 // CacheStore defines the interface for cache data storage.
@@ -56,4 +57,43 @@ type CacheStore interface {
 	Get(key string) ([]byte, int, int64, error)
 	Set(key string, value []byte, version int, timestamp int64) error
 	Close() error
+}
+
+// AnalysisStore defines the interface for tracking analysis runs and storing metrics.
+type AnalysisStore interface {
+	// BeginAnalysis creates a new analysis run and returns its unique ID
+	BeginAnalysis(startTime time.Time, configParams map[string]interface{}) (int64, error)
+	
+	// EndAnalysis updates the analysis run with completion data
+	EndAnalysis(analysisID int64, endTime time.Time, totalFiles int) error
+	
+	// RecordFileMetrics stores raw git metrics for a file
+	RecordFileMetrics(analysisID int64, filePath string, metrics FileMetrics) error
+	
+	// RecordFileScores stores final scores for a file
+	RecordFileScores(analysisID int64, filePath string, scores FileScores) error
+	
+	// Close closes the underlying connection
+	Close() error
+}
+
+// FileMetrics represents raw git metrics for a single file
+type FileMetrics struct {
+	AnalysisTime      time.Time
+	TotalCommits      int
+	TotalChurn        int
+	ContributorCount  int
+	AgeDays           float64
+	GiniCoefficient   float64
+	FileOwner         string
+}
+
+// FileScores represents final computed scores for a single file
+type FileScores struct {
+	AnalysisTime time.Time
+	ScoreModeA   float64 // hot mode score
+	ScoreModeB   float64 // risk mode score
+	ScoreModeC   float64 // complexity mode score
+	ScoreModeD   float64 // stale mode score
+	ScoreLabel   string  // current mode name
 }

@@ -17,6 +17,7 @@ import (
 type CacheStoreManager struct {
 	sync.RWMutex // Protects the store pointers during initialization
 	activity     contract.CacheStore
+	analysis     contract.AnalysisStore
 }
 
 var _ contract.CacheManager = &CacheStoreManager{} // Compile-time check
@@ -26,6 +27,13 @@ func (mgr *CacheStoreManager) GetActivityStore() contract.CacheStore {
 	mgr.RLock()
 	defer mgr.RUnlock()
 	return mgr.activity
+}
+
+// GetAnalysisStore returns the analysis AnalysisStore.
+func (mgr *CacheStoreManager) GetAnalysisStore() contract.AnalysisStore {
+	mgr.RLock()
+	defer mgr.RUnlock()
+	return mgr.analysis
 }
 
 // CacheStoreImpl handles durable storage operations using various database backends.

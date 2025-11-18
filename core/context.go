@@ -8,6 +8,7 @@ type contextKey string
 const (
 	suppressHeaderKey contextKey = "suppressHeader"
 	useFollowKey      contextKey = "useFollow"
+	analysisIDKey     contextKey = "analysisID"
 )
 
 // withSuppressHeader sets whether headers should be suppressed in the context.
@@ -38,4 +39,19 @@ func shouldUseFollow(ctx context.Context) bool {
 	}
 	useFollow, ok := val.(bool)
 	return ok && useFollow
+}
+
+// withAnalysisID sets the analysis ID in the context.
+func withAnalysisID(ctx context.Context, analysisID int64) context.Context {
+	return context.WithValue(ctx, analysisIDKey, analysisID)
+}
+
+// getAnalysisID returns the analysis ID from context.
+func getAnalysisID(ctx context.Context) (int64, bool) {
+	val := ctx.Value(analysisIDKey)
+	if val == nil {
+		return 0, false
+	}
+	id, ok := val.(int64)
+	return id, ok
 }

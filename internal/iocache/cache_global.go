@@ -40,8 +40,16 @@ func InitCaching(backend schema.CacheBackend, connStr string) error {
 			return
 		}
 
+		// Initialize Analysis Store with the specified backend
+		analysisStore, err := NewAnalysisStore(backend, connStr)
+		if err != nil {
+			initErr = fmt.Errorf("failed to initialize analysis store: %w", err)
+			return
+		}
+
 		// Assign to global manager
 		Manager.activity = activityCacheStore
+		Manager.analysis = analysisStore
 	})
 
 	// After once.Do, initErr will contain any error from the initialization block.
@@ -55,6 +63,9 @@ func CloseCaching() { // called in main defer
 		defer Manager.Unlock()
 		if Manager.activity != nil {
 			_ = Manager.activity.Close()
+		}
+		if Manager.analysis != nil {
+			_ = Manager.analysis.Close()
 		}
 	})
 }
