@@ -385,8 +385,8 @@ func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string,
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		`, quotedTableName)
 		args = []any{
-			analysisID, filePath, scores.AnalysisTime, scores.ScoreModeA, scores.ScoreModeB,
-			scores.ScoreModeC, scores.ScoreModeD, scores.ScoreLabel,
+			analysisID, filePath, scores.AnalysisTime, scores.HotScore, scores.RiskScore,
+			scores.ComplexityScore, scores.StaleScore, scores.ScoreLabel,
 		}
 	default: // SQLite and MySQL
 		query = fmt.Sprintf(`
@@ -395,8 +395,8 @@ func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string,
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 		`, quotedTableName)
 		args = []any{
-			analysisID, filePath, formatTime(scores.AnalysisTime, as.backend), scores.ScoreModeA, scores.ScoreModeB,
-			scores.ScoreModeC, scores.ScoreModeD, scores.ScoreLabel,
+			analysisID, filePath, formatTime(scores.AnalysisTime, as.backend), scores.HotScore, scores.RiskScore,
+			scores.ComplexityScore, scores.StaleScore, scores.ScoreLabel,
 		}
 	}
 

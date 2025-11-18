@@ -293,12 +293,12 @@ func recordFileAnalysis(ctx context.Context, cfg *contract.Config, analysisID in
 
 	// Record final scores
 	scores := contract.FileScores{
-		AnalysisTime: now,
-		ScoreModeA:   allScores[schema.HotMode],
-		ScoreModeB:   allScores[schema.RiskMode],
-		ScoreModeC:   allScores[schema.ComplexityMode],
-		ScoreModeD:   allScores[schema.StaleMode],
-		ScoreLabel:   string(cfg.Mode),
+		AnalysisTime:    now,
+		HotScore:        allScores[schema.HotMode],
+		RiskScore:       allScores[schema.RiskMode],
+		ComplexityScore: allScores[schema.ComplexityMode],
+		StaleScore:      allScores[schema.StaleMode],
+		ScoreLabel:      string(cfg.Mode),
 	}
 	if err := analysisStore.RecordFileScores(analysisID, path, scores); err != nil {
 		logTrackingError("RecordFileScores", path, err)

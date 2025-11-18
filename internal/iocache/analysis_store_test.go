@@ -67,12 +67,12 @@ func TestAnalysisStore_SQLite(t *testing.T) {
 
 	// Test RecordFileScores
 	scores := contract.FileScores{
-		AnalysisTime: time.Now(),
-		ScoreModeA:   75.5,
-		ScoreModeB:   80.2,
-		ScoreModeC:   65.3,
-		ScoreModeD:   70.1,
-		ScoreLabel:   "hot",
+		AnalysisTime:    time.Now(),
+		HotScore:        75.5,
+		RiskScore:       80.2,
+		ComplexityScore: 65.3,
+		StaleScore:      70.1,
+		ScoreLabel:      "hot",
 	}
 	err = store.RecordFileScores(analysisID, "test/file.go", scores)
 	assert.NoError(t, err)
@@ -109,12 +109,12 @@ func TestAnalysisStore_MultipleFiles(t *testing.T) {
 		assert.NoError(t, err)
 
 		scores := contract.FileScores{
-			AnalysisTime: time.Now(),
-			ScoreModeA:   75.5,
-			ScoreModeB:   80.2,
-			ScoreModeC:   65.3,
-			ScoreModeD:   70.1,
-			ScoreLabel:   "hot",
+			AnalysisTime:    time.Now(),
+			HotScore:        75.5,
+			RiskScore:       80.2,
+			ComplexityScore: 65.3,
+			StaleScore:      70.1,
+			ScoreLabel:      "hot",
 		}
 		err = store.RecordFileScores(analysisID, file, scores)
 		assert.NoError(t, err)
@@ -152,12 +152,12 @@ func TestAnalysisStore_MultipleRuns(t *testing.T) {
 		assert.NoError(t, err)
 
 		scores := contract.FileScores{
-			AnalysisTime: time.Now(),
-			ScoreModeA:   75.5 + float64(i),
-			ScoreModeB:   80.2 + float64(i),
-			ScoreModeC:   65.3 + float64(i),
-			ScoreModeD:   70.1 + float64(i),
-			ScoreLabel:   "hot",
+			AnalysisTime:    time.Now(),
+			HotScore:        75.5 + float64(i),
+			RiskScore:       80.2 + float64(i),
+			ComplexityScore: 65.3 + float64(i),
+			StaleScore:      70.1 + float64(i),
+			ScoreLabel:      "hot",
 		}
 		err = store.RecordFileScores(id, "test.go", scores)
 		assert.NoError(t, err)

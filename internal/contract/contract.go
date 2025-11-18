@@ -90,10 +90,10 @@ type FileMetrics struct {
 
 // FileScores represents final computed scores for a single file.
 type FileScores struct {
-	AnalysisTime time.Time
-	ScoreModeA   float64 // hot mode score
-	ScoreModeB   float64 // risk mode score
-	ScoreModeC   float64 // complexity mode score
-	ScoreModeD   float64 // stale mode score
-	ScoreLabel   string  // current mode name
+	AnalysisTime    time.Time
+	HotScore        float64 // hot mode score
+	RiskScore       float64 // risk mode score
+	ComplexityScore float64 // complexity mode score
+	StaleScore      float64 // stale mode score
+	ScoreLabel      string  // current mode name
 }
