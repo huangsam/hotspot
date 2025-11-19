@@ -274,7 +274,7 @@ func recordFileAnalysis(ctx context.Context, cfg *contract.Config, analysisID in
 	now := time.Now()
 
 	// Record raw git metrics
-	metrics := contract.FileMetrics{
+	metrics := schema.FileMetrics{
 		AnalysisTime:     now,
 		TotalCommits:     result.Commits,
 		TotalChurn:       result.Churn,
@@ -291,7 +291,7 @@ func recordFileAnalysis(ctx context.Context, cfg *contract.Config, analysisID in
 	allScores := computeAllScores(result, cfg.CustomWeights)
 
 	// Record final scores
-	scores := contract.FileScores{
+	scores := schema.FileScores{
 		AnalysisTime:    now,
 		HotScore:        allScores[schema.HotMode],
 		RiskScore:       allScores[schema.RiskMode],

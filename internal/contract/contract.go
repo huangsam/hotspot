@@ -4,6 +4,8 @@ package contract
 import (
 	"context"
 	"time"
+
+	"github.com/huangsam/hotspot/schema"
 )
 
 // GitClient defines the necessary operations for complex Git analysis.
@@ -68,32 +70,11 @@ type AnalysisStore interface {
 	EndAnalysis(analysisID int64, endTime time.Time, totalFiles int) error
 
 	// RecordFileMetrics stores raw git metrics for a file
-	RecordFileMetrics(analysisID int64, filePath string, metrics FileMetrics) error
+	RecordFileMetrics(analysisID int64, filePath string, metrics schema.FileMetrics) error
 
 	// RecordFileScores stores final scores for a file
-	RecordFileScores(analysisID int64, filePath string, scores FileScores) error
+	RecordFileScores(analysisID int64, filePath string, scores schema.FileScores) error
 
 	// Close closes the underlying connection
 	Close() error
-}
-
-// FileMetrics represents raw git metrics for a single file.
-type FileMetrics struct {
-	AnalysisTime     time.Time
-	TotalCommits     int
-	TotalChurn       int
-	ContributorCount int
-	AgeDays          float64
-	GiniCoefficient  float64
-	FileOwner        string
-}
-
-// FileScores represents final computed scores for a single file.
-type FileScores struct {
-	AnalysisTime    time.Time
-	HotScore        float64 // hot mode score
-	RiskScore       float64 // risk mode score
-	ComplexityScore float64 // complexity mode score
-	StaleScore      float64 // stale mode score
-	ScoreLabel      string  // current mode name
 }

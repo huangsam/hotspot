@@ -328,7 +328,7 @@ func (as *AnalysisStoreImpl) EndAnalysis(analysisID int64, endTime time.Time, to
 }
 
 // RecordFileMetrics stores raw git metrics for a file.
-func (as *AnalysisStoreImpl) RecordFileMetrics(analysisID int64, filePath string, metrics contract.FileMetrics) error {
+func (as *AnalysisStoreImpl) RecordFileMetrics(analysisID int64, filePath string, metrics schema.FileMetrics) error {
 	// Skip for NoneBackend
 	if as.backend == schema.NoneBackend || as.db == nil {
 		return nil
@@ -342,7 +342,7 @@ func (as *AnalysisStoreImpl) RecordFileMetrics(analysisID int64, filePath string
 	switch as.backend {
 	case schema.PostgreSQLBackend:
 		query = fmt.Sprintf(`
-			INSERT INTO %s (analysis_id, file_path, analysis_time, total_commits, total_churn, 
+			INSERT INTO %s (analysis_id, file_path, analysis_time, total_commits, total_churn,
 			                 contributor_count, age_days, gini_coefficient, file_owner)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		`, quotedTableName)
@@ -352,7 +352,7 @@ func (as *AnalysisStoreImpl) RecordFileMetrics(analysisID int64, filePath string
 		}
 	default: // SQLite and MySQL
 		query = fmt.Sprintf(`
-			INSERT INTO %s (analysis_id, file_path, analysis_time, total_commits, total_churn, 
+			INSERT INTO %s (analysis_id, file_path, analysis_time, total_commits, total_churn,
 			                 contributor_count, age_days, gini_coefficient, file_owner)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`, quotedTableName)
@@ -371,7 +371,7 @@ func (as *AnalysisStoreImpl) RecordFileMetrics(analysisID int64, filePath string
 }
 
 // RecordFileScores stores final scores for a file.
-func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string, scores contract.FileScores) error {
+func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string, scores schema.FileScores) error {
 	// Skip for NoneBackend
 	if as.backend == schema.NoneBackend || as.db == nil {
 		return nil
@@ -385,7 +385,7 @@ func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string,
 	switch as.backend {
 	case schema.PostgreSQLBackend:
 		query = fmt.Sprintf(`
-			INSERT INTO %s (analysis_id, file_path, analysis_time, score_mode_a, score_mode_b, 
+			INSERT INTO %s (analysis_id, file_path, analysis_time, score_mode_a, score_mode_b,
 			                 score_mode_c, score_mode_d, score_label)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		`, quotedTableName)
@@ -395,7 +395,7 @@ func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string,
 		}
 	default: // SQLite and MySQL
 		query = fmt.Sprintf(`
-			INSERT INTO %s (analysis_id, file_path, analysis_time, score_mode_a, score_mode_b, 
+			INSERT INTO %s (analysis_id, file_path, analysis_time, score_mode_a, score_mode_b,
 			                 score_mode_c, score_mode_d, score_label)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 		`, quotedTableName)

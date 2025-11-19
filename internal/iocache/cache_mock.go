@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -73,13 +74,13 @@ func (m *MockAnalysisStore) EndAnalysis(analysisID int64, endTime time.Time, tot
 }
 
 // RecordFileMetrics implements the AnalysisStore interface.
-func (m *MockAnalysisStore) RecordFileMetrics(analysisID int64, filePath string, metrics contract.FileMetrics) error {
+func (m *MockAnalysisStore) RecordFileMetrics(analysisID int64, filePath string, metrics schema.FileMetrics) error {
 	args := m.Called(analysisID, filePath, metrics)
 	return args.Error(0)
 }
 
 // RecordFileScores implements the AnalysisStore interface.
-func (m *MockAnalysisStore) RecordFileScores(analysisID int64, filePath string, scores contract.FileScores) error {
+func (m *MockAnalysisStore) RecordFileScores(analysisID int64, filePath string, scores schema.FileScores) error {
 	args := m.Called(analysisID, filePath, scores)
 	return args.Error(0)
 }
