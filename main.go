@@ -120,7 +120,8 @@ func initConfig() {
 	viper.SetDefault("lookback", "6 months")
 	viper.SetDefault("cache-backend", schema.SQLiteBackend)
 	viper.SetDefault("cache-db-connect", "")
-	viper.SetDefault("track-analysis", false)
+	viper.SetDefault("analysis-backend", "")
+	viper.SetDefault("analysis-db-connect", "")
 	viper.SetDefault("emoji", "no")
 	viper.SetDefault("color", "yes")
 }
@@ -167,7 +168,7 @@ func sharedSetup(ctx context.Context, _ *cobra.Command, args []string) error {
 	}
 
 	// 5. Initialize persistence layer with validated config
-	if err := iocache.InitCaching(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
+	if err := iocache.InitCaching(cfg.CacheBackend, cfg.CacheDBConnect, cfg.AnalysisBackend, cfg.AnalysisDBConnect); err != nil {
 		return fmt.Errorf("failed to initialize persistence: %w", err)
 	}
 
@@ -199,8 +200,8 @@ func cacheSetup() error {
 		return err
 	}
 
-	// Initialize caching with the loaded config
-	if err := iocache.InitCaching(backend, connStr); err != nil {
+	// Initialize caching with the loaded config (no analysis tracking for cache commands)
+	if err := iocache.InitCaching(backend, connStr, "", ""); err != nil {
 		return fmt.Errorf("failed to initialize cache: %w", err)
 	}
 
@@ -387,7 +388,8 @@ func init() {
 	rootCmd.PersistentFlags().Int("width", 0, "Terminal width override (0 = auto-detect)")
 	rootCmd.PersistentFlags().String("cache-backend", string(schema.SQLiteBackend), "Cache backend: sqlite or mysql or postgresql or none")
 	rootCmd.PersistentFlags().String("cache-db-connect", "", "Database connection string for mysql/postgresql (e.g., user:pass@tcp(host:port)/dbname)")
-	rootCmd.PersistentFlags().Bool("track-analysis", false, "Enable analysis tracking to database for LLM agent queries")
+	rootCmd.PersistentFlags().String("analysis-backend", "", "Analysis tracking backend: sqlite or mysql or postgresql or none (empty = disabled)")
+	rootCmd.PersistentFlags().String("analysis-db-connect", "", "Database connection string for analysis tracking (must differ from cache-db-connect)")
 	rootCmd.PersistentFlags().String("color", "yes", "Enable colored labels in output (yes/no/true/false/1/0)")
 	rootCmd.PersistentFlags().String("emoji", "no", "Enable emojis in output headers (yes/no/true/false/1/0)")
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {

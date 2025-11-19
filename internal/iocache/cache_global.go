@@ -25,29 +25,33 @@ func GetDBFilePath() string {
 	return contract.GetDBFilePath()
 }
 
-// InitCaching uses sync.Once to safely initialize the global stores with the given backend.
-func InitCaching(backend schema.CacheBackend, connStr string) error {
+// InitCaching initializes the global cache manager with separate cache and analysis stores.
+// analysisBackend and analysisConnStr can be empty to disable analysis tracking.
+func InitCaching(cacheBackend schema.CacheBackend, cacheConnStr string, analysisBackend schema.CacheBackend, analysisConnStr string) error {
 	var initErr error
 
 	initOnce.Do(func() {
 		// This function body runs exactly once, even with concurrent calls.
 		var err error
 
-		// Initialize Activity Store with the specified backend
-		activityCacheStore, err := NewCacheStore(activityTable, backend, connStr)
+		// Initialize Activity Cache Store with the specified backend
+		activityCacheStore, err := NewCacheStore(activityTable, cacheBackend, cacheConnStr)
 		if err != nil {
 			initErr = fmt.Errorf("failed to initialize activity caching: %w", err)
 			return
 		}
 
-		// Initialize Analysis Store with the specified backend
-		analysisStore, err := NewAnalysisStore(backend, connStr)
-		if err != nil {
-			if activityCacheStore != nil {
-				_ = activityCacheStore.Close()
+		// Initialize Analysis Store only if backend is configured
+		var analysisStore contract.AnalysisStore
+		if analysisBackend != "" && analysisBackend != schema.NoneBackend {
+			analysisStore, err = NewAnalysisStore(analysisBackend, analysisConnStr)
+			if err != nil {
+				if activityCacheStore != nil {
+					_ = activityCacheStore.Close()
+				}
+				initErr = fmt.Errorf("failed to initialize analysis store: %w", err)
+				return
 			}
-			initErr = fmt.Errorf("failed to initialize analysis store: %w", err)
-			return
 		}
 
 		// Assign to global manager

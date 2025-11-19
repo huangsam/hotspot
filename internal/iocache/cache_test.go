@@ -21,7 +21,7 @@ func TestCaching(t *testing.T) {
 		closeOnce = sync.Once{} // Reset for test
 
 		// Test initialization with SQLite backend
-		err := InitCaching(schema.SQLiteBackend, "")
+		err := InitCaching(schema.SQLiteBackend, "", "", "")
 		assert.NoError(t, err, "Failed to initialize persistence")
 
 		// Test that Manager is accessible
@@ -46,9 +46,9 @@ func TestCaching(t *testing.T) {
 		closeOnce = sync.Once{} // Reset for test
 
 		// Multiple initializations should be safe (sync.Once)
-		err1 := InitCaching(schema.SQLiteBackend, "")
-		err2 := InitCaching(schema.SQLiteBackend, "")
-		err3 := InitCaching(schema.SQLiteBackend, "")
+		err1 := InitCaching(schema.SQLiteBackend, "", "", "")
+		err2 := InitCaching(schema.SQLiteBackend, "", "", "")
+		err3 := InitCaching(schema.SQLiteBackend, "", "", "")
 
 		assert.NoError(t, err1, "First init should not fail")
 		assert.NoError(t, err2, "Second init should not fail")
@@ -65,7 +65,7 @@ func TestCaching(t *testing.T) {
 		closeOnce = sync.Once{} // Reset for test
 
 		// Test initialization with None backend (no database)
-		err := InitCaching(schema.NoneBackend, "")
+		err := InitCaching(schema.NoneBackend, "", "", "")
 		assert.NoError(t, err, "Failed to initialize persistence with none backend")
 
 		// Test that Manager is accessible
@@ -564,7 +564,7 @@ func TestCacheStoreManagerConcurrency(t *testing.T) {
 	initOnce = sync.Once{}
 	closeOnce = sync.Once{}
 
-	err := InitCaching(schema.SQLiteBackend, "")
+	err := InitCaching(schema.SQLiteBackend, "", "", "")
 	if err != nil {
 		t.Fatalf("InitCaching failed: %v", err)
 	}
@@ -616,7 +616,7 @@ func TestInitCachingErrors(t *testing.T) {
 
 		// Try to init with an invalid connection string for MySQL
 		// This should fail during database connection
-		err := InitCaching(schema.MySQLBackend, "invalid://connection")
+		err := InitCaching(schema.MySQLBackend, "invalid://connection", "", "")
 		assert.Error(t, err, "Expected error for invalid MySQL connection string")
 	})
 }
@@ -688,14 +688,14 @@ func TestMultipleInitCachingCalls(t *testing.T) {
 	closeOnce = sync.Once{}
 
 	// First call should succeed
-	err := InitCaching(schema.SQLiteBackend, "")
+	err := InitCaching(schema.SQLiteBackend, "", "", "")
 	assert.NoError(t, err, "First InitCaching call should not fail")
 
 	// Subsequent calls should be no-ops (due to sync.Once) and not error
-	err = InitCaching(schema.SQLiteBackend, "")
+	err = InitCaching(schema.SQLiteBackend, "", "", "")
 	assert.NoError(t, err, "Second InitCaching call should not error")
 
-	err = InitCaching(schema.MySQLBackend, "different:connection@string")
+	err = InitCaching(schema.MySQLBackend, "different:connection@string", "", "")
 	assert.NoError(t, err, "Third InitCaching call (different backend) should not error")
 
 	// Verify the store is still the SQLite one from the first call

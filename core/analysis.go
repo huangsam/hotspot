@@ -31,10 +31,10 @@ func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client con
 	// Add cache manager to context for use in worker goroutines
 	ctx = contextWithCacheManager(ctx, mgr)
 
-	// --- 0. Begin Analysis Tracking (if enabled and available) ---
+	// --- 0. Begin Analysis Tracking (if configured) ---
 	var analysisID int64
 	analysisStore := mgr.GetAnalysisStore()
-	if cfg.TrackAnalysis && analysisStore != nil {
+	if analysisStore != nil {
 		startTime := time.Now()
 		configParams := map[string]any{
 			"mode":         string(cfg.Mode),

@@ -92,7 +92,9 @@ type Config struct {
 
 	CacheBackend   schema.CacheBackend
 	CacheDBConnect string // Please use env var as this is plaintext
-	TrackAnalysis  bool   // Enable analysis tracking to database
+
+	AnalysisBackend   schema.CacheBackend
+	AnalysisDBConnect string // Please use env var as this is plaintext
 
 	// CustomWeights is a mapping of [ModeName][BreakdownKey] = Weight
 	CustomWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64
@@ -120,12 +122,13 @@ type ConfigRawInput struct {
 	Output         string `mapstructure:"output"`
 	Owner          bool   `mapstructure:"owner"`
 	Detail         bool   `mapstructure:"detail"`
-	Width          int    `mapstructure:"width"`
-	CacheBackend   string `mapstructure:"cache-backend"`
-	CacheDBConnect string `mapstructure:"cache-db-connect"`
-	TrackAnalysis  bool   `mapstructure:"track-analysis"`
-	Emoji          string `mapstructure:"emoji"`
-	Color          string `mapstructure:"color"`
+	Width             int    `mapstructure:"width"`
+	CacheBackend      string `mapstructure:"cache-backend"`
+	CacheDBConnect    string `mapstructure:"cache-db-connect"`
+	AnalysisBackend   string `mapstructure:"analysis-backend"`
+	AnalysisDBConnect string `mapstructure:"analysis-db-connect"`
+	Emoji             string `mapstructure:"emoji"`
+	Color             string `mapstructure:"color"`
 
 	// --- Fields from filesCmd.Flags() ---
 	Explain bool `mapstructure:"explain"`
@@ -302,9 +305,27 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	if err := ValidateDatabaseConnectionString(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
 		return err
 	}
-	cfg.TrackAnalysis = input.TrackAnalysis
 
-	// --- 6. Excludes Processing ---
+	// --- 6. Analysis Backend Validation ---
+	cfg.AnalysisBackend = schema.CacheBackend(strings.ToLower(input.AnalysisBackend))
+	if cfg.AnalysisBackend != "" {
+		if _, ok := schema.ValidCacheBackends[cfg.AnalysisBackend]; !ok {
+			return fmt.Errorf("invalid analysis backend '%s'. must be sqlite, mysql, postgresql, none", input.AnalysisBackend)
+		}
+		cfg.AnalysisDBConnect = input.AnalysisDBConnect
+		if err := ValidateDatabaseConnectionString(cfg.AnalysisBackend, cfg.AnalysisDBConnect); err != nil {
+			return err
+		}
+
+		// Validate that cache and analysis use different databases
+		if cfg.CacheBackend == cfg.AnalysisBackend && cfg.CacheBackend != schema.NoneBackend {
+			if cfg.CacheDBConnect == cfg.AnalysisDBConnect {
+				return fmt.Errorf("cache and analysis storage must use different databases. Both are configured to use the same %s connection", cfg.CacheBackend)
+			}
+		}
+	}
+
+	// --- 7. Excludes Processing ---
 	defaults := []string{
 		"Cargo.lock", "go.sum", "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "composer.lock", "uv.lock",
 		".min.js", ".min.css",
