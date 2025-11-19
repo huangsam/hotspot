@@ -43,6 +43,9 @@ func InitCaching(backend schema.CacheBackend, connStr string) error {
 		// Initialize Analysis Store with the specified backend
 		analysisStore, err := NewAnalysisStore(backend, connStr)
 		if err != nil {
+			if activityCacheStore != nil {
+				_ = activityCacheStore.Close()
+			}
 			initErr = fmt.Errorf("failed to initialize analysis store: %w", err)
 			return
 		}
