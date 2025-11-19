@@ -110,18 +110,18 @@ type ConfigRawInput struct {
 	RepoPathStr string
 
 	// --- Fields from rootCmd.PersistentFlags() ---
-	Filter         string `mapstructure:"filter"`
-	OutputFile     string `mapstructure:"output-file"`
-	Limit          int    `mapstructure:"limit"`
-	Start          string `mapstructure:"start"`
-	End            string `mapstructure:"end"`
-	Workers        int    `mapstructure:"workers"`
-	Mode           string `mapstructure:"mode"`
-	Exclude        string `mapstructure:"exclude"`
-	Precision      int    `mapstructure:"precision"`
-	Output         string `mapstructure:"output"`
-	Owner          bool   `mapstructure:"owner"`
-	Detail         bool   `mapstructure:"detail"`
+	Filter            string `mapstructure:"filter"`
+	OutputFile        string `mapstructure:"output-file"`
+	Limit             int    `mapstructure:"limit"`
+	Start             string `mapstructure:"start"`
+	End               string `mapstructure:"end"`
+	Workers           int    `mapstructure:"workers"`
+	Mode              string `mapstructure:"mode"`
+	Exclude           string `mapstructure:"exclude"`
+	Precision         int    `mapstructure:"precision"`
+	Output            string `mapstructure:"output"`
+	Owner             bool   `mapstructure:"owner"`
+	Detail            bool   `mapstructure:"detail"`
 	Width             int    `mapstructure:"width"`
 	CacheBackend      string `mapstructure:"cache-backend"`
 	CacheDBConnect    string `mapstructure:"cache-db-connect"`
