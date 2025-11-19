@@ -1,6 +1,10 @@
 package core
 
-import "context"
+import (
+	"context"
+
+	"github.com/huangsam/hotspot/internal/contract"
+)
 
 // Context keys for analysis options.
 type contextKey string
@@ -54,4 +58,21 @@ func getAnalysisID(ctx context.Context) (int64, bool) {
 	}
 	id, ok := val.(int64)
 	return id, ok
+}
+
+// cacheManagerKey is the context key for the cache manager.
+type cacheManagerKeyType struct{}
+
+// contextWithCacheManager returns a new context with the given CacheManager.
+func contextWithCacheManager(ctx context.Context, mgr contract.CacheManager) context.Context {
+	return context.WithValue(ctx, cacheManagerKeyType{}, mgr)
+}
+
+// cacheManagerFromContext retrieves the CacheManager from the context.
+func cacheManagerFromContext(ctx context.Context) contract.CacheManager {
+	val := ctx.Value(cacheManagerKeyType{})
+	if mgr, ok := val.(contract.CacheManager); ok {
+		return mgr
+	}
+	return nil
 }

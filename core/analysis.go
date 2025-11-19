@@ -330,21 +330,6 @@ func logTrackingError(operation, path string, err error) {
 	contract.LogWarn(fmt.Sprintf("Analysis tracking failed for %s on %s", operation, path), err)
 }
 
-// cacheManagerKey is the context key for the cache manager.
-type cacheManagerKeyType struct{}
-
-func contextWithCacheManager(ctx context.Context, mgr contract.CacheManager) context.Context {
-	return context.WithValue(ctx, cacheManagerKeyType{}, mgr)
-}
-
-func cacheManagerFromContext(ctx context.Context) contract.CacheManager {
-	val := ctx.Value(cacheManagerKeyType{})
-	if mgr, ok := val.(contract.CacheManager); ok {
-		return mgr
-	}
-	return nil
-}
-
 // getAnalysisWindowForRef queries Git for the exact commit time of the given reference
 // and sets the StartTime by looking back a fixed duration from that commit time.
 func getAnalysisWindowForRef(ctx context.Context, client contract.GitClient, repoPath, ref string, lookback time.Duration) (startTime time.Time, endTime time.Time, err error) {
