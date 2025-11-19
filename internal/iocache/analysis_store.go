@@ -280,7 +280,7 @@ func (as *AnalysisStoreImpl) BeginAnalysis(startTime time.Time, configParams map
 	switch as.backend {
 	case schema.PostgreSQLBackend:
 		query := fmt.Sprintf(`INSERT INTO %s (start_time, config_params) VALUES ($1, $2) RETURNING analysis_id`, quotedTableName)
-		err = as.db.QueryRow(query, formatTime(startTime, as.backend), string(configJSON)).Scan(&analysisID)
+		err = as.db.QueryRow(query, startTime, string(configJSON)).Scan(&analysisID)
 	default: // SQLite and MySQL
 		query := fmt.Sprintf(`INSERT INTO %s (start_time, config_params) VALUES (?, ?)`, quotedTableName)
 		var result sql.Result
@@ -313,7 +313,7 @@ func (as *AnalysisStoreImpl) EndAnalysis(analysisID int64, endTime time.Time, to
 	switch as.backend {
 	case schema.PostgreSQLBackend:
 		query = fmt.Sprintf(`UPDATE %s SET end_time = $1, total_files_analyzed = $2 WHERE analysis_id = $3`, quotedTableName)
-		args = []any{formatTime(endTime, as.backend), totalFiles, analysisID}
+		args = []any{endTime, totalFiles, analysisID}
 	default: // SQLite and MySQL
 		query = fmt.Sprintf(`UPDATE %s SET end_time = ?, total_files_analyzed = ? WHERE analysis_id = ?`, quotedTableName)
 		args = []any{formatTime(endTime, as.backend), totalFiles, analysisID}
@@ -357,7 +357,7 @@ func (as *AnalysisStoreImpl) RecordFileMetrics(analysisID int64, filePath string
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`, quotedTableName)
 		args = []any{
-			analysisID, filePath, formatTime(metrics.AnalysisTime, as.backend), metrics.TotalCommits, metrics.TotalChurn,
+			analysisID, filePath, metrics.AnalysisTime, metrics.TotalCommits, metrics.TotalChurn,
 			metrics.ContributorCount, metrics.AgeDays, metrics.GiniCoefficient, metrics.FileOwner,
 		}
 	}
@@ -390,7 +390,7 @@ func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string,
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		`, quotedTableName)
 		args = []any{
-			analysisID, filePath, scores.AnalysisTime, scores.HotScore, scores.RiskScore,
+			analysisID, filePath, formatTime(scores.AnalysisTime, as.backend), scores.HotScore, scores.RiskScore,
 			scores.ComplexityScore, scores.StaleScore, scores.ScoreLabel,
 		}
 	default: // SQLite and MySQL
