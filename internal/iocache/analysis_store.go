@@ -40,6 +40,8 @@ func NewAnalysisStore(backend schema.CacheBackend, connStr string) (contract.Ana
 		if err != nil {
 			return nil, fmt.Errorf("failed to open SQLite database: %w", err)
 		}
+		// Limit SQLite to a single open connection to avoid "database is locked" errors
+		db.SetMaxOpenConns(1)
 
 	case schema.MySQLBackend:
 		driverName = "mysql"
