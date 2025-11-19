@@ -35,7 +35,10 @@ func NewAnalysisStore(backend schema.CacheBackend, connStr string) (contract.Ana
 	switch backend {
 	case schema.SQLiteBackend:
 		driverName = "sqlite3"
-		dbPath := GetDBFilePath()
+		dbPath := connStr
+		if dbPath == "" {
+			dbPath = GetAnalysisDBFilePath()
+		}
 		db, err = sql.Open(driverName, dbPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open SQLite database: %w", err)

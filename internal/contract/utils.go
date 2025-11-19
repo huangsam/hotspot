@@ -116,7 +116,7 @@ func LogFatal(msg string, err error) {
 	os.Exit(1)
 }
 
-// GetDBFilePath returns the path to the SQLite DB file.
+// GetDBFilePath returns the path to the SQLite DB file for cache storage.
 func GetDBFilePath() string {
 	// Implementation from internal/persist_global.go
 	homeDir, err := os.UserHomeDir()
@@ -124,6 +124,15 @@ func GetDBFilePath() string {
 		return ".hotspot_cache.db"
 	}
 	return filepath.Join(homeDir, ".hotspot_cache.db")
+}
+
+// GetAnalysisDBFilePath returns the path to the SQLite DB file for analysis storage.
+func GetAnalysisDBFilePath() string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return ".hotspot_analysis.db"
+	}
+	return filepath.Join(homeDir, ".hotspot_analysis.db")
 }
 
 // NormalizeTimeseriesPath normalizes a user-provided path relative to the repo root

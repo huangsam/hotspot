@@ -319,7 +319,20 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 
 		// Validate that cache and analysis use different databases
 		if cfg.CacheBackend == cfg.AnalysisBackend && cfg.CacheBackend != schema.NoneBackend {
-			if cfg.CacheDBConnect == cfg.AnalysisDBConnect {
+			// For SQLite, resolve to actual file paths to catch default path conflicts
+			if cfg.CacheBackend == schema.SQLiteBackend {
+				cacheDBPath := cfg.CacheDBConnect
+				if cacheDBPath == "" {
+					cacheDBPath = GetDBFilePath()
+				}
+				analysisDBPath := cfg.AnalysisDBConnect
+				if analysisDBPath == "" {
+					analysisDBPath = GetAnalysisDBFilePath()
+				}
+				if cacheDBPath == analysisDBPath {
+					return fmt.Errorf("cache and analysis storage must use different SQLite database files. Both resolve to %q", cacheDBPath)
+				}
+			} else if cfg.CacheDBConnect == cfg.AnalysisDBConnect {
 				return fmt.Errorf("cache and analysis storage must use different databases. Both are configured to use the same %s connection", cfg.CacheBackend)
 			}
 		}

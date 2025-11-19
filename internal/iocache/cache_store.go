@@ -36,7 +36,10 @@ func NewCacheStore(tableName string, backend schema.CacheBackend, connStr string
 	switch backend {
 	case schema.SQLiteBackend:
 		driverName = "sqlite3"
-		dbPath := GetDBFilePath()
+		dbPath := connStr
+		if dbPath == "" {
+			dbPath = GetDBFilePath()
+		}
 		db, err = sql.Open(driverName, dbPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open SQLite database: %w", err)

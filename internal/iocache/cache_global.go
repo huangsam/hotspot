@@ -20,9 +20,14 @@ var (
 	closeOnce sync.Once
 )
 
-// GetDBFilePath returns the path to the SQLite DB file.
+// GetDBFilePath returns the path to the SQLite DB file for cache storage.
 func GetDBFilePath() string {
 	return contract.GetDBFilePath()
+}
+
+// GetAnalysisDBFilePath returns the path to the SQLite DB file for analysis storage.
+func GetAnalysisDBFilePath() string {
+	return contract.GetAnalysisDBFilePath()
 }
 
 // InitCaching initializes the global cache manager with separate cache and analysis stores.

@@ -445,6 +445,26 @@ func TestProcessAndValidate(t *testing.T) {
 			expectError: true,
 			setupMock:   nil,
 		},
+		{
+			name: "both sqlite with same explicit database path should fail",
+			input: &ConfigRawInput{
+				Limit:             10,
+				Workers:           4,
+				Mode:              string(schema.HotMode),
+				Precision:         1,
+				Output:            "text",
+				Exclude:           "",
+				RepoPathStr:       ".",
+				CacheBackend:      string(schema.SQLiteBackend),
+				CacheDBConnect:    "/tmp/same.db",
+				AnalysisBackend:   string(schema.SQLiteBackend),
+				AnalysisDBConnect: "/tmp/same.db",
+				Emoji:             "no",
+				Color:             "yes",
+			},
+			expectError: true,
+			setupMock:   nil,
+		},
 	}
 
 	for _, tt := range tests {
