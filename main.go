@@ -57,7 +57,7 @@ func startProfiling() error {
 	}
 
 	// Memory profiling will be captured at the end
-	_, err = fmt.Fprintf(os.Stderr, "Profiling enabled. CPU profile: %s.cpu.prof, Memory profile: %s.mem.prof\n", profile.Prefix, profile.Prefix)
+	_, err = fmt.Fprintf(os.Stdout, "Profiling enabled. CPU profile: %s.cpu.prof, Memory profile: %s.mem.prof\n", profile.Prefix, profile.Prefix)
 	return err
 }
 
@@ -80,7 +80,7 @@ func stopProfiling() error {
 		return fmt.Errorf("could not write memory profile: %w", err)
 	}
 
-	_, err = fmt.Fprintf(os.Stderr, "Profiling complete. Use 'go tool pprof %s.cpu.prof' to analyze.\n", profile.Prefix)
+	_, err = fmt.Fprintf(os.Stdout, "Profiling complete. Use 'go tool pprof %s.cpu.prof' to analyze.\n", profile.Prefix)
 	return err
 }
 

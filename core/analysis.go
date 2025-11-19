@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -46,7 +45,7 @@ func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client con
 		var err error
 		analysisID, err = analysisStore.BeginAnalysis(startTime, configParams)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: Analysis tracking could not be initialized: %v (tracking will be skipped)\n", err)
+			contract.LogWarn("Analysis tracking initialization failed", err)
 		} else if analysisID > 0 {
 			// Add analysis ID to context for use in file analysis
 			ctx = withAnalysisID(ctx, analysisID)
@@ -72,7 +71,7 @@ func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client con
 	if analysisStore != nil && analysisID > 0 {
 		endTime := time.Now()
 		if err := analysisStore.EndAnalysis(analysisID, endTime, len(fileResults)); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: Failed to finalize analysis tracking: %v\n", err)
+			contract.LogWarn("Failed to finalize analysis tracking", err)
 		}
 	}
 
@@ -328,7 +327,7 @@ func getOwnerString(owners []string) string {
 
 // logTrackingError logs database tracking errors to stderr without disrupting analysis.
 func logTrackingError(operation, path string, err error) {
-	fmt.Fprintf(os.Stderr, "Warning: Analysis tracking failed for %s on %s: %v\n", operation, path, err)
+	contract.LogWarn(fmt.Sprintf("Analysis tracking failed for %s on %s", operation, path), err)
 }
 
 // cacheManagerKey is the context key for the cache manager.
