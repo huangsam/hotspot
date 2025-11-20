@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
@@ -754,5 +755,74 @@ func TestInitCachingNoneBackend(t *testing.T) {
 		assert.Equal(t, sql.ErrNoRows, err, "Get on NoneBackend should return ErrNoRows")
 
 		CloseCaching()
+	})
+}
+
+// TestCacheStoreGetStatus tests the GetStatus method for different backends.
+func TestCacheStoreGetStatus(t *testing.T) {
+	t.Run("SQLite backend with data", func(t *testing.T) {
+		store, err := NewCacheStore("test_status_table", schema.SQLiteBackend, ":memory:")
+		assert.NoError(t, err, "Failed to create SQLite store")
+		defer func() { _ = store.Close() }()
+
+		// Add some test data
+		testData := []struct {
+			key   string
+			value []byte
+			ts    int64
+		}{
+			{"key1", []byte("value1"), 1000},
+			{"key2", []byte("value2"), 2000},
+			{"key3", []byte("value3"), 1500},
+		}
+
+		for _, data := range testData {
+			err := store.Set(data.key, data.value, 1, data.ts)
+			assert.NoError(t, err, "Set should not fail")
+		}
+
+		// Get status
+		status, err := store.GetStatus()
+		assert.NoError(t, err, "GetStatus should not fail")
+
+		assert.Equal(t, "sqlite", status.Backend, "Backend should be sqlite")
+		assert.True(t, status.Connected, "Should be connected")
+		assert.Equal(t, 3, status.TotalEntries, "Total entries should be 3")
+		assert.Equal(t, time.Unix(2000, 0), status.LastEntryTime, "Last entry time should be 2000")
+		assert.Equal(t, time.Unix(1000, 0), status.OldestEntryTime, "Oldest entry time should be 1000")
+		assert.Greater(t, status.TableSizeBytes, int64(0), "Table size should be greater than 0")
+	})
+
+	t.Run("SQLite backend empty", func(t *testing.T) {
+		store, err := NewCacheStore("test_empty_table", schema.SQLiteBackend, ":memory:")
+		assert.NoError(t, err, "Failed to create SQLite store")
+		defer func() { _ = store.Close() }()
+
+		// Get status without data
+		status, err := store.GetStatus()
+		assert.NoError(t, err, "GetStatus should not fail")
+
+		assert.Equal(t, "sqlite", status.Backend, "Backend should be sqlite")
+		assert.True(t, status.Connected, "Should be connected")
+		assert.Equal(t, 0, status.TotalEntries, "Total entries should be 0")
+		assert.True(t, status.LastEntryTime.IsZero(), "Last entry time should be zero")
+		assert.True(t, status.OldestEntryTime.IsZero(), "Oldest entry time should be zero")
+		assert.Equal(t, int64(0), status.TableSizeBytes, "Table size should be 0")
+	})
+
+	t.Run("None backend", func(t *testing.T) {
+		store, err := NewCacheStore("test_none", schema.NoneBackend, "")
+		assert.NoError(t, err, "Failed to create None store")
+
+		// Get status
+		status, err := store.GetStatus()
+		assert.NoError(t, err, "GetStatus should not fail")
+
+		assert.Equal(t, "none", status.Backend, "Backend should be none")
+		assert.False(t, status.Connected, "Should not be connected")
+		assert.Equal(t, 0, status.TotalEntries, "Total entries should be 0")
+		assert.True(t, status.LastEntryTime.IsZero(), "Last entry time should be zero")
+		assert.True(t, status.OldestEntryTime.IsZero(), "Oldest entry time should be zero")
+		assert.Equal(t, int64(0), status.TableSizeBytes, "Table size should be 0")
 	})
 }

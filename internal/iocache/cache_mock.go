@@ -54,6 +54,12 @@ func (m *MockCacheStore) Close() error {
 	return args.Error(0)
 }
 
+// GetStatus implements the CacheStore interface.
+func (m *MockCacheStore) GetStatus() (schema.CacheStatus, error) {
+	args := m.Called()
+	return args.Get(0).(schema.CacheStatus), args.Error(1)
+}
+
 // MockAnalysisStore is a mock implementation of AnalysisStore for testing.
 type MockAnalysisStore struct {
 	mock.Mock
@@ -89,4 +95,10 @@ func (m *MockAnalysisStore) RecordFileScores(analysisID int64, filePath string, 
 func (m *MockAnalysisStore) Close() error {
 	args := m.Called()
 	return args.Error(0)
+}
+
+// GetStatus implements the AnalysisStore interface.
+func (m *MockAnalysisStore) GetStatus() (schema.AnalysisStatus, error) {
+	args := m.Called()
+	return args.Get(0).(schema.AnalysisStatus), args.Error(1)
 }

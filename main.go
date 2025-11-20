@@ -223,8 +223,16 @@ func analysisSetup() error {
 	}
 
 	// Get analysis-related config values
-	backend := schema.CacheBackend(viper.GetString("analysis-backend"))
+	backendStr := viper.GetString("analysis-backend")
 	connStr := viper.GetString("analysis-db-connect")
+
+	// Handle empty backend as NoneBackend
+	var backend schema.CacheBackend
+	if backendStr == "" {
+		backend = schema.NoneBackend
+	} else {
+		backend = schema.CacheBackend(backendStr)
+	}
 
 	// Basic validation for database backends
 	if err := contract.ValidateDatabaseConnectionString(backend, connStr); err != nil {
@@ -386,6 +394,21 @@ var cacheClearCmd = &cobra.Command{
 	},
 }
 
+// cacheStatusCmd shows cache status.
+var cacheStatusCmd = &cobra.Command{
+	Use:     "status",
+	Short:   "Show cache status information.",
+	Long:    `The status subcommand displays information about the cache store including total entries, last run, and connection status.`,
+	PreRunE: cacheSetupWrapper,
+	Run: func(_ *cobra.Command, _ []string) {
+		status, err := iocache.Manager.GetActivityStore().GetStatus()
+		if err != nil {
+			contract.LogFatal("Failed to get cache status", err)
+		}
+		printCacheStatus(status)
+	},
+}
+
 // analysisCmd focused on analysis data management.
 //
 // Note: Analysis subcommands use minimal initialization (analysisSetup) instead of
@@ -411,6 +434,56 @@ var analysisClearCmd = &cobra.Command{
 	},
 }
 
+// analysisStatusCmd shows analysis status.
+var analysisStatusCmd = &cobra.Command{
+	Use:     "status",
+	Short:   "Show analysis status information.",
+	Long:    `The status subcommand displays information about the analysis store including total runs, last run, and connection status.`,
+	PreRunE: analysisSetupWrapper,
+	Run: func(_ *cobra.Command, _ []string) {
+		status, err := iocache.Manager.GetAnalysisStore().GetStatus()
+		if err != nil {
+			contract.LogFatal("Failed to get analysis status", err)
+		}
+		printAnalysisStatus(status)
+	},
+}
+
+// printCacheStatus prints cache status information.
+func printCacheStatus(status schema.CacheStatus) {
+	fmt.Printf("Cache Backend: %s\n", status.Backend)
+	fmt.Printf("Connected: %t\n", status.Connected)
+	if !status.Connected {
+		return
+	}
+	fmt.Printf("Total Entries: %d\n", status.TotalEntries)
+	if status.TotalEntries > 0 {
+		fmt.Printf("Last Entry: %s\n", status.LastEntryTime.Format("2006-01-02 15:04:05"))
+		fmt.Printf("Oldest Entry: %s\n", status.OldestEntryTime.Format("2006-01-02 15:04:05"))
+	}
+	fmt.Printf("Table Size: %d bytes\n", status.TableSizeBytes)
+}
+
+// printAnalysisStatus prints analysis status information.
+func printAnalysisStatus(status schema.AnalysisStatus) {
+	fmt.Printf("Analysis Backend: %s\n", status.Backend)
+	fmt.Printf("Connected: %t\n", status.Connected)
+	if !status.Connected {
+		return
+	}
+	fmt.Printf("Total Runs: %d\n", status.TotalRuns)
+	if status.TotalRuns > 0 {
+		fmt.Printf("Last Run ID: %d\n", status.LastRunID)
+		fmt.Printf("Last Run: %s\n", status.LastRunTime.Format("2006-01-02 15:04:05"))
+		fmt.Printf("Oldest Run: %s\n", status.OldestRunTime.Format("2006-01-02 15:04:05"))
+		fmt.Printf("Total Files Analyzed: %d\n", status.TotalFilesAnalyzed)
+	}
+	fmt.Println("Table Sizes:")
+	for table, size := range status.TableSizes {
+		fmt.Printf("  %s: %d rows\n", table, size)
+	}
+}
+
 // init defines and binds all flags.
 func init() {
 	// Call initConfig on Cobra's initialization
@@ -432,9 +505,11 @@ func init() {
 
 	// Add the clear subcommand to the parent cache command
 	cacheCmd.AddCommand(cacheClearCmd)
+	cacheCmd.AddCommand(cacheStatusCmd)
 
 	// Add the clear subcommand to the parent analysis command
 	analysisCmd.AddCommand(analysisClearCmd)
+	analysisCmd.AddCommand(analysisStatusCmd)
 
 	// Bind all persistent flags of rootCmd to Viper
 	rootCmd.PersistentFlags().Bool("detail", false, "Print per-target metadata (lines of code, size, age)")

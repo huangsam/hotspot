@@ -4,6 +4,8 @@ package iocache
 import (
 	"database/sql"
 	"fmt"
+	"strings"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql" // MySQL driver
 	"github.com/huangsam/hotspot/internal/contract"
@@ -18,6 +20,7 @@ type CacheStoreImpl struct {
 	tableName  string
 	backend    schema.CacheBackend
 	driverName string
+	connStr    string
 }
 
 var _ contract.CacheStore = &CacheStoreImpl{} // Compile-time check
@@ -72,6 +75,7 @@ func NewCacheStore(tableName string, backend schema.CacheBackend, connStr string
 			tableName:  tableName,
 			backend:    backend,
 			driverName: "",
+			connStr:    connStr,
 		}, nil
 
 	default:
@@ -96,6 +100,7 @@ func NewCacheStore(tableName string, backend schema.CacheBackend, connStr string
 		tableName:  tableName,
 		backend:    backend,
 		driverName: driverName,
+		connStr:    connStr,
 	}, nil
 }
 
@@ -204,4 +209,89 @@ func (ps *CacheStoreImpl) Close() error {
 		return ps.db.Close()
 	}
 	return nil
+}
+
+// GetStatus returns status information about the cache store.
+func (ps *CacheStoreImpl) GetStatus() (schema.CacheStatus, error) {
+	status := schema.CacheStatus{
+		Backend:   string(ps.backend),
+		Connected: ps.db != nil,
+	}
+
+	if ps.backend == schema.NoneBackend || ps.db == nil {
+		return status, nil
+	}
+
+	quotedTableName := quoteTableName(ps.tableName, ps.backend)
+
+	// Get total entries
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s", quotedTableName)
+	row := ps.db.QueryRow(countQuery)
+	if err := row.Scan(&status.TotalEntries); err != nil {
+		return status, fmt.Errorf("failed to get total entries: %w", err)
+	}
+
+	if status.TotalEntries == 0 {
+		return status, nil
+	}
+
+	// Get last entry time
+	lastQuery := fmt.Sprintf("SELECT MAX(cache_timestamp) FROM %s", quotedTableName)
+	row = ps.db.QueryRow(lastQuery)
+	var lastTs int64
+	if err := row.Scan(&lastTs); err != nil {
+		return status, fmt.Errorf("failed to get last entry time: %w", err)
+	}
+	status.LastEntryTime = time.Unix(lastTs, 0)
+
+	// Get oldest entry time
+	oldestQuery := fmt.Sprintf("SELECT MIN(cache_timestamp) FROM %s", quotedTableName)
+	row = ps.db.QueryRow(oldestQuery)
+	var oldestTs int64
+	if err := row.Scan(&oldestTs); err != nil {
+		return status, fmt.Errorf("failed to get oldest entry time: %w", err)
+	}
+	status.OldestEntryTime = time.Unix(oldestTs, 0)
+
+	// Estimate table size (approximate)
+	// For SQLite, use page_count * page_size
+	// For others, estimate based on row count (rough approximation)
+	if ps.backend == schema.SQLiteBackend {
+		sizeQuery := "SELECT page_count * page_size FROM pragma_page_count(), pragma_page_size()"
+		row = ps.db.QueryRow(sizeQuery)
+		if err := row.Scan(&status.TableSizeBytes); err != nil {
+			// If pragma fails, skip size
+			status.TableSizeBytes = 0
+		}
+	} else {
+		// For MySQL/PostgreSQL, use database-specific size queries
+		var sizeQuery string
+		switch ps.backend {
+		case schema.MySQLBackend:
+			// Extract database name from connection string
+			// Format: user:pass@tcp(host:port)/db?params
+			parts := strings.Split(ps.connStr, "/")
+			if len(parts) >= 2 {
+				dbName := strings.Split(parts[1], "?")[0] // Remove query params
+				sizeQuery = fmt.Sprintf("SELECT data_length + index_length FROM information_schema.tables WHERE table_schema = '%s' AND table_name = '%s'", dbName, ps.tableName)
+				row = ps.db.QueryRow(sizeQuery)
+				if err := row.Scan(&status.TableSizeBytes); err != nil {
+					status.TableSizeBytes = int64(status.TotalEntries) * 1000 // Fallback rough estimate
+				}
+			} else {
+				status.TableSizeBytes = int64(status.TotalEntries) * 1000 // Rough estimate
+			}
+		case schema.PostgreSQLBackend:
+			// Use pg_total_relation_size for PostgreSQL
+			sizeQuery = fmt.Sprintf("SELECT pg_total_relation_size('%s')", ps.tableName)
+			row = ps.db.QueryRow(sizeQuery)
+			if err := row.Scan(&status.TableSizeBytes); err != nil {
+				status.TableSizeBytes = int64(status.TotalEntries) * 1000 // Fallback rough estimate
+			}
+		default:
+			status.TableSizeBytes = int64(status.TotalEntries) * 1000 // Rough estimate
+		}
+	}
+
+	return status, nil
 }
