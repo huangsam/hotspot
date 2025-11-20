@@ -31,6 +31,7 @@ func GetAnalysisDBFilePath() string {
 }
 
 // InitCaching initializes the global cache manager with separate cache and analysis stores.
+// cacheBackend and cacheConnStr can be empty to disable cache initialization.
 // analysisBackend and analysisConnStr can be empty to disable analysis tracking.
 func InitCaching(cacheBackend schema.CacheBackend, cacheConnStr string, analysisBackend schema.CacheBackend, analysisConnStr string) error {
 	var initErr error
@@ -39,16 +40,19 @@ func InitCaching(cacheBackend schema.CacheBackend, cacheConnStr string, analysis
 		// This function body runs exactly once, even with concurrent calls.
 		var err error
 
-		// Initialize Activity Cache Store with the specified backend
-		activityCacheStore, err := NewCacheStore(activityTable, cacheBackend, cacheConnStr)
-		if err != nil {
-			initErr = fmt.Errorf("failed to initialize activity caching: %w", err)
-			return
+		// Initialize Activity Cache Store only if backend is configured
+		var activityCacheStore contract.CacheStore
+		if cacheBackend != "" {
+			activityCacheStore, err = NewCacheStore(activityTable, cacheBackend, cacheConnStr)
+			if err != nil {
+				initErr = fmt.Errorf("failed to initialize activity caching: %w", err)
+				return
+			}
 		}
 
 		// Initialize Analysis Store only if backend is configured
 		var analysisStore contract.AnalysisStore
-		if analysisBackend != "" && analysisBackend != schema.NoneBackend {
+		if analysisBackend != "" {
 			analysisStore, err = NewAnalysisStore(analysisBackend, analysisConnStr)
 			if err != nil {
 				if activityCacheStore != nil {
@@ -109,6 +113,50 @@ func ClearCache(backend schema.CacheBackend, dbFilePath, connStr string) error {
 
 	default:
 		return fmt.Errorf("unsupported cache backend for clearing: %s", backend)
+	}
+}
+
+// ClearAnalysis clears the analysis data for the specified backend.
+// For SQLite, it deletes the database file.
+// For SQL backends (MySQL/PostgreSQL), it drops the analysis tables.
+// For NoneBackend, it does nothing.
+func ClearAnalysis(backend schema.CacheBackend, dbFilePath, connStr string) error {
+	switch backend {
+	case schema.SQLiteBackend:
+		if dbFilePath == "" {
+			return fmt.Errorf("dbFilePath cannot be empty for SQLite backend")
+		}
+		// Remove the file; ignore if it doesn't exist
+		if err := os.Remove(dbFilePath); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to remove SQLite database file %s: %w", dbFilePath, err)
+		}
+		return nil
+
+	case schema.MySQLBackend:
+		// Clear all three analysis tables
+		tables := []string{analysisRunsTable, rawGitMetricsTable, finalScoresTable}
+		for _, table := range tables {
+			if err := clearSQLTable("mysql", connStr, table); err != nil {
+				return err
+			}
+		}
+		return nil
+
+	case schema.PostgreSQLBackend:
+		// Clear all three analysis tables
+		tables := []string{analysisRunsTable, rawGitMetricsTable, finalScoresTable}
+		for _, table := range tables {
+			if err := clearSQLTable("pgx", connStr, table); err != nil {
+				return err
+			}
+		}
+		return nil
+
+	case schema.NoneBackend:
+		return nil
+
+	default:
+		return fmt.Errorf("unsupported analysis backend for clearing: %s", backend)
 	}
 }
 

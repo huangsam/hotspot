@@ -211,9 +211,45 @@ func cacheSetup() error {
 	return nil
 }
 
+// analysisSetup loads minimal configuration needed for analysis operations.
+// This is used by commands that need analysis access without full shared setup.
+func analysisSetup() error {
+	// Load config file if present (similar to sharedSetup but minimal)
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return fmt.Errorf("error reading config file: %w", err)
+		}
+		// Config file not found, use defaults/env/flags
+	}
+
+	// Get analysis-related config values
+	backend := schema.CacheBackend(viper.GetString("analysis-backend"))
+	connStr := viper.GetString("analysis-db-connect")
+
+	// Basic validation for database backends
+	if err := contract.ValidateDatabaseConnectionString(backend, connStr); err != nil {
+		return err
+	}
+
+	// Initialize caching with the loaded config (no cache tracking for analysis commands)
+	if err := iocache.InitCaching(schema.NoneBackend, "", backend, connStr); err != nil {
+		return fmt.Errorf("failed to initialize analysis: %w", err)
+	}
+
+	cfg.AnalysisBackend = backend
+	cfg.AnalysisDBConnect = connStr
+
+	return nil
+}
+
 // cacheSetupWrapper wraps initCacheConfig to provide PreRunE for cache commands.
 func cacheSetupWrapper(_ *cobra.Command, _ []string) error {
 	return cacheSetup()
+}
+
+// analysisSetupWrapper wraps analysisSetup to provide PreRunE for analysis commands.
+func analysisSetupWrapper(_ *cobra.Command, _ []string) error {
+	return analysisSetup()
 }
 
 // filesCmd focuses on tactical, file-level analysis.
@@ -350,6 +386,31 @@ var cacheClearCmd = &cobra.Command{
 	},
 }
 
+// analysisCmd focused on analysis data management.
+//
+// Note: Analysis subcommands use minimal initialization (analysisSetup) instead of
+// the full sharedSetup used by analysis commands. This avoids Git repo validation
+// and complex config processing for simple analysis operations.
+var analysisCmd = &cobra.Command{
+	Use:   "analysis",
+	Short: "Manage analysis data operations.",
+	Long:  `The analysis command provides subcommands for managing the application's analysis data.`,
+}
+
+// analysisClearCmd clears the analysis data.
+var analysisClearCmd = &cobra.Command{
+	Use:     "clear",
+	Short:   "Clear the analysis data for the configured backend.",
+	Long:    `The clear subcommand removes all analysis tracking data for the current backend configuration.`,
+	PreRunE: analysisSetupWrapper,
+	Run: func(_ *cobra.Command, _ []string) {
+		if err := iocache.ClearAnalysis(cfg.AnalysisBackend, contract.GetAnalysisDBFilePath(), cfg.AnalysisDBConnect); err != nil {
+			contract.LogFatal("Failed to clear analysis data", err)
+		}
+		fmt.Println("Analysis data cleared successfully.")
+	},
+}
+
 // init defines and binds all flags.
 func init() {
 	// Call initConfig on Cobra's initialization
@@ -363,6 +424,7 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(metricsCmd)
 	rootCmd.AddCommand(cacheCmd)
+	rootCmd.AddCommand(analysisCmd)
 
 	// Add the file comparison subcommand to the parent compare command
 	compareCmd.AddCommand(compareFilesCmd)
@@ -370,6 +432,9 @@ func init() {
 
 	// Add the clear subcommand to the parent cache command
 	cacheCmd.AddCommand(cacheClearCmd)
+
+	// Add the clear subcommand to the parent analysis command
+	analysisCmd.AddCommand(analysisClearCmd)
 
 	// Bind all persistent flags of rootCmd to Viper
 	rootCmd.PersistentFlags().Bool("detail", false, "Print per-target metadata (lines of code, size, age)")
