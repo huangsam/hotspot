@@ -232,15 +232,8 @@ func TestQuoteTableName(t *testing.T) {
 
 // TestSQLiteBackendOperations tests the full lifecycle of SQLite backend operations.
 func TestSQLiteBackendOperations(t *testing.T) {
-	// Use the default database path for tests
-	dbPath := GetDBFilePath()
-	defer func() { _ = os.Remove(dbPath) }() // Clean up after all subtests
-
 	t.Run("set and get operations", func(t *testing.T) {
-		// Clean up before test
-		_ = os.Remove(dbPath)
-
-		store, err := NewCacheStore("test_table", schema.SQLiteBackend, "")
+		store, err := NewCacheStore("test_table", schema.SQLiteBackend, ":memory:")
 		assert.NoError(t, err, "Failed to create SQLite store")
 		defer func() { _ = store.Close() }()
 
@@ -263,10 +256,7 @@ func TestSQLiteBackendOperations(t *testing.T) {
 	})
 
 	t.Run("upsert behavior", func(t *testing.T) {
-		// Clean up before test
-		_ = os.Remove(dbPath)
-
-		store, err := NewCacheStore("test_table", schema.SQLiteBackend, "")
+		store, err := NewCacheStore("test_table", schema.SQLiteBackend, ":memory:")
 		assert.NoError(t, err, "Failed to create SQLite store")
 		defer func() { _ = store.Close() }()
 
@@ -289,10 +279,7 @@ func TestSQLiteBackendOperations(t *testing.T) {
 	})
 
 	t.Run("get non-existent key", func(t *testing.T) {
-		// Clean up before test
-		_ = os.Remove(dbPath)
-
-		store, err := NewCacheStore("test_table", schema.SQLiteBackend, "")
+		store, err := NewCacheStore("test_table", schema.SQLiteBackend, ":memory:")
 		assert.NoError(t, err, "Failed to create SQLite store")
 		defer func() { _ = store.Close() }()
 
@@ -301,10 +288,7 @@ func TestSQLiteBackendOperations(t *testing.T) {
 	})
 
 	t.Run("multiple keys", func(t *testing.T) {
-		// Clean up before test
-		_ = os.Remove(dbPath)
-
-		store, err := NewCacheStore("test_table", schema.SQLiteBackend, "")
+		store, err := NewCacheStore("test_table", schema.SQLiteBackend, ":memory:")
 		assert.NoError(t, err, "Failed to create SQLite store")
 		defer func() { _ = store.Close() }()
 
@@ -555,16 +539,10 @@ func TestClearCache(t *testing.T) {
 
 // TestCacheStoreManagerConcurrency tests concurrent access to CacheStoreManager.
 func TestCacheStoreManagerConcurrency(t *testing.T) {
-	dbPath := GetDBFilePath()
-	defer func() { _ = os.Remove(dbPath) }()
-
-	// Clean up before test
-	_ = os.Remove(dbPath)
-
 	initOnce = sync.Once{}
 	closeOnce = sync.Once{}
 
-	err := InitCaching(schema.SQLiteBackend, "", "", "")
+	err := InitCaching(schema.SQLiteBackend, ":memory:", "", "")
 	if err != nil {
 		t.Fatalf("InitCaching failed: %v", err)
 	}
@@ -692,8 +670,8 @@ func TestInitCachingNoneBackend(t *testing.T) {
 		initOnce = sync.Once{}
 		closeOnce = sync.Once{}
 
-		// Initialize with NoneBackend for cache, SQLite for analysis
-		err := InitCaching(schema.NoneBackend, "", schema.SQLiteBackend, "")
+		// Initialize with NoneBackend for cache, in-memory SQLite for analysis
+		err := InitCaching(schema.NoneBackend, "", schema.SQLiteBackend, ":memory:")
 		assert.NoError(t, err, "InitCaching with NoneBackend cache should not error")
 
 		// Verify Manager is initialized
@@ -727,8 +705,8 @@ func TestInitCachingNoneBackend(t *testing.T) {
 		initOnce = sync.Once{}
 		closeOnce = sync.Once{}
 
-		// Initialize with SQLite for cache, NoneBackend for analysis
-		err := InitCaching(schema.SQLiteBackend, "", schema.NoneBackend, "")
+		// Initialize with in-memory SQLite for cache, NoneBackend for analysis
+		err := InitCaching(schema.SQLiteBackend, ":memory:", schema.NoneBackend, "")
 		assert.NoError(t, err, "InitCaching with NoneBackend analysis should not error")
 
 		// Verify Manager is initialized
@@ -742,9 +720,9 @@ func TestInitCachingNoneBackend(t *testing.T) {
 		analysisStore := Manager.GetAnalysisStore()
 		assert.NotNil(t, analysisStore, "Analysis store should not be nil for NoneBackend")
 
-		// Test that NoneBackend analysis store behaves as no-op
-		// (We can't easily test analysis store methods without more complex setup,
-		// but we can verify it's not nil and can be closed safely)
+		// Test that SQLite cache store works (basic smoke test)
+		err = cacheStore.Set("test_key", []byte("test_value"), 1, 1000)
+		assert.NoError(t, err, "Set on SQLite cache store should not error")
 
 		CloseCaching()
 	})

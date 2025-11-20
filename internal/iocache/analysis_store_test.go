@@ -35,7 +35,7 @@ func TestAnalysisStore_NoneBackend(t *testing.T) {
 
 func TestAnalysisStore_SQLite(t *testing.T) {
 	// Use in-memory SQLite for testing
-	store, err := NewAnalysisStore(schema.SQLiteBackend, "")
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
 	require.NoError(t, err)
 	require.NotNil(t, store)
 	defer func() { _ = store.Close() }()
@@ -83,7 +83,7 @@ func TestAnalysisStore_SQLite(t *testing.T) {
 }
 
 func TestAnalysisStore_MultipleFiles(t *testing.T) {
-	store, err := NewAnalysisStore(schema.SQLiteBackend, "")
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
 	require.NoError(t, err)
 	require.NotNil(t, store)
 	defer func() { _ = store.Close() }()
@@ -125,7 +125,7 @@ func TestAnalysisStore_MultipleFiles(t *testing.T) {
 }
 
 func TestAnalysisStore_MultipleRuns(t *testing.T) {
-	store, err := NewAnalysisStore(schema.SQLiteBackend, "")
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
 	require.NoError(t, err)
 	require.NotNil(t, store)
 	defer func() { _ = store.Close() }()
@@ -172,7 +172,7 @@ func TestAnalysisStore_MultipleRuns(t *testing.T) {
 }
 
 func TestAnalysisStore_RuntimeCapture(t *testing.T) {
-	store, err := NewAnalysisStore(schema.SQLiteBackend, "")
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
 	require.NoError(t, err)
 	require.NotNil(t, store)
 	defer func() { _ = store.Close() }()
