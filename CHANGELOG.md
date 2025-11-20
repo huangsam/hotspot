@@ -1,5 +1,24 @@
 # 🚀 Changelog
 
+## v1.6.0
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.5.1...v1.6.0)
+
+### Features
+
+- **Analysis Tracking System**: Add analysis tracking with DB storage for SQLite, MySQL, PostgreSQL backends
+- **Backend Status Commands**: Add status commands for analysis and cache backends
+
+### Improvements
+
+- **Documentation Migration**: Migrate user instructions to USERGUIDE.md for better UX
+- **Dependency Updates**: Bump golang.org/x/crypto from 0.37.0 to 0.45.0
+
+### Development
+
+- **Test Coverage**: Add comprehensive tests for analysis tracking and backend status
+- **Code Refactoring**: Refactor iocache package and integrate tracking into core analysis pipeline
+
 ## v1.5.1
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.5.0...v1.5.1)
