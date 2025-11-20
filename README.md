@@ -147,7 +147,7 @@ This allows you to manage settings without long command-line strings. Flags alwa
 3.  [hotspot.docs.yml](./examples/hotspot.docs.yml): The canonical template listing every available setting
 4.  [hotspot.weights.yml](./examples/hotspot.weights.yml): Advanced customization of scoring algorithm weights
 
-## Backend Configuration
+## Backend support
 
 Hotspot supports multiple backends for caching Git analysis results and storing analysis data: **SQLite**, **MySQL**, **PostgreSQL**, or **None**.
 
@@ -173,7 +173,7 @@ analysis:
   db_connect: "host=localhost port=5432 user=postgres dbname=hotspot"
 ```
 
-### Management Commands
+### Management commands
 
 ```bash
 hotspot cache status    # Check cache backend status
@@ -184,7 +184,7 @@ hotspot analysis clear  # Clear stored analysis runs
 
 ## Common use cases
 
-### Daily & Sprint Workflows
+### Daily & sprint workflows
 
 ```bash
 # Identify active subsystems for daily standup
@@ -194,7 +194,7 @@ hotspot folders --mode hot --start "2 weeks ago"
 hotspot files --mode hot ./path/from/folder/hot --start "2 weeks ago"
 ```
 
-### Strategic Risk & Debt Management
+### Strategic risk & debt management
 
 ```bash
 # Bus Factor Audit (subsystems with few owners)
@@ -204,7 +204,7 @@ hotspot folders --mode risk --start "1 year ago"
 hotspot folders --mode stale --start "5 years ago" --exclude "test/,vendor/"
 ```
 
-### Change & Release Auditing
+### Change & release auditing
 
 ```bash
 # Measure release risk changes
@@ -214,7 +214,7 @@ hotspot compare folders --mode complexity --base-ref v1.0.0 --target-ref HEAD
 hotspot compare files --mode risk --base-ref main --target-ref feature/new-module
 ```
 
-### Trend Analysis & Historical Tracking
+### Trend analysis & historical tracking
 
 ```bash
 # Track file complexity over time
@@ -233,7 +233,7 @@ All measurements use default settings with 14 concurrent workers on a MacBook Pr
 [git]: https://github.com/git/git
 [kubernetes]: https://github.com/kubernetes/kubernetes
 
-### Test Repositories
+### Test repositories
 
 The benchmarks use repositories of varying scales to demonstrate performance characteristics:
 
@@ -244,7 +244,7 @@ The benchmarks use repositories of varying scales to demonstrate performance cha
 | [git] | C | Large | Complex version control system |
 | [kubernetes] | Go | Massive | Distributed container orchestration platform |
 
-### Benchmark Results
+### Benchmark results
 
 Comprehensive performance benchmarks using [this script](./benchmark/main.go). This shows cold vs warm timings:
 
