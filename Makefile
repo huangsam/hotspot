@@ -20,7 +20,7 @@ INTEGRATION   ?= 0
 
 # --- Phony Targets ---
 # .PHONY: explicitly declares targets that do not represent files
-.PHONY: all bench build check clean coverage demo format fuzz fuzz-long fuzz-quick help install lint profile release snapshot test
+.PHONY: all bench build check clean coverage demo format fuzz fuzz-long fuzz-quick help install lint profile release snapshot test test-all test-all-force test-force test-integ test-integ-force
 
 # --- Targets ---
 
@@ -85,6 +85,15 @@ test-all: test
 test-all-force: export FORCE=1
 test-all-force: export INTEGRATION=1
 test-all-force: test
+test-integ:
+	@echo "🧪 Running integration tests only..."
+	@if [ "$(FORCE)" = "1" ]; then \
+		$(GO) test -tags integration -count=1 ./integration; \
+	else \
+		$(GO) test -tags integration ./integration; \
+	fi
+test-integ-force: export FORCE=1
+test-integ-force: test-integ
 
 # Run benchmarks
 bench:
@@ -201,6 +210,8 @@ help:
 	@echo "  make test-force          - Force runs unit tests (bypasses cache)."
 	@echo "  make test-all            - Runs unit + integration tests."
 	@echo "  make test-all-force      - Force runs all tests (bypasses cache)."
+	@echo "  make test-integ          - Runs integration tests only."
+	@echo "  make test-integ-force    - Force runs integration tests only (bypasses cache)."
 	@echo "  make bench               - Runs Go benchmarks."
 	@echo "  make coverage            - Runs unit tests with coverage."
 
