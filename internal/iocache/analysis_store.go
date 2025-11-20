@@ -373,6 +373,7 @@ func (as *AnalysisStoreImpl) RecordFileMetrics(analysisID int64, filePath string
 	var query string
 	var args []any
 
+	analysisTime := formatTime(metrics.AnalysisTime, as.backend)
 	switch as.backend {
 	case schema.MySQLBackend:
 		query = fmt.Sprintf(`
@@ -381,7 +382,7 @@ func (as *AnalysisStoreImpl) RecordFileMetrics(analysisID int64, filePath string
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`, quotedTableName)
 		args = []any{
-			analysisID, filePath, metrics.AnalysisTime, metrics.TotalCommits, metrics.TotalChurn,
+			analysisID, filePath, analysisTime, metrics.TotalCommits, metrics.TotalChurn,
 			metrics.ContributorCount, metrics.AgeDays, metrics.GiniCoefficient, metrics.FileOwner,
 		}
 	case schema.PostgreSQLBackend:
@@ -391,7 +392,7 @@ func (as *AnalysisStoreImpl) RecordFileMetrics(analysisID int64, filePath string
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		`, quotedTableName)
 		args = []any{
-			analysisID, filePath, metrics.AnalysisTime, metrics.TotalCommits, metrics.TotalChurn,
+			analysisID, filePath, analysisTime, metrics.TotalCommits, metrics.TotalChurn,
 			metrics.ContributorCount, metrics.AgeDays, metrics.GiniCoefficient, metrics.FileOwner,
 		}
 	default: // SQLite
@@ -401,7 +402,7 @@ func (as *AnalysisStoreImpl) RecordFileMetrics(analysisID int64, filePath string
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`, quotedTableName)
 		args = []any{
-			analysisID, filePath, metrics.AnalysisTime, metrics.TotalCommits, metrics.TotalChurn,
+			analysisID, filePath, analysisTime, metrics.TotalCommits, metrics.TotalChurn,
 			metrics.ContributorCount, metrics.AgeDays, metrics.GiniCoefficient, metrics.FileOwner,
 		}
 	}
@@ -426,6 +427,7 @@ func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string,
 	var query string
 	var args []any
 
+	analysisTime := formatTime(scores.AnalysisTime, as.backend)
 	switch as.backend {
 	case schema.MySQLBackend:
 		query = fmt.Sprintf(`
@@ -434,7 +436,7 @@ func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string,
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 		`, quotedTableName)
 		args = []any{
-			analysisID, filePath, formatTime(scores.AnalysisTime, as.backend), scores.HotScore, scores.RiskScore,
+			analysisID, filePath, analysisTime, scores.HotScore, scores.RiskScore,
 			scores.ComplexityScore, scores.StaleScore, scores.ScoreLabel,
 		}
 	case schema.PostgreSQLBackend:
@@ -444,7 +446,7 @@ func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string,
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		`, quotedTableName)
 		args = []any{
-			analysisID, filePath, formatTime(scores.AnalysisTime, as.backend), scores.HotScore, scores.RiskScore,
+			analysisID, filePath, analysisTime, scores.HotScore, scores.RiskScore,
 			scores.ComplexityScore, scores.StaleScore, scores.ScoreLabel,
 		}
 	default: // SQLite
@@ -454,7 +456,7 @@ func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string,
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 		`, quotedTableName)
 		args = []any{
-			analysisID, filePath, formatTime(scores.AnalysisTime, as.backend), scores.HotScore, scores.RiskScore,
+			analysisID, filePath, analysisTime, scores.HotScore, scores.RiskScore,
 			scores.ComplexityScore, scores.StaleScore, scores.ScoreLabel,
 		}
 	}
