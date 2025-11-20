@@ -111,7 +111,7 @@ func ShouldIgnore(path string, excludes []string) bool {
 	return false
 }
 
-// LogFatal logs an error and exits the program.
+// LogFatal logs a fatal error message to stderr and exits the program.
 func LogFatal(msg string, err error) {
 	log.Fatalf("%s: %v", msg, err)
 }
