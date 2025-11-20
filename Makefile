@@ -63,10 +63,10 @@ test:
 	@test_args=""; \
 	if [ "$(FORCE)" = "1" ]; then \
 		test_args="$$test_args -count=1"; \
-		echo "Bypassing test cache..."; \
+		echo "💨 Bypassing test cache..."; \
 	fi; \
 	if [ "$(INTEGRATION)" = "1" ]; then \
-		echo "Including integration tests..."; \
+		echo "🔗 Including integration tests..."; \
 		$(GO) test $$test_args ./...; \
 		$(GO) test -tags integration $$test_args ./integration; \
 	else \
@@ -81,7 +81,7 @@ test-integ:
 	@test_args=""; \
 	if [ "$(FORCE)" = "1" ]; then \
 		test_args="$$test_args -count=1"; \
-		echo "Bypassing test cache..."; \
+		echo "💨 Bypassing test cache..."; \
 	fi; \
 	$(GO) test -tags integration $$test_args ./integration
 
