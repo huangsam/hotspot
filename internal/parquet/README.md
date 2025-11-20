@@ -6,6 +6,22 @@ This package provides data structures and functions for exporting hotspot analys
 
 The package defines Go structs that map to the hotspot analysis database tables and provides functions to write these structs to Parquet files with automatic schema inference.
 
+## Quick Start with CLI
+
+The easiest way to export analysis data is using the `hotspot analysis export` command:
+
+```bash
+# Run analysis with tracking enabled
+hotspot files --analysis-backend sqlite
+
+# Export to Parquet files
+hotspot analysis export --analysis-backend sqlite --parquet-file output
+```
+
+This creates:
+- `output.analysis_runs.parquet` - Analysis run metadata
+- `output.file_scores_metrics.parquet` - Per-file metrics and scores
+
 ## Data Structures
 
 ### AnalysisRun
