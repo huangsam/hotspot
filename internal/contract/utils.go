@@ -112,18 +112,32 @@ func ShouldIgnore(path string, excludes []string) bool {
 
 // LogFatal logs an error and exits the program.
 func LogFatal(msg string, err error) {
-	_, _ = fmt.Fprintf(os.Stderr, "%s: %v\n", msg, err)
+	_, _ = fmt.Fprintf(os.Stderr, "Fatal %s: %v\n", msg, err)
 	os.Exit(1)
 }
 
-// GetDBFilePath returns the path to the SQLite DB file.
-func GetDBFilePath() string {
+// LogWarn logs a warning message to stderr.
+func LogWarn(msg string, err error) {
+	_, _ = fmt.Fprintf(os.Stderr, "Warn %s: %v\n", msg, err)
+}
+
+// GetCacheDBFilePath returns the path to the SQLite DB file for cache storage.
+func GetCacheDBFilePath() string {
 	// Implementation from internal/persist_global.go
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return ".hotspot_cache.db"
 	}
 	return filepath.Join(homeDir, ".hotspot_cache.db")
+}
+
+// GetAnalysisDBFilePath returns the path to the SQLite DB file for analysis storage.
+func GetAnalysisDBFilePath() string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return ".hotspot_analysis.db"
+	}
+	return filepath.Join(homeDir, ".hotspot_analysis.db")
 }
 
 // NormalizeTimeseriesPath normalizes a user-provided path relative to the repo root

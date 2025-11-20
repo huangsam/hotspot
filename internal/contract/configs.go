@@ -93,6 +93,9 @@ type Config struct {
 	CacheBackend   schema.CacheBackend
 	CacheDBConnect string // Please use env var as this is plaintext
 
+	AnalysisBackend   schema.CacheBackend
+	AnalysisDBConnect string // Please use env var as this is plaintext
+
 	// CustomWeights is a mapping of [ModeName][BreakdownKey] = Weight
 	CustomWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64
 
@@ -107,23 +110,25 @@ type ConfigRawInput struct {
 	RepoPathStr string
 
 	// --- Fields from rootCmd.PersistentFlags() ---
-	Filter         string `mapstructure:"filter"`
-	OutputFile     string `mapstructure:"output-file"`
-	Limit          int    `mapstructure:"limit"`
-	Start          string `mapstructure:"start"`
-	End            string `mapstructure:"end"`
-	Workers        int    `mapstructure:"workers"`
-	Mode           string `mapstructure:"mode"`
-	Exclude        string `mapstructure:"exclude"`
-	Precision      int    `mapstructure:"precision"`
-	Output         string `mapstructure:"output"`
-	Owner          bool   `mapstructure:"owner"`
-	Detail         bool   `mapstructure:"detail"`
-	Width          int    `mapstructure:"width"`
-	CacheBackend   string `mapstructure:"cache-backend"`
-	CacheDBConnect string `mapstructure:"cache-db-connect"`
-	Emoji          string `mapstructure:"emoji"`
-	Color          string `mapstructure:"color"`
+	Filter            string `mapstructure:"filter"`
+	OutputFile        string `mapstructure:"output-file"`
+	Limit             int    `mapstructure:"limit"`
+	Start             string `mapstructure:"start"`
+	End               string `mapstructure:"end"`
+	Workers           int    `mapstructure:"workers"`
+	Mode              string `mapstructure:"mode"`
+	Exclude           string `mapstructure:"exclude"`
+	Precision         int    `mapstructure:"precision"`
+	Output            string `mapstructure:"output"`
+	Owner             bool   `mapstructure:"owner"`
+	Detail            bool   `mapstructure:"detail"`
+	Width             int    `mapstructure:"width"`
+	CacheBackend      string `mapstructure:"cache-backend"`
+	CacheDBConnect    string `mapstructure:"cache-db-connect"`
+	AnalysisBackend   string `mapstructure:"analysis-backend"`
+	AnalysisDBConnect string `mapstructure:"analysis-db-connect"`
+	Emoji             string `mapstructure:"emoji"`
+	Color             string `mapstructure:"color"`
 
 	// --- Fields from filesCmd.Flags() ---
 	Explain bool `mapstructure:"explain"`
@@ -237,6 +242,53 @@ func ValidateDatabaseConnectionString(backend schema.CacheBackend, connStr strin
 	return nil
 }
 
+// validateBackendConfigs validates cache and analysis backend configurations.
+func validateBackendConfigs(cfg *Config, input *ConfigRawInput) error {
+	// --- Cache Backend Validation ---
+	cfg.CacheBackend = schema.CacheBackend(strings.ToLower(input.CacheBackend))
+	if _, ok := schema.ValidCacheBackends[cfg.CacheBackend]; !ok {
+		return fmt.Errorf("invalid cache backend '%s'. must be sqlite, mysql, postgresql, none", input.CacheBackend)
+	}
+	cfg.CacheDBConnect = input.CacheDBConnect
+	if err := ValidateDatabaseConnectionString(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
+		return err
+	}
+
+	// --- Analysis Backend Validation ---
+	cfg.AnalysisBackend = schema.CacheBackend(strings.ToLower(input.AnalysisBackend))
+	if cfg.AnalysisBackend != "" {
+		if _, ok := schema.ValidCacheBackends[cfg.AnalysisBackend]; !ok {
+			return fmt.Errorf("invalid analysis backend '%s'. must be sqlite, mysql, postgresql, none", input.AnalysisBackend)
+		}
+		cfg.AnalysisDBConnect = input.AnalysisDBConnect
+		if err := ValidateDatabaseConnectionString(cfg.AnalysisBackend, cfg.AnalysisDBConnect); err != nil {
+			return err
+		}
+
+		// Validate that cache and analysis use different databases
+		if cfg.CacheBackend == cfg.AnalysisBackend && cfg.CacheBackend != schema.NoneBackend {
+			// For SQLite, resolve to actual file paths to catch default path conflicts
+			if cfg.CacheBackend == schema.SQLiteBackend {
+				cacheDBPath := cfg.CacheDBConnect
+				if cacheDBPath == "" {
+					cacheDBPath = GetCacheDBFilePath()
+				}
+				analysisDBPath := cfg.AnalysisDBConnect
+				if analysisDBPath == "" {
+					analysisDBPath = GetAnalysisDBFilePath()
+				}
+				if cacheDBPath == analysisDBPath {
+					return fmt.Errorf("cache and analysis storage must use different SQLite database files. Both resolve to %q", cacheDBPath)
+				}
+			} else if cfg.CacheDBConnect == cfg.AnalysisDBConnect {
+				return fmt.Errorf("cache and analysis storage must use different databases. Both are configured to use the same %s connection", cfg.CacheBackend)
+			}
+		}
+	}
+
+	return nil
+}
+
 // validateSimpleInputs processes and validates all non-path related fields.
 func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	// --- 0. Transfer simple non-validated fields from input -> cfg ---
@@ -291,13 +343,8 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 		return fmt.Errorf("invalid output format '%s'. must be text, csv, json", cfg.Output)
 	}
 
-	// --- 5. Cache Backend Validation ---
-	cfg.CacheBackend = schema.CacheBackend(strings.ToLower(input.CacheBackend))
-	if _, ok := schema.ValidCacheBackends[cfg.CacheBackend]; !ok {
-		return fmt.Errorf("invalid cache backend '%s'. must be sqlite, mysql, postgresql, none", input.CacheBackend)
-	}
-	cfg.CacheDBConnect = input.CacheDBConnect
-	if err := ValidateDatabaseConnectionString(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
+	// --- 5. Backend Validation ---
+	if err := validateBackendConfigs(cfg, input); err != nil {
 		return err
 	}
 

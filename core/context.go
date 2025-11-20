@@ -1,6 +1,10 @@
 package core
 
-import "context"
+import (
+	"context"
+
+	"github.com/huangsam/hotspot/internal/contract"
+)
 
 // Context keys for analysis options.
 type contextKey string
@@ -8,6 +12,7 @@ type contextKey string
 const (
 	suppressHeaderKey contextKey = "suppressHeader"
 	useFollowKey      contextKey = "useFollow"
+	analysisIDKey     contextKey = "analysisID"
 )
 
 // withSuppressHeader sets whether headers should be suppressed in the context.
@@ -38,4 +43,36 @@ func shouldUseFollow(ctx context.Context) bool {
 	}
 	useFollow, ok := val.(bool)
 	return ok && useFollow
+}
+
+// withAnalysisID sets the analysis ID in the context.
+func withAnalysisID(ctx context.Context, analysisID int64) context.Context {
+	return context.WithValue(ctx, analysisIDKey, analysisID)
+}
+
+// getAnalysisID returns the analysis ID from context.
+func getAnalysisID(ctx context.Context) (int64, bool) {
+	val := ctx.Value(analysisIDKey)
+	if val == nil {
+		return 0, false
+	}
+	id, ok := val.(int64)
+	return id, ok
+}
+
+// cacheManagerKey is the context key for the cache manager.
+type cacheManagerKeyType struct{}
+
+// contextWithCacheManager returns a new context with the given CacheManager.
+func contextWithCacheManager(ctx context.Context, mgr contract.CacheManager) context.Context {
+	return context.WithValue(ctx, cacheManagerKeyType{}, mgr)
+}
+
+// cacheManagerFromContext retrieves the CacheManager from the context.
+func cacheManagerFromContext(ctx context.Context) contract.CacheManager {
+	val := ctx.Value(cacheManagerKeyType{})
+	if mgr, ok := val.(contract.CacheManager); ok {
+		return mgr
+	}
+	return nil
 }

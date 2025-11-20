@@ -33,9 +33,9 @@ func WriteWithOutputFile(cfg *contract.Config, writer func(io.Writer) error, suc
 
 	if file != os.Stdout {
 		if cfg.UseEmojis {
-			_, _ = fmt.Fprintf(os.Stderr, "💾 %s to %s\n", successMsg, cfg.OutputFile)
+			_, _ = fmt.Fprintf(os.Stdout, "💾 %s to %s\n", successMsg, cfg.OutputFile)
 		} else {
-			_, _ = fmt.Fprintf(os.Stderr, "%s to %s\n", successMsg, cfg.OutputFile)
+			_, _ = fmt.Fprintf(os.Stdout, "%s to %s\n", successMsg, cfg.OutputFile)
 		}
 	}
 	return nil

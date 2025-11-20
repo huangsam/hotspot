@@ -4,6 +4,8 @@ package contract
 import (
 	"context"
 	"time"
+
+	"github.com/huangsam/hotspot/schema"
 )
 
 // GitClient defines the necessary operations for complex Git analysis.
@@ -48,6 +50,7 @@ type GitClient interface {
 // This allows the cache layer to be mocked for testing.
 type CacheManager interface {
 	GetActivityStore() CacheStore
+	GetAnalysisStore() AnalysisStore
 }
 
 // CacheStore defines the interface for cache data storage.
@@ -55,5 +58,23 @@ type CacheManager interface {
 type CacheStore interface {
 	Get(key string) ([]byte, int, int64, error)
 	Set(key string, value []byte, version int, timestamp int64) error
+	Close() error
+}
+
+// AnalysisStore defines the interface for tracking analysis runs and storing metrics.
+type AnalysisStore interface {
+	// BeginAnalysis creates a new analysis run and returns its unique ID
+	BeginAnalysis(startTime time.Time, configParams map[string]any) (int64, error)
+
+	// EndAnalysis updates the analysis run with completion data
+	EndAnalysis(analysisID int64, endTime time.Time, totalFiles int) error
+
+	// RecordFileMetrics stores raw git metrics for a file
+	RecordFileMetrics(analysisID int64, filePath string, metrics schema.FileMetrics) error
+
+	// RecordFileScores stores final scores for a file
+	RecordFileScores(analysisID int64, filePath string, scores schema.FileScores) error
+
+	// Close closes the underlying connection
 	Close() error
 }

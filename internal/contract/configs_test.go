@@ -339,6 +339,132 @@ func TestProcessAndValidate(t *testing.T) {
 				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
 			},
 		},
+		{
+			name: "analysis backend sqlite",
+			input: &ConfigRawInput{
+				Limit:             10,
+				Workers:           4,
+				Mode:              string(schema.HotMode),
+				Precision:         1,
+				Output:            "text",
+				Exclude:           "",
+				RepoPathStr:       ".",
+				CacheBackend:      string(schema.SQLiteBackend),
+				AnalysisBackend:   string(schema.SQLiteBackend),
+				AnalysisDBConnect: "analysis.db",
+				Emoji:             "no",
+				Color:             "yes",
+			},
+			expectError: false,
+			setupMock: func(mock *MockGitClient, workDir string) {
+				ctx := context.Background()
+				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
+			},
+		},
+		{
+			name: "analysis backend mysql with connection string",
+			input: &ConfigRawInput{
+				Limit:             10,
+				Workers:           4,
+				Mode:              string(schema.HotMode),
+				Precision:         1,
+				Output:            "text",
+				Exclude:           "",
+				RepoPathStr:       ".",
+				CacheBackend:      string(schema.MySQLBackend),
+				CacheDBConnect:    "user:pass@tcp(localhost:3306)/cache",
+				AnalysisBackend:   string(schema.MySQLBackend),
+				AnalysisDBConnect: "user:pass@tcp(localhost:3306)/analysis",
+				Emoji:             "no",
+				Color:             "yes",
+			},
+			expectError: false,
+			setupMock: func(mock *MockGitClient, workDir string) {
+				ctx := context.Background()
+				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
+			},
+		},
+		{
+			name: "analysis backend same as cache backend with different db",
+			input: &ConfigRawInput{
+				Limit:             10,
+				Workers:           4,
+				Mode:              string(schema.HotMode),
+				Precision:         1,
+				Output:            "text",
+				Exclude:           "",
+				RepoPathStr:       ".",
+				CacheBackend:      string(schema.MySQLBackend),
+				CacheDBConnect:    "user:pass@tcp(localhost:3306)/cache",
+				AnalysisBackend:   string(schema.MySQLBackend),
+				AnalysisDBConnect: "user:pass@tcp(localhost:3306)/analysis",
+				Emoji:             "no",
+				Color:             "yes",
+			},
+			expectError: false,
+			setupMock: func(mock *MockGitClient, workDir string) {
+				ctx := context.Background()
+				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
+			},
+		},
+		{
+			name: "analysis backend same as cache backend with same db should fail",
+			input: &ConfigRawInput{
+				Limit:             10,
+				Workers:           4,
+				Mode:              string(schema.HotMode),
+				Precision:         1,
+				Output:            "text",
+				Exclude:           "",
+				RepoPathStr:       ".",
+				CacheBackend:      string(schema.MySQLBackend),
+				CacheDBConnect:    "user:pass@tcp(localhost:3306)/hotspot",
+				AnalysisBackend:   string(schema.MySQLBackend),
+				AnalysisDBConnect: "user:pass@tcp(localhost:3306)/hotspot",
+				Emoji:             "no",
+				Color:             "yes",
+			},
+			expectError: true,
+			setupMock:   nil,
+		},
+		{
+			name: "invalid analysis backend",
+			input: &ConfigRawInput{
+				Limit:           10,
+				Workers:         4,
+				Mode:            string(schema.HotMode),
+				Precision:       1,
+				Output:          "text",
+				Exclude:         "",
+				RepoPathStr:     ".",
+				CacheBackend:    string(schema.SQLiteBackend),
+				AnalysisBackend: "invalid_backend",
+				Emoji:           "no",
+				Color:           "yes",
+			},
+			expectError: true,
+			setupMock:   nil,
+		},
+		{
+			name: "both sqlite with same explicit database path should fail",
+			input: &ConfigRawInput{
+				Limit:             10,
+				Workers:           4,
+				Mode:              string(schema.HotMode),
+				Precision:         1,
+				Output:            "text",
+				Exclude:           "",
+				RepoPathStr:       ".",
+				CacheBackend:      string(schema.SQLiteBackend),
+				CacheDBConnect:    "/tmp/same.db",
+				AnalysisBackend:   string(schema.SQLiteBackend),
+				AnalysisDBConnect: "/tmp/same.db",
+				Emoji:             "no",
+				Color:             "yes",
+			},
+			expectError: true,
+			setupMock:   nil,
+		},
 	}
 
 	for _, tt := range tests {

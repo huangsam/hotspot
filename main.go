@@ -57,7 +57,7 @@ func startProfiling() error {
 	}
 
 	// Memory profiling will be captured at the end
-	_, err = fmt.Fprintf(os.Stderr, "Profiling enabled. CPU profile: %s.cpu.prof, Memory profile: %s.mem.prof\n", profile.Prefix, profile.Prefix)
+	_, err = fmt.Fprintf(os.Stdout, "Profiling enabled. CPU profile: %s.cpu.prof, Memory profile: %s.mem.prof\n", profile.Prefix, profile.Prefix)
 	return err
 }
 
@@ -80,7 +80,7 @@ func stopProfiling() error {
 		return fmt.Errorf("could not write memory profile: %w", err)
 	}
 
-	_, err = fmt.Fprintf(os.Stderr, "Profiling complete. Use 'go tool pprof %s.cpu.prof' to analyze.\n", profile.Prefix)
+	_, err = fmt.Fprintf(os.Stdout, "Profiling complete. Use 'go tool pprof %s.cpu.prof' to analyze.\n", profile.Prefix)
 	return err
 }
 
@@ -120,6 +120,8 @@ func initConfig() {
 	viper.SetDefault("lookback", "6 months")
 	viper.SetDefault("cache-backend", schema.SQLiteBackend)
 	viper.SetDefault("cache-db-connect", "")
+	viper.SetDefault("analysis-backend", "")
+	viper.SetDefault("analysis-db-connect", "")
 	viper.SetDefault("emoji", "no")
 	viper.SetDefault("color", "yes")
 }
@@ -166,7 +168,7 @@ func sharedSetup(ctx context.Context, _ *cobra.Command, args []string) error {
 	}
 
 	// 5. Initialize persistence layer with validated config
-	if err := iocache.InitCaching(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
+	if err := iocache.InitCaching(cfg.CacheBackend, cfg.CacheDBConnect, cfg.AnalysisBackend, cfg.AnalysisDBConnect); err != nil {
 		return fmt.Errorf("failed to initialize persistence: %w", err)
 	}
 
@@ -198,8 +200,8 @@ func cacheSetup() error {
 		return err
 	}
 
-	// Initialize caching with the loaded config
-	if err := iocache.InitCaching(backend, connStr); err != nil {
+	// Initialize caching with the loaded config (no analysis tracking for cache commands)
+	if err := iocache.InitCaching(backend, connStr, "", ""); err != nil {
 		return fmt.Errorf("failed to initialize cache: %w", err)
 	}
 
@@ -209,9 +211,45 @@ func cacheSetup() error {
 	return nil
 }
 
+// analysisSetup loads minimal configuration needed for analysis operations.
+// This is used by commands that need analysis access without full shared setup.
+func analysisSetup() error {
+	// Load config file if present (similar to sharedSetup but minimal)
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return fmt.Errorf("error reading config file: %w", err)
+		}
+		// Config file not found, use defaults/env/flags
+	}
+
+	// Get analysis-related config values
+	backend := schema.CacheBackend(viper.GetString("analysis-backend"))
+	connStr := viper.GetString("analysis-db-connect")
+
+	// Basic validation for database backends
+	if err := contract.ValidateDatabaseConnectionString(backend, connStr); err != nil {
+		return err
+	}
+
+	// Initialize caching with the loaded config (no cache tracking for analysis commands)
+	if err := iocache.InitCaching(schema.NoneBackend, "", backend, connStr); err != nil {
+		return fmt.Errorf("failed to initialize analysis: %w", err)
+	}
+
+	cfg.AnalysisBackend = backend
+	cfg.AnalysisDBConnect = connStr
+
+	return nil
+}
+
 // cacheSetupWrapper wraps initCacheConfig to provide PreRunE for cache commands.
 func cacheSetupWrapper(_ *cobra.Command, _ []string) error {
 	return cacheSetup()
+}
+
+// analysisSetupWrapper wraps analysisSetup to provide PreRunE for analysis commands.
+func analysisSetupWrapper(_ *cobra.Command, _ []string) error {
+	return analysisSetup()
 }
 
 // filesCmd focuses on tactical, file-level analysis.
@@ -341,10 +379,35 @@ var cacheClearCmd = &cobra.Command{
 	Long:    `The clear subcommand removes all cached data for the current backend configuration.`,
 	PreRunE: cacheSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := iocache.ClearCache(cfg.CacheBackend, contract.GetDBFilePath(), cfg.CacheDBConnect); err != nil {
+		if err := iocache.ClearCache(cfg.CacheBackend, contract.GetCacheDBFilePath(), cfg.CacheDBConnect); err != nil {
 			contract.LogFatal("Failed to clear cache", err)
 		}
 		fmt.Println("Cache cleared successfully.")
+	},
+}
+
+// analysisCmd focused on analysis data management.
+//
+// Note: Analysis subcommands use minimal initialization (analysisSetup) instead of
+// the full sharedSetup used by analysis commands. This avoids Git repo validation
+// and complex config processing for simple analysis operations.
+var analysisCmd = &cobra.Command{
+	Use:   "analysis",
+	Short: "Manage analysis data operations.",
+	Long:  `The analysis command provides subcommands for managing the application's analysis data.`,
+}
+
+// analysisClearCmd clears the analysis data.
+var analysisClearCmd = &cobra.Command{
+	Use:     "clear",
+	Short:   "Clear the analysis data for the configured backend.",
+	Long:    `The clear subcommand removes all analysis tracking data for the current backend configuration.`,
+	PreRunE: analysisSetupWrapper,
+	Run: func(_ *cobra.Command, _ []string) {
+		if err := iocache.ClearAnalysis(cfg.AnalysisBackend, contract.GetAnalysisDBFilePath(), cfg.AnalysisDBConnect); err != nil {
+			contract.LogFatal("Failed to clear analysis data", err)
+		}
+		fmt.Println("Analysis data cleared successfully.")
 	},
 }
 
@@ -361,6 +424,7 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(metricsCmd)
 	rootCmd.AddCommand(cacheCmd)
+	rootCmd.AddCommand(analysisCmd)
 
 	// Add the file comparison subcommand to the parent compare command
 	compareCmd.AddCommand(compareFilesCmd)
@@ -368,6 +432,9 @@ func init() {
 
 	// Add the clear subcommand to the parent cache command
 	cacheCmd.AddCommand(cacheClearCmd)
+
+	// Add the clear subcommand to the parent analysis command
+	analysisCmd.AddCommand(analysisClearCmd)
 
 	// Bind all persistent flags of rootCmd to Viper
 	rootCmd.PersistentFlags().Bool("detail", false, "Print per-target metadata (lines of code, size, age)")
@@ -386,6 +453,8 @@ func init() {
 	rootCmd.PersistentFlags().Int("width", 0, "Terminal width override (0 = auto-detect)")
 	rootCmd.PersistentFlags().String("cache-backend", string(schema.SQLiteBackend), "Cache backend: sqlite or mysql or postgresql or none")
 	rootCmd.PersistentFlags().String("cache-db-connect", "", "Database connection string for mysql/postgresql (e.g., user:pass@tcp(host:port)/dbname)")
+	rootCmd.PersistentFlags().String("analysis-backend", "", "Analysis tracking backend: sqlite or mysql or postgresql or none (empty = disabled)")
+	rootCmd.PersistentFlags().String("analysis-db-connect", "", "Database connection string for analysis tracking (must differ from cache-db-connect)")
 	rootCmd.PersistentFlags().String("color", "yes", "Enable colored labels in output (yes/no/true/false/1/0)")
 	rootCmd.PersistentFlags().String("emoji", "no", "Enable emojis in output headers (yes/no/true/false/1/0)")
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {

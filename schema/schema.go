@@ -202,3 +202,24 @@ type MetricsModeWithData struct {
 	Weights map[string]float64 `json:"weights"`
 	Formula string             `json:"formula"`
 }
+
+// FileMetrics represents raw git metrics for a single file.
+type FileMetrics struct {
+	AnalysisTime     time.Time
+	TotalCommits     int
+	TotalChurn       int
+	ContributorCount int
+	AgeDays          float64
+	GiniCoefficient  float64
+	FileOwner        string
+}
+
+// FileScores represents final computed scores for a single file.
+type FileScores struct {
+	AnalysisTime    time.Time
+	HotScore        float64 // hot mode score
+	RiskScore       float64 // risk mode score
+	ComplexityScore float64 // complexity mode score
+	StaleScore      float64 // stale mode score
+	ScoreLabel      string  // current mode name
+}

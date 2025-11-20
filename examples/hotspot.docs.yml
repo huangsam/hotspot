@@ -58,6 +58,19 @@
 # PostgreSQL format: host=localhost port=5432 user=postgres password=mysecretpassword dbname=postgres
 # cache-db-connect: ""
 
+# analysis-backend: The backend to use for storing analysis tracking results.
+# Valid values: sqlite, mysql, postgresql, none (empty = disabled)
+# Corresponds to: --analysis-backend
+# Default: "" (disabled)
+# analysis-backend: sqlite
+
+# analysis-db-connect: Database connection string for analysis tracking (mysql/postgresql backends).
+# Must differ from cache-db-connect if both use the same backend type.
+# Corresponds to: --analysis-db-connect
+# MySQL format: user:password@tcp(host:port)/dbname
+# PostgreSQL format: host=localhost port=5432 user=postgres password=mysecretpassword dbname=postgres
+# analysis-db-connect: ""
+
 # emoji: Enable emojis in output headers.
 # Valid values: yes, no, true, false, 1, 0
 # Corresponds to: --emoji
