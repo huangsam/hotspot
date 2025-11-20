@@ -542,7 +542,7 @@ func (as *AnalysisStoreImpl) GetStatus() (schema.AnalysisStatus, error) {
 		}
 
 		// Get total files analyzed
-		filesQuery := fmt.Sprintf("SELECT SUM(total_files_analyzed) FROM %s", quoteTableName(analysisRunsTable, as.backend))
+		filesQuery := fmt.Sprintf("SELECT COALESCE(SUM(total_files_analyzed), 0) FROM %s", quoteTableName(analysisRunsTable, as.backend))
 		row = as.db.QueryRow(filesQuery)
 		if err := row.Scan(&status.TotalFilesAnalyzed); err != nil {
 			return status, fmt.Errorf("failed to get total files analyzed: %w", err)
