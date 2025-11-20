@@ -478,6 +478,122 @@ func (as *AnalysisStoreImpl) GetStatus() (schema.AnalysisStatus, error) {
 	return status, nil
 }
 
+// GetAllAnalysisRuns retrieves all analysis runs from the store.
+func (as *AnalysisStoreImpl) GetAllAnalysisRuns() ([]schema.AnalysisRunRecord, error) {
+	// Skip for NoneBackend
+	if as.backend == schema.NoneBackend || as.db == nil {
+		return nil, nil
+	}
+
+	quotedTableName := quoteTableName(analysisRunsTable, as.backend)
+	query := fmt.Sprintf("SELECT analysis_id, start_time, end_time, run_duration_ms, total_files_analyzed, config_params FROM %s ORDER BY analysis_id", quotedTableName)
+
+	rows, err := as.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query analysis runs: %w", err)
+	}
+	defer rows.Close()
+
+	var results []schema.AnalysisRunRecord
+
+	for rows.Next() {
+		var record schema.AnalysisRunRecord
+
+		switch as.backend {
+		case schema.SQLiteBackend:
+			var startTimeStr string
+			var endTimeStr *string
+			if err := rows.Scan(&record.AnalysisID, &startTimeStr, &endTimeStr, &record.RunDurationMs, &record.TotalFilesAnalyzed, &record.ConfigParams); err != nil {
+				return nil, fmt.Errorf("failed to scan analysis run: %w", err)
+			}
+			// Parse start time
+			startTime, err := time.Parse(time.RFC3339Nano, startTimeStr)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse start_time: %w", err)
+			}
+			record.StartTime = startTime
+			// Parse end time if present
+			if endTimeStr != nil {
+				endTime, err := time.Parse(time.RFC3339Nano, *endTimeStr)
+				if err != nil {
+					return nil, fmt.Errorf("failed to parse end_time: %w", err)
+				}
+				record.EndTime = &endTime
+			}
+		default: // MySQL and PostgreSQL
+			if err := rows.Scan(&record.AnalysisID, &record.StartTime, &record.EndTime, &record.RunDurationMs, &record.TotalFilesAnalyzed, &record.ConfigParams); err != nil {
+				return nil, fmt.Errorf("failed to scan analysis run: %w", err)
+			}
+		}
+
+		results = append(results, record)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating analysis runs: %w", err)
+	}
+
+	return results, nil
+}
+
+// GetAllFileScoresMetrics retrieves all file scores and metrics from the store.
+func (as *AnalysisStoreImpl) GetAllFileScoresMetrics() ([]schema.FileScoresMetricsRecord, error) {
+	// Skip for NoneBackend
+	if as.backend == schema.NoneBackend || as.db == nil {
+		return nil, nil
+	}
+
+	quotedTableName := quoteTableName(fileScoresMetricsTable, as.backend)
+	query := fmt.Sprintf(`SELECT analysis_id, file_path, analysis_time, total_commits, total_churn, 
+		contributor_count, age_days, gini_coefficient, file_owner, 
+		score_hot, score_risk, score_complexity, score_stale, score_label 
+		FROM %s ORDER BY analysis_id, file_path`, quotedTableName)
+
+	rows, err := as.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query file scores metrics: %w", err)
+	}
+	defer rows.Close()
+
+	var results []schema.FileScoresMetricsRecord
+
+	for rows.Next() {
+		var record schema.FileScoresMetricsRecord
+
+		switch as.backend {
+		case schema.SQLiteBackend:
+			var analysisTimeStr string
+			if err := rows.Scan(&record.AnalysisID, &record.FilePath, &analysisTimeStr, &record.TotalCommits,
+				&record.TotalChurn, &record.ContributorCount, &record.AgeDays, &record.GiniCoefficient,
+				&record.FileOwner, &record.ScoreHot, &record.ScoreRisk, &record.ScoreComplexity,
+				&record.ScoreStale, &record.ScoreLabel); err != nil {
+				return nil, fmt.Errorf("failed to scan file scores metrics: %w", err)
+			}
+			// Parse analysis time
+			analysisTime, err := time.Parse(time.RFC3339Nano, analysisTimeStr)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse analysis_time: %w", err)
+			}
+			record.AnalysisTime = analysisTime
+		default: // MySQL and PostgreSQL
+			if err := rows.Scan(&record.AnalysisID, &record.FilePath, &record.AnalysisTime, &record.TotalCommits,
+				&record.TotalChurn, &record.ContributorCount, &record.AgeDays, &record.GiniCoefficient,
+				&record.FileOwner, &record.ScoreHot, &record.ScoreRisk, &record.ScoreComplexity,
+				&record.ScoreStale, &record.ScoreLabel); err != nil {
+				return nil, fmt.Errorf("failed to scan file scores metrics: %w", err)
+			}
+		}
+
+		results = append(results, record)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating file scores metrics: %w", err)
+	}
+
+	return results, nil
+}
+
 // formatTime converts a time.Time to the appropriate format for the backend.
 func formatTime(t time.Time, backend schema.CacheBackend) any {
 	switch backend {

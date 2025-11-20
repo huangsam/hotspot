@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/huangsam/hotspot/schema"
 	"github.com/parquet-go/parquet-go"
 )
 
@@ -248,4 +249,44 @@ func MockFetchFileScoresMetrics() []FileScoresMetrics {
 			ScoreLabel:       "risk",
 		},
 	}
+}
+
+// ConvertAnalysisRunRecords converts schema.AnalysisRunRecord to AnalysisRun for Parquet export.
+func ConvertAnalysisRunRecords(records []schema.AnalysisRunRecord) []AnalysisRun {
+	result := make([]AnalysisRun, len(records))
+	for i, record := range records {
+		result[i] = AnalysisRun{
+			AnalysisID:         record.AnalysisID,
+			StartTime:          record.StartTime,
+			EndTime:            record.EndTime,
+			RunDurationMs:      record.RunDurationMs,
+			TotalFilesAnalyzed: record.TotalFilesAnalyzed,
+			ConfigParams:       record.ConfigParams,
+		}
+	}
+	return result
+}
+
+// ConvertFileScoresMetricsRecords converts schema.FileScoresMetricsRecord to FileScoresMetrics for Parquet export.
+func ConvertFileScoresMetricsRecords(records []schema.FileScoresMetricsRecord) []FileScoresMetrics {
+	result := make([]FileScoresMetrics, len(records))
+	for i, record := range records {
+		result[i] = FileScoresMetrics{
+			AnalysisID:       record.AnalysisID,
+			FilePath:         record.FilePath,
+			AnalysisTime:     record.AnalysisTime,
+			TotalCommits:     record.TotalCommits,
+			TotalChurn:       record.TotalChurn,
+			ContributorCount: record.ContributorCount,
+			AgeDays:          record.AgeDays,
+			GiniCoefficient:  record.GiniCoefficient,
+			FileOwner:        record.FileOwner,
+			ScoreHot:         record.ScoreHot,
+			ScoreRisk:        record.ScoreRisk,
+			ScoreComplexity:  record.ScoreComplexity,
+			ScoreStale:       record.ScoreStale,
+			ScoreLabel:       record.ScoreLabel,
+		}
+	}
+	return result
 }

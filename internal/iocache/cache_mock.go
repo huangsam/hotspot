@@ -96,3 +96,15 @@ func (m *MockAnalysisStore) GetStatus() (schema.AnalysisStatus, error) {
 	args := m.Called()
 	return args.Get(0).(schema.AnalysisStatus), args.Error(1)
 }
+
+// GetAllAnalysisRuns implements the AnalysisStore interface.
+func (m *MockAnalysisStore) GetAllAnalysisRuns() ([]schema.AnalysisRunRecord, error) {
+	args := m.Called()
+	return args.Get(0).([]schema.AnalysisRunRecord), args.Error(1)
+}
+
+// GetAllFileScoresMetrics implements the AnalysisStore interface.
+func (m *MockAnalysisStore) GetAllFileScoresMetrics() ([]schema.FileScoresMetricsRecord, error) {
+	args := m.Called()
+	return args.Get(0).([]schema.FileScoresMetricsRecord), args.Error(1)
+}
