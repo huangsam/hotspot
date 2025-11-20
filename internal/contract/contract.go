@@ -70,11 +70,8 @@ type AnalysisStore interface {
 	// EndAnalysis updates the analysis run with completion data
 	EndAnalysis(analysisID int64, endTime time.Time, totalFiles int) error
 
-	// RecordFileMetrics stores raw git metrics for a file
-	RecordFileMetrics(analysisID int64, filePath string, metrics schema.FileMetrics) error
-
-	// RecordFileScores stores final scores for a file
-	RecordFileScores(analysisID int64, filePath string, scores schema.FileScores) error
+	// RecordFileMetricsAndScores stores both raw git metrics and final scores for a file in one operation
+	RecordFileMetricsAndScores(analysisID int64, filePath string, metrics schema.FileMetrics, scores schema.FileScores) error
 
 	// GetStatus returns status information about the analysis store
 	GetStatus() (schema.AnalysisStatus, error)

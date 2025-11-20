@@ -133,8 +133,8 @@ func ClearAnalysis(backend schema.CacheBackend, dbFilePath, connStr string) erro
 		return nil
 
 	case schema.MySQLBackend:
-		// Clear all three analysis tables
-		tables := []string{analysisRunsTable, rawGitMetricsTable, finalScoresTable}
+		// Clear analysis tables
+		tables := []string{analysisRunsTable, fileScoresMetricsTable}
 		for _, table := range tables {
 			if err := clearSQLTable("mysql", connStr, table); err != nil {
 				return err
@@ -143,8 +143,8 @@ func ClearAnalysis(backend schema.CacheBackend, dbFilePath, connStr string) erro
 		return nil
 
 	case schema.PostgreSQLBackend:
-		// Clear all three analysis tables
-		tables := []string{analysisRunsTable, rawGitMetricsTable, finalScoresTable}
+		// Clear analysis tables
+		tables := []string{analysisRunsTable, fileScoresMetricsTable}
 		for _, table := range tables {
 			if err := clearSQLTable("pgx", connStr, table); err != nil {
 				return err

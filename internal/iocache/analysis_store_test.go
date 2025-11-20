@@ -23,10 +23,7 @@ func TestAnalysisStore_NoneBackend(t *testing.T) {
 	err = store.EndAnalysis(1, time.Now(), 10)
 	assert.NoError(t, err)
 
-	err = store.RecordFileMetrics(1, "test.go", schema.FileMetrics{})
-	assert.NoError(t, err)
-
-	err = store.RecordFileScores(1, "test.go", schema.FileScores{})
+	err = store.RecordFileMetricsAndScores(1, "test.go", schema.FileMetrics{}, schema.FileScores{})
 	assert.NoError(t, err)
 
 	err = store.Close()
@@ -51,7 +48,7 @@ func TestAnalysisStore_SQLite(t *testing.T) {
 	require.NoError(t, err)
 	assert.Greater(t, analysisID, int64(0))
 
-	// Test RecordFileMetrics
+	// Test RecordFileMetricsAndScores
 	metrics := schema.FileMetrics{
 		AnalysisTime:     time.Now(),
 		TotalCommits:     100,
@@ -61,10 +58,6 @@ func TestAnalysisStore_SQLite(t *testing.T) {
 		GiniCoefficient:  0.5,
 		FileOwner:        "test-owner",
 	}
-	err = store.RecordFileMetrics(analysisID, "test/file.go", metrics)
-	assert.NoError(t, err)
-
-	// Test RecordFileScores
 	scores := schema.FileScores{
 		AnalysisTime:    time.Now(),
 		HotScore:        75.5,
@@ -73,7 +66,7 @@ func TestAnalysisStore_SQLite(t *testing.T) {
 		StaleScore:      70.1,
 		ScoreLabel:      "hot",
 	}
-	err = store.RecordFileScores(analysisID, "test/file.go", scores)
+	err = store.RecordFileMetricsAndScores(analysisID, "test/file.go", metrics, scores)
 	assert.NoError(t, err)
 
 	// Test EndAnalysis
@@ -104,9 +97,6 @@ func TestAnalysisStore_MultipleFiles(t *testing.T) {
 			GiniCoefficient:  0.5,
 			FileOwner:        "owner",
 		}
-		err = store.RecordFileMetrics(analysisID, file, metrics)
-		assert.NoError(t, err)
-
 		scores := schema.FileScores{
 			AnalysisTime:    time.Now(),
 			HotScore:        75.5,
@@ -115,7 +105,7 @@ func TestAnalysisStore_MultipleFiles(t *testing.T) {
 			StaleScore:      70.1,
 			ScoreLabel:      "hot",
 		}
-		err = store.RecordFileScores(analysisID, file, scores)
+		err = store.RecordFileMetricsAndScores(analysisID, file, metrics, scores)
 		assert.NoError(t, err)
 	}
 
@@ -147,9 +137,6 @@ func TestAnalysisStore_MultipleRuns(t *testing.T) {
 			GiniCoefficient:  0.5,
 			FileOwner:        "owner",
 		}
-		err = store.RecordFileMetrics(id, "test.go", metrics)
-		assert.NoError(t, err)
-
 		scores := schema.FileScores{
 			AnalysisTime:    time.Now(),
 			HotScore:        75.5 + float64(i),
@@ -158,7 +145,7 @@ func TestAnalysisStore_MultipleRuns(t *testing.T) {
 			StaleScore:      70.1 + float64(i),
 			ScoreLabel:      "hot",
 		}
-		err = store.RecordFileScores(id, "test.go", scores)
+		err = store.RecordFileMetricsAndScores(id, "test.go", metrics, scores)
 		assert.NoError(t, err)
 
 		err = store.EndAnalysis(id, time.Now(), 1)
@@ -288,9 +275,6 @@ func TestAnalysisStore_GetStatus(t *testing.T) {
 				GiniCoefficient:  0.5,
 				FileOwner:        "owner",
 			}
-			err = store.RecordFileMetrics(id, "test.go", metrics)
-			assert.NoError(t, err)
-
 			scores := schema.FileScores{
 				AnalysisTime:    startTime,
 				HotScore:        75.5,
@@ -299,7 +283,7 @@ func TestAnalysisStore_GetStatus(t *testing.T) {
 				StaleScore:      70.1,
 				ScoreLabel:      "hot",
 			}
-			err = store.RecordFileScores(id, "test.go", scores)
+			err = store.RecordFileMetricsAndScores(id, "test.go", metrics, scores)
 			assert.NoError(t, err)
 
 			err = store.EndAnalysis(id, startTime.Add(time.Minute), 1)
@@ -319,8 +303,7 @@ func TestAnalysisStore_GetStatus(t *testing.T) {
 		assert.True(t, status.OldestRunTime.Equal(startTime) || !status.OldestRunTime.IsZero(), "Oldest run time should be set")
 		assert.Equal(t, 3, status.TotalFilesAnalyzed, "Total files analyzed should be 3")
 		assert.Contains(t, status.TableSizes, "hotspot_analysis_runs", "Should have analysis_runs table size")
-		assert.Contains(t, status.TableSizes, "hotspot_raw_git_metrics", "Should have raw_git_metrics table size")
-		assert.Contains(t, status.TableSizes, "hotspot_final_scores", "Should have final_scores table size")
+		assert.Contains(t, status.TableSizes, "hotspot_file_scores_metrics", "Should have file_scores_metrics table size")
 	})
 
 	t.Run("SQLite backend empty", func(t *testing.T) {
@@ -341,8 +324,7 @@ func TestAnalysisStore_GetStatus(t *testing.T) {
 		assert.True(t, status.OldestRunTime.IsZero(), "Oldest run time should be zero")
 		assert.Equal(t, 0, status.TotalFilesAnalyzed, "Total files analyzed should be 0")
 		assert.Contains(t, status.TableSizes, "hotspot_analysis_runs", "Should have analysis_runs table size")
-		assert.Contains(t, status.TableSizes, "hotspot_raw_git_metrics", "Should have raw_git_metrics table size")
-		assert.Contains(t, status.TableSizes, "hotspot_final_scores", "Should have final_scores table size")
+		assert.Contains(t, status.TableSizes, "hotspot_file_scores_metrics", "Should have file_scores_metrics table size")
 	})
 
 	t.Run("None backend", func(t *testing.T) {

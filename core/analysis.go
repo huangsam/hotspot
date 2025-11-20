@@ -281,9 +281,6 @@ func recordFileAnalysis(ctx context.Context, cfg *contract.Config, analysisID in
 		GiniCoefficient:  result.Gini,
 		FileOwner:        getOwnerString(result.Owners),
 	}
-	if err := analysisStore.RecordFileMetrics(analysisID, path, metrics); err != nil {
-		logTrackingError("RecordFileMetrics", path, err)
-	}
 
 	// Compute all four scoring modes
 	allScores := computeAllScores(result, cfg.CustomWeights)
@@ -297,8 +294,10 @@ func recordFileAnalysis(ctx context.Context, cfg *contract.Config, analysisID in
 		StaleScore:      allScores[schema.StaleMode],
 		ScoreLabel:      string(cfg.Mode),
 	}
-	if err := analysisStore.RecordFileScores(analysisID, path, scores); err != nil {
-		logTrackingError("RecordFileScores", path, err)
+
+	// Record both metrics and scores in one operation
+	if err := analysisStore.RecordFileMetricsAndScores(analysisID, path, metrics, scores); err != nil {
+		logTrackingError("RecordFileMetricsAndScores", path, err)
 	}
 }
 

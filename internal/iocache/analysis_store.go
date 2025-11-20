@@ -12,9 +12,8 @@ import (
 
 // Table names for analysis tracking.
 const (
-	analysisRunsTable  = "hotspot_analysis_runs"
-	rawGitMetricsTable = "hotspot_raw_git_metrics"
-	finalScoresTable   = "hotspot_final_scores"
+	analysisRunsTable      = "hotspot_analysis_runs"
+	fileScoresMetricsTable = "hotspot_file_scores_metrics"
 )
 
 // AnalysisStoreImpl implements the AnalysisStore interface.
@@ -91,15 +90,14 @@ func NewAnalysisStore(backend schema.CacheBackend, connStr string) (contract.Ana
 	}, nil
 }
 
-// createAnalysisTables creates all three analysis tracking tables.
+// createAnalysisTables creates the analysis tracking tables.
 func createAnalysisTables(db *sql.DB, backend schema.CacheBackend) error {
 	tables := []struct {
 		name  string
 		query string
 	}{
 		{analysisRunsTable, getCreateAnalysisRunsQuery(backend)},
-		{rawGitMetricsTable, getCreateRawGitMetricsQuery(backend)},
-		{finalScoresTable, getCreateFinalScoresQuery(backend)},
+		{fileScoresMetricsTable, getCreateFileScoresMetricsQuery(backend)},
 	}
 
 	for _, table := range tables {
@@ -154,9 +152,9 @@ func getCreateAnalysisRunsQuery(backend schema.CacheBackend) string {
 	}
 }
 
-// getCreateRawGitMetricsQuery returns the CREATE TABLE query for hotspot_raw_git_metrics.
-func getCreateRawGitMetricsQuery(backend schema.CacheBackend) string {
-	quotedTableName := quoteTableName(rawGitMetricsTable, backend)
+// getCreateFileScoresMetricsQuery returns the CREATE TABLE query for hotspot_file_scores_metrics.
+func getCreateFileScoresMetricsQuery(backend schema.CacheBackend) string {
+	quotedTableName := quoteTableName(fileScoresMetricsTable, backend)
 
 	switch backend {
 	case schema.MySQLBackend:
@@ -171,6 +169,11 @@ func getCreateRawGitMetricsQuery(backend schema.CacheBackend) string {
 				age_days DOUBLE NOT NULL,
 				gini_coefficient DOUBLE NOT NULL,
 				file_owner VARCHAR(100),
+				score_hot DOUBLE NOT NULL,
+				score_risk DOUBLE NOT NULL,
+				score_complexity DOUBLE NOT NULL,
+				score_stale DOUBLE NOT NULL,
+				score_label VARCHAR(50) NOT NULL,
 				PRIMARY KEY (analysis_id, file_path)
 			);
 		`, quotedTableName)
@@ -187,6 +190,11 @@ func getCreateRawGitMetricsQuery(backend schema.CacheBackend) string {
 				age_days DOUBLE PRECISION NOT NULL,
 				gini_coefficient DOUBLE PRECISION NOT NULL,
 				file_owner TEXT,
+				score_hot DOUBLE PRECISION NOT NULL,
+				score_risk DOUBLE PRECISION NOT NULL,
+				score_complexity DOUBLE PRECISION NOT NULL,
+				score_stale DOUBLE PRECISION NOT NULL,
+				score_label TEXT NOT NULL,
 				PRIMARY KEY (analysis_id, file_path)
 			);
 		`, quotedTableName)
@@ -203,53 +211,6 @@ func getCreateRawGitMetricsQuery(backend schema.CacheBackend) string {
 				age_days REAL NOT NULL,
 				gini_coefficient REAL NOT NULL,
 				file_owner TEXT,
-				PRIMARY KEY (analysis_id, file_path)
-			);
-		`, quotedTableName)
-	}
-}
-
-// getCreateFinalScoresQuery returns the CREATE TABLE query for hotspot_final_scores.
-func getCreateFinalScoresQuery(backend schema.CacheBackend) string {
-	quotedTableName := quoteTableName(finalScoresTable, backend)
-
-	switch backend {
-	case schema.MySQLBackend:
-		return fmt.Sprintf(`
-			CREATE TABLE IF NOT EXISTS %s (
-				analysis_id BIGINT NOT NULL,
-				file_path VARCHAR(512) NOT NULL,
-				analysis_time DATETIME(6) NOT NULL,
-				score_hot DOUBLE NOT NULL,
-				score_risk DOUBLE NOT NULL,
-				score_complexity DOUBLE NOT NULL,
-				score_stale DOUBLE NOT NULL,
-				score_label VARCHAR(50) NOT NULL,
-				PRIMARY KEY (analysis_id, file_path)
-			);
-		`, quotedTableName)
-
-	case schema.PostgreSQLBackend:
-		return fmt.Sprintf(`
-			CREATE TABLE IF NOT EXISTS %s (
-				analysis_id BIGINT NOT NULL,
-				file_path TEXT NOT NULL,
-				analysis_time TIMESTAMPTZ NOT NULL,
-				score_hot DOUBLE PRECISION NOT NULL,
-				score_risk DOUBLE PRECISION NOT NULL,
-				score_complexity DOUBLE PRECISION NOT NULL,
-				score_stale DOUBLE PRECISION NOT NULL,
-				score_label TEXT NOT NULL,
-				PRIMARY KEY (analysis_id, file_path)
-			);
-		`, quotedTableName)
-
-	default: // SQLite
-		return fmt.Sprintf(`
-			CREATE TABLE IF NOT EXISTS %s (
-				analysis_id INTEGER NOT NULL,
-				file_path TEXT NOT NULL,
-				analysis_time TEXT NOT NULL,
 				score_hot REAL NOT NULL,
 				score_risk REAL NOT NULL,
 				score_complexity REAL NOT NULL,
@@ -361,14 +322,14 @@ func (as *AnalysisStoreImpl) EndAnalysis(analysisID int64, endTime time.Time, to
 	return nil
 }
 
-// RecordFileMetrics stores raw git metrics for a file.
-func (as *AnalysisStoreImpl) RecordFileMetrics(analysisID int64, filePath string, metrics schema.FileMetrics) error {
+// RecordFileMetricsAndScores stores both raw git metrics and final scores for a file in one operation.
+func (as *AnalysisStoreImpl) RecordFileMetricsAndScores(analysisID int64, filePath string, metrics schema.FileMetrics, scores schema.FileScores) error {
 	// Skip for NoneBackend
 	if as.backend == schema.NoneBackend || as.db == nil {
 		return nil
 	}
 
-	quotedTableName := quoteTableName(rawGitMetricsTable, as.backend)
+	quotedTableName := quoteTableName(fileScoresMetricsTable, as.backend)
 
 	var query string
 	var args []any
@@ -378,92 +339,44 @@ func (as *AnalysisStoreImpl) RecordFileMetrics(analysisID int64, filePath string
 	case schema.MySQLBackend:
 		query = fmt.Sprintf(`
 			INSERT INTO %s (analysis_id, file_path, analysis_time, total_commits, total_churn,
-			                 contributor_count, age_days, gini_coefficient, file_owner)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			                 contributor_count, age_days, gini_coefficient, file_owner,
+			                 score_hot, score_risk, score_complexity, score_stale, score_label)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`, quotedTableName)
 		args = []any{
 			analysisID, filePath, analysisTime, metrics.TotalCommits, metrics.TotalChurn,
 			metrics.ContributorCount, metrics.AgeDays, metrics.GiniCoefficient, metrics.FileOwner,
+			scores.HotScore, scores.RiskScore, scores.ComplexityScore, scores.StaleScore, scores.ScoreLabel,
 		}
 	case schema.PostgreSQLBackend:
 		query = fmt.Sprintf(`
 			INSERT INTO %s (analysis_id, file_path, analysis_time, total_commits, total_churn,
-			                 contributor_count, age_days, gini_coefficient, file_owner)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			                 contributor_count, age_days, gini_coefficient, file_owner,
+			                 score_hot, score_risk, score_complexity, score_stale, score_label)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		`, quotedTableName)
 		args = []any{
 			analysisID, filePath, analysisTime, metrics.TotalCommits, metrics.TotalChurn,
 			metrics.ContributorCount, metrics.AgeDays, metrics.GiniCoefficient, metrics.FileOwner,
+			scores.HotScore, scores.RiskScore, scores.ComplexityScore, scores.StaleScore, scores.ScoreLabel,
 		}
 	default: // SQLite
 		query = fmt.Sprintf(`
 			INSERT INTO %s (analysis_id, file_path, analysis_time, total_commits, total_churn,
-			                 contributor_count, age_days, gini_coefficient, file_owner)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			                 contributor_count, age_days, gini_coefficient, file_owner,
+			                 score_hot, score_risk, score_complexity, score_stale, score_label)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`, quotedTableName)
 		args = []any{
 			analysisID, filePath, analysisTime, metrics.TotalCommits, metrics.TotalChurn,
 			metrics.ContributorCount, metrics.AgeDays, metrics.GiniCoefficient, metrics.FileOwner,
+			scores.HotScore, scores.RiskScore, scores.ComplexityScore, scores.StaleScore, scores.ScoreLabel,
 		}
 	}
 
 	_, err := as.db.Exec(query, args...)
 	if err != nil {
-		return fmt.Errorf("failed to insert file metrics: %w", err)
-	}
-
-	return nil
-}
-
-// RecordFileScores stores final scores for a file.
-func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string, scores schema.FileScores) error {
-	// Skip for NoneBackend
-	if as.backend == schema.NoneBackend || as.db == nil {
-		return nil
-	}
-
-	quotedTableName := quoteTableName(finalScoresTable, as.backend)
-
-	var query string
-	var args []any
-
-	analysisTime := formatTime(scores.AnalysisTime, as.backend)
-	switch as.backend {
-	case schema.MySQLBackend:
-		query = fmt.Sprintf(`
-			INSERT INTO %s (analysis_id, file_path, analysis_time, score_hot, score_risk,
-			                 score_complexity, score_stale, score_label)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		`, quotedTableName)
-		args = []any{
-			analysisID, filePath, analysisTime, scores.HotScore, scores.RiskScore,
-			scores.ComplexityScore, scores.StaleScore, scores.ScoreLabel,
-		}
-	case schema.PostgreSQLBackend:
-		query = fmt.Sprintf(`
-			INSERT INTO %s (analysis_id, file_path, analysis_time, score_hot, score_risk,
-			                 score_complexity, score_stale, score_label)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		`, quotedTableName)
-		args = []any{
-			analysisID, filePath, analysisTime, scores.HotScore, scores.RiskScore,
-			scores.ComplexityScore, scores.StaleScore, scores.ScoreLabel,
-		}
-	default: // SQLite
-		query = fmt.Sprintf(`
-			INSERT INTO %s (analysis_id, file_path, analysis_time, score_hot, score_risk,
-			                 score_complexity, score_stale, score_label)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		`, quotedTableName)
-		args = []any{
-			analysisID, filePath, analysisTime, scores.HotScore, scores.RiskScore,
-			scores.ComplexityScore, scores.StaleScore, scores.ScoreLabel,
-		}
-	}
-
-	_, err := as.db.Exec(query, args...)
-	if err != nil {
-		return fmt.Errorf("failed to insert file scores: %w", err)
+		return fmt.Errorf("failed to insert file metrics and scores: %w", err)
 	}
 
 	return nil
@@ -550,7 +463,7 @@ func (as *AnalysisStoreImpl) GetStatus() (schema.AnalysisStatus, error) {
 	}
 
 	// Get table sizes
-	tables := []string{analysisRunsTable, rawGitMetricsTable, finalScoresTable}
+	tables := []string{analysisRunsTable, fileScoresMetricsTable}
 	for _, table := range tables {
 		quotedTable := quoteTableName(table, as.backend)
 		countQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s", quotedTable)

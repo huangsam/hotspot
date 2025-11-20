@@ -79,15 +79,9 @@ func (m *MockAnalysisStore) EndAnalysis(analysisID int64, endTime time.Time, tot
 	return args.Error(0)
 }
 
-// RecordFileMetrics implements the AnalysisStore interface.
-func (m *MockAnalysisStore) RecordFileMetrics(analysisID int64, filePath string, metrics schema.FileMetrics) error {
-	args := m.Called(analysisID, filePath, metrics)
-	return args.Error(0)
-}
-
-// RecordFileScores implements the AnalysisStore interface.
-func (m *MockAnalysisStore) RecordFileScores(analysisID int64, filePath string, scores schema.FileScores) error {
-	args := m.Called(analysisID, filePath, scores)
+// RecordFileMetricsAndScores implements the AnalysisStore interface.
+func (m *MockAnalysisStore) RecordFileMetricsAndScores(analysisID int64, filePath string, metrics schema.FileMetrics, scores schema.FileScores) error {
+	args := m.Called(analysisID, filePath, metrics, scores)
 	return args.Error(0)
 }
 
