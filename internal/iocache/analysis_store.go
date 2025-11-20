@@ -305,21 +305,55 @@ func (as *AnalysisStoreImpl) EndAnalysis(analysisID int64, endTime time.Time, to
 		return nil
 	}
 
+	// First, get the start_time to calculate duration
 	quotedTableName := quoteTableName(analysisRunsTable, as.backend)
+	var startTime time.Time
 
 	var query string
+	switch as.backend {
+	case schema.PostgreSQLBackend:
+		query = fmt.Sprintf(`SELECT start_time FROM %s WHERE analysis_id = $1`, quotedTableName)
+	default: // SQLite and MySQL
+		query = fmt.Sprintf(`SELECT start_time FROM %s WHERE analysis_id = ?`, quotedTableName)
+	}
+
+	row := as.db.QueryRow(query, analysisID)
+
+	// Handle different time storage formats per backend
+	switch as.backend {
+	case schema.SQLiteBackend:
+		var startTimeStr string
+		if err := row.Scan(&startTimeStr); err != nil {
+			return fmt.Errorf("failed to get start_time for analysis %d: %w", analysisID, err)
+		}
+		var err error
+		startTime, err = time.Parse(time.RFC3339Nano, startTimeStr)
+		if err != nil {
+			return fmt.Errorf("failed to parse start_time: %w", err)
+		}
+	default: // MySQL and PostgreSQL store as native datetime
+		if err := row.Scan(&startTime); err != nil {
+			return fmt.Errorf("failed to get start_time for analysis %d: %w", analysisID, err)
+		}
+	}
+
+	// Calculate duration in milliseconds
+	durationMs := endTime.Sub(startTime).Milliseconds()
+
+	// Update the analysis run with completion data
+	var updateQuery string
 	var args []any
 
 	switch as.backend {
 	case schema.PostgreSQLBackend:
-		query = fmt.Sprintf(`UPDATE %s SET end_time = $1, total_files_analyzed = $2 WHERE analysis_id = $3`, quotedTableName)
-		args = []any{endTime, totalFiles, analysisID}
+		updateQuery = fmt.Sprintf(`UPDATE %s SET end_time = $1, run_duration_ms = $2, total_files_analyzed = $3 WHERE analysis_id = $4`, quotedTableName)
+		args = []any{endTime, durationMs, totalFiles, analysisID}
 	default: // SQLite and MySQL
-		query = fmt.Sprintf(`UPDATE %s SET end_time = ?, total_files_analyzed = ? WHERE analysis_id = ?`, quotedTableName)
-		args = []any{formatTime(endTime, as.backend), totalFiles, analysisID}
+		updateQuery = fmt.Sprintf(`UPDATE %s SET end_time = ?, run_duration_ms = ?, total_files_analyzed = ? WHERE analysis_id = ?`, quotedTableName)
+		args = []any{formatTime(endTime, as.backend), durationMs, totalFiles, analysisID}
 	}
 
-	_, err := as.db.Exec(query, args...)
+	_, err := as.db.Exec(updateQuery, args...)
 	if err != nil {
 		return fmt.Errorf("failed to update analysis run: %w", err)
 	}
