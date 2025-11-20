@@ -1,5 +1,21 @@
 # 🚀 Changelog
 
+## v1.7.0
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.6.0...v1.7.0)
+
+### Features
+
+- **Schema Consolidation**: Merge prior tables into unified `hotspot_file_scores_metrics` table for better data organization
+
+### Improvements
+
+- **API Simplification**: Remove deprecated AnalysisStore methods for cleaner interface and reduced complexity
+
+### Development
+
+- **Version Management**: Retract v1.6.0 due to breaking API changes that would cause incompatibility
+
 ## v1.6.0
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.5.1...v1.6.0)
