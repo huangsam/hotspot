@@ -220,10 +220,10 @@ func getCreateFinalScoresQuery(backend schema.CacheBackend) string {
 				analysis_id BIGINT NOT NULL,
 				file_path VARCHAR(512) NOT NULL,
 				analysis_time DATETIME(6) NOT NULL,
-				score_mode_a DOUBLE NOT NULL,
-				score_mode_b DOUBLE NOT NULL,
-				score_mode_c DOUBLE NOT NULL,
-				score_mode_d DOUBLE NOT NULL,
+				score_hot DOUBLE NOT NULL,
+				score_risk DOUBLE NOT NULL,
+				score_complexity DOUBLE NOT NULL,
+				score_stale DOUBLE NOT NULL,
 				score_label VARCHAR(50) NOT NULL,
 				PRIMARY KEY (analysis_id, file_path)
 			);
@@ -235,10 +235,10 @@ func getCreateFinalScoresQuery(backend schema.CacheBackend) string {
 				analysis_id BIGINT NOT NULL,
 				file_path TEXT NOT NULL,
 				analysis_time TIMESTAMPTZ NOT NULL,
-				score_mode_a DOUBLE PRECISION NOT NULL,
-				score_mode_b DOUBLE PRECISION NOT NULL,
-				score_mode_c DOUBLE PRECISION NOT NULL,
-				score_mode_d DOUBLE PRECISION NOT NULL,
+				score_hot DOUBLE PRECISION NOT NULL,
+				score_risk DOUBLE PRECISION NOT NULL,
+				score_complexity DOUBLE PRECISION NOT NULL,
+				score_stale DOUBLE PRECISION NOT NULL,
 				score_label TEXT NOT NULL,
 				PRIMARY KEY (analysis_id, file_path)
 			);
@@ -250,10 +250,10 @@ func getCreateFinalScoresQuery(backend schema.CacheBackend) string {
 				analysis_id INTEGER NOT NULL,
 				file_path TEXT NOT NULL,
 				analysis_time TEXT NOT NULL,
-				score_mode_a REAL NOT NULL,
-				score_mode_b REAL NOT NULL,
-				score_mode_c REAL NOT NULL,
-				score_mode_d REAL NOT NULL,
+				score_hot REAL NOT NULL,
+				score_risk REAL NOT NULL,
+				score_complexity REAL NOT NULL,
+				score_stale REAL NOT NULL,
 				score_label TEXT NOT NULL,
 				PRIMARY KEY (analysis_id, file_path)
 			);
@@ -429,8 +429,8 @@ func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string,
 	switch as.backend {
 	case schema.MySQLBackend:
 		query = fmt.Sprintf(`
-			INSERT INTO %s (analysis_id, file_path, analysis_time, score_mode_a, score_mode_b,
-			                 score_mode_c, score_mode_d, score_label)
+			INSERT INTO %s (analysis_id, file_path, analysis_time, score_hot, score_risk,
+			                 score_complexity, score_stale, score_label)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 		`, quotedTableName)
 		args = []any{
@@ -439,8 +439,8 @@ func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string,
 		}
 	case schema.PostgreSQLBackend:
 		query = fmt.Sprintf(`
-			INSERT INTO %s (analysis_id, file_path, analysis_time, score_mode_a, score_mode_b,
-			                 score_mode_c, score_mode_d, score_label)
+			INSERT INTO %s (analysis_id, file_path, analysis_time, score_hot, score_risk,
+			                 score_complexity, score_stale, score_label)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		`, quotedTableName)
 		args = []any{
@@ -449,8 +449,8 @@ func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string,
 		}
 	default: // SQLite
 		query = fmt.Sprintf(`
-			INSERT INTO %s (analysis_id, file_path, analysis_time, score_mode_a, score_mode_b,
-			                 score_mode_c, score_mode_d, score_label)
+			INSERT INTO %s (analysis_id, file_path, analysis_time, score_hot, score_risk,
+			                 score_complexity, score_stale, score_label)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 		`, quotedTableName)
 		args = []any{
