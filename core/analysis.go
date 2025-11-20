@@ -27,6 +27,31 @@ func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client con
 		internal.LogAnalysisHeader(cfg)
 	}
 
+	// Add cache manager to context for use in worker goroutines
+	ctx = contextWithCacheManager(ctx, mgr)
+
+	// --- 0. Begin Analysis Tracking (if configured) ---
+	var analysisID int64
+	analysisStore := mgr.GetAnalysisStore()
+	if analysisStore != nil {
+		startTime := time.Now()
+		configParams := map[string]any{
+			"mode":         string(cfg.Mode),
+			"lookback":     cfg.Lookback.String(),
+			"repo_path":    cfg.RepoPath,
+			"workers":      cfg.Workers,
+			"result_limit": cfg.ResultLimit,
+		}
+		var err error
+		analysisID, err = analysisStore.BeginAnalysis(startTime, configParams)
+		if err != nil {
+			contract.LogWarn("Analysis tracking initialization failed", err)
+		} else if analysisID > 0 {
+			// Add analysis ID to context for use in file analysis
+			ctx = withAnalysisID(ctx, analysisID)
+		}
+	}
+
 	// --- 1. Aggregation Phase (with caching) ---
 	output, err := agg.CachedAggregateActivity(ctx, cfg, client, mgr)
 	if err != nil {
@@ -41,6 +66,14 @@ func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client con
 
 	// --- 3. Core Analysis ---
 	fileResults := analyzeRepo(ctx, cfg, client, output, files)
+
+	// --- 4. End Analysis Tracking ---
+	if analysisStore != nil && analysisID > 0 {
+		endTime := time.Now()
+		if err := analysisStore.EndAnalysis(analysisID, endTime, len(fileResults)); err != nil {
+			contract.LogWarn("Failed to finalize analysis tracking", err)
+		}
+	}
 
 	return &schema.SingleAnalysisOutput{
 		FileResults:     fileResults,
@@ -211,8 +244,88 @@ func analyzeFileCommon(ctx context.Context, cfg *contract.Config, client contrac
 		CalculateOwner().          // Calculates file owner
 		CalculateScore()           // Computes the final composite score
 
-	// 3. Return the final product
-	return builder.Build()
+	// 3. Build the final result
+	result := builder.Build()
+
+	// 4. Record metrics and scores to database (if analysis tracking is enabled)
+	if analysisID, ok := getAnalysisID(ctx); ok && analysisID > 0 {
+		// Get the analysis store from the context via the cache manager
+		recordFileAnalysis(ctx, cfg, analysisID, path, &result)
+	}
+
+	return result
+}
+
+// recordFileAnalysis records file metrics and scores to the database.
+func recordFileAnalysis(ctx context.Context, cfg *contract.Config, analysisID int64, path string, result *schema.FileResult) {
+	// Get the cache manager from context
+	mgr := cacheManagerFromContext(ctx)
+	if mgr == nil {
+		return
+	}
+
+	analysisStore := mgr.GetAnalysisStore()
+	if analysisStore == nil {
+		return
+	}
+
+	now := time.Now()
+
+	// Record raw git metrics
+	metrics := schema.FileMetrics{
+		AnalysisTime:     now,
+		TotalCommits:     result.Commits,
+		TotalChurn:       result.Churn,
+		ContributorCount: result.UniqueContributors,
+		AgeDays:          float64(result.AgeDays), // Convert int to float64 for type compatibility with FileMetrics struct
+		GiniCoefficient:  result.Gini,
+		FileOwner:        getOwnerString(result.Owners),
+	}
+	if err := analysisStore.RecordFileMetrics(analysisID, path, metrics); err != nil {
+		logTrackingError("RecordFileMetrics", path, err)
+	}
+
+	// Compute all four scoring modes
+	allScores := computeAllScores(result, cfg.CustomWeights)
+
+	// Record final scores
+	scores := schema.FileScores{
+		AnalysisTime:    now,
+		HotScore:        allScores[schema.HotMode],
+		RiskScore:       allScores[schema.RiskMode],
+		ComplexityScore: allScores[schema.ComplexityMode],
+		StaleScore:      allScores[schema.StaleMode],
+		ScoreLabel:      string(cfg.Mode),
+	}
+	if err := analysisStore.RecordFileScores(analysisID, path, scores); err != nil {
+		logTrackingError("RecordFileScores", path, err)
+	}
+}
+
+// computeAllScores computes scores for all four modes.
+func computeAllScores(m *schema.FileResult, customWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64) map[schema.ScoringMode]float64 {
+	scores := make(map[schema.ScoringMode]float64)
+
+	// Compute score for each mode without mutating the input
+	for _, mode := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode} {
+		mCopy := *m
+		mCopy.Mode = mode
+		scores[mode] = computeScore(&mCopy, mode, customWeights)
+	}
+	return scores
+}
+
+// getOwnerString converts the owners slice to a string.
+func getOwnerString(owners []string) string {
+	if len(owners) == 0 {
+		return ""
+	}
+	return owners[0] // Return the primary owner
+}
+
+// logTrackingError logs database tracking errors to stderr without disrupting analysis.
+func logTrackingError(operation, path string, err error) {
+	contract.LogWarn(fmt.Sprintf("Analysis tracking failed for %s on %s", operation, path), err)
 }
 
 // getAnalysisWindowForRef queries Git for the exact commit time of the given reference

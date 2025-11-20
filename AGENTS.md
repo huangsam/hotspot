@@ -229,7 +229,7 @@ The internal package has been restructured into focused subpackages for better o
 Contains configuration management, Git client interfaces, time utilities, and general-purpose helpers.
 
 ### iocache/
-Implements I/O caching functionality with support for multiple database backends (SQLite, MySQL, PostgreSQL).
+Implements I/O caching and analysis tracking functionality with support for multiple database backends (SQLite, MySQL, PostgreSQL).
 
 ### outwriter/
 Handles output formatting and writing for different formats (text tables, JSON, CSV) and analysis types (files, folders, comparisons, timeseries).
