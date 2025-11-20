@@ -250,8 +250,6 @@ func analyzeFileCommon(ctx context.Context, cfg *contract.Config, client contrac
 	// 4. Record metrics and scores to database (if analysis tracking is enabled)
 	if analysisID, ok := getAnalysisID(ctx); ok && analysisID > 0 {
 		// Get the analysis store from the context via the cache manager
-		// Note: We need to pass the cache manager through the context or another mechanism
-		// For now, we'll use a global reference (to be improved)
 		recordFileAnalysis(ctx, cfg, analysisID, path, &result)
 	}
 
