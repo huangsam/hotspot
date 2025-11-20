@@ -170,3 +170,89 @@ func TestAnalysisStore_MultipleRuns(t *testing.T) {
 	assert.NotEqual(t, analysisIDs[0], analysisIDs[1])
 	assert.NotEqual(t, analysisIDs[1], analysisIDs[2])
 }
+
+func TestAnalysisStore_RuntimeCapture(t *testing.T) {
+	store, err := NewAnalysisStore(schema.SQLiteBackend, "")
+	require.NoError(t, err)
+	require.NotNil(t, store)
+	defer func() { _ = store.Close() }()
+
+	t.Run("runtime calculation", func(t *testing.T) {
+		// Start analysis at a known time
+		startTime := time.Now().Add(-100 * time.Millisecond) // Start 100ms ago
+		analysisID, err := store.BeginAnalysis(startTime, map[string]any{"test": "runtime"})
+		require.NoError(t, err)
+
+		// Wait a bit to ensure measurable duration
+		time.Sleep(50 * time.Millisecond)
+
+		// End analysis
+		endTime := time.Now()
+		err = store.EndAnalysis(analysisID, endTime, 1)
+		assert.NoError(t, err)
+
+		// Query the database to verify runtime was captured
+		db := store.(*AnalysisStoreImpl).db
+		var storedStartTime, storedEndTime string
+		var storedDurationMs int64
+
+		row := db.QueryRow("SELECT start_time, end_time, run_duration_ms FROM hotspot_analysis_runs WHERE analysis_id = ?", analysisID)
+		err = row.Scan(&storedStartTime, &storedEndTime, &storedDurationMs)
+		assert.NoError(t, err)
+
+		// Parse stored times
+		storedStart, err := time.Parse(time.RFC3339Nano, storedStartTime)
+		assert.NoError(t, err)
+		storedEnd, err := time.Parse(time.RFC3339Nano, storedEndTime)
+		assert.NoError(t, err)
+
+		// Verify duration calculation: should be approximately end - start
+		expectedDurationMs := storedEnd.Sub(storedStart).Milliseconds()
+		assert.Equal(t, expectedDurationMs, storedDurationMs)
+
+		// Verify duration is reasonable (should be around 150ms ± some tolerance)
+		assert.GreaterOrEqual(t, storedDurationMs, int64(100)) // At least 100ms (our initial offset)
+		assert.LessOrEqual(t, storedDurationMs, int64(300))    // At most 300ms (allowing for test overhead)
+	})
+
+	t.Run("zero duration edge case", func(t *testing.T) {
+		// Test with same start and end time
+		startTime := time.Now()
+		analysisID, err := store.BeginAnalysis(startTime, map[string]any{"test": "zero_duration"})
+		require.NoError(t, err)
+
+		// End immediately with same time
+		err = store.EndAnalysis(analysisID, startTime, 1)
+		assert.NoError(t, err)
+
+		// Verify duration is 0
+		db := store.(*AnalysisStoreImpl).db
+		var storedDurationMs int64
+		row := db.QueryRow("SELECT run_duration_ms FROM hotspot_analysis_runs WHERE analysis_id = ?", analysisID)
+		err = row.Scan(&storedDurationMs)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), storedDurationMs)
+	})
+
+	t.Run("large duration", func(t *testing.T) {
+		// Test with a longer duration
+		startTime := time.Now().Add(-5 * time.Second)
+		analysisID, err := store.BeginAnalysis(startTime, map[string]any{"test": "large_duration"})
+		require.NoError(t, err)
+
+		endTime := time.Now()
+		err = store.EndAnalysis(analysisID, endTime, 1)
+		assert.NoError(t, err)
+
+		// Verify duration is approximately 5 seconds
+		db := store.(*AnalysisStoreImpl).db
+		var storedDurationMs int64
+		row := db.QueryRow("SELECT run_duration_ms FROM hotspot_analysis_runs WHERE analysis_id = ?", analysisID)
+		err = row.Scan(&storedDurationMs)
+		assert.NoError(t, err)
+
+		// Should be around 5000ms ± tolerance
+		assert.GreaterOrEqual(t, storedDurationMs, int64(4900))
+		assert.LessOrEqual(t, storedDurationMs, int64(5100))
+	})
+}
