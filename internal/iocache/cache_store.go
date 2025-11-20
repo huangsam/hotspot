@@ -4,10 +4,9 @@ package iocache
 import (
 	"database/sql"
 	"fmt"
-	"strings"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql" // MySQL driver
+	"github.com/go-sql-driver/mysql" // MySQL driver
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	_ "github.com/jackc/pgx/v5/stdlib" // PostgreSQL driver
@@ -268,18 +267,23 @@ func (ps *CacheStoreImpl) GetStatus() (schema.CacheStatus, error) {
 		var sizeQuery string
 		switch ps.backend {
 		case schema.MySQLBackend:
-			// Extract database name from connection string
-			// Format: user:pass@tcp(host:port)/db?params
-			parts := strings.Split(ps.connStr, "/")
-			if len(parts) >= 2 {
-				dbName := strings.Split(parts[1], "?")[0] // Remove query params
-				sizeQuery = "SELECT data_length + index_length FROM information_schema.tables WHERE table_schema = ? AND table_name = ?"
-				row = ps.db.QueryRow(sizeQuery, dbName, ps.tableName)
-				if err := row.Scan(&status.TableSizeBytes); err != nil {
-					status.TableSizeBytes = int64(status.TotalEntries) * 1000 // Fallback rough estimate
-				}
-			} else {
-				status.TableSizeBytes = int64(status.TotalEntries) * 1000 // Rough estimate
+			// Fallback rough estimate if information_schema query fails
+			status.TableSizeBytes = int64(status.TotalEntries) * 1000
+
+			// Use information_schema for MySQL
+			cfg, err := mysql.ParseDSN(ps.connStr)
+			if err != nil {
+				break
+			}
+			dbName := cfg.DBName
+			if dbName == "" {
+				break
+			}
+			sizeQuery := "SELECT data_length + index_length FROM information_schema.tables WHERE table_schema = ? AND table_name = ?"
+			row := ps.db.QueryRow(sizeQuery, dbName, ps.tableName)
+			if err := row.Scan(&status.TableSizeBytes); err != nil {
+				// Fallback if the query or scanning fails
+				status.TableSizeBytes = int64(status.TotalEntries) * 1000
 			}
 		case schema.PostgreSQLBackend:
 			// Use pg_total_relation_size for PostgreSQL
