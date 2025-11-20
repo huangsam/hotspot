@@ -2,6 +2,7 @@ package contract
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -112,13 +113,12 @@ func ShouldIgnore(path string, excludes []string) bool {
 
 // LogFatal logs an error and exits the program.
 func LogFatal(msg string, err error) {
-	_, _ = fmt.Fprintf(os.Stderr, "Fatal %s: %v\n", msg, err)
-	os.Exit(1)
+	log.Fatalf("%s: %v", msg, err)
 }
 
 // LogWarn logs a warning message to stderr.
 func LogWarn(msg string, err error) {
-	_, _ = fmt.Fprintf(os.Stderr, "Warn %s: %v\n", msg, err)
+	log.Printf("%s: %v", msg, err)
 }
 
 // GetCacheDBFilePath returns the path to the SQLite DB file for cache storage.
