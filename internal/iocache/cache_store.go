@@ -273,8 +273,8 @@ func (ps *CacheStoreImpl) GetStatus() (schema.CacheStatus, error) {
 			parts := strings.Split(ps.connStr, "/")
 			if len(parts) >= 2 {
 				dbName := strings.Split(parts[1], "?")[0] // Remove query params
-				sizeQuery = fmt.Sprintf("SELECT data_length + index_length FROM information_schema.tables WHERE table_schema = '%s' AND table_name = '%s'", dbName, ps.tableName)
-				row = ps.db.QueryRow(sizeQuery)
+				sizeQuery = "SELECT data_length + index_length FROM information_schema.tables WHERE table_schema = ? AND table_name = ?"
+				row = ps.db.QueryRow(sizeQuery, dbName, ps.tableName)
 				if err := row.Scan(&status.TableSizeBytes); err != nil {
 					status.TableSizeBytes = int64(status.TotalEntries) * 1000 // Fallback rough estimate
 				}
@@ -283,8 +283,8 @@ func (ps *CacheStoreImpl) GetStatus() (schema.CacheStatus, error) {
 			}
 		case schema.PostgreSQLBackend:
 			// Use pg_total_relation_size for PostgreSQL
-			sizeQuery = fmt.Sprintf("SELECT pg_total_relation_size('%s')", ps.tableName)
-			row = ps.db.QueryRow(sizeQuery)
+			sizeQuery = "SELECT pg_total_relation_size($1)"
+			row = ps.db.QueryRow(sizeQuery, ps.tableName)
 			if err := row.Scan(&status.TableSizeBytes); err != nil {
 				status.TableSizeBytes = int64(status.TotalEntries) * 1000 // Fallback rough estimate
 			}
