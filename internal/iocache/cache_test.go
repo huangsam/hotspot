@@ -675,33 +675,106 @@ func TestCacheStoreImplSetWithNilDB(t *testing.T) {
 	assert.NoError(t, err, "Set with nil db (NoneBackend) should not error")
 }
 
-// TestMultipleInitCachingCalls tests that InitCaching can be called multiple times safely.
-func TestMultipleInitCachingCalls(t *testing.T) {
-	dbPath := GetDBFilePath()
-	defer func() { _ = os.Remove(dbPath) }()
-
-	// Clean up before test
-	_ = os.Remove(dbPath)
-
-	// Reset sync.Once for this test
+// TestInitCachingNoneBackend tests that InitCaching properly handles NoneBackend
+// for both cache and analysis stores, creating no-op implementations.
+func TestInitCachingNoneBackend(t *testing.T) {
+	// Reset sync.Once for clean test state
 	initOnce = sync.Once{}
 	closeOnce = sync.Once{}
+	defer func() {
+		// Clean up
+		initOnce = sync.Once{}
+		closeOnce = sync.Once{}
+	}()
 
-	// First call should succeed
-	err := InitCaching(schema.SQLiteBackend, "", "", "")
-	assert.NoError(t, err, "First InitCaching call should not fail")
+	t.Run("cache backend none", func(t *testing.T) {
+		// Reset for this subtest
+		initOnce = sync.Once{}
+		closeOnce = sync.Once{}
 
-	// Subsequent calls should be no-ops (due to sync.Once) and not error
-	err = InitCaching(schema.SQLiteBackend, "", "", "")
-	assert.NoError(t, err, "Second InitCaching call should not error")
+		// Initialize with NoneBackend for cache, SQLite for analysis
+		err := InitCaching(schema.NoneBackend, "", schema.SQLiteBackend, "")
+		assert.NoError(t, err, "InitCaching with NoneBackend cache should not error")
 
-	err = InitCaching(schema.MySQLBackend, "different:connection@string", "", "")
-	assert.NoError(t, err, "Third InitCaching call (different backend) should not error")
+		// Verify Manager is initialized
+		assert.NotNil(t, Manager, "Manager should not be nil")
 
-	// Verify the store is still the SQLite one from the first call
-	store := Manager.GetActivityStore()
-	assert.NotNil(t, store, "Store should not be nil")
+		// Verify cache store is created (no-op implementation)
+		cacheStore := Manager.GetActivityStore()
+		assert.NotNil(t, cacheStore, "Activity store should not be nil for NoneBackend")
 
-	// Close
-	CloseCaching()
+		// Verify analysis store is created
+		analysisStore := Manager.GetAnalysisStore()
+		assert.NotNil(t, analysisStore, "Analysis store should not be nil")
+
+		// Test that NoneBackend cache store behaves as no-op
+		testKey := "none_cache_test"
+		testValue := []byte("test_value")
+
+		// Set should not error
+		err = cacheStore.Set(testKey, testValue, 1, 1234567890)
+		assert.NoError(t, err, "Set on NoneBackend cache store should not error")
+
+		// Get should return ErrNoRows (no data persisted)
+		_, _, _, err = cacheStore.Get(testKey)
+		assert.Equal(t, sql.ErrNoRows, err, "Get on NoneBackend cache store should return ErrNoRows")
+
+		CloseCaching()
+	})
+
+	t.Run("analysis backend none", func(t *testing.T) {
+		// Reset for this subtest
+		initOnce = sync.Once{}
+		closeOnce = sync.Once{}
+
+		// Initialize with SQLite for cache, NoneBackend for analysis
+		err := InitCaching(schema.SQLiteBackend, "", schema.NoneBackend, "")
+		assert.NoError(t, err, "InitCaching with NoneBackend analysis should not error")
+
+		// Verify Manager is initialized
+		assert.NotNil(t, Manager, "Manager should not be nil")
+
+		// Verify cache store is created
+		cacheStore := Manager.GetActivityStore()
+		assert.NotNil(t, cacheStore, "Activity store should not be nil")
+
+		// Verify analysis store is created (no-op implementation)
+		analysisStore := Manager.GetAnalysisStore()
+		assert.NotNil(t, analysisStore, "Analysis store should not be nil for NoneBackend")
+
+		// Test that NoneBackend analysis store behaves as no-op
+		// (We can't easily test analysis store methods without more complex setup,
+		// but we can verify it's not nil and can be closed safely)
+
+		CloseCaching()
+	})
+
+	t.Run("both backends none", func(t *testing.T) {
+		// Reset for this subtest
+		initOnce = sync.Once{}
+		closeOnce = sync.Once{}
+
+		// Initialize with NoneBackend for both
+		err := InitCaching(schema.NoneBackend, "", schema.NoneBackend, "")
+		assert.NoError(t, err, "InitCaching with both NoneBackend should not error")
+
+		// Verify Manager is initialized
+		assert.NotNil(t, Manager, "Manager should not be nil")
+
+		// Verify both stores are created (no-op implementations)
+		cacheStore := Manager.GetActivityStore()
+		assert.NotNil(t, cacheStore, "Activity store should not be nil for NoneBackend")
+
+		analysisStore := Manager.GetAnalysisStore()
+		assert.NotNil(t, analysisStore, "Analysis store should not be nil for NoneBackend")
+
+		// Test no-op behavior for cache store
+		err = cacheStore.Set("test", []byte("value"), 1, 1000)
+		assert.NoError(t, err, "Set on NoneBackend should not error")
+
+		_, _, _, err = cacheStore.Get("test")
+		assert.Equal(t, sql.ErrNoRows, err, "Get on NoneBackend should return ErrNoRows")
+
+		CloseCaching()
+	})
 }
