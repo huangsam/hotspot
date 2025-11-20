@@ -121,8 +121,8 @@ func LogWarn(msg string, err error) {
 	_, _ = fmt.Fprintf(os.Stderr, "Warn %s: %v\n", msg, err)
 }
 
-// GetDBFilePath returns the path to the SQLite DB file for cache storage.
-func GetDBFilePath() string {
+// GetCacheDBFilePath returns the path to the SQLite DB file for cache storage.
+func GetCacheDBFilePath() string {
 	// Implementation from internal/persist_global.go
 	homeDir, err := os.UserHomeDir()
 	if err != nil {

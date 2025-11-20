@@ -323,7 +323,7 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 			if cfg.CacheBackend == schema.SQLiteBackend {
 				cacheDBPath := cfg.CacheDBConnect
 				if cacheDBPath == "" {
-					cacheDBPath = GetDBFilePath()
+					cacheDBPath = GetCacheDBFilePath()
 				}
 				analysisDBPath := cfg.AnalysisDBConnect
 				if analysisDBPath == "" {

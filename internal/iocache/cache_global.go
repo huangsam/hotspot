@@ -22,7 +22,7 @@ var (
 
 // GetDBFilePath returns the path to the SQLite DB file for cache storage.
 func GetDBFilePath() string {
-	return contract.GetDBFilePath()
+	return contract.GetCacheDBFilePath()
 }
 
 // GetAnalysisDBFilePath returns the path to the SQLite DB file for analysis storage.

@@ -343,7 +343,7 @@ var cacheClearCmd = &cobra.Command{
 	Long:    `The clear subcommand removes all cached data for the current backend configuration.`,
 	PreRunE: cacheSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := iocache.ClearCache(cfg.CacheBackend, contract.GetDBFilePath(), cfg.CacheDBConnect); err != nil {
+		if err := iocache.ClearCache(cfg.CacheBackend, contract.GetCacheDBFilePath(), cfg.CacheDBConnect); err != nil {
 			contract.LogFatal("Failed to clear cache", err)
 		}
 		fmt.Println("Cache cleared successfully.")
