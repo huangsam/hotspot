@@ -492,7 +492,7 @@ func (as *AnalysisStoreImpl) GetAllAnalysisRuns() ([]schema.AnalysisRunRecord, e
 	if err != nil {
 		return nil, fmt.Errorf("failed to query analysis runs: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var results []schema.AnalysisRunRecord
 
@@ -544,16 +544,16 @@ func (as *AnalysisStoreImpl) GetAllFileScoresMetrics() ([]schema.FileScoresMetri
 	}
 
 	quotedTableName := quoteTableName(fileScoresMetricsTable, as.backend)
-	query := fmt.Sprintf(`SELECT analysis_id, file_path, analysis_time, total_commits, total_churn, 
-		contributor_count, age_days, gini_coefficient, file_owner, 
-		score_hot, score_risk, score_complexity, score_stale, score_label 
+	query := fmt.Sprintf(`SELECT analysis_id, file_path, analysis_time, total_commits, total_churn,
+		contributor_count, age_days, gini_coefficient, file_owner,
+		score_hot, score_risk, score_complexity, score_stale, score_label
 		FROM %s ORDER BY analysis_id, file_path`, quotedTableName)
 
 	rows, err := as.db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query file scores metrics: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var results []schema.FileScoresMetricsRecord
 

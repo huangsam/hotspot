@@ -85,10 +85,10 @@ func TestWriteAnalysisRunsParquet(t *testing.T) {
 	// Read back and verify data
 	file, err := os.Open(outputPath)
 	require.NoError(t, err, "Should be able to open output file")
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	reader := parquet.NewGenericReader[AnalysisRun](file)
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	// Read all rows
 	readData := make([]AnalysisRun, reader.NumRows())
@@ -99,7 +99,7 @@ func TestWriteAnalysisRunsParquet(t *testing.T) {
 	assert.Equal(t, len(data), n, "Should read all records")
 
 	// Verify data integrity
-	for i := 0; i < len(data); i++ {
+	for i := range data {
 		assert.Equal(t, data[i].AnalysisID, readData[i].AnalysisID, "AnalysisID should match")
 		assert.Equal(t, data[i].TotalFilesAnalyzed, readData[i].TotalFilesAnalyzed, "TotalFilesAnalyzed should match")
 
@@ -148,10 +148,10 @@ func TestWriteFileScoresMetricsParquet(t *testing.T) {
 	// Read back and verify data
 	file, err := os.Open(outputPath)
 	require.NoError(t, err, "Should be able to open output file")
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	reader := parquet.NewGenericReader[FileScoresMetrics](file)
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	// Read all rows
 	readData := make([]FileScoresMetrics, reader.NumRows())
@@ -162,7 +162,7 @@ func TestWriteFileScoresMetricsParquet(t *testing.T) {
 	assert.Equal(t, len(data), n, "Should read all records")
 
 	// Verify data integrity
-	for i := 0; i < len(data); i++ {
+	for i := range data {
 		assert.Equal(t, data[i].AnalysisID, readData[i].AnalysisID, "AnalysisID should match")
 		assert.Equal(t, data[i].FilePath, readData[i].FilePath, "FilePath should match")
 		assert.Equal(t, data[i].TotalCommits, readData[i].TotalCommits, "TotalCommits should match")
@@ -301,10 +301,10 @@ func TestNullableFieldHandling(t *testing.T) {
 	// Read back and verify
 	file, err := os.Open(outputPath)
 	require.NoError(t, err)
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	reader := parquet.NewGenericReader[AnalysisRun](file)
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	readData := make([]AnalysisRun, reader.NumRows())
 	n, err := reader.Read(readData)
@@ -350,10 +350,10 @@ func TestTimestampPrecision(t *testing.T) {
 
 	file, err := os.Open(outputPath)
 	require.NoError(t, err)
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	reader := parquet.NewGenericReader[AnalysisRun](file)
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	readData := make([]AnalysisRun, reader.NumRows())
 	_, err = reader.Read(readData)

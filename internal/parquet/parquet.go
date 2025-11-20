@@ -94,12 +94,12 @@ func WriteAnalysisRunsParquet(data []AnalysisRun, outputPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create output file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Create a Parquet writer using struct schema inference
 	// The schema is automatically derived from the AnalysisRun struct tags
 	writer := parquet.NewGenericWriter[AnalysisRun](file)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	// Write all records to the file
 	// The Write method accepts a variadic slice
@@ -125,12 +125,12 @@ func WriteFileScoresMetricsParquet(data []FileScoresMetrics, outputPath string) 
 	if err != nil {
 		return fmt.Errorf("failed to create output file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Create a Parquet writer using struct schema inference
 	// The schema is automatically derived from the FileScoresMetrics struct tags
 	writer := parquet.NewGenericWriter[FileScoresMetrics](file)
-	defer writer.Close()
+	defer func() { _ = writer.Close() }()
 
 	// Write all records to the file
 	// The Write method accepts a variadic slice
