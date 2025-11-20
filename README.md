@@ -66,6 +66,8 @@ hotspot folders
 hotspot files /path/to/repo/pkg
 ```
 
+For detailed usage instructions, configuration options, and common workflows, see [USERGUIDE.md](./USERGUIDE.md).
+
 ### Live demo
 
 Here's a demo of Hotspot in action:
@@ -81,10 +83,6 @@ Here is what the tool shows for [kubernetes/kubernetes](https://github.com/kuber
 This ranking displays the **complexity score** and a colored label based on:
 
 `hotspot files --mode complexity --start 2024-01-01T00:00:00Z --end 2025-01-01T00:00:00Z --workers 16 --follow --exclude 'vendor/,.pb.go'`
-
-### Learn more
-
-For detailed usage instructions, configuration options, and common workflows, see [USERGUIDE.md](./USERGUIDE.md).
 
 ## Performance
 
