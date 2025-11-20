@@ -242,6 +242,53 @@ func ValidateDatabaseConnectionString(backend schema.CacheBackend, connStr strin
 	return nil
 }
 
+// validateBackendConfigs validates cache and analysis backend configurations.
+func validateBackendConfigs(cfg *Config, input *ConfigRawInput) error {
+	// --- Cache Backend Validation ---
+	cfg.CacheBackend = schema.CacheBackend(strings.ToLower(input.CacheBackend))
+	if _, ok := schema.ValidCacheBackends[cfg.CacheBackend]; !ok {
+		return fmt.Errorf("invalid cache backend '%s'. must be sqlite, mysql, postgresql, none", input.CacheBackend)
+	}
+	cfg.CacheDBConnect = input.CacheDBConnect
+	if err := ValidateDatabaseConnectionString(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
+		return err
+	}
+
+	// --- Analysis Backend Validation ---
+	cfg.AnalysisBackend = schema.CacheBackend(strings.ToLower(input.AnalysisBackend))
+	if cfg.AnalysisBackend != "" {
+		if _, ok := schema.ValidCacheBackends[cfg.AnalysisBackend]; !ok {
+			return fmt.Errorf("invalid analysis backend '%s'. must be sqlite, mysql, postgresql, none", input.AnalysisBackend)
+		}
+		cfg.AnalysisDBConnect = input.AnalysisDBConnect
+		if err := ValidateDatabaseConnectionString(cfg.AnalysisBackend, cfg.AnalysisDBConnect); err != nil {
+			return err
+		}
+
+		// Validate that cache and analysis use different databases
+		if cfg.CacheBackend == cfg.AnalysisBackend && cfg.CacheBackend != schema.NoneBackend {
+			// For SQLite, resolve to actual file paths to catch default path conflicts
+			if cfg.CacheBackend == schema.SQLiteBackend {
+				cacheDBPath := cfg.CacheDBConnect
+				if cacheDBPath == "" {
+					cacheDBPath = GetCacheDBFilePath()
+				}
+				analysisDBPath := cfg.AnalysisDBConnect
+				if analysisDBPath == "" {
+					analysisDBPath = GetAnalysisDBFilePath()
+				}
+				if cacheDBPath == analysisDBPath {
+					return fmt.Errorf("cache and analysis storage must use different SQLite database files. Both resolve to %q", cacheDBPath)
+				}
+			} else if cfg.CacheDBConnect == cfg.AnalysisDBConnect {
+				return fmt.Errorf("cache and analysis storage must use different databases. Both are configured to use the same %s connection", cfg.CacheBackend)
+			}
+		}
+	}
+
+	return nil
+}
+
 // validateSimpleInputs processes and validates all non-path related fields.
 func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	// --- 0. Transfer simple non-validated fields from input -> cfg ---
@@ -296,49 +343,12 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 		return fmt.Errorf("invalid output format '%s'. must be text, csv, json", cfg.Output)
 	}
 
-	// --- 5. Cache Backend Validation ---
-	cfg.CacheBackend = schema.CacheBackend(strings.ToLower(input.CacheBackend))
-	if _, ok := schema.ValidCacheBackends[cfg.CacheBackend]; !ok {
-		return fmt.Errorf("invalid cache backend '%s'. must be sqlite, mysql, postgresql, none", input.CacheBackend)
-	}
-	cfg.CacheDBConnect = input.CacheDBConnect
-	if err := ValidateDatabaseConnectionString(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
+	// --- 5. Backend Validation ---
+	if err := validateBackendConfigs(cfg, input); err != nil {
 		return err
 	}
 
-	// --- 6. Analysis Backend Validation ---
-	cfg.AnalysisBackend = schema.CacheBackend(strings.ToLower(input.AnalysisBackend))
-	if cfg.AnalysisBackend != "" {
-		if _, ok := schema.ValidCacheBackends[cfg.AnalysisBackend]; !ok {
-			return fmt.Errorf("invalid analysis backend '%s'. must be sqlite, mysql, postgresql, none", input.AnalysisBackend)
-		}
-		cfg.AnalysisDBConnect = input.AnalysisDBConnect
-		if err := ValidateDatabaseConnectionString(cfg.AnalysisBackend, cfg.AnalysisDBConnect); err != nil {
-			return err
-		}
-
-		// Validate that cache and analysis use different databases
-		if cfg.CacheBackend == cfg.AnalysisBackend && cfg.CacheBackend != schema.NoneBackend {
-			// For SQLite, resolve to actual file paths to catch default path conflicts
-			if cfg.CacheBackend == schema.SQLiteBackend {
-				cacheDBPath := cfg.CacheDBConnect
-				if cacheDBPath == "" {
-					cacheDBPath = GetCacheDBFilePath()
-				}
-				analysisDBPath := cfg.AnalysisDBConnect
-				if analysisDBPath == "" {
-					analysisDBPath = GetAnalysisDBFilePath()
-				}
-				if cacheDBPath == analysisDBPath {
-					return fmt.Errorf("cache and analysis storage must use different SQLite database files. Both resolve to %q", cacheDBPath)
-				}
-			} else if cfg.CacheDBConnect == cfg.AnalysisDBConnect {
-				return fmt.Errorf("cache and analysis storage must use different databases. Both are configured to use the same %s connection", cfg.CacheBackend)
-			}
-		}
-	}
-
-	// --- 7. Excludes Processing ---
+	// --- 6. Excludes Processing ---
 	defaults := []string{
 		"Cargo.lock", "go.sum", "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "composer.lock", "uv.lock",
 		".min.js", ".min.css",
