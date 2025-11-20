@@ -147,6 +147,41 @@ This allows you to manage settings without long command-line strings. Flags alwa
 3.  [hotspot.docs.yml](./examples/hotspot.docs.yml): The canonical template listing every available setting
 4.  [hotspot.weights.yml](./examples/hotspot.weights.yml): Advanced customization of scoring algorithm weights
 
+## Backend Configuration
+
+Hotspot supports multiple backends for caching Git analysis results and storing analysis data: **SQLite**, **MySQL**, **PostgreSQL**, or **None**.
+
+### Configuration
+
+Set backends via environment variables:
+
+```bash
+export HOTSPOT_CACHE_BACKEND=mysql
+export HOTSPOT_CACHE_DB_CONNECT="user:pass@tcp(localhost:3306)/hotspot"
+export HOTSPOT_ANALYSIS_BACKEND=postgresql
+export HOTSPOT_ANALYSIS_DB_CONNECT="host=localhost port=5432 user=postgres dbname=hotspot"
+```
+
+Or in `.hotspot.yaml`:
+
+```yaml
+cache:
+  backend: mysql
+  db_connect: "user:pass@tcp(localhost:3306)/hotspot"
+analysis:
+  backend: postgresql
+  db_connect: "host=localhost port=5432 user=postgres dbname=hotspot"
+```
+
+### Management Commands
+
+```bash
+hotspot cache status    # Check cache backend status
+hotspot cache clear     # Clear cached data
+hotspot analysis status # Check analysis backend status
+hotspot analysis clear  # Clear stored analysis runs
+```
+
 ## Common use cases
 
 ### Daily & Sprint Workflows
@@ -220,9 +255,4 @@ Comprehensive performance benchmarks using [this script](./benchmark/main.go). T
 | [git] | 0.650s / 0.032s | 1.604s / 0.159s | 2.603s / 0.197s |
 | [kubernetes] | 3.665s / 0.112s | 8.365s / 1.579s | 13.006s / 0.634s |
 
-Hotspot caches Git analysis results to speed up repeat runs. Here are the benefits:
-
-- Cold runs: Analyzes Git history without caching
-- Warm runs: ~35x faster using cached data
-
-If you need fresh analysis, clear the cache: `hotspot cache clear`
+The data shows that Hotspot caches Git analysis results to speed up repeated runs.

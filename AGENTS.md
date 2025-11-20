@@ -21,6 +21,7 @@ Hotspot is a Git repository analysis CLI tool that identifies code hotspots thro
 - **CLI Framework**: Cobra-based command structure with Viper configuration management
 - **Analysis Engine**: Multi-threaded Git analysis with configurable scoring algorithms
 - **Output System**: Multi-format output (text, JSON, CSV) with customizable formatting
+- **Backend Support**: Configurable backends for caching and analysis storage (SQLite, MySQL, PostgreSQL, None)
 - **Scoring Modes**: Four distinct scoring algorithms (hot, risk, complexity, stale)
 
 ### Data Flow
@@ -50,7 +51,7 @@ hotspot/
 │   └── constants.go    # Scoring modes and output formats
 └── internal/           # Internal utilities and helpers
     ├── contract/       # Configuration, Git client interfaces, and utilities
-    ├── iocache/        # I/O caching implementation
+    ├── iocache/        # I/O caching and analysis storage with backend support (SQLite, MySQL, PostgreSQL, None)
     └── outwriter/      # Output formatting and writing
 ```
 
@@ -73,6 +74,12 @@ The root command defines the base CLI structure with help text and default behav
     - `compareFilesCmd`: Compare file metrics between Git refs
     - `compareFoldersCmd`: Compare folder metrics between Git refs
   - `timeseriesCmd`: Timeseries analysis for specific paths
+  - `cacheCmd`: Cache management
+    - `cacheStatusCmd`: Show cache status (`hotspot cache status`)
+    - `cacheClearCmd`: Clear cache data (`hotspot cache clear`)
+  - `analysisCmd`: Analysis management
+    - `analysisStatusCmd`: Show analysis status (`hotspot analysis status`)
+    - `analysisClearCmd`: Clear analysis data (`hotspot analysis clear`)
   - `versionCmd`: Version information
 
 #### Configuration Management
