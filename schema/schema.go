@@ -223,3 +223,25 @@ type FileScores struct {
 	StaleScore      float64 // stale mode score
 	ScoreLabel      string  // current mode name
 }
+
+// CacheStatus represents the status of the cache store.
+type CacheStatus struct {
+	Backend         string    `json:"backend"`
+	Connected       bool      `json:"connected"`
+	TotalEntries    int       `json:"total_entries"`
+	LastEntryTime   time.Time `json:"last_entry_time"`
+	OldestEntryTime time.Time `json:"oldest_entry_time"`
+	TableSizeBytes  int64     `json:"table_size_bytes"`
+}
+
+// AnalysisStatus represents the status of the analysis store.
+type AnalysisStatus struct {
+	Backend            string           `json:"backend"`
+	Connected          bool             `json:"connected"`
+	TotalRuns          int              `json:"total_runs"`
+	LastRunID          int64            `json:"last_run_id"`
+	LastRunTime        time.Time        `json:"last_run_time"`
+	OldestRunTime      time.Time        `json:"oldest_run_time"`
+	TotalFilesAnalyzed int              `json:"total_files_analyzed"`
+	TableSizes         map[string]int64 `json:"table_sizes"`
+}

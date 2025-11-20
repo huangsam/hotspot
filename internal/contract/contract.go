@@ -58,6 +58,7 @@ type CacheManager interface {
 type CacheStore interface {
 	Get(key string) ([]byte, int, int64, error)
 	Set(key string, value []byte, version int, timestamp int64) error
+	GetStatus() (schema.CacheStatus, error)
 	Close() error
 }
 
@@ -74,6 +75,9 @@ type AnalysisStore interface {
 
 	// RecordFileScores stores final scores for a file
 	RecordFileScores(analysisID int64, filePath string, scores schema.FileScores) error
+
+	// GetStatus returns status information about the analysis store
+	GetStatus() (schema.AnalysisStatus, error)
 
 	// Close closes the underlying connection
 	Close() error

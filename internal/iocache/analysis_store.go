@@ -477,6 +477,94 @@ func (as *AnalysisStoreImpl) Close() error {
 	return nil
 }
 
+// GetStatus returns status information about the analysis store.
+func (as *AnalysisStoreImpl) GetStatus() (schema.AnalysisStatus, error) {
+	status := schema.AnalysisStatus{
+		Backend:    string(as.backend),
+		Connected:  as.db != nil,
+		TableSizes: make(map[string]int64),
+	}
+
+	if as.backend == schema.NoneBackend || as.db == nil {
+		return status, nil
+	}
+
+	// Get total runs
+	runsQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s", quoteTableName(analysisRunsTable, as.backend))
+	row := as.db.QueryRow(runsQuery)
+	if err := row.Scan(&status.TotalRuns); err != nil {
+		return status, fmt.Errorf("failed to get total runs: %w", err)
+	}
+
+	if status.TotalRuns > 0 {
+		// Get last run info
+		lastRunQuery := fmt.Sprintf("SELECT analysis_id, start_time FROM %s ORDER BY analysis_id DESC LIMIT 1", quoteTableName(analysisRunsTable, as.backend))
+		row = as.db.QueryRow(lastRunQuery)
+
+		switch as.backend {
+		case schema.SQLiteBackend:
+			var lastRunID int64
+			var lastRunTimeStr string
+			if err := row.Scan(&lastRunID, &lastRunTimeStr); err != nil {
+				return status, fmt.Errorf("failed to get last run info: %w", err)
+			}
+			status.LastRunID = lastRunID
+			lastRunTime, err := time.Parse(time.RFC3339Nano, lastRunTimeStr)
+			if err != nil {
+				return status, fmt.Errorf("failed to parse last run time: %w", err)
+			}
+			status.LastRunTime = lastRunTime
+		default: // MySQL and PostgreSQL store as native datetime
+			if err := row.Scan(&status.LastRunID, &status.LastRunTime); err != nil {
+				return status, fmt.Errorf("failed to get last run info: %w", err)
+			}
+		}
+
+		// Get oldest run time
+		oldestRunQuery := fmt.Sprintf("SELECT start_time FROM %s ORDER BY analysis_id ASC LIMIT 1", quoteTableName(analysisRunsTable, as.backend))
+		row = as.db.QueryRow(oldestRunQuery)
+
+		switch as.backend {
+		case schema.SQLiteBackend:
+			var oldestRunTimeStr string
+			if err := row.Scan(&oldestRunTimeStr); err != nil {
+				return status, fmt.Errorf("failed to get oldest run time: %w", err)
+			}
+			oldestRunTime, err := time.Parse(time.RFC3339Nano, oldestRunTimeStr)
+			if err != nil {
+				return status, fmt.Errorf("failed to parse oldest run time: %w", err)
+			}
+			status.OldestRunTime = oldestRunTime
+		default: // MySQL and PostgreSQL store as native datetime
+			if err := row.Scan(&status.OldestRunTime); err != nil {
+				return status, fmt.Errorf("failed to get oldest run time: %w", err)
+			}
+		}
+
+		// Get total files analyzed
+		filesQuery := fmt.Sprintf("SELECT COALESCE(SUM(total_files_analyzed), 0) FROM %s", quoteTableName(analysisRunsTable, as.backend))
+		row = as.db.QueryRow(filesQuery)
+		if err := row.Scan(&status.TotalFilesAnalyzed); err != nil {
+			return status, fmt.Errorf("failed to get total files analyzed: %w", err)
+		}
+	}
+
+	// Get table sizes
+	tables := []string{analysisRunsTable, rawGitMetricsTable, finalScoresTable}
+	for _, table := range tables {
+		quotedTable := quoteTableName(table, as.backend)
+		countQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s", quotedTable)
+		row = as.db.QueryRow(countQuery)
+		var count int64
+		if err := row.Scan(&count); err != nil {
+			return status, fmt.Errorf("failed to get count for table %s: %w", table, err)
+		}
+		status.TableSizes[table] = count
+	}
+
+	return status, nil
+}
+
 // formatTime converts a time.Time to the appropriate format for the backend.
 func formatTime(t time.Time, backend schema.CacheBackend) any {
 	switch backend {
