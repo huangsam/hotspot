@@ -58,14 +58,18 @@ reinstall: clean install
 # Run tests
 # FORCE=1: Bypass test cache (default: use cache)
 # INTEGRATION=1: Include integration tests (default: unit tests only)
+# ONLY_INTEGRATION=1: Run only integration tests (internal use)
 test:
-	@echo "🧪 Running tests..."
-	@test_args=""; \
-	if [ "$(FORCE)" = "1" ]; then \
-		test_args="$$test_args -count=1"; \
-		echo "💨 Bypassing test cache..."; \
+	@if [ "$(ONLY_INTEGRATION)" = "1" ]; then \
+		echo "🧪 Running integration tests only..."; \
+	else \
+		echo "🧪 Running tests..."; \
 	fi; \
-	if [ "$(INTEGRATION)" = "1" ]; then \
+	test_args=""; \
+	if [ "$(FORCE)" = "1" ]; then test_args="$$test_args -count=1"; echo "💨 Bypassing test cache..."; fi; \
+	if [ "$(ONLY_INTEGRATION)" = "1" ]; then \
+		$(GO) test -tags integration $$test_args ./integration; \
+	elif [ "$(INTEGRATION)" = "1" ]; then \
 		echo "🔗 Including integration tests..."; \
 		$(GO) test $$test_args ./...; \
 		$(GO) test -tags integration $$test_args ./integration; \
@@ -76,14 +80,8 @@ test:
 # Convenience aliases for common test scenarios
 test-all: export INTEGRATION=1
 test-all: test
-test-integ:
-	@echo "🧪 Running integration tests only..."
-	@test_args=""; \
-	if [ "$(FORCE)" = "1" ]; then \
-		test_args="$$test_args -count=1"; \
-		echo "💨 Bypassing test cache..."; \
-	fi; \
-	$(GO) test -tags integration $$test_args ./integration
+test-integ: export ONLY_INTEGRATION=1
+test-integ: test
 
 # Run benchmarks
 bench:
