@@ -20,7 +20,7 @@ INTEGRATION   ?= 0
 
 # --- Phony Targets ---
 # .PHONY: explicitly declares targets that do not represent files
-.PHONY: all bench build check clean coverage demo format fuzz fuzz-long fuzz-quick help install lint profile release snapshot test test-all test-all-force test-force test-integ test-integ-force
+.PHONY: all bench build check clean coverage demo format fuzz fuzz-long fuzz-quick help install lint profile release snapshot test test-all test-integ
 
 # --- Targets ---
 
@@ -56,44 +56,34 @@ install: $(BIN_DIR)/$(BINARY_NAME)
 reinstall: clean install
 
 # Run tests
-# FORCE=1: Bypass test cache
-# INTEGRATION=1: Include integration tests
+# FORCE=1: Bypass test cache (default: use cache)
+# INTEGRATION=1: Include integration tests (default: unit tests only)
 test:
 	@echo "🧪 Running tests..."
-	@if [ "$(INTEGRATION)" = "1" ]; then \
+	@test_args=""; \
+	if [ "$(FORCE)" = "1" ]; then \
+		test_args="$$test_args -count=1"; \
+		echo "Bypassing test cache..."; \
+	fi; \
+	if [ "$(INTEGRATION)" = "1" ]; then \
 		echo "Including integration tests..."; \
-		if [ "$(FORCE)" = "1" ]; then \
-			$(GO) test -count=1 ./...; \
-			$(GO) test -tags integration -count=1 ./integration; \
-		else \
-			$(GO) test ./...; \
-			$(GO) test -tags integration ./integration; \
-		fi; \
+		$(GO) test $$test_args ./...; \
+		$(GO) test -tags integration $$test_args ./integration; \
 	else \
-		if [ "$(FORCE)" = "1" ]; then \
-			$(GO) test -count=1 ./...; \
-		else \
-			$(GO) test ./...; \
-		fi; \
+		$(GO) test $$test_args ./...; \
 	fi
 
 # Convenience aliases for common test scenarios
-test-force: export FORCE=1
-test-force: test
 test-all: export INTEGRATION=1
 test-all: test
-test-all-force: export FORCE=1
-test-all-force: export INTEGRATION=1
-test-all-force: test
 test-integ:
 	@echo "🧪 Running integration tests only..."
-	@if [ "$(FORCE)" = "1" ]; then \
-		$(GO) test -tags integration -count=1 ./integration; \
-	else \
-		$(GO) test -tags integration ./integration; \
-	fi
-test-integ-force: export FORCE=1
-test-integ-force: test-integ
+	@test_args=""; \
+	if [ "$(FORCE)" = "1" ]; then \
+		test_args="$$test_args -count=1"; \
+		echo "Bypassing test cache..."; \
+	fi; \
+	$(GO) test -tags integration $$test_args ./integration
 
 # Run benchmarks
 bench:
@@ -206,12 +196,9 @@ help:
 	@echo "  make install             - Installs the built binary to $$(go env GOPATH)/bin."
 	@echo "  make reinstall           - Reinstalls the built binary."
 
-	@echo "  make test                - Runs unit tests."
-	@echo "  make test-force          - Force runs unit tests (bypasses cache)."
-	@echo "  make test-all            - Runs unit + integration tests."
-	@echo "  make test-all-force      - Force runs all tests (bypasses cache)."
-	@echo "  make test-integ          - Runs integration tests only."
-	@echo "  make test-integ-force    - Force runs integration tests only (bypasses cache)."
+	@echo "  make test                - Runs unit tests (use FORCE=1 to bypass cache)."
+	@echo "  make test-all            - Runs unit + integration tests (use FORCE=1 to bypass cache)."
+	@echo "  make test-integ          - Runs integration tests only (use FORCE=1 to bypass cache)."
 	@echo "  make bench               - Runs Go benchmarks."
 	@echo "  make coverage            - Runs unit tests with coverage."
 
