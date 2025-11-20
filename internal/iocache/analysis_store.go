@@ -119,12 +119,12 @@ func getCreateAnalysisRunsQuery(backend schema.CacheBackend) string {
 	case schema.MySQLBackend:
 		return fmt.Sprintf(`
 			CREATE TABLE IF NOT EXISTS %s (
-				analysis_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+				analysis_id BIGINT AUTO_INCREMENT PRIMARY KEY,
 				start_time DATETIME(6) NOT NULL,
 				end_time DATETIME(6),
 				run_duration_ms INT,
 				total_files_analyzed INT,
-				config_params JSON
+				config_params TEXT
 			);
 		`, quotedTableName)
 
@@ -136,7 +136,7 @@ func getCreateAnalysisRunsQuery(backend schema.CacheBackend) string {
 				end_time TIMESTAMPTZ,
 				run_duration_ms INT,
 				total_files_analyzed INT,
-				config_params JSONB
+				config_params TEXT
 			);
 		`, quotedTableName)
 
@@ -162,16 +162,16 @@ func getCreateRawGitMetricsQuery(backend schema.CacheBackend) string {
 	case schema.MySQLBackend:
 		return fmt.Sprintf(`
 			CREATE TABLE IF NOT EXISTS %s (
+				id BIGINT AUTO_INCREMENT PRIMARY KEY,
 				analysis_id BIGINT NOT NULL,
-				file_path TEXT NOT NULL,
+				file_path VARCHAR(512) NOT NULL,
 				analysis_time DATETIME(6) NOT NULL,
 				total_commits INT NOT NULL,
 				total_churn INT NOT NULL,
 				contributor_count INT NOT NULL,
 				age_days DOUBLE NOT NULL,
 				gini_coefficient DOUBLE NOT NULL,
-				file_owner TEXT,
-				PRIMARY KEY (analysis_id, file_path(768))
+				file_owner VARCHAR(100)
 			);
 		`, quotedTableName)
 
@@ -217,15 +217,15 @@ func getCreateFinalScoresQuery(backend schema.CacheBackend) string {
 	case schema.MySQLBackend:
 		return fmt.Sprintf(`
 			CREATE TABLE IF NOT EXISTS %s (
+				id BIGINT AUTO_INCREMENT PRIMARY KEY,
 				analysis_id BIGINT NOT NULL,
-				file_path TEXT NOT NULL,
+				file_path VARCHAR(512) NOT NULL,
 				analysis_time DATETIME(6) NOT NULL,
 				score_mode_a DOUBLE NOT NULL,
 				score_mode_b DOUBLE NOT NULL,
 				score_mode_c DOUBLE NOT NULL,
 				score_mode_d DOUBLE NOT NULL,
-				score_label VARCHAR(50) NOT NULL,
-				PRIMARY KEY (analysis_id, file_path(768))
+				score_label VARCHAR(50) NOT NULL
 			);
 		`, quotedTableName)
 
@@ -374,6 +374,16 @@ func (as *AnalysisStoreImpl) RecordFileMetrics(analysisID int64, filePath string
 	var args []any
 
 	switch as.backend {
+	case schema.MySQLBackend:
+		query = fmt.Sprintf(`
+			INSERT INTO %s (analysis_id, file_path, analysis_time, total_commits, total_churn,
+			                 contributor_count, age_days, gini_coefficient, file_owner)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`, quotedTableName)
+		args = []any{
+			analysisID, filePath, metrics.AnalysisTime, metrics.TotalCommits, metrics.TotalChurn,
+			metrics.ContributorCount, metrics.AgeDays, metrics.GiniCoefficient, metrics.FileOwner,
+		}
 	case schema.PostgreSQLBackend:
 		query = fmt.Sprintf(`
 			INSERT INTO %s (analysis_id, file_path, analysis_time, total_commits, total_churn,
@@ -384,7 +394,7 @@ func (as *AnalysisStoreImpl) RecordFileMetrics(analysisID int64, filePath string
 			analysisID, filePath, metrics.AnalysisTime, metrics.TotalCommits, metrics.TotalChurn,
 			metrics.ContributorCount, metrics.AgeDays, metrics.GiniCoefficient, metrics.FileOwner,
 		}
-	default: // SQLite and MySQL
+	default: // SQLite
 		query = fmt.Sprintf(`
 			INSERT INTO %s (analysis_id, file_path, analysis_time, total_commits, total_churn,
 			                 contributor_count, age_days, gini_coefficient, file_owner)
@@ -417,6 +427,16 @@ func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string,
 	var args []any
 
 	switch as.backend {
+	case schema.MySQLBackend:
+		query = fmt.Sprintf(`
+			INSERT INTO %s (analysis_id, file_path, analysis_time, score_mode_a, score_mode_b,
+			                 score_mode_c, score_mode_d, score_label)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		`, quotedTableName)
+		args = []any{
+			analysisID, filePath, formatTime(scores.AnalysisTime, as.backend), scores.HotScore, scores.RiskScore,
+			scores.ComplexityScore, scores.StaleScore, scores.ScoreLabel,
+		}
 	case schema.PostgreSQLBackend:
 		query = fmt.Sprintf(`
 			INSERT INTO %s (analysis_id, file_path, analysis_time, score_mode_a, score_mode_b,
@@ -427,7 +447,7 @@ func (as *AnalysisStoreImpl) RecordFileScores(analysisID int64, filePath string,
 			analysisID, filePath, formatTime(scores.AnalysisTime, as.backend), scores.HotScore, scores.RiskScore,
 			scores.ComplexityScore, scores.StaleScore, scores.ScoreLabel,
 		}
-	default: // SQLite and MySQL
+	default: // SQLite
 		query = fmt.Sprintf(`
 			INSERT INTO %s (analysis_id, file_path, analysis_time, score_mode_a, score_mode_b,
 			                 score_mode_c, score_mode_d, score_label)
