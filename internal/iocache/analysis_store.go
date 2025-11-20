@@ -162,7 +162,6 @@ func getCreateRawGitMetricsQuery(backend schema.CacheBackend) string {
 	case schema.MySQLBackend:
 		return fmt.Sprintf(`
 			CREATE TABLE IF NOT EXISTS %s (
-				id BIGINT AUTO_INCREMENT PRIMARY KEY,
 				analysis_id BIGINT NOT NULL,
 				file_path VARCHAR(512) NOT NULL,
 				analysis_time DATETIME(6) NOT NULL,
@@ -171,7 +170,8 @@ func getCreateRawGitMetricsQuery(backend schema.CacheBackend) string {
 				contributor_count INT NOT NULL,
 				age_days DOUBLE NOT NULL,
 				gini_coefficient DOUBLE NOT NULL,
-				file_owner VARCHAR(100)
+				file_owner VARCHAR(100),
+				PRIMARY KEY (analysis_id, file_path)
 			);
 		`, quotedTableName)
 
@@ -217,7 +217,6 @@ func getCreateFinalScoresQuery(backend schema.CacheBackend) string {
 	case schema.MySQLBackend:
 		return fmt.Sprintf(`
 			CREATE TABLE IF NOT EXISTS %s (
-				id BIGINT AUTO_INCREMENT PRIMARY KEY,
 				analysis_id BIGINT NOT NULL,
 				file_path VARCHAR(512) NOT NULL,
 				analysis_time DATETIME(6) NOT NULL,
@@ -225,7 +224,8 @@ func getCreateFinalScoresQuery(backend schema.CacheBackend) string {
 				score_mode_b DOUBLE NOT NULL,
 				score_mode_c DOUBLE NOT NULL,
 				score_mode_d DOUBLE NOT NULL,
-				score_label VARCHAR(50) NOT NULL
+				score_label VARCHAR(50) NOT NULL,
+				PRIMARY KEY (analysis_id, file_path)
 			);
 		`, quotedTableName)
 
