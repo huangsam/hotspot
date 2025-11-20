@@ -508,14 +508,14 @@ func executeExport() error {
 	if err := parquet.WriteAnalysisRunsParquet(parquetAnalysisRuns, analysisRunsFile); err != nil {
 		return fmt.Errorf("failed to write analysis runs: %w", err)
 	}
-	fmt.Printf("✓ Exported %d analysis runs to: %s\n", len(parquetAnalysisRuns), analysisRunsFile)
+	fmt.Printf("Exported %d analysis runs to: %s\n", len(parquetAnalysisRuns), analysisRunsFile)
 
 	// Write file scores metrics to Parquet
 	fileMetricsFile := parquetFile + ".file_scores_metrics.parquet"
 	if err := parquet.WriteFileScoresMetricsParquet(parquetFileMetrics, fileMetricsFile); err != nil {
 		return fmt.Errorf("failed to write file scores metrics: %w", err)
 	}
-	fmt.Printf("✓ Exported %d file score records to: %s\n", len(parquetFileMetrics), fileMetricsFile)
+	fmt.Printf("Exported %d file score records to: %s\n", len(parquetFileMetrics), fileMetricsFile)
 
 	fmt.Println("\nExport complete! The Parquet files can be used with:")
 	fmt.Println("  - Apache Spark")
@@ -592,8 +592,8 @@ func init() {
 
 	// Add the --parquet-file flag to the export command
 	exportCmd.Flags().String("parquet-file", "", "Base name for Parquet output files (will create .analysis_runs.parquet and .file_scores_metrics.parquet)")
-	if err := viper.BindPFlag("parquet-file", exportCmd.Flags().Lookup("parquet-file")); err != nil {
-		contract.LogFatal("Error binding parquet-file flag", err)
+	if err := viper.BindPFlags(exportCmd.Flags()); err != nil {
+		contract.LogFatal("Error binding export flags", err)
 	}
 
 	// Bind all persistent flags of rootCmd to Viper

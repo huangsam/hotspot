@@ -80,14 +80,6 @@ type FileScoresMetrics struct {
 }
 
 // WriteAnalysisRunsParquet writes a slice of AnalysisRun structs to a Parquet file.
-// This function demonstrates how to use parquet-go for struct-based schema inference.
-//
-// Parameters:
-//   - data: Slice of AnalysisRun structs to write
-//   - outputPath: File path where the Parquet file will be written
-//
-// Returns:
-//   - error: Any error encountered during file creation or writing
 func WriteAnalysisRunsParquet(data []AnalysisRun, outputPath string) error {
 	// Create the output file
 	file, err := os.Create(outputPath)
@@ -111,14 +103,6 @@ func WriteAnalysisRunsParquet(data []AnalysisRun, outputPath string) error {
 }
 
 // WriteFileScoresMetricsParquet writes a slice of FileScoresMetrics structs to a Parquet file.
-// This function demonstrates how to use parquet-go for struct-based schema inference.
-//
-// Parameters:
-//   - data: Slice of FileScoresMetrics structs to write
-//   - outputPath: File path where the Parquet file will be written
-//
-// Returns:
-//   - error: Any error encountered during file creation or writing
 func WriteFileScoresMetricsParquet(data []FileScoresMetrics, outputPath string) error {
 	// Create the output file
 	file, err := os.Create(outputPath)
@@ -142,10 +126,6 @@ func WriteFileScoresMetricsParquet(data []FileScoresMetrics, outputPath string) 
 }
 
 // MockFetchAnalysisRuns generates sample AnalysisRun data for demonstration.
-// This function shows how nullable fields are mapped to nil pointers.
-//
-// Returns:
-//   - []AnalysisRun: A slice of sample analysis run records
 func MockFetchAnalysisRuns() []AnalysisRun {
 	now := time.Now()
 	startTime1 := now.Add(-2 * time.Hour)
@@ -190,10 +170,6 @@ func MockFetchAnalysisRuns() []AnalysisRun {
 }
 
 // MockFetchFileScoresMetrics generates sample FileScoresMetrics data for demonstration.
-// This function shows how nullable fields are mapped to nil pointers.
-//
-// Returns:
-//   - []FileScoresMetrics: A slice of sample file metrics records
 func MockFetchFileScoresMetrics() []FileScoresMetrics {
 	now := time.Now()
 	owner1 := "alice@example.com"
