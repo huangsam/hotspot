@@ -2,6 +2,8 @@ module github.com/huangsam/hotspot
 
 go 1.25.0
 
+retract v1.6.0
+
 require (
 	github.com/fatih/color v1.18.0
 	github.com/go-sql-driver/mysql v1.9.3
