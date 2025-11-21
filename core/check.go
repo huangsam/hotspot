@@ -29,14 +29,14 @@ func ExecuteHotspotCheck(ctx context.Context, cfg *contract.Config, mgr contract
 	}
 
 	if len(changedFiles) == 0 {
-		fmt.Println("✅ No files changed between refs - check passed")
+		fmt.Println("No files changed between refs - check passed")
 		return nil
 	}
 
 	// Filter changed files to only include those we want to analyze
 	filesToAnalyze := filterChangedFiles(changedFiles, cfg.Excludes)
 	if len(filesToAnalyze) == 0 {
-		fmt.Println("✅ No relevant files to check (all excluded) - check passed")
+		fmt.Println("No relevant files to check (all excluded) - check passed")
 		return nil
 	}
 
