@@ -300,6 +300,21 @@ var compareCmd = &cobra.Command{
 	Long:  `The compare command provides insight into how risk metrics have changed for different units (files, folders, etc.).`,
 }
 
+// checkCmd focused on CI/CD policy enforcement.
+var checkCmd = &cobra.Command{
+	Use:     "check [repo-path]",
+	Short:   "Check files changed between refs against risk thresholds for CI/CD gating.",
+	Long:    `The check command analyzes only files changed between two Git references and enforces policy thresholds. Designed specifically for CI/CD pipelines, it fails with a non-zero exit code if any file exceeds configured risk thresholds (default: 50.0 for all modes).`,
+	Args:    cobra.MaximumNArgs(1),
+	PreRunE: sharedSetupWrapper,
+	Run: func(_ *cobra.Command, _ []string) {
+		// Validation is done in ExecuteHotspotCheck
+		if err := core.ExecuteHotspotCheck(rootCtx, cfg, cacheManager); err != nil {
+			contract.LogFatal("Policy check failed", err)
+		}
+	},
+}
+
 // checkCompareAndExecute validates compare mode and executes the given function.
 func checkCompareAndExecute(executeFunc core.ExecutorFunc) {
 	if !cfg.CompareMode {
@@ -578,6 +593,7 @@ func init() {
 	rootCmd.AddCommand(filesCmd)
 	rootCmd.AddCommand(foldersCmd)
 	rootCmd.AddCommand(compareCmd)
+	rootCmd.AddCommand(checkCmd)
 	rootCmd.AddCommand(timeseriesCmd)
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(metricsCmd)
@@ -635,6 +651,14 @@ func init() {
 	compareCmd.PersistentFlags().String("lookback", "6 months", "Time duration to look back from Base/Target ref commit time")
 	if err := viper.BindPFlags(compareCmd.PersistentFlags()); err != nil {
 		contract.LogFatal("Error binding compare flags", err)
+	}
+
+	// Bind all flags of checkCmd to Viper (reuse compare flag keys)
+	checkCmd.Flags().String("base-ref", "", "Base Git reference for the BEFORE state (required)")
+	checkCmd.Flags().String("target-ref", "", "Target Git reference for the AFTER state (required)")
+	checkCmd.Flags().String("lookback", "6 months", "Time duration to look back from Target ref commit time")
+	if err := viper.BindPFlags(checkCmd.Flags()); err != nil {
+		contract.LogFatal("Error binding check flags", err)
 	}
 
 	// Bind all flags of timeseriesCmd to Viper
