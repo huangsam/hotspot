@@ -13,6 +13,7 @@ import (
 	"github.com/huangsam/hotspot/core"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/iocache"
+	"github.com/huangsam/hotspot/internal/parquet"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -449,6 +450,83 @@ var analysisStatusCmd = &cobra.Command{
 	},
 }
 
+// exportCmd exports analysis data to Parquet files.
+var exportCmd = &cobra.Command{
+	Use:     "export",
+	Short:   "Export analysis data to Parquet files.",
+	Long:    `The export command reads analysis data from the configured backend and exports it to Parquet files for use with analytics tools like Spark, Pandas, and DuckDB.`,
+	PreRunE: analysisSetupWrapper,
+	Run: func(_ *cobra.Command, _ []string) {
+		if err := executeExport(); err != nil {
+			contract.LogFatal("Failed to export analysis data", err)
+		}
+	},
+}
+
+// executeExport performs the actual export of analysis data to Parquet files.
+func executeExport() error {
+	parquetFile := viper.GetString("parquet-file")
+	if parquetFile == "" {
+		return errors.New("--parquet-file is required")
+	}
+
+	// Get the analysis store
+	store := iocache.Manager.GetAnalysisStore()
+
+	// Check if there's any data to export
+	status, err := store.GetStatus()
+	if err != nil {
+		return fmt.Errorf("failed to get analysis status: %w", err)
+	}
+
+	if status.TotalRuns == 0 {
+		return errors.New("no analysis data found to export")
+	}
+
+	fmt.Printf("Exporting data from %s backend...\n", status.Backend)
+	fmt.Printf("Total analysis runs: %d\n", status.TotalRuns)
+	fmt.Printf("Total file records: %d\n", status.TableSizes["hotspot_file_scores_metrics"])
+
+	// Retrieve all analysis runs
+	analysisRuns, err := store.GetAllAnalysisRuns()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve analysis runs: %w", err)
+	}
+
+	// Retrieve all file scores metrics
+	fileMetrics, err := store.GetAllFileScoresMetrics()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve file scores metrics: %w", err)
+	}
+
+	// Convert to Parquet format
+	parquetAnalysisRuns := parquet.ConvertAnalysisRunRecords(analysisRuns)
+	parquetFileMetrics := parquet.ConvertFileScoresMetricsRecords(fileMetrics)
+
+	// Write analysis runs to Parquet
+	analysisRunsFile := parquetFile + ".analysis_runs.parquet"
+	if err := parquet.WriteAnalysisRunsParquet(parquetAnalysisRuns, analysisRunsFile); err != nil {
+		return fmt.Errorf("failed to write analysis runs: %w", err)
+	}
+	fmt.Printf("Exported %d analysis runs to: %s\n", len(parquetAnalysisRuns), analysisRunsFile)
+
+	// Write file scores metrics to Parquet
+	fileMetricsFile := parquetFile + ".file_scores_metrics.parquet"
+	if err := parquet.WriteFileScoresMetricsParquet(parquetFileMetrics, fileMetricsFile); err != nil {
+		return fmt.Errorf("failed to write file scores metrics: %w", err)
+	}
+	fmt.Printf("Exported %d file score records to: %s\n", len(parquetFileMetrics), fileMetricsFile)
+
+	fmt.Println("\nExport complete! The Parquet files can be used with:")
+	fmt.Println("  - Apache Spark")
+	fmt.Println("  - Apache Arrow")
+	fmt.Println("  - Pandas (via pyarrow)")
+	fmt.Println("  - DuckDB")
+	fmt.Println("  - Any other Parquet-compatible tool")
+
+	return nil
+}
+
 // printCacheStatus prints cache status information.
 func printCacheStatus(status schema.CacheStatus) {
 	fmt.Printf("Cache Backend: %s\n", status.Backend)
@@ -510,6 +588,13 @@ func init() {
 	// Add the clear subcommand to the parent analysis command
 	analysisCmd.AddCommand(analysisClearCmd)
 	analysisCmd.AddCommand(analysisStatusCmd)
+	analysisCmd.AddCommand(exportCmd)
+
+	// Add the --parquet-file flag to the export command
+	exportCmd.Flags().String("parquet-file", "", "Base name for Parquet output files (will create .analysis_runs.parquet and .file_scores_metrics.parquet)")
+	if err := viper.BindPFlags(exportCmd.Flags()); err != nil {
+		contract.LogFatal("Error binding export flags", err)
+	}
 
 	// Bind all persistent flags of rootCmd to Viper
 	rootCmd.PersistentFlags().Bool("detail", false, "Print per-target metadata (lines of code, size, age)")

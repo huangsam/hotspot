@@ -46,3 +46,4 @@ hotspot-integration-*/
 /*.json
 /*.back
 /*.backup
+/*.parquet
