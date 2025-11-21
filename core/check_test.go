@@ -101,19 +101,19 @@ func TestPrintCheckResult(t *testing.T) {
 
 func TestExecuteHotspotCheck_MissingCompareMode(t *testing.T) {
 	ctx := context.Background()
-	
+
 	// Create config without compare mode
 	cfg := &contract.Config{
 		RepoPath:    "/test/repo",
 		CompareMode: false,
 	}
-	
+
 	// Create mock cache manager
 	mockManager := &iocache.MockCacheManager{}
-	
+
 	// Execute should return error
 	err := ExecuteHotspotCheck(ctx, cfg, mockManager)
-	
+
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "base-ref and --target-ref")
 }

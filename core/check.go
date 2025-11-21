@@ -12,12 +12,12 @@ import (
 
 // CheckResult holds the results of a policy check.
 type CheckResult struct {
-	Passed        bool
-	FailedFiles   []CheckFailedFile
-	TotalFiles    int
-	CheckedModes  []schema.ScoringMode
-	TargetRef     string
-	BaseRef       string
+	Passed       bool
+	FailedFiles  []CheckFailedFile
+	TotalFiles   int
+	CheckedModes []schema.ScoringMode
+	TargetRef    string
+	BaseRef      string
 }
 
 // CheckFailedFile represents a file that failed the policy check.
@@ -82,7 +82,7 @@ func ExecuteHotspotCheck(ctx context.Context, cfg *contract.Config, mgr contract
 
 	for _, mode := range schema.AllScoringModes {
 		threshold := cfg.RiskThresholds[mode]
-		
+
 		// Create mode-specific config
 		cfgMode := cfgTarget.Clone()
 		cfgMode.Mode = mode
@@ -150,7 +150,7 @@ func printCheckResult(result CheckResult, duration time.Duration) {
 
 	// Print failed files grouped by mode
 	fmt.Printf("❌ Policy check failed: %d file(s) exceeded thresholds\n\n", len(result.FailedFiles))
-	
+
 	// Group by mode for better readability
 	modeGroups := make(map[schema.ScoringMode][]CheckFailedFile)
 	for _, failed := range result.FailedFiles {
