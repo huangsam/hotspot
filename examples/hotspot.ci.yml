@@ -1,34 +1,24 @@
-# examples/hotspot.ci.yaml
+# examples/hotspot.ci.yml
 #
-# Configuration optimized for CI/CD pipelines and automated reporting.
-# Prioritizes machine-readable output and targeted analysis.
+# Configuration optimized for CI/CD policy enforcement with hotspot check command.
+# Defines risk thresholds for each scoring mode.
 
 # --- Global Settings ---
-# limit: A standard result limit.
-limit: 25
-# workers: Max out workers for fastest possible analysis on a dedicated machine.
-workers: 16
-# mode: Use 'risk' mode for a more holistic assessment of change complexity.
-mode: risk
-# output: Always use JSON output for easy parsing and ingestion by other tools.
-output: json
-# output-file: Write the structured output to a specific path for artifact collection.
-output-file: hotspot-report.json
-# cache-backend: Disable caching in CI to ensure fresh analysis on every run.
+# workers: Use moderate workers for CI performance
+workers: 8
+# cache-backend: Disable caching in CI for fresh analysis
 cache-backend: none
 
-# --- Comparison Settings ---
-# base-ref: Compare against the main branch (e.g., to see risk added by a PR).
-base-ref: main
-# target-ref: Compare against the current commit (the PR branch HEAD).
-target-ref: HEAD
-# lookback: Focus analysis only on files changed in the last 30 days of activity.
-lookback: 30 days
+# --- Comparison Settings (required for check command) ---
+# lookback: Analyze activity from the last 3 months
+lookback: 3 months
 
-# --- Command-Specific Settings ---
-# detail: Include metrics like LoC and file age for deeper risk analysis.
-detail: true
-# owner: Include the owner field for reports.
-owner: true
-# explain: Provide the score breakdown for diagnostics (useful in CI logs).
-explain: true
+# --- Risk Thresholds ---
+# Define maximum acceptable scores for each mode.
+# Files exceeding these thresholds will fail the check.
+# Default is 50.0 for all modes if not specified.
+thresholds:
+  hot: 60.0         # Activity hotspots threshold
+  risk: 55.0        # Knowledge risk/bus factor threshold
+  complexity: 70.0  # Technical debt threshold
+  stale: 65.0       # Maintenance debt threshold

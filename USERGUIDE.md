@@ -56,6 +56,16 @@ The `timeseries` subcommand tracks how hotspot scores change over time for a spe
 | `--interval` | Total time window (e.g., `6 months`, `1 year`). |
 | `--points` | Number of data points to generate. |
 
+### CI/CD Policy Enforcement
+
+The `check` command allows you to enforce risk thresholds in CI/CD pipelines, failing builds when files exceed acceptable risk levels. If no thresholds are specified, it defaults to 50.0 for all scoring modes.
+
+**Example:** Use the provided CI configuration for policy enforcement.
+
+`hotspot check`
+
+The [example CI config](./examples/hotspot.ci.yml) shows how custom thresholds can be configured for each scoring mode and is useful for maintaining code quality standards specific to your team.
+
 ## Configuration
 
 ### Configuration file
@@ -65,7 +75,7 @@ For complex or repetitive commands, Hotspot can read all flags from a configurat
 This allows you to manage settings without long command-line strings. Flags always override file settings. We provide four documented examples in the `examples/` directory to cover common use cases:
 
 1.  [hotspot.basic.yml](./examples/hotspot.basic.yml): Quick setup for local development
-2.  [hotspot.ci.yml](./examples/hotspot.ci.yml): Optimized settings for automated CI/CD runs (e.g., JSON output)
+2.  [hotspot.ci.yml](./examples/hotspot.ci.yml): Optimized settings for CI/CD policy enforcement
 3.  [hotspot.docs.yml](./examples/hotspot.docs.yml): The canonical template listing every available setting
 4.  [hotspot.weights.yml](./examples/hotspot.weights.yml): Advanced customization of scoring algorithm weights
 

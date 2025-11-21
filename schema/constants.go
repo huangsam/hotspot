@@ -65,6 +65,9 @@ const (
 	NoneBackend       CacheBackend = "none"
 )
 
+// AllScoringModes returns a list of all supported scoring modes.
+var AllScoringModes = []ScoringMode{HotMode, RiskMode, ComplexityMode, StaleMode}
+
 // ValidOutputModes lists all valid output modes.
 var ValidOutputModes = map[OutputMode]struct{}{
 	CSVOut:     {},
