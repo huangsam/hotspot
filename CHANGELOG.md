@@ -1,5 +1,17 @@
 # 🚀 Changelog
 
+## v1.8.0
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.7.0...v1.8.0)
+
+### Features
+
+- **Parquet Export**: Enable Parquet exports from analysis DB (#20)
+
+### Improvements
+
+- **Documentation**: Update README.md and USERGUIDE.md with Parquet export details
+
 ## v1.7.0
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.6.0...v1.7.0)
