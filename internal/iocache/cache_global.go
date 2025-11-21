@@ -30,10 +30,10 @@ func GetAnalysisDBFilePath() string {
 	return contract.GetAnalysisDBFilePath()
 }
 
-// InitCaching initializes the global cache manager with separate cache and analysis stores.
+// InitStores initializes the global cache manager with separate cache and analysis stores.
 // cacheBackend and cacheConnStr can be empty to disable cache initialization.
 // analysisBackend and analysisConnStr can be empty to disable analysis tracking.
-func InitCaching(cacheBackend schema.CacheBackend, cacheConnStr string, analysisBackend schema.CacheBackend, analysisConnStr string) error {
+func InitStores(cacheBackend schema.CacheBackend, cacheConnStr string, analysisBackend schema.CacheBackend, analysisConnStr string) error {
 	var initErr error
 
 	initOnce.Do(func() {

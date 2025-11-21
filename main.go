@@ -169,7 +169,7 @@ func sharedSetup(ctx context.Context, _ *cobra.Command, args []string) error {
 	}
 
 	// 5. Initialize persistence layer with validated config
-	if err := iocache.InitCaching(cfg.CacheBackend, cfg.CacheDBConnect, cfg.AnalysisBackend, cfg.AnalysisDBConnect); err != nil {
+	if err := iocache.InitStores(cfg.CacheBackend, cfg.CacheDBConnect, cfg.AnalysisBackend, cfg.AnalysisDBConnect); err != nil {
 		return fmt.Errorf("failed to initialize persistence: %w", err)
 	}
 
@@ -202,7 +202,7 @@ func cacheSetup() error {
 	}
 
 	// Initialize caching with the loaded config (no analysis tracking for cache commands)
-	if err := iocache.InitCaching(backend, connStr, "", ""); err != nil {
+	if err := iocache.InitStores(backend, connStr, "", ""); err != nil {
 		return fmt.Errorf("failed to initialize cache: %w", err)
 	}
 
@@ -240,13 +240,25 @@ func analysisSetup() error {
 		return err
 	}
 
-	// Initialize caching with the loaded config (no cache tracking for analysis commands)
-	if err := iocache.InitCaching(schema.NoneBackend, "", backend, connStr); err != nil {
+	// Get output-related config values (used by export command)
+	outputStr := viper.GetString("output")
+	outputFile := viper.GetString("output-file")
+
+	// Parse and validate output format
+	output := schema.OutputMode(outputStr) // default is "text"
+	if _, ok := schema.ValidOutputModes[output]; !ok {
+		return fmt.Errorf("invalid output format '%s'. must be text, csv, json, parquet", outputStr)
+	}
+
+	// Initialize stores with the loaded config (no cache tracking for analysis commands)
+	if err := iocache.InitStores(schema.NoneBackend, "", backend, connStr); err != nil {
 		return fmt.Errorf("failed to initialize analysis: %w", err)
 	}
 
 	cfg.AnalysisBackend = backend
 	cfg.AnalysisDBConnect = connStr
+	cfg.Output = output
+	cfg.OutputFile = outputFile
 
 	return nil
 }
@@ -454,7 +466,7 @@ var analysisStatusCmd = &cobra.Command{
 var exportCmd = &cobra.Command{
 	Use:     "export",
 	Short:   "Export analysis data to Parquet files.",
-	Long:    `The export command reads analysis data from the configured backend and exports it to Parquet files for use with analytics tools like Spark, Pandas, and DuckDB.`,
+	Long:    `The export command reads analysis data from the configured backend and exports it to Parquet files for use with analytics tools like Spark, Pandas, and DuckDB. Requires --output-file.`,
 	PreRunE: analysisSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := executeExport(); err != nil {
@@ -465,9 +477,12 @@ var exportCmd = &cobra.Command{
 
 // executeExport performs the actual export of analysis data to Parquet files.
 func executeExport() error {
-	parquetFile := viper.GetString("parquet-file")
-	if parquetFile == "" {
-		return errors.New("--parquet-file is required")
+	// Export always uses parquet format, regardless of --output flag
+	cfg.Output = schema.ParquetOut
+
+	// Validate that output file is specified
+	if cfg.OutputFile == "" {
+		return errors.New("--output-file is required for export command")
 	}
 
 	// Get the analysis store
@@ -504,14 +519,14 @@ func executeExport() error {
 	parquetFileMetrics := parquet.ConvertFileScoresMetricsRecords(fileMetrics)
 
 	// Write analysis runs to Parquet
-	analysisRunsFile := parquetFile + ".analysis_runs.parquet"
+	analysisRunsFile := cfg.OutputFile + ".analysis_runs.parquet"
 	if err := parquet.WriteAnalysisRunsParquet(parquetAnalysisRuns, analysisRunsFile); err != nil {
 		return fmt.Errorf("failed to write analysis runs: %w", err)
 	}
 	fmt.Printf("Exported %d analysis runs to: %s\n", len(parquetAnalysisRuns), analysisRunsFile)
 
 	// Write file scores metrics to Parquet
-	fileMetricsFile := parquetFile + ".file_scores_metrics.parquet"
+	fileMetricsFile := cfg.OutputFile + ".file_scores_metrics.parquet"
 	if err := parquet.WriteFileScoresMetricsParquet(parquetFileMetrics, fileMetricsFile); err != nil {
 		return fmt.Errorf("failed to write file scores metrics: %w", err)
 	}
@@ -590,12 +605,6 @@ func init() {
 	analysisCmd.AddCommand(analysisStatusCmd)
 	analysisCmd.AddCommand(exportCmd)
 
-	// Add the --parquet-file flag to the export command
-	exportCmd.Flags().String("parquet-file", "", "Base name for Parquet output files (will create .analysis_runs.parquet and .file_scores_metrics.parquet)")
-	if err := viper.BindPFlags(exportCmd.Flags()); err != nil {
-		contract.LogFatal("Error binding export flags", err)
-	}
-
 	// Bind all persistent flags of rootCmd to Viper
 	rootCmd.PersistentFlags().Bool("detail", false, "Print per-target metadata (lines of code, size, age)")
 	rootCmd.PersistentFlags().String("end", "", "End date in ISO8601 or time ago")
@@ -603,7 +612,7 @@ func init() {
 	rootCmd.PersistentFlags().StringP("filter", "f", "", "Filter targets by path prefix")
 	rootCmd.PersistentFlags().IntP("limit", "l", contract.DefaultResultLimit, "Number of results to display")
 	rootCmd.PersistentFlags().String("mode", string(schema.HotMode), "Scoring mode: hot or risk or complexity or stale")
-	rootCmd.PersistentFlags().String("output", string(schema.TextOut), "Output format: text or csv or json")
+	rootCmd.PersistentFlags().String("output", string(schema.TextOut), "Output format: text or csv or json or parquet")
 	rootCmd.PersistentFlags().String("output-file", "", "Optional path to write output to")
 	rootCmd.PersistentFlags().Bool("owner", false, "Print per-target owner")
 	rootCmd.PersistentFlags().Int("precision", contract.DefaultPrecision, "Decimal precision for numeric columns")

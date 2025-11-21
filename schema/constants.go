@@ -35,9 +35,10 @@ const (
 
 // All output modes supported.
 const (
-	CSVOut  OutputMode = "csv"
-	TextOut OutputMode = "text" // default
-	JSONOut OutputMode = "json"
+	CSVOut     OutputMode = "csv"
+	TextOut    OutputMode = "text" // default
+	JSONOut    OutputMode = "json"
+	ParquetOut OutputMode = "parquet"
 )
 
 // All status supported.
@@ -66,9 +67,10 @@ const (
 
 // ValidOutputModes lists all valid output modes.
 var ValidOutputModes = map[OutputMode]struct{}{
-	CSVOut:  {},
-	TextOut: {},
-	JSONOut: {},
+	CSVOut:     {},
+	TextOut:    {},
+	JSONOut:    {},
+	ParquetOut: {},
 }
 
 // ValidScoringModes lists all valid scoring modes.

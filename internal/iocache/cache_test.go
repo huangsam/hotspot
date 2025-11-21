@@ -22,7 +22,7 @@ func TestCaching(t *testing.T) {
 		closeOnce = sync.Once{} // Reset for test
 
 		// Test initialization with SQLite backend
-		err := InitCaching(schema.SQLiteBackend, "", "", "")
+		err := InitStores(schema.SQLiteBackend, "", "", "")
 		assert.NoError(t, err, "Failed to initialize persistence")
 
 		// Test that Manager is accessible
@@ -47,9 +47,9 @@ func TestCaching(t *testing.T) {
 		closeOnce = sync.Once{} // Reset for test
 
 		// Multiple initializations should be safe (sync.Once)
-		err1 := InitCaching(schema.SQLiteBackend, "", "", "")
-		err2 := InitCaching(schema.SQLiteBackend, "", "", "")
-		err3 := InitCaching(schema.SQLiteBackend, "", "", "")
+		err1 := InitStores(schema.SQLiteBackend, "", "", "")
+		err2 := InitStores(schema.SQLiteBackend, "", "", "")
+		err3 := InitStores(schema.SQLiteBackend, "", "", "")
 
 		assert.NoError(t, err1, "First init should not fail")
 		assert.NoError(t, err2, "Second init should not fail")
@@ -66,7 +66,7 @@ func TestCaching(t *testing.T) {
 		closeOnce = sync.Once{} // Reset for test
 
 		// Test initialization with None backend (no database)
-		err := InitCaching(schema.NoneBackend, "", "", "")
+		err := InitStores(schema.NoneBackend, "", "", "")
 		assert.NoError(t, err, "Failed to initialize persistence with none backend")
 
 		// Test that Manager is accessible
@@ -543,9 +543,9 @@ func TestCacheStoreManagerConcurrency(t *testing.T) {
 	initOnce = sync.Once{}
 	closeOnce = sync.Once{}
 
-	err := InitCaching(schema.SQLiteBackend, ":memory:", "", "")
+	err := InitStores(schema.SQLiteBackend, ":memory:", "", "")
 	if err != nil {
-		t.Fatalf("InitCaching failed: %v", err)
+		t.Fatalf("InitStores failed: %v", err)
 	}
 	defer CloseCaching()
 
@@ -577,8 +577,8 @@ func TestCacheStoreManagerConcurrency(t *testing.T) {
 }
 
 // Helper function to check if a string contains a substring.
-// TestInitCachingErrors tests error handling in InitCaching.
-func TestInitCachingErrors(t *testing.T) {
+// TestInitStoresErrors tests error handling in InitStores.
+func TestInitStoresErrors(t *testing.T) {
 	t.Run("invalid table name during init", func(t *testing.T) {
 		// This test verifies that errors during store creation are properly propagated
 		// We can't easily test this without modifying activityTable constant,
@@ -595,7 +595,7 @@ func TestInitCachingErrors(t *testing.T) {
 
 		// Try to init with an invalid connection string for MySQL
 		// This should fail during database connection
-		err := InitCaching(schema.MySQLBackend, "invalid://connection", "", "")
+		err := InitStores(schema.MySQLBackend, "invalid://connection", "", "")
 		assert.Error(t, err, "Expected error for invalid MySQL connection string")
 	})
 }
@@ -654,9 +654,9 @@ func TestCacheStoreImplSetWithNilDB(t *testing.T) {
 	assert.NoError(t, err, "Set with nil db (NoneBackend) should not error")
 }
 
-// TestInitCachingNoneBackend tests that InitCaching properly handles NoneBackend
+// TestInitStoresNoneBackend tests that InitStores properly handles NoneBackend
 // for both cache and analysis stores, creating no-op implementations.
-func TestInitCachingNoneBackend(t *testing.T) {
+func TestInitStoresNoneBackend(t *testing.T) {
 	// Reset sync.Once for clean test state
 	initOnce = sync.Once{}
 	closeOnce = sync.Once{}
@@ -672,8 +672,8 @@ func TestInitCachingNoneBackend(t *testing.T) {
 		closeOnce = sync.Once{}
 
 		// Initialize with NoneBackend for cache, in-memory SQLite for analysis
-		err := InitCaching(schema.NoneBackend, "", schema.SQLiteBackend, ":memory:")
-		assert.NoError(t, err, "InitCaching with NoneBackend cache should not error")
+		err := InitStores(schema.NoneBackend, "", schema.SQLiteBackend, ":memory:")
+		assert.NoError(t, err, "InitStores with NoneBackend cache should not error")
 
 		// Verify Manager is initialized
 		assert.NotNil(t, Manager, "Manager should not be nil")
@@ -707,8 +707,8 @@ func TestInitCachingNoneBackend(t *testing.T) {
 		closeOnce = sync.Once{}
 
 		// Initialize with in-memory SQLite for cache, NoneBackend for analysis
-		err := InitCaching(schema.SQLiteBackend, ":memory:", schema.NoneBackend, "")
-		assert.NoError(t, err, "InitCaching with NoneBackend analysis should not error")
+		err := InitStores(schema.SQLiteBackend, ":memory:", schema.NoneBackend, "")
+		assert.NoError(t, err, "InitStores with NoneBackend analysis should not error")
 
 		// Verify Manager is initialized
 		assert.NotNil(t, Manager, "Manager should not be nil")
@@ -734,8 +734,8 @@ func TestInitCachingNoneBackend(t *testing.T) {
 		closeOnce = sync.Once{}
 
 		// Initialize with NoneBackend for both
-		err := InitCaching(schema.NoneBackend, "", schema.NoneBackend, "")
-		assert.NoError(t, err, "InitCaching with both NoneBackend should not error")
+		err := InitStores(schema.NoneBackend, "", schema.NoneBackend, "")
+		assert.NoError(t, err, "InitStores with both NoneBackend should not error")
 
 		// Verify Manager is initialized
 		assert.NotNil(t, Manager, "Manager should not be nil")
