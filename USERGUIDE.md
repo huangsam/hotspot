@@ -56,6 +56,16 @@ The `timeseries` subcommand tracks how hotspot scores change over time for a spe
 | `--interval` | Total time window (e.g., `6 months`, `1 year`). |
 | `--points` | Number of data points to generate. |
 
+### CI/CD Policy Enforcement
+
+The `check` command allows you to enforce risk thresholds in CI/CD pipelines, failing builds when files exceed acceptable risk levels. If no thresholds are specified, it defaults to 50.0 for all scoring modes.
+
+**Example:** Use the provided CI configuration for policy enforcement.
+
+`hotspot check`
+
+The [example CI config](./examples/hotspot.ci.yml) shows how custom thresholds can be configured for each scoring mode and is useful for maintaining code quality standards specific to your team.
+
 ## Configuration
 
 ### Configuration file
