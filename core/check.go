@@ -60,6 +60,8 @@ func ExecuteHotspotCheck(ctx context.Context, cfg *contract.Config, mgr contract
 	// Note: We run analyzeRepo separately for each mode rather than combining them
 	// to keep the implementation simple and leverage existing infrastructure.
 	// Each mode requires different weighting calculations in the scoring phase.
+	// This could be optimized in the future if performance becomes a concern, possibly
+	// with the use of caching or in-place multi-mode scoring.
 	failedFiles := []schema.CheckFailedFile{}
 
 	for _, mode := range schema.AllScoringModes {

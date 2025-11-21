@@ -601,6 +601,13 @@ func processRiskThresholds(cfg *Config, input *ConfigRawInput) error {
 		thresholds[schema.StaleMode] = *input.Thresholds.Stale
 	}
 
+	// Validate thresholds
+	for mode, threshold := range thresholds {
+		if threshold < 0.0 || threshold > 100.0 {
+			return fmt.Errorf("risk threshold for mode %s must be between 0.0 and 100.0 (received %.2f)", mode, threshold)
+		}
+	}
+
 	cfg.RiskThresholds = thresholds
 	return nil
 }
