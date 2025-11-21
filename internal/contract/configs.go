@@ -61,6 +61,14 @@ type WeightsRawInput struct {
 	Complexity *ModeWeightsRaw `mapstructure:"complexity"`
 }
 
+// ThresholdsRawInput holds risk threshold definitions from the YAML config file.
+type ThresholdsRawInput struct {
+	Hot        *float64 `mapstructure:"hot"`
+	Risk       *float64 `mapstructure:"risk"`
+	Complexity *float64 `mapstructure:"complexity"`
+	Stale      *float64 `mapstructure:"stale"`
+}
+
 // Config holds the runtime configuration for the analysis.
 // This struct remains the "final, validated" config.
 type Config struct {
@@ -98,6 +106,9 @@ type Config struct {
 
 	// CustomWeights is a mapping of [ModeName][BreakdownKey] = Weight
 	CustomWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64
+
+	// RiskThresholds is a mapping of [ModeName] = Threshold score value
+	RiskThresholds map[schema.ScoringMode]float64
 
 	UseEmojis bool // Enable emojis in output headers
 	UseColors bool // Enable colored labels in table output
@@ -146,6 +157,9 @@ type ConfigRawInput struct {
 
 	// --- Custom weights from config file ---
 	Weights WeightsRawInput `mapstructure:"weights"`
+
+	// --- Risk thresholds from config file ---
+	Thresholds ThresholdsRawInput `mapstructure:"thresholds"`
 }
 
 // Clone returns a deep copy of the Config struct.
@@ -162,6 +176,10 @@ func (c *Config) Clone() *Config {
 			clone.CustomWeights[mode] = make(map[schema.BreakdownKey]float64)
 			maps.Copy(clone.CustomWeights[mode], modeMap)
 		}
+	}
+	if c.RiskThresholds != nil {
+		clone.RiskThresholds = make(map[schema.ScoringMode]float64)
+		maps.Copy(clone.RiskThresholds, c.RiskThresholds)
 	}
 	return &clone
 }
@@ -204,6 +222,9 @@ func ProcessAndValidate(ctx context.Context, cfg *Config, client GitClient, inpu
 		return err
 	}
 	if err := processCustomWeights(cfg, input); err != nil {
+		return err
+	}
+	if err := processRiskThresholds(cfg, input); err != nil {
 		return err
 	}
 	if err := resolveGitPathAndFilter(ctx, cfg, client, input); err != nil {
@@ -552,6 +573,35 @@ func processCustomWeights(cfg *Config, input *ConfigRawInput) error {
 		return err
 	}
 	cfg.CustomWeights = weights
+	return nil
+}
+
+// processRiskThresholds converts the raw threshold input into the final cfg.RiskThresholds map.
+// If no thresholds are provided in the config, it initializes with default values (50.0 for all modes).
+func processRiskThresholds(cfg *Config, input *ConfigRawInput) error {
+	thresholds := make(map[schema.ScoringMode]float64)
+
+	// Set defaults first (50.0 for all modes)
+	thresholds[schema.HotMode] = 50.0
+	thresholds[schema.RiskMode] = 50.0
+	thresholds[schema.ComplexityMode] = 50.0
+	thresholds[schema.StaleMode] = 50.0
+
+	// Override with custom values if provided
+	if input.Thresholds.Hot != nil {
+		thresholds[schema.HotMode] = *input.Thresholds.Hot
+	}
+	if input.Thresholds.Risk != nil {
+		thresholds[schema.RiskMode] = *input.Thresholds.Risk
+	}
+	if input.Thresholds.Complexity != nil {
+		thresholds[schema.ComplexityMode] = *input.Thresholds.Complexity
+	}
+	if input.Thresholds.Stale != nil {
+		thresholds[schema.StaleMode] = *input.Thresholds.Stale
+	}
+
+	cfg.RiskThresholds = thresholds
 	return nil
 }
 

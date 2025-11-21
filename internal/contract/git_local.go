@@ -126,6 +126,23 @@ func (c *LocalGitClient) ListFilesAtRef(ctx context.Context, repoPath string, re
 	return files, nil
 }
 
+// GetChangedFilesBetweenRefs implements the GitClient interface.
+func (c *LocalGitClient) GetChangedFilesBetweenRefs(ctx context.Context, repoPath string, baseRef string, targetRef string) ([]string, error) {
+	args := []string{
+		"diff", "--name-only",
+		baseRef + ".." + targetRef,
+	}
+	out, err := c.Run(ctx, repoPath, args...)
+	if err != nil {
+		return nil, err
+	}
+	files := strings.Split(strings.TrimSpace(string(out)), "\n")
+	if len(files) == 1 && files[0] == "" {
+		return []string{}, nil
+	}
+	return files, nil
+}
+
 // GetOldestCommitDateForPath implements the GitClient interface.
 func (c *LocalGitClient) GetOldestCommitDateForPath(ctx context.Context, repoPath string, path string, before time.Time, numCommits int, maxSearchDuration time.Duration) (time.Time, error) {
 	afterTime := before.Add(-maxSearchDuration)

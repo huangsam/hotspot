@@ -68,6 +68,13 @@ func (m *MockGitClient) ListFilesAtRef(ctx context.Context, repoPath string, ref
 	return files, ret.Error(1)
 }
 
+// GetChangedFilesBetweenRefs implements the GitClient interface.
+func (m *MockGitClient) GetChangedFilesBetweenRefs(ctx context.Context, repoPath string, baseRef string, targetRef string) ([]string, error) {
+	ret := m.Called(ctx, repoPath, baseRef, targetRef)
+	files, _ := ret.Get(0).([]string)
+	return files, ret.Error(1)
+}
+
 // GetOldestCommitDateForPath implements the GitClient interface.
 func (m *MockGitClient) GetOldestCommitDateForPath(ctx context.Context, repoPath string, path string, before time.Time, numCommits int, maxSearchDuration time.Duration) (time.Time, error) {
 	ret := m.Called(ctx, repoPath, path, before, numCommits, maxSearchDuration)
