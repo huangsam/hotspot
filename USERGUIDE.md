@@ -115,7 +115,7 @@ Export analysis data to Parquet files for use with analytics tools like Spark, P
 hotspot files --analysis-backend sqlite
 
 # Export to Parquet files
-hotspot analysis export --analysis-backend sqlite --parquet-file mydata
+hotspot analysis export --analysis-backend sqlite --output-file mydata
 ```
 
 This creates two files:
@@ -128,7 +128,7 @@ This creates two files:
 SQLite (default):
 
 ```bash
-hotspot analysis export --analysis-backend sqlite --parquet-file export/data
+hotspot analysis export --analysis-backend sqlite --output-file export/data
 ```
 
 MySQL:
@@ -137,7 +137,7 @@ MySQL:
 hotspot analysis export \
   --analysis-backend mysql \
   --analysis-db-connect "user:pass@tcp(localhost:3306)/hotspot" \
-  --parquet-file export/data
+  --output-file export/data
 ```
 
 PostgreSQL:
@@ -146,7 +146,7 @@ PostgreSQL:
 hotspot analysis export \
   --analysis-backend postgresql \
   --analysis-db-connect "host=localhost port=5432 dbname=hotspot" \
-  --parquet-file export/data
+  --output-file export/data
 ```
 
 #### Reading exported data
