@@ -241,14 +241,7 @@ func analysisSetup() error {
 	}
 
 	// Get output-related config values (used by export command)
-	outputStr := viper.GetString("output")
 	outputFile := viper.GetString("output-file")
-
-	// Parse and validate output format
-	output := schema.OutputMode(outputStr) // default is "text"
-	if _, ok := schema.ValidOutputModes[output]; !ok {
-		return fmt.Errorf("invalid output format '%s'. must be text, csv, json, parquet", outputStr)
-	}
 
 	// Initialize stores with the loaded config (no cache tracking for analysis commands)
 	if err := iocache.InitStores(schema.NoneBackend, "", backend, connStr); err != nil {
@@ -257,7 +250,6 @@ func analysisSetup() error {
 
 	cfg.AnalysisBackend = backend
 	cfg.AnalysisDBConnect = connStr
-	cfg.Output = output
 	cfg.OutputFile = outputFile
 
 	return nil
