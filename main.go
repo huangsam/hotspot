@@ -454,21 +454,21 @@ var analysisStatusCmd = &cobra.Command{
 	},
 }
 
-// exportCmd exports analysis data to Parquet files.
-var exportCmd = &cobra.Command{
+// analysisExportCmd exports analysis data to Parquet files.
+var analysisExportCmd = &cobra.Command{
 	Use:     "export",
 	Short:   "Export analysis data to Parquet files.",
 	Long:    `The export command reads analysis data and exports it to Parquet for analytics via Spark, Pandas, and DuckDB. Requires --output-file.`,
 	PreRunE: analysisSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := executeExport(); err != nil {
+		if err := executeAnalysisExport(); err != nil {
 			contract.LogFatal("Failed to export analysis data", err)
 		}
 	},
 }
 
-// executeExport performs the actual export of analysis data to Parquet files.
-func executeExport() error {
+// executeAnalysisExport performs the actual export of analysis data to Parquet files.
+func executeAnalysisExport() error {
 	// Export always uses parquet format, regardless of --output flag
 	cfg.Output = schema.ParquetOut
 
@@ -595,7 +595,7 @@ func init() {
 	// Add the clear subcommand to the parent analysis command
 	analysisCmd.AddCommand(analysisClearCmd)
 	analysisCmd.AddCommand(analysisStatusCmd)
-	analysisCmd.AddCommand(exportCmd)
+	analysisCmd.AddCommand(analysisExportCmd)
 
 	// Bind all persistent flags of rootCmd to Viper
 	rootCmd.PersistentFlags().Bool("detail", false, "Print per-target metadata (lines of code, size, age)")
