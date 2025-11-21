@@ -466,7 +466,7 @@ var analysisStatusCmd = &cobra.Command{
 var exportCmd = &cobra.Command{
 	Use:     "export",
 	Short:   "Export analysis data to Parquet files.",
-	Long:    `The export command reads analysis data from the configured backend and exports it to Parquet files for use with analytics tools like Spark, Pandas, and DuckDB. Requires --output-file.`,
+	Long:    `The export command reads analysis data and exports it to Parquet for analytics via Spark, Pandas, and DuckDB. Requires --output-file.`,
 	PreRunE: analysisSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := executeExport(); err != nil {
