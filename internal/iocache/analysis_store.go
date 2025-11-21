@@ -545,9 +545,9 @@ func (as *AnalysisStoreImpl) GetAllFileScoresMetrics() ([]schema.FileScoresMetri
 
 	quotedTableName := quoteTableName(fileScoresMetricsTable, as.backend)
 	query := fmt.Sprintf(`SELECT analysis_id, file_path, analysis_time, total_commits, total_churn,
-		contributor_count, age_days, gini_coefficient, file_owner,
-		score_hot, score_risk, score_complexity, score_stale, score_label
-		FROM %s ORDER BY analysis_id, file_path`, quotedTableName)
+    contributor_count, age_days, gini_coefficient, file_owner,
+    score_hot, score_risk, score_complexity, score_stale, score_label
+    FROM %s ORDER BY analysis_id, file_path`, quotedTableName)
 
 	rows, err := as.db.Query(query)
 	if err != nil {
