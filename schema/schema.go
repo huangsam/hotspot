@@ -273,3 +273,21 @@ type FileScoresMetricsRecord struct {
 	ScoreStale       float64
 	ScoreLabel       string
 }
+
+// CheckResult holds the results of a policy check.
+type CheckResult struct {
+	Passed       bool
+	FailedFiles  []CheckFailedFile
+	TotalFiles   int
+	CheckedModes []ScoringMode
+	TargetRef    string
+	BaseRef      string
+}
+
+// CheckFailedFile represents a file that failed the policy check.
+type CheckFailedFile struct {
+	Path      string
+	Mode      ScoringMode
+	Score     float64
+	Threshold float64
+}

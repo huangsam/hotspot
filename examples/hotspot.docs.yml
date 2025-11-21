@@ -186,3 +186,14 @@
 # Used by: 'hotspot timeseries'
 # Corresponds to: --points
 # points: 4
+
+
+# --- Risk Thresholds (Applicable only to 'hotspot check' commands) ---
+# Define maximum acceptable scores for each scoring mode.
+# Files exceeding these thresholds will fail the check and cause non-zero exit.
+# Default: 50.0 for all modes if not specified.
+# thresholds:
+#   hot: 60.0         # Activity hotspots threshold
+#   risk: 55.0        # Knowledge risk/bus factor threshold
+#   complexity: 70.0  # Technical debt threshold
+#   stale: 65.0       # Maintenance debt threshold

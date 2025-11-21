@@ -56,13 +56,13 @@ func TestPrintCheckResult(t *testing.T) {
 	// Test that printCheckResult doesn't panic with various inputs
 	tests := []struct {
 		name   string
-		result CheckResult
+		result schema.CheckResult
 	}{
 		{
 			name: "all passed",
-			result: CheckResult{
+			result: schema.CheckResult{
 				Passed:       true,
-				FailedFiles:  []CheckFailedFile{},
+				FailedFiles:  []schema.CheckFailedFile{},
 				TotalFiles:   5,
 				CheckedModes: []schema.ScoringMode{schema.HotMode, schema.RiskMode},
 				BaseRef:      "main",
@@ -71,9 +71,9 @@ func TestPrintCheckResult(t *testing.T) {
 		},
 		{
 			name: "some failed",
-			result: CheckResult{
+			result: schema.CheckResult{
 				Passed: false,
-				FailedFiles: []CheckFailedFile{
+				FailedFiles: []schema.CheckFailedFile{
 					{
 						Path:      "main.go",
 						Mode:      schema.HotMode,

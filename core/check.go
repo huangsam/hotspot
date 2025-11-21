@@ -10,24 +10,6 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// CheckResult holds the results of a policy check.
-type CheckResult struct {
-	Passed       bool
-	FailedFiles  []CheckFailedFile
-	TotalFiles   int
-	CheckedModes []schema.ScoringMode
-	TargetRef    string
-	BaseRef      string
-}
-
-// CheckFailedFile represents a file that failed the policy check.
-type CheckFailedFile struct {
-	Path      string
-	Mode      schema.ScoringMode
-	Score     float64
-	Threshold float64
-}
-
 // ExecuteHotspotCheck runs the check command for CI/CD gating.
 // It analyzes only files changed between base and target refs, checks them against thresholds,
 // and returns a non-zero exit code if any files exceed the thresholds.
@@ -78,7 +60,7 @@ func ExecuteHotspotCheck(ctx context.Context, cfg *contract.Config, mgr contract
 	// Note: We run analyzeRepo separately for each mode rather than combining them
 	// to keep the implementation simple and leverage existing infrastructure.
 	// Each mode requires different weighting calculations in the scoring phase.
-	failedFiles := []CheckFailedFile{}
+	failedFiles := []schema.CheckFailedFile{}
 
 	for _, mode := range schema.AllScoringModes {
 		threshold := cfg.RiskThresholds[mode]
@@ -93,7 +75,7 @@ func ExecuteHotspotCheck(ctx context.Context, cfg *contract.Config, mgr contract
 		// Check against threshold
 		for _, file := range fileResults {
 			if file.Score > threshold {
-				failedFiles = append(failedFiles, CheckFailedFile{
+				failedFiles = append(failedFiles, schema.CheckFailedFile{
 					Path:      file.Path,
 					Mode:      mode,
 					Score:     file.Score,
@@ -104,7 +86,7 @@ func ExecuteHotspotCheck(ctx context.Context, cfg *contract.Config, mgr contract
 	}
 
 	// Build result
-	result := CheckResult{
+	result := schema.CheckResult{
 		Passed:       len(failedFiles) == 0,
 		FailedFiles:  failedFiles,
 		TotalFiles:   len(filesToAnalyze),
@@ -137,7 +119,7 @@ func filterChangedFiles(files []string, excludes []string) []string {
 }
 
 // printCheckResult prints the check result in a concise format suitable for CI/CD.
-func printCheckResult(result CheckResult, duration time.Duration) {
+func printCheckResult(result schema.CheckResult, duration time.Duration) {
 	fmt.Printf("\n🔍 Policy Check Results (%.2fs)\n", duration.Seconds())
 	fmt.Printf("   Base Ref:    %s\n", result.BaseRef)
 	fmt.Printf("   Target Ref:  %s\n", result.TargetRef)
@@ -152,7 +134,7 @@ func printCheckResult(result CheckResult, duration time.Duration) {
 	fmt.Printf("❌ Policy check failed: %d file(s) exceeded thresholds\n\n", len(result.FailedFiles))
 
 	// Group by mode for better readability
-	modeGroups := make(map[schema.ScoringMode][]CheckFailedFile)
+	modeGroups := make(map[schema.ScoringMode][]schema.CheckFailedFile)
 	for _, failed := range result.FailedFiles {
 		modeGroups[failed.Mode] = append(modeGroups[failed.Mode], failed)
 	}
