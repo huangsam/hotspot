@@ -1,0 +1,24 @@
+# examples/hotspot.check.yml
+#
+# Configuration optimized for CI/CD policy enforcement with hotspot check command.
+# Defines risk thresholds for each scoring mode.
+
+# --- Global Settings ---
+# workers: Use moderate workers for CI performance
+workers: 8
+# cache-backend: Disable caching in CI for fresh analysis
+cache-backend: none
+
+# --- Comparison Settings (required for check command) ---
+# lookback: Analyze activity from the last 3 months
+lookback: 3 months
+
+# --- Risk Thresholds ---
+# Define maximum acceptable scores for each mode.
+# Files exceeding these thresholds will fail the check.
+# Default is 50.0 for all modes if not specified.
+thresholds:
+  hot: 60.0         # Activity hotspots threshold
+  risk: 55.0        # Knowledge risk/bus factor threshold
+  complexity: 70.0  # Technical debt threshold
+  stale: 65.0       # Maintenance debt threshold

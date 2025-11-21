@@ -655,6 +655,14 @@ func init() {
 		contract.LogFatal("Error binding compare flags", err)
 	}
 
+	// Bind all flags of checkCmd to Viper (reuse compare flag keys)
+	checkCmd.Flags().String("base-ref", "", "Base Git reference for the BEFORE state (required)")
+	checkCmd.Flags().String("target-ref", "", "Target Git reference for the AFTER state (required)")
+	checkCmd.Flags().String("lookback", "6 months", "Time duration to look back from Target ref commit time")
+	if err := viper.BindPFlags(checkCmd.Flags()); err != nil {
+		contract.LogFatal("Error binding check flags", err)
+	}
+
 	// Bind all flags of timeseriesCmd to Viper
 	timeseriesCmd.Flags().String("path", "", "Path to the file or folder to analyze (required)")
 	timeseriesCmd.Flags().String("interval", "3 months", "Total time interval")
