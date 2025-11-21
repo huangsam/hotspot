@@ -120,18 +120,18 @@ func filterChangedFiles(files []string, excludes []string) []string {
 
 // printCheckResult prints the check result in a concise format suitable for CI/CD.
 func printCheckResult(result schema.CheckResult, duration time.Duration) {
-	fmt.Printf("\n🔍 Policy Check Results (%.2fs)\n", duration.Seconds())
-	fmt.Printf("   Base Ref:    %s\n", result.BaseRef)
-	fmt.Printf("   Target Ref:  %s\n", result.TargetRef)
-	fmt.Printf("   Files Analyzed: %d\n\n", result.TotalFiles)
+	fmt.Printf("Policy Check Results:\n")
+	fmt.Printf("  Base Ref:       %s\n", result.BaseRef)
+	fmt.Printf("  Target Ref:     %s\n", result.TargetRef)
+	fmt.Printf("  Checked %d files in %v\n\n", result.TotalFiles, duration)
 
 	if result.Passed {
-		fmt.Println("✅ All files passed policy checks")
+		fmt.Println("All files passed policy checks")
 		return
 	}
 
 	// Print failed files grouped by mode
-	fmt.Printf("❌ Policy check failed: %d file(s) exceeded thresholds\n\n", len(result.FailedFiles))
+	fmt.Printf("Policy check failed: %d file(s) exceeded thresholds\n\n", len(result.FailedFiles))
 
 	// Group by mode for better readability
 	modeGroups := make(map[schema.ScoringMode][]schema.CheckFailedFile)
