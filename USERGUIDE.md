@@ -119,17 +119,20 @@ hotspot analysis export --analysis-backend sqlite --parquet-file mydata
 ```
 
 This creates two files:
+
 - `mydata.analysis_runs.parquet` - Analysis run metadata
 - `mydata.file_scores_metrics.parquet` - Per-file metrics and scores
 
 #### Using with different backends
 
-**SQLite (default):**
+SQLite (default):
+
 ```bash
 hotspot analysis export --analysis-backend sqlite --parquet-file export/data
 ```
 
-**MySQL:**
+MySQL:
+
 ```bash
 hotspot analysis export \
   --analysis-backend mysql \
@@ -137,7 +140,8 @@ hotspot analysis export \
   --parquet-file export/data
 ```
 
-**PostgreSQL:**
+PostgreSQL:
+
 ```bash
 hotspot analysis export \
   --analysis-backend postgresql \
@@ -147,7 +151,8 @@ hotspot analysis export \
 
 #### Reading exported data
 
-**Python (Pandas):**
+Python (Pandas):
+
 ```python
 import pandas as pd
 
@@ -158,17 +163,19 @@ files = pd.read_parquet('mydata.file_scores_metrics.parquet')
 print(files.groupby('analysis_id')['score_hot'].mean())
 ```
 
-**DuckDB:**
+DuckDB:
+
 ```sql
 -- Query Parquet files directly
 SELECT * FROM 'mydata.analysis_runs.parquet';
-SELECT file_path, score_hot, score_risk 
-FROM 'mydata.file_scores_metrics.parquet' 
-ORDER BY score_hot DESC 
+SELECT file_path, score_hot, score_risk
+FROM 'mydata.file_scores_metrics.parquet'
+ORDER BY score_hot DESC
 LIMIT 10;
 ```
 
-**Apache Spark:**
+Apache Spark:
+
 ```scala
 val runs = spark.read.parquet("mydata.analysis_runs.parquet")
 val files = spark.read.parquet("mydata.file_scores_metrics.parquet")
