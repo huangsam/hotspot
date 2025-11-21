@@ -308,9 +308,7 @@ var checkCmd = &cobra.Command{
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if !cfg.CompareMode {
-			contract.LogFatal("Cannot run check", errors.New("base and target refs must be provided"))
-		}
+		// Validation is done in ExecuteHotspotCheck
 		if err := core.ExecuteHotspotCheck(rootCtx, cfg, cacheManager); err != nil {
 			contract.LogFatal("Policy check failed", err)
 		}

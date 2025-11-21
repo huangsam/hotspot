@@ -75,10 +75,12 @@ func ExecuteHotspotCheck(ctx context.Context, cfg *contract.Config, mgr contract
 	}
 
 	// Analyze files with all scoring modes and check thresholds
-	allModes := []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode}
+	// Note: We run analyzeRepo separately for each mode rather than combining them
+	// to keep the implementation simple and leverage existing infrastructure.
+	// Each mode requires different weighting calculations in the scoring phase.
 	failedFiles := []CheckFailedFile{}
 
-	for _, mode := range allModes {
+	for _, mode := range schema.AllScoringModes {
 		threshold := cfg.RiskThresholds[mode]
 		
 		// Create mode-specific config
@@ -106,7 +108,7 @@ func ExecuteHotspotCheck(ctx context.Context, cfg *contract.Config, mgr contract
 		Passed:       len(failedFiles) == 0,
 		FailedFiles:  failedFiles,
 		TotalFiles:   len(filesToAnalyze),
-		CheckedModes: allModes,
+		CheckedModes: schema.AllScoringModes,
 		BaseRef:      cfg.BaseRef,
 		TargetRef:    cfg.TargetRef,
 	}

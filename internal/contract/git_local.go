@@ -127,6 +127,10 @@ func (c *LocalGitClient) ListFilesAtRef(ctx context.Context, repoPath string, re
 }
 
 // GetChangedFilesBetweenRefs implements the GitClient interface.
+// It returns files that have changed between baseRef and targetRef.
+// Uses Git's ".." (two-dot) range syntax which shows commits reachable from
+// targetRef but not from baseRef. This is appropriate for comparing branches
+// that share a common ancestor (e.g., feature branch vs main).
 func (c *LocalGitClient) GetChangedFilesBetweenRefs(ctx context.Context, repoPath string, baseRef string, targetRef string) ([]string, error) {
 	args := []string{
 		"diff", "--name-only",
