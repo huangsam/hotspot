@@ -17,10 +17,10 @@ type AnalysisRun struct {
 	// AnalysisID is the unique identifier for this analysis run
 	AnalysisID int64 `parquet:"analysis_id,snappy"`
 
-	// StartTime is when the analysis began (stored as TIMESTAMP with nanosecond precision)
+	// StartTime is when the analysis began (stored as TIMESTAMP with microsecond precision)
 	StartTime time.Time `parquet:"start_time,snappy"`
 
-	// EndTime is when the analysis completed (nullable, stored as TIMESTAMP with nanosecond precision)
+	// EndTime is when the analysis completed (nullable, stored as TIMESTAMP with microsecond precision)
 	EndTime *time.Time `parquet:"end_time,optional,snappy"`
 
 	// RunDurationMs is the duration of the analysis run in milliseconds (nullable)
@@ -42,7 +42,7 @@ type FileScoresMetrics struct {
 	// FilePath is the relative path to the file in the repository
 	FilePath string `parquet:"file_path,snappy"`
 
-	// AnalysisTime is when this file was analyzed (stored as TIMESTAMP with nanosecond precision)
+	// AnalysisTime is when this file was analyzed (stored as TIMESTAMP with microsecond precision)
 	AnalysisTime time.Time `parquet:"analysis_time,snappy"`
 
 	// TotalCommits is the number of commits affecting this file
