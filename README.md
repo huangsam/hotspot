@@ -66,7 +66,7 @@ hotspot folders
 hotspot files /path/to/repo/pkg
 ```
 
-For detailed usage instructions, configuration options, and common workflows, see [USERGUIDE.md](./USERGUIDE.md).
+For detailed usage, configuration options, and common workflows, see [USERGUIDE.md](./USERGUIDE.md).
 
 ### Live demo
 

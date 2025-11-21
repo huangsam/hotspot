@@ -73,6 +73,12 @@ type AnalysisStore interface {
 	// RecordFileMetricsAndScores stores both raw git metrics and final scores for a file in one operation
 	RecordFileMetricsAndScores(analysisID int64, filePath string, metrics schema.FileMetrics, scores schema.FileScores) error
 
+	// GetAllAnalysisRuns retrieves all analysis runs from the store
+	GetAllAnalysisRuns() ([]schema.AnalysisRunRecord, error)
+
+	// GetAllFileScoresMetrics retrieves all file scores and metrics from the store
+	GetAllFileScoresMetrics() ([]schema.FileScoresMetricsRecord, error)
+
 	// GetStatus returns status information about the analysis store
 	GetStatus() (schema.AnalysisStatus, error)
 

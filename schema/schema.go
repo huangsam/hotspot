@@ -245,3 +245,31 @@ type AnalysisStatus struct {
 	TotalFilesAnalyzed int              `json:"total_files_analyzed"`
 	TableSizes         map[string]int64 `json:"table_sizes"`
 }
+
+// AnalysisRunRecord represents a row from the hotspot_analysis_runs table.
+type AnalysisRunRecord struct {
+	AnalysisID         int64
+	StartTime          time.Time
+	EndTime            *time.Time
+	RunDurationMs      *int32
+	TotalFilesAnalyzed int32
+	ConfigParams       *string
+}
+
+// FileScoresMetricsRecord represents a row from the hotspot_file_scores_metrics table.
+type FileScoresMetricsRecord struct {
+	AnalysisID       int64
+	FilePath         string
+	AnalysisTime     time.Time
+	TotalCommits     int32
+	TotalChurn       int32
+	ContributorCount int32
+	AgeDays          float64
+	GiniCoefficient  float64
+	FileOwner        *string
+	ScoreHot         float64
+	ScoreRisk        float64
+	ScoreComplexity  float64
+	ScoreStale       float64
+	ScoreLabel       string
+}

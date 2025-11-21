@@ -104,6 +104,85 @@ hotspot analysis status # Check analysis backend status
 hotspot analysis clear  # Clear stored analysis runs
 ```
 
+### Exporting to Parquet
+
+Export analysis data to Parquet files for use with analytics tools like Spark, Pandas, and DuckDB.
+
+#### Basic export
+
+```bash
+# Run analysis with tracking enabled
+hotspot files --analysis-backend sqlite
+
+# Export to Parquet files
+hotspot analysis export --analysis-backend sqlite --output-file mydata
+```
+
+This creates two files:
+
+- `mydata.analysis_runs.parquet` - Analysis run metadata
+- `mydata.file_scores_metrics.parquet` - Per-file metrics and scores
+
+#### Using with different backends
+
+SQLite (default):
+
+```bash
+hotspot analysis export --analysis-backend sqlite --output-file export/data
+```
+
+MySQL:
+
+```bash
+hotspot analysis export \
+  --analysis-backend mysql \
+  --analysis-db-connect "user:pass@tcp(localhost:3306)/hotspot" \
+  --output-file export/data
+```
+
+PostgreSQL:
+
+```bash
+hotspot analysis export \
+  --analysis-backend postgresql \
+  --analysis-db-connect "host=localhost port=5432 dbname=hotspot" \
+  --output-file export/data
+```
+
+#### Reading exported data
+
+Python (Pandas):
+
+```python
+import pandas as pd
+
+runs = pd.read_parquet('mydata.analysis_runs.parquet')
+files = pd.read_parquet('mydata.file_scores_metrics.parquet')
+
+# Analyze trends
+print(files.groupby('analysis_id')['score_hot'].mean())
+```
+
+DuckDB:
+
+```sql
+-- Query Parquet files directly
+SELECT * FROM 'mydata.analysis_runs.parquet';
+SELECT file_path, score_hot, score_risk
+FROM 'mydata.file_scores_metrics.parquet'
+ORDER BY score_hot DESC
+LIMIT 10;
+```
+
+Apache Spark:
+
+```scala
+val runs = spark.read.parquet("mydata.analysis_runs.parquet")
+val files = spark.read.parquet("mydata.file_scores_metrics.parquet")
+
+files.groupBy("analysis_id").count().show()
+```
+
 ## Common use cases
 
 ### Daily & sprint workflows
