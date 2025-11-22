@@ -507,6 +507,21 @@ var analysisExportCmd = &cobra.Command{
 	},
 }
 
+// analysisMigrateCmd runs database migrations for the analysis store.
+var analysisMigrateCmd = &cobra.Command{
+	Use:   "migrate",
+	Short: "Run database schema migrations for the analysis store.",
+	Long: `The migrate command uses golang-migrate to manage database schema evolution for the analysis store.
+By default, it migrates to the latest version. Use --target-version to migrate to a specific version.`,
+	PreRunE: analysisSetupWrapper,
+	Run: func(_ *cobra.Command, _ []string) {
+		targetVersion := viper.GetInt("target-version")
+		if err := iocache.MigrateAnalysis(cfg.AnalysisBackend, cfg.AnalysisDBConnect, targetVersion); err != nil {
+			contract.LogFatal("Failed to run migrations", err)
+		}
+	},
+}
+
 // executeAnalysisExport performs the actual export of analysis data to Parquet files.
 func executeAnalysisExport() error {
 	// Export always uses parquet format, regardless of --output flag
@@ -637,6 +652,7 @@ func init() {
 	analysisCmd.AddCommand(analysisClearCmd)
 	analysisCmd.AddCommand(analysisStatusCmd)
 	analysisCmd.AddCommand(analysisExportCmd)
+	analysisCmd.AddCommand(analysisMigrateCmd)
 
 	// Bind all persistent flags of rootCmd to Viper
 	rootCmd.PersistentFlags().Bool("detail", false, "Print per-target metadata (lines of code, size, age)")
@@ -686,6 +702,12 @@ func init() {
 	checkCmd.Flags().String("thresholds-override", "", "Risk thresholds for CI/CD gating (format: 'hot:50,risk:50,complexity:50,stale:50')")
 	if err := viper.BindPFlags(checkCmd.Flags()); err != nil {
 		contract.LogFatal("Error binding check flags", err)
+	}
+
+	// Bind all flags of analysisMigrateCmd to Viper
+	analysisMigrateCmd.Flags().Int("target-version", -1, "Target migration version (-1 means latest, 0 means rollback to initial state)")
+	if err := viper.BindPFlags(analysisMigrateCmd.Flags()); err != nil {
+		contract.LogFatal("Error binding analysis migrate flags", err)
 	}
 }
 
