@@ -1,5 +1,19 @@
 # 🚀 Changelog
 
+## v1.10.1
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.10.0...v1.10.1)
+
+### Improvements
+
+- **Documentation Updates**: Update README and USERGUIDE documentation
+- **Schema Fixes**: Fix schema terms in configuration and migration code
+- **Driver Change**: Change PostgreSQL driver from pq to pgx
+
+### Development
+
+- **Dependency Updates**: Update dependencies for pgx driver
+
 ## v1.10.0
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.9.0...v1.10.0)
