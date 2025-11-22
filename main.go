@@ -227,6 +227,11 @@ func cacheSetup() error {
 	return nil
 }
 
+// cacheSetupWrapper wraps cacheSetup to provide PreRunE for cache commands.
+func cacheSetupWrapper(_ *cobra.Command, _ []string) error {
+	return cacheSetup()
+}
+
 // analysisSetup loads minimal configuration needed for analysis operations.
 // This is used by commands that need analysis access without full shared setup.
 func analysisSetup() error {
@@ -278,11 +283,6 @@ func analysisSetup() error {
 	cfg.OutputFile = outputFile
 
 	return nil
-}
-
-// cacheSetupWrapper wraps initCacheConfig to provide PreRunE for cache commands.
-func cacheSetupWrapper(_ *cobra.Command, _ []string) error {
-	return cacheSetup()
 }
 
 // analysisSetupWrapper wraps analysisSetup to provide PreRunE for analysis commands.
