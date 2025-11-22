@@ -19,8 +19,9 @@ import (
 var migrationsFS embed.FS
 
 // MigrateAnalysis runs database migrations for the analysis store.
-// If targetVersion is 0 or negative, it migrates to the latest version.
-// Otherwise, it migrates to the specified version.
+// - If targetVersion < 0, it migrates to the latest version.
+// - If targetVersion == 0, it rolls back all migrations (to initial state).
+// - If targetVersion > 0, it migrates to the specified version.
 func MigrateAnalysis(backend schema.CacheBackend, connStr string, targetVersion int) error {
 	if backend == schema.NoneBackend {
 		return fmt.Errorf("migrations are not supported for NoneBackend")
