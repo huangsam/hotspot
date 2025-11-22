@@ -53,6 +53,7 @@ func (b *MigrationBuilder) buildDatabase() error {
 		if err != nil {
 			return fmt.Errorf("failed to open SQLite database: %w", err)
 		}
+		b.db.SetMaxOpenConns(1)
 
 	case schema.MySQLBackend:
 		driverName = "mysql"
