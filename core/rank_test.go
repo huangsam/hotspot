@@ -10,10 +10,10 @@ import (
 // TestRankFiles tests file ranking logic.
 func TestRankFiles(t *testing.T) {
 	files := []schema.FileResult{
-		{Path: "low.go", SizeBytes: 1, Score: 10, Mode: schema.HotMode},
-		{Path: "high.go", SizeBytes: 1, Score: 90, Mode: schema.HotMode},
-		{Path: "medium.go", SizeBytes: 1, Score: 50, Mode: schema.HotMode},
-		{Path: "critical.go", SizeBytes: 1, Score: 95, Mode: schema.HotMode},
+		{Path: "low.go", SizeBytes: 1, ModeScore: 10, Mode: schema.HotMode},
+		{Path: "high.go", SizeBytes: 1, ModeScore: 90, Mode: schema.HotMode},
+		{Path: "medium.go", SizeBytes: 1, ModeScore: 50, Mode: schema.HotMode},
+		{Path: "critical.go", SizeBytes: 1, ModeScore: 95, Mode: schema.HotMode},
 	}
 
 	t.Run("rank and limit", func(t *testing.T) {
@@ -31,7 +31,7 @@ func TestRankFiles(t *testing.T) {
 	t.Run("scores in descending order", func(t *testing.T) {
 		ranked := rankFiles(files, 10)
 		for i := 1; i < len(ranked); i++ {
-			assert.LessOrEqual(t, ranked[i].Score, ranked[i-1].Score)
+			assert.LessOrEqual(t, ranked[i].ModeScore, ranked[i-1].ModeScore)
 		}
 	})
 }

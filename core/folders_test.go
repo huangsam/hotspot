@@ -18,7 +18,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			Commits:     10,
 			Churn:       50,
 			LinesOfCode: 100,
-			Score:       25.0,
+			ModeScore:   25.0,
 			Owners:      []string{"Alice"},
 		},
 		{
@@ -26,7 +26,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			Commits:     5,
 			Churn:       25,
 			LinesOfCode: 50,
-			Score:       15.0,
+			ModeScore:   15.0,
 			Owners:      []string{"Bob"},
 		},
 		{
@@ -34,7 +34,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			Commits:     8,
 			Churn:       40,
 			LinesOfCode: 80,
-			Score:       20.0,
+			ModeScore:   20.0,
 			Owners:      []string{"Alice"},
 		},
 		{
@@ -42,7 +42,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			Commits:     3,
 			Churn:       15,
 			LinesOfCode: 30,
-			Score:       10.0,
+			ModeScore:   10.0,
 			Owners:      []string{"Charlie"},
 		},
 	}
@@ -94,7 +94,7 @@ func TestAggregateAndScoreFolders_WithPathFilter(t *testing.T) {
 			Commits:     10,
 			Churn:       50,
 			LinesOfCode: 100,
-			Score:       25.0,
+			ModeScore:   25.0,
 			Owners:      []string{"Alice"},
 		},
 		{
@@ -102,7 +102,7 @@ func TestAggregateAndScoreFolders_WithPathFilter(t *testing.T) {
 			Commits:     5,
 			Churn:       25,
 			LinesOfCode: 50,
-			Score:       15.0,
+			ModeScore:   15.0,
 			Owners:      []string{"Bob"},
 		},
 		{
@@ -110,7 +110,7 @@ func TestAggregateAndScoreFolders_WithPathFilter(t *testing.T) {
 			Commits:     8,
 			Churn:       40,
 			LinesOfCode: 80,
-			Score:       20.0,
+			ModeScore:   20.0,
 			Owners:      []string{"Alice"},
 		},
 	}
@@ -142,7 +142,7 @@ func TestAggregateAndScoreFolders_SingleFileInRoot(t *testing.T) {
 			Commits:     5,
 			Churn:       25,
 			LinesOfCode: 50,
-			Score:       12.0,
+			ModeScore:   12.0,
 			Owners:      []string{"Alice"},
 		},
 	}
@@ -165,7 +165,7 @@ func TestAggregateAndScoreFolders_OwnerCalculation(t *testing.T) {
 			Commits:     8,
 			Churn:       40,
 			LinesOfCode: 80,
-			Score:       20.0,
+			ModeScore:   20.0,
 			Owners:      []string{"Alice"}, // Alice has 8 commits
 		},
 		{
@@ -173,7 +173,7 @@ func TestAggregateAndScoreFolders_OwnerCalculation(t *testing.T) {
 			Commits:     12,
 			Churn:       60,
 			LinesOfCode: 120,
-			Score:       25.0,
+			ModeScore:   25.0,
 			Owners:      []string{"Bob"}, // Bob has 12 commits
 		},
 		{
@@ -181,7 +181,7 @@ func TestAggregateAndScoreFolders_OwnerCalculation(t *testing.T) {
 			Commits:     6,
 			Churn:       30,
 			LinesOfCode: 60,
-			Score:       15.0,
+			ModeScore:   15.0,
 			Owners:      []string{"Alice"}, // Alice has another 6 commits
 		},
 	}
@@ -209,7 +209,7 @@ func TestAggregateAndScoreFolders_NoOwners(t *testing.T) {
 			Commits:     5,
 			Churn:       25,
 			LinesOfCode: 50,
-			Score:       12.0,
+			ModeScore:   12.0,
 			Owners:      []string{}, // No owners
 		},
 	}

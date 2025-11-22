@@ -147,7 +147,7 @@ func formatTopMetricBreakdown(f *schema.FileResult) string {
 	var metrics []metricBreakdown
 
 	// 1. Filter and Convert Map to Slice
-	for k, v := range f.Breakdown {
+	for k, v := range f.ModeBreakdown {
 		// Only include meaningful metrics
 		if v >= metricContribMinimum {
 			metrics = append(metrics, metricBreakdown{

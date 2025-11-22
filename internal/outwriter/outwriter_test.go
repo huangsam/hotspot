@@ -15,9 +15,9 @@ func TestOutWriter_WriteFiles(t *testing.T) {
 	ow := NewOutWriter()
 	files := []schema.FileResult{
 		{
-			Path:  "file.go",
-			Score: 90.0,
-			Mode:  schema.HotMode,
+			Path:      "file.go",
+			ModeScore: 90.0,
+			Mode:      schema.HotMode,
 		},
 	}
 

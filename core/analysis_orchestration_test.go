@@ -231,8 +231,8 @@ func TestRunFollowPass(t *testing.T) {
 
 	// Create test data
 	ranked := []schema.FileResult{
-		{Path: "main.go", Score: 10.0},
-		{Path: "core/agg.go", Score: 8.0},
+		{Path: "main.go", ModeScore: 10.0},
+		{Path: "core/agg.go", ModeScore: 8.0},
 	}
 
 	output := &schema.AggregateOutput{
@@ -268,7 +268,7 @@ func TestRunFollowPass(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.Len(t, result, 2)
 	// Results should be re-ranked by score (descending)
-	assert.GreaterOrEqual(t, result[0].Score, result[1].Score)
+	assert.GreaterOrEqual(t, result[0].ModeScore, result[1].ModeScore)
 
 	mockClient.AssertExpectations(t)
 }

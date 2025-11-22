@@ -56,31 +56,22 @@ func ExecuteHotspotCheck(ctx context.Context, cfg *contract.Config, mgr contract
 		return fmt.Errorf("failed to aggregate activity: %w", err)
 	}
 
-	// Analyze files with all scoring modes and check thresholds
-	// Note: We run analyzeRepo separately for each mode rather than combining them
-	// to keep the implementation simple and leverage existing infrastructure.
-	// Each mode requires different weighting calculations in the scoring phase.
-	// This could be optimized in the future if performance becomes a concern, possibly
-	// with the use of caching or in-place multi-mode scoring.
+	// Analyze files once (all scores are computed upfront in FileResult)
+	cfgDefault := cfgTarget.Clone()
+	cfgDefault.Mode = schema.HotMode // Mode doesn't matter since all scores are computed
+	fileResults := analyzeRepo(ctx, cfgDefault, client, output, filesToAnalyze)
+
+	// Check all files against thresholds for all modes
 	failedFiles := []schema.CheckFailedFile{}
-
-	for _, mode := range schema.AllScoringModes {
-		threshold := cfg.RiskThresholds[mode]
-
-		// Create mode-specific config
-		cfgMode := cfgTarget.Clone()
-		cfgMode.Mode = mode
-
-		// Analyze files with this mode
-		fileResults := analyzeRepo(ctx, cfgMode, client, output, filesToAnalyze)
-
-		// Check against threshold
-		for _, file := range fileResults {
-			if file.Score > threshold {
+	for _, file := range fileResults {
+		for _, mode := range schema.AllScoringModes {
+			score := file.AllScores[mode]
+			threshold := cfg.RiskThresholds[mode]
+			if score > threshold {
 				failedFiles = append(failedFiles, schema.CheckFailedFile{
 					Path:      file.Path,
 					Mode:      mode,
-					Score:     file.Score,
+					Score:     score,
 					Threshold: threshold,
 				})
 			}

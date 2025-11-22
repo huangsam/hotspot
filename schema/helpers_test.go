@@ -125,11 +125,11 @@ func TestGetDefaultWeights(t *testing.T) {
 
 func TestFileResultGetters(t *testing.T) {
 	file := FileResult{
-		Path:    "src/main.go",
-		Score:   85.5,
-		Commits: 42,
-		Churn:   156,
-		Owners:  []string{"Alice", "Bob"},
+		Path:      "src/main.go",
+		ModeScore: 85.5,
+		Commits:   42,
+		Churn:     156,
+		Owners:    []string{"Alice", "Bob"},
 	}
 
 	// Test GetPath

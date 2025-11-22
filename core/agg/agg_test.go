@@ -194,7 +194,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		fileResults := []schema.FileResult{
 			{
 				Path:        "core/agg.go",
-				Score:       85.0,
+				ModeScore:   85.0,
 				Commits:     10,
 				Churn:       50,
 				LinesOfCode: 100,
@@ -202,7 +202,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			},
 			{
 				Path:        "core/analysis.go",
-				Score:       75.0,
+				ModeScore:   75.0,
 				Commits:     8,
 				Churn:       40,
 				LinesOfCode: 80,
@@ -210,7 +210,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			},
 			{
 				Path:        "core/main.go",
-				Score:       90.0,
+				ModeScore:   90.0,
 				Commits:     15,
 				Churn:       30,
 				LinesOfCode: 50,
@@ -242,7 +242,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		fileResults := []schema.FileResult{
 			{
 				Path:        "src/file1.go",
-				Score:       80.0,
+				ModeScore:   80.0,
 				Commits:     5,
 				Churn:       25,
 				LinesOfCode: 50,
@@ -250,7 +250,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			},
 			{
 				Path:        "src/file2.go",
-				Score:       70.0,
+				ModeScore:   70.0,
 				Commits:     10,
 				Churn:       30,
 				LinesOfCode: 60,
@@ -258,7 +258,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			},
 			{
 				Path:        "src/file3.go",
-				Score:       75.0,
+				ModeScore:   75.0,
 				Commits:     3,
 				Churn:       15,
 				LinesOfCode: 40,
@@ -303,7 +303,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		fileResults := []schema.FileResult{
 			{
 				Path:        "utils/helper.go",
-				Score:       65.0,
+				ModeScore:   65.0,
 				Commits:     7,
 				Churn:       20,
 				LinesOfCode: 30,
@@ -333,7 +333,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		fileResults := []schema.FileResult{
 			{
 				Path:        "main.go",
-				Score:       85.0,
+				ModeScore:   85.0,
 				Commits:     12,
 				Churn:       45,
 				LinesOfCode: 75,
@@ -341,7 +341,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			},
 			{
 				Path:        "README.md",
-				Score:       20.0,
+				ModeScore:   20.0,
 				Commits:     2,
 				Churn:       5,
 				LinesOfCode: 25,
@@ -372,7 +372,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		fileResults := []schema.FileResult{
 			{
 				Path:        "main.go",
-				Score:       85.0,
+				ModeScore:   85.0,
 				Commits:     12,
 				Churn:       45,
 				LinesOfCode: 75,
@@ -380,7 +380,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			},
 			{
 				Path:        "config.go",
-				Score:       70.0,
+				ModeScore:   70.0,
 				Commits:     8,
 				Churn:       25,
 				LinesOfCode: 50,
@@ -411,7 +411,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		fileResults := []schema.FileResult{
 			{
 				Path:        "pkg/small.go",
-				Score:       90.0,
+				ModeScore:   90.0,
 				Commits:     5,
 				Churn:       10,
 				LinesOfCode: 20, // Small file
@@ -419,7 +419,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			},
 			{
 				Path:        "pkg/large.go",
-				Score:       70.0,
+				ModeScore:   70.0,
 				Commits:     15,
 				Churn:       50,
 				LinesOfCode: 200, // Large file
@@ -451,7 +451,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		fileResults := []schema.FileResult{
 			{
 				Path:        "lib/utils.go",
-				Score:       75.0,
+				ModeScore:   75.0,
 				Commits:     8,
 				Churn:       25,
 				LinesOfCode: 45,
@@ -459,7 +459,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			},
 			{
 				Path:        "lib/helpers.go",
-				Score:       80.0,
+				ModeScore:   80.0,
 				Commits:     6,
 				Churn:       20,
 				LinesOfCode: 35,
@@ -491,7 +491,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			// api folder
 			{
 				Path:        "api/handlers.go",
-				Score:       85.0,
+				ModeScore:   85.0,
 				Commits:     12,
 				Churn:       40,
 				LinesOfCode: 100,
@@ -499,7 +499,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			},
 			{
 				Path:        "api/middleware.go",
-				Score:       75.0,
+				ModeScore:   75.0,
 				Commits:     8,
 				Churn:       25,
 				LinesOfCode: 80,
@@ -508,7 +508,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			// db folder
 			{
 				Path:        "db/models.go",
-				Score:       80.0,
+				ModeScore:   80.0,
 				Commits:     10,
 				Churn:       35,
 				LinesOfCode: 90,
@@ -517,7 +517,7 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			// root file
 			{
 				Path:        "config.go",
-				Score:       70.0,
+				ModeScore:   70.0,
 				Commits:     5,
 				Churn:       15,
 				LinesOfCode: 40,

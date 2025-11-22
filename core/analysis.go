@@ -283,7 +283,7 @@ func recordFileAnalysis(ctx context.Context, cfg *contract.Config, analysisID in
 	}
 
 	// Compute all four scoring modes
-	allScores := computeAllScores(result, cfg.CustomWeights)
+	allScores := result.AllScores
 
 	// Record final scores
 	scores := schema.FileScores{
@@ -299,19 +299,6 @@ func recordFileAnalysis(ctx context.Context, cfg *contract.Config, analysisID in
 	if err := analysisStore.RecordFileMetricsAndScores(analysisID, path, metrics, scores); err != nil {
 		logTrackingError("RecordFileMetricsAndScores", path, err)
 	}
-}
-
-// computeAllScores computes scores for all four modes.
-func computeAllScores(m *schema.FileResult, customWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64) map[schema.ScoringMode]float64 {
-	scores := make(map[schema.ScoringMode]float64)
-
-	// Compute score for each mode without mutating the input
-	for _, mode := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode} {
-		mCopy := *m
-		mCopy.Mode = mode
-		scores[mode] = computeScore(&mCopy, mode, customWeights)
-	}
-	return scores
 }
 
 // getOwnerString converts the owners slice to a string.
@@ -450,7 +437,7 @@ func analyzeTimeseriesPoint(
 	}
 	for _, fr := range output.FileResults {
 		if fr.Path == path {
-			return fr.Score, fr.Owners
+			return fr.ModeScore, fr.Owners
 		}
 	}
 	return 0, []string{}

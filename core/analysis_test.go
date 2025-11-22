@@ -46,7 +46,7 @@ func TestAnalyzeFileCommon(t *testing.T) {
 	assert.Equal(t, 5, result.Commits)
 	assert.Equal(t, 15, result.Churn)
 	assert.Equal(t, 2, result.UniqueContributors)
-	assert.True(t, result.Score >= 0 && result.Score <= 100)
+	assert.True(t, result.ModeScore >= 0 && result.ModeScore <= 100)
 	// Note: Breakdown will be empty because SizeBytes is 0 (file doesn't exist in test)
 	// assert.NotEmpty(t, result.Breakdown)
 }
@@ -106,7 +106,7 @@ func TestAnalyzeRepo(t *testing.T) {
 
 	// Verify scores are calculated
 	for _, result := range results {
-		assert.True(t, result.Score >= 0 && result.Score <= 100)
+		assert.True(t, result.ModeScore >= 0 && result.ModeScore <= 100)
 		// Note: Breakdown will be empty because SizeBytes is 0 (files don't exist in test)
 		// assert.NotEmpty(t, result.Breakdown)
 	}

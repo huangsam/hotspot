@@ -66,15 +66,15 @@ func writeFileTable(files []schema.FileResult, cfg *contract.Config, fmtFloat fu
 	var data [][]string
 	for i, f := range files {
 		// Prepare the row data as a slice of strings
-		label := contract.GetPlainLabel(f.Score)
+		label := contract.GetPlainLabel(f.ModeScore)
 		if cfg.UseColors {
-			label = contract.GetColorLabel(f.Score)
+			label = contract.GetColorLabel(f.ModeScore)
 		}
 		row := []string{
 			strconv.Itoa(i + 1), // Rank
 			contract.TruncatePath(f.Path, getMaxTablePathWidth(cfg)), // File
-			fmtFloat(f.Score), // Score
-			label,             // Label
+			fmtFloat(f.ModeScore), // Score
+			label,                 // Label
 		}
 		if cfg.Detail {
 			row = append(
@@ -144,10 +144,10 @@ func writeCSVResultsForFiles(w *csv.Writer, files []schema.FileResult, fmtFloat 
 	}
 	for i, f := range files {
 		rec := []string{
-			strconv.Itoa(i + 1),             // Rank
-			f.Path,                          // File Path
-			fmtFloat(f.Score),               // Score
-			contract.GetPlainLabel(f.Score), // Label
+			strconv.Itoa(i + 1),                           // Rank
+			f.Path,                                        // File Path
+			fmtFloat(f.ModeScore),                         // Score
+			contract.GetPlainLabel(f.ModeScore),           // Label
 			fmt.Sprintf(intFmt, f.UniqueContributors),     // Contributors
 			fmt.Sprintf(intFmt, f.Commits),                // Commits
 			fmtFloat(float64(f.SizeBytes) / 1024.0),       // Size in KB
@@ -178,7 +178,7 @@ func writeJSONResultsForFiles(w io.Writer, files []schema.FileResult) error {
 	for i, f := range files {
 		output[i] = JSONFileResult{
 			Rank:       i + 1,
-			Label:      contract.GetPlainLabel(f.Score),
+			Label:      contract.GetPlainLabel(f.ModeScore),
 			FileResult: f,
 		}
 	}

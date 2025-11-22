@@ -86,7 +86,7 @@ func TestComputeScoreAllModes(t *testing.T) {
 		t.Run(string(mode), func(t *testing.T) {
 			score := computeScore(&metrics, mode, nil)
 			assert.True(t, score >= 0 && score <= 100)
-			assert.NotEmpty(t, metrics.Breakdown)
+			assert.NotEmpty(t, metrics.ModeBreakdown)
 		})
 	}
 }

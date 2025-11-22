@@ -129,11 +129,11 @@ func computeScore(m *schema.FileResult, mode schema.ScoringMode, customWeights m
 	}
 
 	// Save breakdown (scaled to percent contributions) in the metrics for explain mode.
-	if m.Breakdown == nil {
-		m.Breakdown = make(map[schema.BreakdownKey]float64)
+	if m.ModeBreakdown == nil {
+		m.ModeBreakdown = make(map[schema.BreakdownKey]float64)
 	}
 	for k, v := range breakdown {
-		m.Breakdown[k] = v * 100.0
+		m.ModeBreakdown[k] = v * 100.0
 	}
 
 	return score

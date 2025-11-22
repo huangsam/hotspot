@@ -11,7 +11,7 @@ import (
 // of files, all files are returned in sorted order.
 func rankFiles(files []schema.FileResult, limit int) []schema.FileResult {
 	sort.Slice(files, func(i, j int) bool {
-		return files[i].Score > files[j].Score
+		return files[i].ModeScore > files[j].ModeScore
 	})
 	if len(files) > limit {
 		return files[:limit]

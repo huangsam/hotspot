@@ -18,7 +18,7 @@ func TestWriteJSONResults(t *testing.T) {
 	files := []schema.FileResult{
 		{
 			Path:               "test.go",
-			Score:              85.5,
+			ModeScore:          85.5,
 			UniqueContributors: 3,
 			Commits:            10,
 			SizeBytes:          1024,
@@ -53,7 +53,7 @@ func TestWriteCSVResults(t *testing.T) {
 	files := []schema.FileResult{
 		{
 			Path:               "file1.go",
-			Score:              75.25,
+			ModeScore:          75.25,
 			UniqueContributors: 2,
 			Commits:            5,
 			SizeBytes:          2048,
@@ -107,19 +107,19 @@ func TestWriteCSVResultsEmptyFiles(t *testing.T) {
 func TestWriteJSONResultsMultipleFiles(t *testing.T) {
 	files := []schema.FileResult{
 		{
-			Path:  "file1.go",
-			Score: 90.0,
-			Mode:  schema.HotMode,
+			Path:      "file1.go",
+			ModeScore: 90.0,
+			Mode:      schema.HotMode,
 		},
 		{
-			Path:  "file2.go",
-			Score: 85.0,
-			Mode:  schema.RiskMode,
+			Path:      "file2.go",
+			ModeScore: 85.0,
+			Mode:      schema.RiskMode,
 		},
 		{
-			Path:  "file3.go",
-			Score: 80.0,
-			Mode:  schema.ComplexityMode,
+			Path:      "file3.go",
+			ModeScore: 80.0,
+			Mode:      schema.ComplexityMode,
 		},
 	}
 
@@ -152,7 +152,7 @@ func TestFormatTopMetricBreakdown(t *testing.T) {
 		{
 			name: "top 3 contributors",
 			file: &schema.FileResult{
-				Breakdown: map[schema.BreakdownKey]float64{
+				ModeBreakdown: map[schema.BreakdownKey]float64{
 					schema.BreakdownCommits: 40.0,
 					schema.BreakdownChurn:   30.0,
 					schema.BreakdownAge:     20.0,
@@ -164,7 +164,7 @@ func TestFormatTopMetricBreakdown(t *testing.T) {
 		{
 			name: "less than 3 contributors",
 			file: &schema.FileResult{
-				Breakdown: map[schema.BreakdownKey]float64{
+				ModeBreakdown: map[schema.BreakdownKey]float64{
 					schema.BreakdownCommits: 60.0,
 					schema.BreakdownChurn:   40.0,
 				},
@@ -174,7 +174,7 @@ func TestFormatTopMetricBreakdown(t *testing.T) {
 		{
 			name: "single contributor",
 			file: &schema.FileResult{
-				Breakdown: map[schema.BreakdownKey]float64{
+				ModeBreakdown: map[schema.BreakdownKey]float64{
 					schema.BreakdownAge: 100.0,
 				},
 			},
@@ -183,7 +183,7 @@ func TestFormatTopMetricBreakdown(t *testing.T) {
 		{
 			name: "all below minimum threshold",
 			file: &schema.FileResult{
-				Breakdown: map[schema.BreakdownKey]float64{
+				ModeBreakdown: map[schema.BreakdownKey]float64{
 					schema.BreakdownCommits: 0.3,
 					schema.BreakdownChurn:   0.2,
 				},
@@ -193,7 +193,7 @@ func TestFormatTopMetricBreakdown(t *testing.T) {
 		{
 			name: "empty breakdown",
 			file: &schema.FileResult{
-				Breakdown: map[schema.BreakdownKey]float64{},
+				ModeBreakdown: map[schema.BreakdownKey]float64{},
 			},
 			expected: "Not applicable",
 		},
@@ -211,7 +211,7 @@ func TestWriteFileResultsTable(t *testing.T) {
 	files := []schema.FileResult{
 		{
 			Path:               "main.go",
-			Score:              85.5,
+			ModeScore:          85.5,
 			UniqueContributors: 3,
 			Commits:            10,
 			SizeBytes:          1024,
@@ -256,9 +256,9 @@ func TestWriteFileResultsTable(t *testing.T) {
 func TestWriteFileResultsJSON(t *testing.T) {
 	files := []schema.FileResult{
 		{
-			Path:  "test.go",
-			Score: 75.0,
-			Mode:  schema.RiskMode,
+			Path:      "test.go",
+			ModeScore: 75.0,
+			Mode:      schema.RiskMode,
 		},
 	}
 
@@ -286,7 +286,7 @@ func TestWriteFileResultsCSV(t *testing.T) {
 	files := []schema.FileResult{
 		{
 			Path:               "example.go",
-			Score:              65.25,
+			ModeScore:          65.25,
 			UniqueContributors: 2,
 			Commits:            5,
 			SizeBytes:          2048,

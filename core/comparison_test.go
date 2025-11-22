@@ -15,7 +15,7 @@ func TestCompareFileResults_StatusClassification(t *testing.T) {
 	baseResults := []schema.FileResult{
 		{
 			Path:               "existing_in_both.go",
-			Score:              10.0,
+			ModeScore:          10.0,
 			Commits:            5,
 			Churn:              15,
 			LinesOfCode:        100,
@@ -24,7 +24,7 @@ func TestCompareFileResults_StatusClassification(t *testing.T) {
 		},
 		{
 			Path:               "only_in_base.go",
-			Score:              5.0,
+			ModeScore:          5.0,
 			Commits:            2,
 			Churn:              8,
 			LinesOfCode:        50,
@@ -36,7 +36,7 @@ func TestCompareFileResults_StatusClassification(t *testing.T) {
 	targetResults := []schema.FileResult{
 		{
 			Path:               "existing_in_both.go",
-			Score:              12.0,
+			ModeScore:          12.0,
 			Commits:            7,
 			Churn:              20,
 			LinesOfCode:        110,
@@ -45,7 +45,7 @@ func TestCompareFileResults_StatusClassification(t *testing.T) {
 		},
 		{
 			Path:               "only_in_target.go",
-			Score:              8.0,
+			ModeScore:          8.0,
 			Commits:            4,
 			Churn:              12,
 			LinesOfCode:        80,
@@ -110,23 +110,23 @@ func TestCompareFileResults_NoSignificantChanges(t *testing.T) {
 
 	baseResults := []schema.FileResult{
 		{
-			Path:  "unchanged.go",
-			Score: 10.0,
+			Path:      "unchanged.go",
+			ModeScore: 10.0,
 		},
 		{
-			Path:  "tiny_change.go",
-			Score: 10.0,
+			Path:      "tiny_change.go",
+			ModeScore: 10.0,
 		},
 	}
 
 	targetResults := []schema.FileResult{
 		{
-			Path:  "unchanged.go",
-			Score: 10.0, // Exactly the same
+			Path:      "unchanged.go",
+			ModeScore: 10.0, // Exactly the same
 		},
 		{
-			Path:  "tiny_change.go",
-			Score: 10.001, // Change smaller than 0.01 threshold
+			Path:      "tiny_change.go",
+			ModeScore: 10.001, // Change smaller than 0.01 threshold
 		},
 	}
 
@@ -166,47 +166,47 @@ func TestCompareFileResults_OwnershipChanges(t *testing.T) {
 
 	baseResults := []schema.FileResult{
 		{
-			Path:   "same_owner.go",
-			Score:  10.0,
-			Owners: []string{"Alice"},
+			Path:      "same_owner.go",
+			ModeScore: 10.0,
+			Owners:    []string{"Alice"},
 		},
 		{
-			Path:   "changed_owner.go",
-			Score:  10.0,
-			Owners: []string{"Alice"},
+			Path:      "changed_owner.go",
+			ModeScore: 10.0,
+			Owners:    []string{"Alice"},
 		},
 		{
-			Path:   "multiple_owners_same.go",
-			Score:  10.0,
-			Owners: []string{"Alice", "Bob"},
+			Path:      "multiple_owners_same.go",
+			ModeScore: 10.0,
+			Owners:    []string{"Alice", "Bob"},
 		},
 		{
-			Path:   "multiple_owners_changed.go",
-			Score:  10.0,
-			Owners: []string{"Alice", "Bob"},
+			Path:      "multiple_owners_changed.go",
+			ModeScore: 10.0,
+			Owners:    []string{"Alice", "Bob"},
 		},
 	}
 
 	targetResults := []schema.FileResult{
 		{
-			Path:   "same_owner.go",
-			Score:  10.0,              // No significant change
-			Owners: []string{"Alice"}, // Same owner
+			Path:      "same_owner.go",
+			ModeScore: 10.0,              // No significant change
+			Owners:    []string{"Alice"}, // Same owner
 		},
 		{
-			Path:   "changed_owner.go",
-			Score:  11.0,            // Significant change
-			Owners: []string{"Bob"}, // Different owner
+			Path:      "changed_owner.go",
+			ModeScore: 11.0,            // Significant change
+			Owners:    []string{"Bob"}, // Different owner
 		},
 		{
-			Path:   "multiple_owners_same.go",
-			Score:  12.0,                     // Significant change
-			Owners: []string{"Bob", "Alice"}, // Same owners, different order
+			Path:      "multiple_owners_same.go",
+			ModeScore: 12.0,                     // Significant change
+			Owners:    []string{"Bob", "Alice"}, // Same owners, different order
 		},
 		{
-			Path:   "multiple_owners_changed.go",
-			Score:  13.0,                         // Significant change
-			Owners: []string{"Alice", "Charlie"}, // One owner changed
+			Path:      "multiple_owners_changed.go",
+			ModeScore: 13.0,                         // Significant change
+			Owners:    []string{"Alice", "Charlie"}, // One owner changed
 		},
 	}
 

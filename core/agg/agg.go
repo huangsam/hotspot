@@ -293,7 +293,7 @@ func AggregateAndScoreFolders(cfg *contract.Config, fileResults []schema.FileRes
 		folderResults[folderPath].Commits += fr.Commits
 		folderResults[folderPath].Churn += fr.Churn
 		folderResults[folderPath].TotalLOC += fr.LinesOfCode
-		folderResults[folderPath].WeightedScoreSum += fr.Score * float64(fr.LinesOfCode)
+		folderResults[folderPath].WeightedScoreSum += fr.ModeScore * float64(fr.LinesOfCode)
 
 		// 3. Aggregate author contributions for owner calculation
 		if len(fr.Owners) > 0 {

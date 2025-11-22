@@ -630,10 +630,13 @@ func init() {
 	rootCmd.PersistentFlags().Int("width", 0, "Terminal width override (0 = auto-detect)")
 	rootCmd.PersistentFlags().String("cache-backend", string(schema.SQLiteBackend), "Cache backend: sqlite or mysql or postgresql or none")
 	rootCmd.PersistentFlags().String("cache-db-connect", "", "Database connection string for mysql/postgresql (e.g., user:pass@tcp(host:port)/dbname)")
-	rootCmd.PersistentFlags().String("analysis-backend", "", "Analysis tracking backend: sqlite or mysql or postgresql or none (empty = disabled)")
+	rootCmd.PersistentFlags().String("analysis-backend", "", "Analysis tracking backend: sqlite or mysql or postgresql or none")
 	rootCmd.PersistentFlags().String("analysis-db-connect", "", "Database connection string for analysis tracking (must differ from cache-db-connect)")
 	rootCmd.PersistentFlags().String("color", "yes", "Enable colored labels in output (yes/no/true/false/1/0)")
 	rootCmd.PersistentFlags().String("emoji", "no", "Enable emojis in output headers (yes/no/true/false/1/0)")
+	rootCmd.PersistentFlags().String("lookback", "6 months", "Time duration to look back from Base/Target ref commit time")
+	rootCmd.PersistentFlags().String("base-ref", "", "Base Git reference for the BEFORE state")
+	rootCmd.PersistentFlags().String("target-ref", "", "Target Git reference for the AFTER state")
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
 		contract.LogFatal("Error binding root flags", err)
 	}
@@ -645,24 +648,8 @@ func init() {
 		contract.LogFatal("Error binding files flags", err)
 	}
 
-	// Bind all persistent flags of compareCmd to Viper
-	compareCmd.PersistentFlags().String("base-ref", "", "Base Git reference for the BEFORE state (required)")
-	compareCmd.PersistentFlags().String("target-ref", "", "Target Git reference for the AFTER state (required)")
-	compareCmd.PersistentFlags().String("lookback", "6 months", "Time duration to look back from Base/Target ref commit time")
-	if err := viper.BindPFlags(compareCmd.PersistentFlags()); err != nil {
-		contract.LogFatal("Error binding compare flags", err)
-	}
-
-	// Bind all flags of checkCmd to Viper (reuse compare flag keys)
-	checkCmd.Flags().String("base-ref", "", "Base Git reference for the BEFORE state (required)")
-	checkCmd.Flags().String("target-ref", "", "Target Git reference for the AFTER state (required)")
-	checkCmd.Flags().String("lookback", "6 months", "Time duration to look back from Target ref commit time")
-	if err := viper.BindPFlags(checkCmd.Flags()); err != nil {
-		contract.LogFatal("Error binding check flags", err)
-	}
-
 	// Bind all flags of timeseriesCmd to Viper
-	timeseriesCmd.Flags().String("path", "", "Path to the file or folder to analyze (required)")
+	timeseriesCmd.Flags().String("path", "", "Path to the file or folder to analyze")
 	timeseriesCmd.Flags().String("interval", "3 months", "Total time interval")
 	timeseriesCmd.Flags().Int("points", 3, "Number of lookback points")
 	if err := viper.BindPFlags(timeseriesCmd.Flags()); err != nil {
