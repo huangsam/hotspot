@@ -412,7 +412,7 @@ var compareFoldersCmd = &cobra.Command{
 // versionCmd show the verbose version for diagnostic purposes.
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Print the version number of hotspot",
+	Short: "Print the version number of hotspot.",
 	Run: func(cmd *cobra.Command, _ []string) {
 		cmd.Printf("hotspot CLI\n")
 		cmd.Printf("  Version: %s\n", version)
@@ -425,7 +425,7 @@ var versionCmd = &cobra.Command{
 // metricsCmd displays the formal definitions of all scoring modes.
 var metricsCmd = &cobra.Command{
 	Use:     "metrics",
-	Short:   "Display formal definitions of all scoring modes",
+	Short:   "Display formal definitions of all scoring modes.",
 	Long:    `The metrics command shows the purpose, factors, and mathematical formulas for all four core scoring modes without performing Git analysis.`,
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
