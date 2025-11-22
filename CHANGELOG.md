@@ -11,12 +11,12 @@
 ### Improvements
 
 - **Performance**: Optimize check runtime and bindings
-- **Integration Tests**: Optimize thresholds and config overrides
 - **Benchmarks**: Update results in README.md
 
 ### Development
 
 - **Test Coverage**: Increase in core and iocache
+- **Integration Tests**: Optimize runtime and config overrides
 - **Makefile**: Split phony targets into multiple lines
 
 ## v1.8.0
