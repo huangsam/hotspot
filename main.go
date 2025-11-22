@@ -13,7 +13,6 @@ import (
 	"github.com/huangsam/hotspot/core"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/iocache"
-	"github.com/huangsam/hotspot/internal/parquet"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -485,7 +484,7 @@ var cacheStatusCmd = &cobra.Command{
 		if err != nil {
 			contract.LogFatal("Failed to get cache status", err)
 		}
-		printCacheStatus(status)
+		iocache.PrintCacheStatus(status)
 	},
 }
 
@@ -525,7 +524,7 @@ var analysisStatusCmd = &cobra.Command{
 		if err != nil {
 			contract.LogFatal("Failed to get analysis status", err)
 		}
-		printAnalysisStatus(status)
+		iocache.PrintAnalysisStatus(status)
 	},
 }
 
@@ -536,7 +535,7 @@ var analysisExportCmd = &cobra.Command{
 	Long:    `The export command reads analysis data and exports it to Parquet for analytics via Spark, Pandas, and DuckDB. Requires --output-file.`,
 	PreRunE: analysisSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := executeAnalysisExport(); err != nil {
+		if err := iocache.ExecuteAnalysisExport(cfg.OutputFile); err != nil {
 			contract.LogFatal("Failed to export analysis data", err)
 		}
 	},
@@ -554,108 +553,6 @@ var analysisMigrateCmd = &cobra.Command{
 			contract.LogFatal("Failed to run migrations", err)
 		}
 	},
-}
-
-// executeAnalysisExport performs the actual export of analysis data to Parquet files.
-func executeAnalysisExport() error {
-	// Export always uses parquet format, regardless of --output flag
-	cfg.Output = schema.ParquetOut
-
-	// Validate that output file is specified
-	if cfg.OutputFile == "" {
-		return errors.New("--output-file is required for export command")
-	}
-
-	// Get the analysis store
-	store := iocache.Manager.GetAnalysisStore()
-
-	// Check if there's any data to export
-	status, err := store.GetStatus()
-	if err != nil {
-		return fmt.Errorf("failed to get analysis status: %w", err)
-	}
-
-	if status.TotalRuns == 0 {
-		return errors.New("no analysis data found to export")
-	}
-
-	fmt.Printf("Exporting data from %s backend...\n", status.Backend)
-	fmt.Printf("Total analysis runs: %d\n", status.TotalRuns)
-	fmt.Printf("Total file records: %d\n", status.TableSizes["hotspot_file_scores_metrics"])
-
-	// Retrieve all analysis runs
-	analysisRuns, err := store.GetAllAnalysisRuns()
-	if err != nil {
-		return fmt.Errorf("failed to retrieve analysis runs: %w", err)
-	}
-
-	// Retrieve all file scores metrics
-	fileMetrics, err := store.GetAllFileScoresMetrics()
-	if err != nil {
-		return fmt.Errorf("failed to retrieve file scores metrics: %w", err)
-	}
-
-	// Convert to Parquet format
-	parquetAnalysisRuns := parquet.ConvertAnalysisRunRecords(analysisRuns)
-	parquetFileMetrics := parquet.ConvertFileScoresMetricsRecords(fileMetrics)
-
-	// Write analysis runs to Parquet
-	analysisRunsFile := cfg.OutputFile + ".analysis_runs.parquet"
-	if err := parquet.WriteAnalysisRunsParquet(parquetAnalysisRuns, analysisRunsFile); err != nil {
-		return fmt.Errorf("failed to write analysis runs: %w", err)
-	}
-	fmt.Printf("Exported %d analysis runs to: %s\n", len(parquetAnalysisRuns), analysisRunsFile)
-
-	// Write file scores metrics to Parquet
-	fileMetricsFile := cfg.OutputFile + ".file_scores_metrics.parquet"
-	if err := parquet.WriteFileScoresMetricsParquet(parquetFileMetrics, fileMetricsFile); err != nil {
-		return fmt.Errorf("failed to write file scores metrics: %w", err)
-	}
-	fmt.Printf("Exported %d file score records to: %s\n", len(parquetFileMetrics), fileMetricsFile)
-
-	fmt.Println("\nExport complete! The Parquet files can be used with:")
-	fmt.Println("  - Apache Spark")
-	fmt.Println("  - Apache Arrow")
-	fmt.Println("  - Pandas (via pyarrow)")
-	fmt.Println("  - DuckDB")
-	fmt.Println("  - Any other Parquet-compatible tool")
-
-	return nil
-}
-
-// printCacheStatus prints cache status information.
-func printCacheStatus(status schema.CacheStatus) {
-	fmt.Printf("Cache Backend: %s\n", status.Backend)
-	fmt.Printf("Connected: %t\n", status.Connected)
-	if !status.Connected {
-		return
-	}
-	fmt.Printf("Total Entries: %d\n", status.TotalEntries)
-	if status.TotalEntries > 0 {
-		fmt.Printf("Last Entry: %s\n", status.LastEntryTime.Format("2006-01-02 15:04:05"))
-		fmt.Printf("Oldest Entry: %s\n", status.OldestEntryTime.Format("2006-01-02 15:04:05"))
-	}
-	fmt.Printf("Table Size: %d bytes\n", status.TableSizeBytes)
-}
-
-// printAnalysisStatus prints analysis status information.
-func printAnalysisStatus(status schema.AnalysisStatus) {
-	fmt.Printf("Analysis Backend: %s\n", status.Backend)
-	fmt.Printf("Connected: %t\n", status.Connected)
-	if !status.Connected {
-		return
-	}
-	fmt.Printf("Total Runs: %d\n", status.TotalRuns)
-	if status.TotalRuns > 0 {
-		fmt.Printf("Last Run ID: %d\n", status.LastRunID)
-		fmt.Printf("Last Run: %s\n", status.LastRunTime.Format("2006-01-02 15:04:05"))
-		fmt.Printf("Oldest Run: %s\n", status.OldestRunTime.Format("2006-01-02 15:04:05"))
-		fmt.Printf("Total Files Analyzed: %d\n", status.TotalFilesAnalyzed)
-	}
-	fmt.Println("Table Sizes:")
-	for table, size := range status.TableSizes {
-		fmt.Printf("  %s: %d rows\n", table, size)
-	}
 }
 
 // init defines and binds all flags.
