@@ -28,7 +28,8 @@ Hotspot was born to fix that: providing a transparent, auditable tool for teams 
 - ⚡ **Fast results** - analyze thousands of files in seconds
 - 🧮 **Rich insights** - contributors, churn, size, age, and risk metrics
 - 🎯 **Actionable filters** - narrow down by path, exclude noise, or track trends over time
-- 📊 **Export results** - save to CSV/JSON to track trends and progress
+- 📊 **Export results** - save to CSV/JSON/Parquet to track trends and progress
+- 🔄 **CI/CD integration** - enforce risk thresholds in pipelines
 
 ### Target audience
 
