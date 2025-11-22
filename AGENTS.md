@@ -45,7 +45,9 @@ hotspot/
 │   ├── score.go        # Scoring algorithms and metrics
 │   ├── rank.go         # Ranking and sorting logic
 │   ├── builder.go      # File metrics builder pattern
-│   └── comparison.go   # Comparison analysis logic
+│   ├── comparison.go   # Comparison analysis logic
+│   ├── check.go        # Check command for CI/CD gating
+│   └── check_test.go   # Check command tests
 ├── schema/             # Data structures and constants
 │   ├── schema.go       # Core data models
 │   └── constants.go    # Scoring modes and output formats
@@ -74,6 +76,7 @@ The root command defines the base CLI structure with help text and default behav
     - `compareFilesCmd`: Compare file metrics between Git refs
     - `compareFoldersCmd`: Compare folder metrics between Git refs
   - `timeseriesCmd`: Timeseries analysis for specific paths
+  - `checkCmd`: CI/CD policy enforcement (`hotspot check [repo-path]`)
   - `cacheCmd`: Cache management
     - `cacheStatusCmd`: Show cache status (`hotspot cache status`)
     - `cacheClearCmd`: Clear cache data (`hotspot cache clear`)
@@ -128,6 +131,16 @@ The core package contains the main analysis algorithms, scoring logic, and execu
 - Path-specific score extraction
 - Supports both files and folders
 - Multiple scoring modes
+
+#### ExecuteHotspotCheck
+
+**Purpose**: Runs the check command for CI/CD gating with configurable thresholds.
+
+**Key Features**:
+- Validates hotspot scores against user-defined thresholds
+- Supports all scoring modes (hot, risk, complexity, stale)
+- Provides informative output for success/failure
+- Designed for integration into CI/CD pipelines
 
 ### Analysis Pipeline
 
@@ -307,6 +320,18 @@ core.ExecuteHotspotCompare() → runCompareAnalysisForRef() for base and target
 comparison.go: compareFileResults() → calculate deltas
 ↓
 internal: PrintComparisonResults() → before/after/delta output
+```
+
+### Check Analysis
+
+```
+CLI: hotspot check --thresholds-override "hot:50,risk:50"
+↓
+main.go: sharedSetup() → threshold validation
+↓
+core.ExecuteHotspotCheck() → runSingleAnalysisCore() → validate against thresholds
+↓
+Output success/failure with details for CI/CD gating
 ```
 
 This documentation provides a comprehensive overview of the hotspot CLI's core architecture, focusing on the main.go, core, and schema packages. The design emphasizes concurrent processing, flexible scoring modes, and clean separation of concerns between data aggregation, analysis, and presentation.
