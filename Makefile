@@ -19,8 +19,17 @@ INTEGRATION   ?= 0
 .DEFAULT_GOAL := build
 
 # --- Phony Targets ---
-# .PHONY: explicitly declares targets that do not represent files
-.PHONY: all bench build check clean coverage demo format fuzz fuzz-long fuzz-quick help install lint profile release snapshot test test-all test-integ
+
+# Build and install targets
+.PHONY: all build clean install reinstall
+# Test targets
+.PHONY: test test-all test-integ bench coverage
+# Code quality targets
+.PHONY: format lint check
+# Development tools
+.PHONY: fuzz fuzz-quick fuzz-long profile demo
+# Release targets
+.PHONY: snapshot release help
 
 # --- Targets ---
 
