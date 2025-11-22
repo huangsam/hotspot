@@ -60,9 +60,20 @@ The `timeseries` subcommand tracks how hotspot scores change over time for a spe
 
 The `check` command allows you to enforce risk thresholds in CI/CD pipelines, failing builds when files exceed acceptable risk levels. If no thresholds are specified, it defaults to 50.0 for all scoring modes.
 
-**Example:** Use the provided CI configuration for policy enforcement.
+**Example:** Use CI configuration for policy enforcement.
 
 `hotspot check`
+
+**Example:** Use CLI overrides for policy enforcement.
+
+`hotspot check --thresholds "hot:75,risk:60,complexity:80,stale:70"`
+
+| Flags | Description |
+|-------|-------------|
+| `--base-ref` | The BEFORE Git reference (e.g., `main`, `v1.0.0`, a commit hash). |
+| `--target-ref` | The AFTER Git reference (defaults to `HEAD`). |
+| `--lookback` | Time window (e.g. `6 months`) used for base and target. |
+| `--thresholds` | Custom risk thresholds per scoring mode (format: `hot:50,risk:50,complexity:50,stale:50`). |
 
 The [example CI config](./examples/hotspot.ci.yml) shows how custom thresholds can be configured for each scoring mode and is useful for maintaining code quality standards specific to your team.
 

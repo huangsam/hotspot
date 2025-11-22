@@ -655,6 +655,12 @@ func init() {
 	if err := viper.BindPFlags(timeseriesCmd.Flags()); err != nil {
 		contract.LogFatal("Error binding timeseries flags", err)
 	}
+
+	// Bind all flags of checkCmd to Viper
+	checkCmd.Flags().String("thresholds-override", "", "Risk thresholds for CI/CD gating (format: 'hot:50,risk:50,complexity:50,stale:50')")
+	if err := viper.BindPFlags(checkCmd.Flags()); err != nil {
+		contract.LogFatal("Error binding check flags", err)
+	}
 }
 
 // main starts the execution of the logic.

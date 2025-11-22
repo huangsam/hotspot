@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -154,6 +155,9 @@ type ConfigRawInput struct {
 	Path     string `mapstructure:"path"`
 	Interval string `mapstructure:"interval"`
 	Points   int    `mapstructure:"points"`
+
+	// --- Fields from checkCmd.Flags() ---
+	ThresholdsStr string `mapstructure:"thresholds-override"`
 
 	// --- Custom weights from config file ---
 	Weights WeightsRawInput `mapstructure:"weights"`
@@ -578,6 +582,7 @@ func processCustomWeights(cfg *Config, input *ConfigRawInput) error {
 
 // processRiskThresholds converts the raw threshold input into the final cfg.RiskThresholds map.
 // If no thresholds are provided in the config, it initializes with default values (50.0 for all modes).
+// Command-line --thresholds-override flag takes precedence over config file settings.
 func processRiskThresholds(cfg *Config, input *ConfigRawInput) error {
 	thresholds := make(map[schema.ScoringMode]float64)
 
@@ -587,7 +592,7 @@ func processRiskThresholds(cfg *Config, input *ConfigRawInput) error {
 	thresholds[schema.ComplexityMode] = 50.0
 	thresholds[schema.StaleMode] = 50.0
 
-	// Override with custom values if provided
+	// Override with config file values if provided
 	if input.Thresholds.Hot != nil {
 		thresholds[schema.HotMode] = *input.Thresholds.Hot
 	}
@@ -599,6 +604,16 @@ func processRiskThresholds(cfg *Config, input *ConfigRawInput) error {
 	}
 	if input.Thresholds.Stale != nil {
 		thresholds[schema.StaleMode] = *input.Thresholds.Stale
+	}
+
+	// Override with command-line flag if provided (takes precedence)
+	if input.ThresholdsStr != "" {
+		parsedThresholds, err := parseRiskThresholdsString(input.ThresholdsStr)
+		if err != nil {
+			return fmt.Errorf("invalid --thresholds format: %w", err)
+		}
+		// Merge parsed values
+		maps.Copy(thresholds, parsedThresholds)
 	}
 
 	// Validate thresholds
@@ -664,4 +679,53 @@ func resolveGitPathAndFilter(ctx context.Context, cfg *Config, client GitClient,
 	}
 
 	return nil
+}
+
+// parseRiskThresholdsString parses a string like "hot:50,risk:60,complexity:70,stale:80"
+// into a map of ScoringMode to float64.
+func parseRiskThresholdsString(s string) (map[schema.ScoringMode]float64, error) {
+	thresholds := make(map[schema.ScoringMode]float64)
+
+	if s == "" {
+		return thresholds, nil
+	}
+
+	parts := strings.SplitSeq(s, ",")
+	for part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+
+		keyValue := strings.Split(part, ":")
+		if len(keyValue) != 2 {
+			return nil, fmt.Errorf("invalid threshold format '%s', expected 'mode:value'", part)
+		}
+
+		modeStr := strings.TrimSpace(keyValue[0])
+		valueStr := strings.TrimSpace(keyValue[1])
+
+		var mode schema.ScoringMode
+		switch strings.ToLower(modeStr) {
+		case "hot":
+			mode = schema.HotMode
+		case "risk":
+			mode = schema.RiskMode
+		case "complexity":
+			mode = schema.ComplexityMode
+		case "stale":
+			mode = schema.StaleMode
+		default:
+			return nil, fmt.Errorf("invalid mode '%s', must be hot, risk, complexity, or stale", modeStr)
+		}
+
+		value, err := strconv.ParseFloat(valueStr, 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid threshold value '%s' for mode %s: %w", valueStr, mode, err)
+		}
+
+		thresholds[mode] = value
+	}
+
+	return thresholds, nil
 }
