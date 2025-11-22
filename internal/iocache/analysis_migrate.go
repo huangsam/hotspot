@@ -9,7 +9,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database"
 	"github.com/golang-migrate/migrate/v4/database/mysql"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4/database/pgx/v5"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
@@ -104,7 +104,7 @@ func (b *MigrationBuilder) buildDriver() error {
 		}
 
 	case schema.PostgreSQLBackend:
-		b.driver, err = postgres.WithInstance(b.db, &postgres.Config{})
+		b.driver, err = pgx.WithInstance(b.db, &pgx.Config{})
 		if err != nil {
 			return fmt.Errorf("failed to create PostgreSQL migrate driver: %w", err)
 		}
