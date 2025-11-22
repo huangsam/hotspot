@@ -1,5 +1,22 @@
 # 🚀 Changelog
 
+## v1.10.0
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.9.0...v1.10.0)
+
+### Features
+
+- **Analysis Schema Version Management**: Add schema versioning and migration system for analysis tracking (#24)
+
+### Improvements
+
+- **Code Refactoring**: Migrate command logic from main.go to iocache package for better organization
+- **Command Formatting**: Apply periods to the end of all command descriptions
+
+### Development
+
+- **Migration System**: Implement database migration framework for analysis schema updates
+
 ## v1.9.0
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.8.0...v1.9.0)
