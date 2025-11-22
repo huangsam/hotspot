@@ -216,7 +216,7 @@ func cacheSetup() error {
 	}
 
 	// Get cache-related config values
-	backend := schema.CacheBackend(viper.GetString("cache-backend"))
+	backend := schema.DatabaseBackend(viper.GetString("cache-backend"))
 	connStr := viper.GetString("cache-db-connect")
 
 	// Basic validation for database backends
@@ -252,11 +252,11 @@ func analysisSetup() error {
 	connStr := viper.GetString("analysis-db-connect")
 
 	// Handle empty backend as NoneBackend
-	var backend schema.CacheBackend
+	var backend schema.DatabaseBackend
 	if backendStr == "" {
 		backend = schema.NoneBackend
 	} else {
-		backend = schema.CacheBackend(backendStr)
+		backend = schema.DatabaseBackend(backendStr)
 	}
 
 	// Basic validation for database backends
@@ -297,11 +297,11 @@ func analysisMigrateSetup() error {
 	connStr := viper.GetString("analysis-db-connect")
 
 	// Handle empty backend as NoneBackend
-	var backend schema.CacheBackend
+	var backend schema.DatabaseBackend
 	if backendStr == "" {
 		backend = schema.NoneBackend
 	} else {
-		backend = schema.CacheBackend(backendStr)
+		backend = schema.DatabaseBackend(backendStr)
 	}
 
 	// Basic validation for database backends

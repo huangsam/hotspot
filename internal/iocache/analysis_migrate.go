@@ -27,7 +27,7 @@ var migrationsFS embed.FS
 
 // MigrationBuilder handles the construction of migration components.
 type MigrationBuilder struct {
-	backend schema.CacheBackend
+	backend schema.DatabaseBackend
 	connStr string
 	db      *sql.DB
 	driver  database.Driver
@@ -36,7 +36,7 @@ type MigrationBuilder struct {
 }
 
 // NewMigrationBuilder creates a new MigrationBuilder instance.
-func NewMigrationBuilder(backend schema.CacheBackend, connStr string) *MigrationBuilder {
+func NewMigrationBuilder(backend schema.DatabaseBackend, connStr string) *MigrationBuilder {
 	return &MigrationBuilder{
 		backend: backend,
 		connStr: connStr,
@@ -208,7 +208,7 @@ func executeMigration(m *migrate.Migrate, targetVersion int) error {
 // If targetVersion == 0, it rolls back all migrations (to initial state).
 // If targetVersion > 0, it migrates to the specified version.
 // If targetVersion is invalid, it returns an error.
-func MigrateAnalysis(backend schema.CacheBackend, connStr string, targetVersion int) error {
+func MigrateAnalysis(backend schema.DatabaseBackend, connStr string, targetVersion int) error {
 	if backend == schema.NoneBackend {
 		return fmt.Errorf("migrations are not supported for NoneBackend")
 	}

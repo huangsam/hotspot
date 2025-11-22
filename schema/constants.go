@@ -14,8 +14,8 @@ type (
 	// ScoringMode represents the scoring mode used.
 	ScoringMode string
 
-	// CacheBackend represents the database backend for caching.
-	CacheBackend string
+	// DatabaseBackend represents the database backend for caching.
+	DatabaseBackend string
 )
 
 // Breakdown keys used in the scoring logic.
@@ -59,10 +59,10 @@ const (
 
 // All cache backends supported.
 const (
-	SQLiteBackend     CacheBackend = "sqlite" // default
-	MySQLBackend      CacheBackend = "mysql"
-	PostgreSQLBackend CacheBackend = "postgresql"
-	NoneBackend       CacheBackend = "none"
+	SQLiteBackend     DatabaseBackend = "sqlite" // default
+	MySQLBackend      DatabaseBackend = "mysql"
+	PostgreSQLBackend DatabaseBackend = "postgresql"
+	NoneBackend       DatabaseBackend = "none"
 )
 
 // AllScoringModes returns a list of all supported scoring modes.
@@ -85,7 +85,7 @@ var ValidScoringModes = map[ScoringMode]struct{}{
 }
 
 // ValidCacheBackends lists all valid cache backends.
-var ValidCacheBackends = map[CacheBackend]struct{}{
+var ValidCacheBackends = map[DatabaseBackend]struct{}{
 	SQLiteBackend:     {},
 	MySQLBackend:      {},
 	PostgreSQLBackend: {},

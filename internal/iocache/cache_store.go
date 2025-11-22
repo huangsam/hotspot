@@ -17,7 +17,7 @@ import (
 type CacheStoreImpl struct {
 	db         *sql.DB
 	tableName  string
-	backend    schema.CacheBackend
+	backend    schema.DatabaseBackend
 	driverName string
 	connStr    string
 }
@@ -25,7 +25,7 @@ type CacheStoreImpl struct {
 var _ contract.CacheStore = &CacheStoreImpl{} // Compile-time check
 
 // NewCacheStore initializes and returns a new CacheStore based on the backend type.
-func NewCacheStore(tableName string, backend schema.CacheBackend, connStr string) (contract.CacheStore, error) {
+func NewCacheStore(tableName string, backend schema.DatabaseBackend, connStr string) (contract.CacheStore, error) {
 	// Validate table name to prevent SQL injection
 	if err := validateTableName(tableName); err != nil {
 		return nil, err
@@ -104,7 +104,7 @@ func NewCacheStore(tableName string, backend schema.CacheBackend, connStr string
 }
 
 // getCreateTableQuery returns the CREATE TABLE query for the given backend.
-func getCreateTableQuery(tableName string, backend schema.CacheBackend) string {
+func getCreateTableQuery(tableName string, backend schema.DatabaseBackend) string {
 	quotedTableName := quoteTableName(tableName, backend)
 	switch backend {
 	case schema.MySQLBackend:
