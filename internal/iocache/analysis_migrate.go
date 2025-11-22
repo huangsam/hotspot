@@ -161,7 +161,7 @@ func executeMigration(m *migrate.Migrate, targetVersion int) error {
 			return fmt.Errorf("failed to migrate to latest version: %w", err)
 		}
 		if err == migrate.ErrNoChange {
-			fmt.Println("No migration needed. Database is already at the latest version.")
+			fmt.Println("No migration needed. Database is already at the latest version")
 		} else {
 			newVersion, _, _ := m.Version()
 			if isNewDatabase {
