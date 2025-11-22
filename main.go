@@ -101,11 +101,16 @@ var rootCmd = &cobra.Command{
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	// Set config file name and paths
-	viper.SetConfigName(".hotspot") // Name of config file (without extension)
-	viper.SetConfigType("yaml")     // We'll use YAML format
-	viper.AddConfigPath(".")        // Look in the current directory
-	viper.AddConfigPath("$HOME")    // Look in the home directory
+	// Check if a specific config file is provided
+	if configFile := viper.GetString("config"); configFile != "" {
+		viper.SetConfigFile(configFile)
+	} else {
+		// Set config file name and paths
+		viper.SetConfigName(".hotspot") // Name of config file (without extension)
+		viper.SetConfigType("yaml")     // We'll use YAML format
+		viper.AddConfigPath(".")        // Look in the current directory
+		viper.AddConfigPath("$HOME")    // Look in the home directory
+	}
 
 	// Set environment variable prefix
 	viper.SetEnvPrefix("HOTSPOT")
@@ -184,6 +189,16 @@ func sharedSetupWrapper(cmd *cobra.Command, args []string) error {
 // cacheSetup loads minimal configuration needed for cache operations.
 // This is used by commands that need cache access without full shared setup.
 func cacheSetup() error {
+	// Handle config file
+	if configFile := viper.GetString("config"); configFile != "" {
+		viper.SetConfigFile(configFile)
+	} else {
+		viper.SetConfigName(".hotspot")
+		viper.SetConfigType("yaml")
+		viper.AddConfigPath(".")
+		viper.AddConfigPath("$HOME")
+	}
+
 	// Load config file if present (similar to sharedSetup but minimal)
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
@@ -215,6 +230,16 @@ func cacheSetup() error {
 // analysisSetup loads minimal configuration needed for analysis operations.
 // This is used by commands that need analysis access without full shared setup.
 func analysisSetup() error {
+	// Handle config file
+	if configFile := viper.GetString("config"); configFile != "" {
+		viper.SetConfigFile(configFile)
+	} else {
+		viper.SetConfigName(".hotspot")
+		viper.SetConfigType("yaml")
+		viper.AddConfigPath(".")
+		viper.AddConfigPath("$HOME")
+	}
+
 	// Load config file if present (similar to sharedSetup but minimal)
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
@@ -637,6 +662,7 @@ func init() {
 	rootCmd.PersistentFlags().String("lookback", "6 months", "Time duration to look back from Base/Target ref commit time")
 	rootCmd.PersistentFlags().String("base-ref", "", "Base Git reference for the BEFORE state")
 	rootCmd.PersistentFlags().String("target-ref", "", "Target Git reference for the AFTER state")
+	rootCmd.PersistentFlags().String("config", "", "Path to config file")
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
 		contract.LogFatal("Error binding root flags", err)
 	}

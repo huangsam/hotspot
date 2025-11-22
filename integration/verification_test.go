@@ -82,6 +82,8 @@ func getHotspotBinary() string {
 // TestFilesVerification runs hotspot files with time filters and verifies both commit counts and age calculations.
 // This test samples a subset of files to keep runtime reasonable while still providing good coverage.
 func TestFilesVerification(t *testing.T) {
+	t.Parallel()
+
 	// Skip if not in a git repo
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not available")
@@ -202,6 +204,8 @@ func parseHotspotDetailOutput(output string) map[string]schema.FileResult {
 
 // TestFoldersVerification runs hotspot folders with time filters and verifies folder aggregation.
 func TestFoldersVerification(t *testing.T) {
+	t.Parallel()
+
 	// Skip if not in a git repo
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not available")
@@ -245,6 +249,8 @@ func TestFoldersVerification(t *testing.T) {
 
 // TestCompareFilesVerification runs hotspot compare files and verifies comparison deltas.
 func TestCompareFilesVerification(t *testing.T) {
+	t.Parallel()
+
 	// Skip if not in a git repo
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not available")
@@ -307,6 +313,8 @@ func TestCompareFilesVerification(t *testing.T) {
 
 // TestCompareFoldersVerification runs hotspot compare folders and verifies comparison deltas.
 func TestCompareFoldersVerification(t *testing.T) {
+	t.Parallel()
+
 	// Skip if not in a git repo
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not available")
@@ -391,6 +399,8 @@ func parseHotspotFolderOutput(output string) map[string]schema.FolderResult {
 // TestExternalRepoVerification clones a couple of small public repos and runs basic verification.
 // This test is kept minimal to avoid network dependencies and long runtimes.
 func TestExternalRepoVerification(t *testing.T) {
+	t.Parallel()
+
 	// Test repos with different characteristics for basic coverage
 	// Reduced from 4 to 2 repos to keep runtime reasonable
 	testRepos := []struct {
@@ -445,6 +455,8 @@ func TestExternalRepoVerification(t *testing.T) {
 
 // TestTimeseriesVerification tests the timeseries command functionality.
 func TestTimeseriesVerification(t *testing.T) {
+	t.Parallel()
+
 	// Skip if not in a git repo
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not available")
@@ -566,6 +578,8 @@ func extractJSONFromOutput(output string) string {
 
 // TestCheckVerification tests the check command functionality.
 func TestCheckVerification(t *testing.T) {
+	t.Parallel()
+
 	// Skip if not in a git repo
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not available")
@@ -630,6 +644,8 @@ func TestCheckVerification(t *testing.T) {
 
 // TestMetricsVerification tests the metrics command and custom weights handling.
 func TestMetricsVerification(t *testing.T) {
+	t.Parallel()
+
 	// Skip if not in a git repo
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not available")
@@ -642,6 +658,18 @@ func TestMetricsVerification(t *testing.T) {
 
 	// Get hotspot binary (built once and shared)
 	hotspotPath := getHotspotBinary()
+
+	// Helper function to create a temp config file
+	createTempConfig := func(t *testing.T, content string) string {
+		t.Helper()
+		configFile, err := os.CreateTemp("", "hotspot_test_config_*.yml")
+		require.NoError(t, err)
+		_, err = configFile.WriteString(content)
+		require.NoError(t, err)
+		_ = configFile.Close()
+		t.Cleanup(func() { _ = os.Remove(configFile.Name()) })
+		return configFile.Name()
+	}
 
 	// Test valid custom weights configurations
 	t.Run("valid_weights_commit_focused", func(t *testing.T) {
@@ -657,13 +685,10 @@ weights:
     contrib: 0.04
     size: 0.01
 `
-		configFile := filepath.Join(repoDir, ".hotspot.yml")
-		err = os.WriteFile(configFile, []byte(configContent), 0o644)
-		require.NoError(t, err)
-		t.Cleanup(func() { _ = os.Remove(configFile) })
+		configFile := createTempConfig(t, configContent)
 
 		// Run hotspot metrics to verify custom weights are loaded and displayed
-		cmd := exec.Command(hotspotPath, "metrics", "--output", "json")
+		cmd := exec.Command(hotspotPath, "metrics", "--output", "json", "--config", configFile)
 		cmd.Dir = repoDir
 		var stdout bytes.Buffer
 		cmd.Stdout = &stdout
@@ -714,13 +739,10 @@ weights:
     contrib: 0.04
     size: 0.01
 `
-		configFile := filepath.Join(repoDir, ".hotspot.yml")
-		err = os.WriteFile(configFile, []byte(configContent), 0o644)
-		require.NoError(t, err)
-		t.Cleanup(func() { _ = os.Remove(configFile) })
+		configFile := createTempConfig(t, configContent)
 
 		// Run hotspot metrics to verify custom weights are loaded and displayed
-		cmd := exec.Command(hotspotPath, "metrics", "--output", "json")
+		cmd := exec.Command(hotspotPath, "metrics", "--output", "json", "--config", configFile)
 		cmd.Dir = repoDir
 		var stdout bytes.Buffer
 		cmd.Stdout = &stdout
@@ -769,13 +791,10 @@ weights:
     churn: 0.3
     age: 0.3  # 0.5 + 0.3 + 0.3 = 1.1
 `
-		configFile := filepath.Join(repoDir, ".hotspot.yml")
-		err = os.WriteFile(configFile, []byte(configContent), 0o644)
-		require.NoError(t, err)
-		t.Cleanup(func() { _ = os.Remove(configFile) })
+		configFile := createTempConfig(t, configContent)
 
 		// Run hotspot metrics - should fail due to invalid weights
-		cmd := exec.Command(hotspotPath, "metrics")
+		cmd := exec.Command(hotspotPath, "metrics", "--config", configFile)
 		cmd.Dir = repoDir
 		var stdout bytes.Buffer
 		cmd.Stdout = &stdout
