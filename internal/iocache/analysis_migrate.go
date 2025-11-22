@@ -209,6 +209,7 @@ func MigrateAnalysis(backend schema.CacheBackend, connStr string, targetVersion 
 	if err := builder.buildMigrate(); err != nil {
 		return err
 	}
+	defer func() { _, _ = builder.m.Close() }()
 
 	return executeMigration(builder.m, targetVersion)
 }
