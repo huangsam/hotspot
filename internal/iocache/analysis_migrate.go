@@ -16,6 +16,12 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
+// Target migration version constants.
+const (
+	targetLatestVersion  = -1
+	targetInitialVersion = 0
+)
+
 //go:embed migrations/*.sql
 var migrationsFS embed.FS
 
@@ -146,7 +152,7 @@ func executeMigration(m *migrate.Migrate, targetVersion int) error {
 
 	// Perform migration
 	switch {
-	case targetVersion < 0:
+	case targetVersion == targetLatestVersion:
 		// Migrate to latest version
 		err = m.Up()
 		if err != nil && err != migrate.ErrNoChange {
@@ -158,7 +164,7 @@ func executeMigration(m *migrate.Migrate, targetVersion int) error {
 			newVersion, _, _ := m.Version()
 			fmt.Printf("Successfully migrated from version %d to version %d\n", currentVersion, newVersion)
 		}
-	case targetVersion == 0:
+	case targetVersion == targetInitialVersion:
 		// Special case: migrate all the way down to version 0 (no migrations applied)
 		err = m.Down()
 		if err != nil && err != migrate.ErrNoChange {
@@ -169,7 +175,7 @@ func executeMigration(m *migrate.Migrate, targetVersion int) error {
 		} else {
 			fmt.Printf("Successfully rolled back from version %d to version 0\n", currentVersion)
 		}
-	default:
+	case targetVersion > targetInitialVersion:
 		// Migrate to specific version
 		err = m.Migrate(uint(targetVersion))
 		if err != nil && err != migrate.ErrNoChange {
@@ -180,6 +186,8 @@ func executeMigration(m *migrate.Migrate, targetVersion int) error {
 		} else {
 			fmt.Printf("Successfully migrated from version %d to version %d\n", currentVersion, targetVersion)
 		}
+	default:
+		return fmt.Errorf("invalid target version: %d", targetVersion)
 	}
 
 	return nil
