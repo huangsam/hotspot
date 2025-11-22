@@ -25,7 +25,7 @@ func validateTableName(name string) error {
 }
 
 // quoteTableName returns the properly quoted table name for the given backend.
-func quoteTableName(name string, backend schema.CacheBackend) string {
+func quoteTableName(name string, backend schema.DatabaseBackend) string {
 	switch backend {
 	case schema.PostgreSQLBackend:
 		return fmt.Sprintf("\"%s\"", name)

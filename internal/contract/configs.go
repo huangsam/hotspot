@@ -99,10 +99,10 @@ type Config struct {
 	TimeseriesInterval time.Duration
 	TimeseriesPoints   int
 
-	CacheBackend   schema.CacheBackend
+	CacheBackend   schema.DatabaseBackend
 	CacheDBConnect string // Please use env var as this is plaintext
 
-	AnalysisBackend   schema.CacheBackend
+	AnalysisBackend   schema.DatabaseBackend
 	AnalysisDBConnect string // Please use env var as this is plaintext
 
 	// CustomWeights is a mapping of [ModeName][BreakdownKey] = Weight
@@ -239,7 +239,7 @@ func ProcessAndValidate(ctx context.Context, cfg *Config, client GitClient, inpu
 
 // ValidateDatabaseConnectionString validates the format of database connection strings
 // for MySQL and PostgreSQL backends.
-func ValidateDatabaseConnectionString(backend schema.CacheBackend, connStr string) error {
+func ValidateDatabaseConnectionString(backend schema.DatabaseBackend, connStr string) error {
 	switch backend {
 	case schema.SQLiteBackend, schema.NoneBackend:
 		return nil
@@ -270,7 +270,7 @@ func ValidateDatabaseConnectionString(backend schema.CacheBackend, connStr strin
 // validateBackendConfigs validates cache and analysis backend configurations.
 func validateBackendConfigs(cfg *Config, input *ConfigRawInput) error {
 	// --- Cache Backend Validation ---
-	cfg.CacheBackend = schema.CacheBackend(strings.ToLower(input.CacheBackend))
+	cfg.CacheBackend = schema.DatabaseBackend(strings.ToLower(input.CacheBackend))
 	if _, ok := schema.ValidCacheBackends[cfg.CacheBackend]; !ok {
 		return fmt.Errorf("invalid cache backend '%s'. must be sqlite, mysql, postgresql, none", input.CacheBackend)
 	}
@@ -280,7 +280,7 @@ func validateBackendConfigs(cfg *Config, input *ConfigRawInput) error {
 	}
 
 	// --- Analysis Backend Validation ---
-	cfg.AnalysisBackend = schema.CacheBackend(strings.ToLower(input.AnalysisBackend))
+	cfg.AnalysisBackend = schema.DatabaseBackend(strings.ToLower(input.AnalysisBackend))
 	if cfg.AnalysisBackend != "" {
 		if _, ok := schema.ValidCacheBackends[cfg.AnalysisBackend]; !ok {
 			return fmt.Errorf("invalid analysis backend '%s'. must be sqlite, mysql, postgresql, none", input.AnalysisBackend)

@@ -186,9 +186,8 @@ func sharedSetupWrapper(cmd *cobra.Command, args []string) error {
 	return sharedSetup(rootCtx, cmd, args)
 }
 
-// cacheSetup loads minimal configuration needed for cache operations.
-// This is used by commands that need cache access without full shared setup.
-func cacheSetup() error {
+// loadConfigFile handles config file loading logic common to all setup functions.
+func loadConfigFile() error {
 	// Handle config file
 	if configFile := viper.GetString("config"); configFile != "" {
 		viper.SetConfigFile(configFile)
@@ -199,16 +198,25 @@ func cacheSetup() error {
 		viper.AddConfigPath("$HOME")
 	}
 
-	// Load config file if present (similar to sharedSetup but minimal)
+	// Load config file if present
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 			return fmt.Errorf("error reading config file: %w", err)
 		}
 		// Config file not found, use defaults/env/flags
 	}
+	return nil
+}
+
+// cacheSetup loads minimal configuration needed for cache operations.
+// This is used by commands that need cache access without full shared setup.
+func cacheSetup() error {
+	if err := loadConfigFile(); err != nil {
+		return err
+	}
 
 	// Get cache-related config values
-	backend := schema.CacheBackend(viper.GetString("cache-backend"))
+	backend := schema.DatabaseBackend(viper.GetString("cache-backend"))
 	connStr := viper.GetString("cache-db-connect")
 
 	// Basic validation for database backends
@@ -227,25 +235,16 @@ func cacheSetup() error {
 	return nil
 }
 
+// cacheSetupWrapper wraps cacheSetup to provide PreRunE for cache commands.
+func cacheSetupWrapper(_ *cobra.Command, _ []string) error {
+	return cacheSetup()
+}
+
 // analysisSetup loads minimal configuration needed for analysis operations.
 // This is used by commands that need analysis access without full shared setup.
 func analysisSetup() error {
-	// Handle config file
-	if configFile := viper.GetString("config"); configFile != "" {
-		viper.SetConfigFile(configFile)
-	} else {
-		viper.SetConfigName(".hotspot")
-		viper.SetConfigType("yaml")
-		viper.AddConfigPath(".")
-		viper.AddConfigPath("$HOME")
-	}
-
-	// Load config file if present (similar to sharedSetup but minimal)
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			return fmt.Errorf("error reading config file: %w", err)
-		}
-		// Config file not found, use defaults/env/flags
+	if err := loadConfigFile(); err != nil {
+		return err
 	}
 
 	// Get analysis-related config values
@@ -253,11 +252,11 @@ func analysisSetup() error {
 	connStr := viper.GetString("analysis-db-connect")
 
 	// Handle empty backend as NoneBackend
-	var backend schema.CacheBackend
+	var backend schema.DatabaseBackend
 	if backendStr == "" {
 		backend = schema.NoneBackend
 	} else {
-		backend = schema.CacheBackend(backendStr)
+		backend = schema.DatabaseBackend(backendStr)
 	}
 
 	// Basic validation for database backends
@@ -280,14 +279,50 @@ func analysisSetup() error {
 	return nil
 }
 
-// cacheSetupWrapper wraps initCacheConfig to provide PreRunE for cache commands.
-func cacheSetupWrapper(_ *cobra.Command, _ []string) error {
-	return cacheSetup()
-}
-
 // analysisSetupWrapper wraps analysisSetup to provide PreRunE for analysis commands.
 func analysisSetupWrapper(_ *cobra.Command, _ []string) error {
 	return analysisSetup()
+}
+
+// analysisMigrateSetup loads minimal configuration needed for migrate operations.
+// This is a specialized setup that does NOT initialize stores or create tables,
+// allowing migrations to run on a fresh database.
+func analysisMigrateSetup() error {
+	if err := loadConfigFile(); err != nil {
+		return err
+	}
+
+	// Get analysis-related config values
+	backendStr := viper.GetString("analysis-backend")
+	connStr := viper.GetString("analysis-db-connect")
+
+	// Handle empty backend as NoneBackend
+	var backend schema.DatabaseBackend
+	if backendStr == "" {
+		backend = schema.NoneBackend
+	} else {
+		backend = schema.DatabaseBackend(backendStr)
+	}
+
+	// Basic validation for database backends
+	if err := contract.ValidateDatabaseConnectionString(backend, connStr); err != nil {
+		return err
+	}
+
+	// For SQLite backend with empty connection string, use default path
+	if backend == schema.SQLiteBackend && connStr == "" {
+		connStr = contract.GetAnalysisDBFilePath()
+	}
+
+	cfg.AnalysisBackend = backend
+	cfg.AnalysisDBConnect = connStr
+
+	return nil
+}
+
+// analysisMigrateSetupWrapper wraps analysisMigrateSetup to provide PreRunE for migrate command.
+func analysisMigrateSetupWrapper(_ *cobra.Command, _ []string) error {
+	return analysisMigrateSetup()
 }
 
 // filesCmd focuses on tactical, file-level analysis.
@@ -507,6 +542,20 @@ var analysisExportCmd = &cobra.Command{
 	},
 }
 
+// analysisMigrateCmd runs database migrations for the analysis store.
+var analysisMigrateCmd = &cobra.Command{
+	Use:     "migrate",
+	Short:   "Run database schema migrations for the analysis store.",
+	Long:    `The migrate command manages database schema evolution for the analysis store. By default, it migrates to the latest version.`,
+	PreRunE: analysisMigrateSetupWrapper,
+	Run: func(_ *cobra.Command, _ []string) {
+		targetVersion := viper.GetInt("target-version")
+		if err := iocache.MigrateAnalysis(cfg.AnalysisBackend, cfg.AnalysisDBConnect, targetVersion); err != nil {
+			contract.LogFatal("Failed to run migrations", err)
+		}
+	},
+}
+
 // executeAnalysisExport performs the actual export of analysis data to Parquet files.
 func executeAnalysisExport() error {
 	// Export always uses parquet format, regardless of --output flag
@@ -637,6 +686,7 @@ func init() {
 	analysisCmd.AddCommand(analysisClearCmd)
 	analysisCmd.AddCommand(analysisStatusCmd)
 	analysisCmd.AddCommand(analysisExportCmd)
+	analysisCmd.AddCommand(analysisMigrateCmd)
 
 	// Bind all persistent flags of rootCmd to Viper
 	rootCmd.PersistentFlags().Bool("detail", false, "Print per-target metadata (lines of code, size, age)")
@@ -686,6 +736,12 @@ func init() {
 	checkCmd.Flags().String("thresholds-override", "", "Risk thresholds for CI/CD gating (format: 'hot:50,risk:50,complexity:50,stale:50')")
 	if err := viper.BindPFlags(checkCmd.Flags()); err != nil {
 		contract.LogFatal("Error binding check flags", err)
+	}
+
+	// Bind all flags of analysisMigrateCmd to Viper
+	analysisMigrateCmd.Flags().Int("target-version", -1, "Target migration version (-1 means latest, 0 means rollback to initial state)")
+	if err := viper.BindPFlags(analysisMigrateCmd.Flags()); err != nil {
+		contract.LogFatal("Error binding analysis migrate flags", err)
 	}
 }
 

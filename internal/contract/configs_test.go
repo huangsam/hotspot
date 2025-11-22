@@ -937,7 +937,7 @@ func TestGetAnalysisStartAndEndTime(t *testing.T) {
 func TestValidateDatabaseConnectionString(t *testing.T) {
 	tests := []struct {
 		name        string
-		backend     schema.CacheBackend
+		backend     schema.DatabaseBackend
 		connStr     string
 		expectError bool
 	}{

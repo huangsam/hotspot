@@ -33,7 +33,7 @@ func GetAnalysisDBFilePath() string {
 // InitStores initializes the global cache manager with separate cache and analysis stores.
 // cacheBackend and cacheConnStr can be empty to disable cache initialization.
 // analysisBackend and analysisConnStr can be empty to disable analysis tracking.
-func InitStores(cacheBackend schema.CacheBackend, cacheConnStr string, analysisBackend schema.CacheBackend, analysisConnStr string) error {
+func InitStores(cacheBackend schema.DatabaseBackend, cacheConnStr string, analysisBackend schema.DatabaseBackend, analysisConnStr string) error {
 	var initErr error
 
 	initOnce.Do(func() {
@@ -90,7 +90,7 @@ func CloseCaching() { // called in main defer
 // For SQLite, it deletes the database file.
 // For SQL backends (MySQL/PostgreSQL), it drops the table.
 // For NoneBackend, it does nothing.
-func ClearCache(backend schema.CacheBackend, dbFilePath, connStr string) error {
+func ClearCache(backend schema.DatabaseBackend, dbFilePath, connStr string) error {
 	switch backend {
 	case schema.SQLiteBackend:
 		if dbFilePath == "" {
@@ -120,7 +120,7 @@ func ClearCache(backend schema.CacheBackend, dbFilePath, connStr string) error {
 // For SQLite, it deletes the database file.
 // For SQL backends (MySQL/PostgreSQL), it drops the analysis tables.
 // For NoneBackend, it does nothing.
-func ClearAnalysis(backend schema.CacheBackend, dbFilePath, connStr string) error {
+func ClearAnalysis(backend schema.DatabaseBackend, dbFilePath, connStr string) error {
 	switch backend {
 	case schema.SQLiteBackend:
 		if dbFilePath == "" {
