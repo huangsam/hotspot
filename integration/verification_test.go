@@ -777,6 +777,8 @@ weights:
 		// Run hotspot metrics - should fail due to invalid weights
 		cmd := exec.Command(hotspotPath, "metrics")
 		cmd.Dir = repoDir
+		var stdout bytes.Buffer
+		cmd.Stdout = &stdout
 		err = cmd.Run()
 		assert.Error(t, err, "Should fail with invalid weights that don't sum to 1.0")
 	})
