@@ -244,105 +244,178 @@ func TestAnalysisStore_RuntimeCapture(t *testing.T) {
 	})
 }
 
-func TestAnalysisStore_GetStatus(t *testing.T) {
-	t.Run("SQLite backend with data", func(t *testing.T) {
-		store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+func TestAnalysisStore_GetAllAnalysisRuns(t *testing.T) {
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	require.NoError(t, err)
+	require.NotNil(t, store)
+	defer func() { _ = store.Close() }()
+
+	// Test empty store
+	runs, err := store.GetAllAnalysisRuns()
+	assert.NoError(t, err)
+	assert.Empty(t, runs)
+
+	// Add some analysis runs
+	startTime := time.Now()
+	configs := []map[string]any{
+		{"mode": "hot", "lookback": "30d"},
+		{"mode": "risk", "lookback": "60d"},
+	}
+
+	var analysisIDs []int64
+	for _, config := range configs {
+		id, err := store.BeginAnalysis(startTime, config)
 		require.NoError(t, err)
-		require.NotNil(t, store)
-		defer func() { _ = store.Close() }()
+		analysisIDs = append(analysisIDs, id)
 
-		// Create some analysis runs
-		startTime := time.Now()
-		runs := []map[string]any{
-			{"mode": "hot", "lookback": "30d"},
-			{"mode": "risk", "lookback": "60d"},
-			{"mode": "complexity", "lookback": "90d"},
-		}
+		err = store.EndAnalysis(id, startTime.Add(time.Minute), 1)
+		assert.NoError(t, err)
+	}
 
-		var analysisIDs []int64
-		for _, config := range runs {
-			id, err := store.BeginAnalysis(startTime, config)
-			require.NoError(t, err)
-			analysisIDs = append(analysisIDs, id)
+	// Get all runs
+	runs, err = store.GetAllAnalysisRuns()
+	assert.NoError(t, err)
+	assert.Len(t, runs, 2)
 
-			// Add some metrics
-			metrics := schema.FileMetrics{
-				AnalysisTime:     startTime,
-				TotalCommits:     100,
-				TotalChurn:       500,
-				ContributorCount: 5,
-				AgeDays:          365.0,
-				GiniCoefficient:  0.5,
-				FileOwner:        "owner",
-			}
-			scores := schema.FileScores{
-				AnalysisTime:    startTime,
-				HotScore:        75.5,
-				RiskScore:       80.2,
-				ComplexityScore: 65.3,
-				StaleScore:      70.1,
-				ScoreLabel:      "hot",
-			}
-			err = store.RecordFileMetricsAndScores(id, "test.go", metrics, scores)
-			assert.NoError(t, err)
+	// Verify the runs
+	for i, run := range runs {
+		assert.Equal(t, analysisIDs[i], run.AnalysisID)
+		// ConfigParams is stored as JSON string, so we can't directly compare
+		assert.Equal(t, int32(1), run.TotalFilesAnalyzed)
+		assert.NotNil(t, run.RunDurationMs)
+		assert.Greater(t, *run.RunDurationMs, int32(0))
+	}
+}
 
-			err = store.EndAnalysis(id, startTime.Add(time.Minute), 1)
-			assert.NoError(t, err)
-		}
+func TestAnalysisStore_GetAllFileScoresMetrics(t *testing.T) {
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	require.NoError(t, err)
+	require.NotNil(t, store)
+	defer func() { _ = store.Close() }()
 
-		// Get status
-		status, err := store.GetStatus()
-		assert.NoError(t, err, "GetStatus should not fail")
+	// Test empty store
+	metrics, err := store.GetAllFileScoresMetrics()
+	assert.NoError(t, err)
+	assert.Empty(t, metrics)
 
-		assert.Len(t, analysisIDs, 3, "Should have collected 3 analysis IDs")
-		assert.Equal(t, "sqlite", status.Backend, "Backend should be sqlite")
-		assert.True(t, status.Connected, "Should be connected")
-		assert.Equal(t, 3, status.TotalRuns, "Total runs should be 3")
-		assert.Greater(t, status.LastRunID, int64(0), "Last run ID should be set")
-		assert.True(t, !status.LastRunTime.IsZero(), "Last run time should not be zero")
-		assert.True(t, status.OldestRunTime.Equal(startTime) || !status.OldestRunTime.IsZero(), "Oldest run time should be set")
-		assert.Equal(t, 3, status.TotalFilesAnalyzed, "Total files analyzed should be 3")
-		assert.Contains(t, status.TableSizes, "hotspot_analysis_runs", "Should have analysis_runs table size")
-		assert.Contains(t, status.TableSizes, "hotspot_file_scores_metrics", "Should have file_scores_metrics table size")
-	})
+	// Add analysis run and file metrics
+	analysisID, err := store.BeginAnalysis(time.Now(), map[string]any{"test": "metrics"})
+	require.NoError(t, err)
 
-	t.Run("SQLite backend empty", func(t *testing.T) {
-		store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
-		require.NoError(t, err)
-		require.NotNil(t, store)
-		defer func() { _ = store.Close() }()
+	fileMetrics := schema.FileMetrics{
+		AnalysisTime:     time.Now(),
+		TotalCommits:     100,
+		TotalChurn:       500,
+		ContributorCount: 5,
+		AgeDays:          365.0,
+		GiniCoefficient:  0.5,
+		FileOwner:        "test-owner",
+	}
+	fileScores := schema.FileScores{
+		AnalysisTime:    time.Now(),
+		HotScore:        75.5,
+		RiskScore:       80.2,
+		ComplexityScore: 65.3,
+		StaleScore:      70.1,
+		ScoreLabel:      "hot",
+	}
 
-		// Get status without data
-		status, err := store.GetStatus()
-		assert.NoError(t, err, "GetStatus should not fail")
+	err = store.RecordFileMetricsAndScores(analysisID, "test/file.go", fileMetrics, fileScores)
+	assert.NoError(t, err)
 
-		assert.Equal(t, "sqlite", status.Backend, "Backend should be sqlite")
-		assert.True(t, status.Connected, "Should be connected")
-		assert.Equal(t, 0, status.TotalRuns, "Total runs should be 0")
-		assert.Equal(t, int64(0), status.LastRunID, "Last run ID should be 0")
-		assert.True(t, status.LastRunTime.IsZero(), "Last run time should be zero")
-		assert.True(t, status.OldestRunTime.IsZero(), "Oldest run time should be zero")
-		assert.Equal(t, 0, status.TotalFilesAnalyzed, "Total files analyzed should be 0")
-		assert.Contains(t, status.TableSizes, "hotspot_analysis_runs", "Should have analysis_runs table size")
-		assert.Contains(t, status.TableSizes, "hotspot_file_scores_metrics", "Should have file_scores_metrics table size")
-	})
+	err = store.EndAnalysis(analysisID, time.Now(), 1)
+	assert.NoError(t, err)
 
-	t.Run("None backend", func(t *testing.T) {
-		store, err := NewAnalysisStore(schema.NoneBackend, "")
-		require.NoError(t, err)
-		require.NotNil(t, store)
+	// Get all metrics
+	metrics, err = store.GetAllFileScoresMetrics()
+	assert.NoError(t, err)
+	assert.Len(t, metrics, 1)
 
-		// Get status
-		status, err := store.GetStatus()
-		assert.NoError(t, err, "GetStatus should not fail")
+	// Verify the metrics
+	record := metrics[0]
+	assert.Equal(t, analysisID, record.AnalysisID)
+	assert.Equal(t, "test/file.go", record.FilePath)
+	assert.Equal(t, int32(fileMetrics.TotalCommits), record.TotalCommits)
+	assert.Equal(t, int32(fileMetrics.TotalChurn), record.TotalChurn)
+	assert.Equal(t, int32(fileMetrics.ContributorCount), record.ContributorCount)
+	assert.Equal(t, fileMetrics.AgeDays, record.AgeDays)
+	assert.Equal(t, fileMetrics.GiniCoefficient, record.GiniCoefficient)
+	assert.Equal(t, fileScores.HotScore, record.ScoreHot)
+	assert.Equal(t, fileScores.ScoreLabel, record.ScoreLabel)
+}
 
-		assert.Equal(t, "none", status.Backend, "Backend should be none")
-		assert.False(t, status.Connected, "Should not be connected")
-		assert.Equal(t, 0, status.TotalRuns, "Total runs should be 0")
-		assert.Equal(t, int64(0), status.LastRunID, "Last run ID should be 0")
-		assert.True(t, status.LastRunTime.IsZero(), "Last run time should be zero")
-		assert.True(t, status.OldestRunTime.IsZero(), "Oldest run time should be zero")
-		assert.Equal(t, 0, status.TotalFilesAnalyzed, "Total files analyzed should be 0")
-		assert.Empty(t, status.TableSizes, "Table sizes should be empty")
-	})
+func TestAnalysisStore_BeginEndAnalysis(t *testing.T) {
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	require.NoError(t, err)
+	require.NotNil(t, store)
+	defer func() { _ = store.Close() }()
+
+	// Test BeginAnalysis
+	startTime := time.Now()
+	configParams := map[string]any{"mode": "hot", "workers": 4}
+	analysisID, err := store.BeginAnalysis(startTime, configParams)
+	assert.NoError(t, err)
+	assert.Greater(t, analysisID, int64(0))
+
+	// Test EndAnalysis
+	endTime := time.Now()
+	totalFiles := 42
+	err = store.EndAnalysis(analysisID, endTime, totalFiles)
+	assert.NoError(t, err)
+
+	// Verify the data was stored correctly
+	runs, err := store.GetAllAnalysisRuns()
+	assert.NoError(t, err)
+	assert.Len(t, runs, 1)
+
+	run := runs[0]
+	assert.Equal(t, analysisID, run.AnalysisID)
+	assert.Equal(t, int32(totalFiles), run.TotalFilesAnalyzed)
+	assert.NotNil(t, run.RunDurationMs)
+}
+
+func TestAnalysisStore_RecordFileMetricsAndScores(t *testing.T) {
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	require.NoError(t, err)
+	require.NotNil(t, store)
+	defer func() { _ = store.Close() }()
+
+	// Create analysis run
+	analysisID, err := store.BeginAnalysis(time.Now(), map[string]any{"test": "record"})
+	require.NoError(t, err)
+
+	// Test recording metrics and scores
+	filePath := "src/main.go"
+	metrics := schema.FileMetrics{
+		AnalysisTime:     time.Now(),
+		TotalCommits:     150,
+		TotalChurn:       750,
+		ContributorCount: 8,
+		AgeDays:          200.5,
+		GiniCoefficient:  0.3,
+		FileOwner:        "developer@example.com",
+	}
+	scores := schema.FileScores{
+		AnalysisTime:    time.Now(),
+		HotScore:        85.2,
+		RiskScore:       72.1,
+		ComplexityScore: 90.5,
+		StaleScore:      45.3,
+		ScoreLabel:      "complexity",
+	}
+
+	err = store.RecordFileMetricsAndScores(analysisID, filePath, metrics, scores)
+	assert.NoError(t, err)
+
+	// Verify the data was stored
+	fileMetrics, err := store.GetAllFileScoresMetrics()
+	assert.NoError(t, err)
+	assert.Len(t, fileMetrics, 1)
+
+	record := fileMetrics[0]
+	assert.Equal(t, analysisID, record.AnalysisID)
+	assert.Equal(t, filePath, record.FilePath)
+	assert.Equal(t, int32(metrics.TotalCommits), record.TotalCommits)
+	assert.Equal(t, scores.HotScore, record.ScoreHot)
+	assert.Equal(t, scores.ScoreLabel, record.ScoreLabel)
 }
