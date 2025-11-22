@@ -564,10 +564,9 @@ var analysisExportCmd = &cobra.Command{
 
 // analysisMigrateCmd runs database migrations for the analysis store.
 var analysisMigrateCmd = &cobra.Command{
-	Use:   "migrate",
-	Short: "Run database schema migrations for the analysis store.",
-	Long: `The migrate command uses golang-migrate to manage database schema evolution for the analysis store.
-By default, it migrates to the latest version. Use --target-version to migrate to a specific version.`,
+	Use:     "migrate",
+	Short:   "Run database schema migrations for the analysis store.",
+	Long:    `The migrate command manages database schema evolution for the analysis store. By default, it migrates to the latest version.`,
 	PreRunE: analysisMigrateSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		targetVersion := viper.GetInt("target-version")

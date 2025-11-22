@@ -204,9 +204,10 @@ func executeMigration(m *migrate.Migrate, targetVersion int) error {
 }
 
 // MigrateAnalysis runs database migrations for the analysis store.
-// - If targetVersion < 0, it migrates to the latest version.
-// - If targetVersion == 0, it rolls back all migrations (to initial state).
-// - If targetVersion > 0, it migrates to the specified version.
+// If targetVersion == -1, it migrates to the latest version.
+// If targetVersion == 0, it rolls back all migrations (to initial state).
+// If targetVersion > 0, it migrates to the specified version.
+// If targetVersion is invalid, it returns an error.
 func MigrateAnalysis(backend schema.CacheBackend, connStr string, targetVersion int) error {
 	if backend == schema.NoneBackend {
 		return fmt.Errorf("migrations are not supported for NoneBackend")
