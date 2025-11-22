@@ -1,5 +1,24 @@
 # 🚀 Changelog
 
+## v1.9.0
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.8.0...v1.9.0)
+
+### Features
+
+- **Check Command**: Add `hotspot check` for CI with configurable thresholds (#22)
+
+### Improvements
+
+- **Performance**: Optimize check runtime and bindings
+- **Integration Tests**: Optimize thresholds and config overrides
+- **Benchmarks**: Update results in README.md
+
+### Development
+
+- **Test Coverage**: Increase in core and iocache
+- **Makefile**: Split phony targets into multiple lines
+
 ## v1.8.0
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.7.0...v1.8.0)
