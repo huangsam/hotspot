@@ -449,10 +449,6 @@ func TestExternalRepoVerification(t *testing.T) {
 	}
 }
 
-// verifyRepo runs hotspot and verifies against git for a given repo.
-// This function is no longer used after optimizing TestExternalRepoVerification
-// to focus on basic functionality rather than exhaustive verification.
-
 // TestTimeseriesVerification tests the timeseries command functionality.
 func TestTimeseriesVerification(t *testing.T) {
 	t.Parallel()
