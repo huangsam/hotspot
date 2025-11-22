@@ -1,7 +1,9 @@
 //go:build integration
 
-// Package integration contains integration tests for hotspot.
-// These tests are excluded from normal test runs due to build tags.
+// Package integration contains end-to-end tests for hotspot.
+// These tests verify the complete CLI user experience by building and executing
+// the hotspot binary with various commands and arguments, then validating outputs.
+// Tests are excluded from normal test runs due to build tags.
 // To run these tests: go test -tags integration ./integration
 // Or use: make test-integration
 package integration
