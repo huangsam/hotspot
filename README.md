@@ -110,9 +110,9 @@ Comprehensive performance benchmarks using [this script](./benchmark/main.go). T
 
 | Repository | Files (Cold/Warm) | Compare Files (Cold/Warm) | Timeseries (Cold/Warm) |
 |------------|-------------------|---------------------------|------------------------|
-| [csv-parser] | 0.037s / 0.012s | 0.127s / 0.035s | 0.118s / 0.042s |
-| [fd] | 0.039s / 0.014s | 0.075s / 0.033s | 0.127s / 0.052s |
-| [git] | 0.650s / 0.032s | 1.604s / 0.159s | 2.603s / 0.197s |
-| [kubernetes] | 3.665s / 0.112s | 8.365s / 1.579s | 13.006s / 0.634s |
+| [csv-parser] | 0.037s / 0.013s | 0.127s / 0.035s | 0.114s / 0.045s |
+| [fd] | 0.044s / 0.014s | 0.076s / 0.036s | 0.129s / 0.059s |
+| [git] | 0.564s / 0.033s | 1.361s / 0.153s | 2.328s / 0.200s |
+| [kubernetes] | 3.129s / 0.111s | 6.980s / 1.543s | 11.010s / 0.615s |
 
 The data shows that Hotspot caches Git analysis results to speed up repeated runs. You can configure different backends (SQLite, MySQL, PostgreSQL) for caching and analysis storage. If you need fresh analysis, clear the cache: `hotspot cache clear`
