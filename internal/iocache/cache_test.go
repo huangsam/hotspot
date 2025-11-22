@@ -194,7 +194,7 @@ func TestQuoteTableName(t *testing.T) {
 	tests := []struct {
 		name      string
 		tableName string
-		backend   schema.CacheBackend
+		backend   schema.DatabaseBackend
 		want      string
 	}{
 		{
@@ -316,7 +316,7 @@ func TestSQLiteBackendOperations(t *testing.T) {
 func TestGetPlaceholder(t *testing.T) {
 	tests := []struct {
 		name    string
-		backend schema.CacheBackend
+		backend schema.DatabaseBackend
 		want    string
 	}{
 		{
@@ -356,7 +356,7 @@ func TestGetPlaceholder(t *testing.T) {
 func TestGetUpsertQuery(t *testing.T) {
 	tests := []struct {
 		name         string
-		backend      schema.CacheBackend
+		backend      schema.DatabaseBackend
 		tableName    string
 		wantContains []string
 	}{
@@ -411,7 +411,7 @@ func TestGetUpsertQuery(t *testing.T) {
 func TestGetCreateTableQuery(t *testing.T) {
 	tests := []struct {
 		name         string
-		backend      schema.CacheBackend
+		backend      schema.DatabaseBackend
 		tableName    string
 		wantContains []string
 	}{

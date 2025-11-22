@@ -19,14 +19,14 @@ const (
 // AnalysisStoreImpl implements the AnalysisStore interface.
 type AnalysisStoreImpl struct {
 	db         *sql.DB
-	backend    schema.CacheBackend
+	backend    schema.DatabaseBackend
 	driverName string
 }
 
 var _ contract.AnalysisStore = &AnalysisStoreImpl{} // Compile-time check
 
 // NewAnalysisStore creates a new AnalysisStore with the specified backend.
-func NewAnalysisStore(backend schema.CacheBackend, connStr string) (contract.AnalysisStore, error) {
+func NewAnalysisStore(backend schema.DatabaseBackend, connStr string) (contract.AnalysisStore, error) {
 	var db *sql.DB
 	var err error
 	var driverName string
@@ -91,7 +91,7 @@ func NewAnalysisStore(backend schema.CacheBackend, connStr string) (contract.Ana
 }
 
 // createAnalysisTables creates the analysis tracking tables.
-func createAnalysisTables(db *sql.DB, backend schema.CacheBackend) error {
+func createAnalysisTables(db *sql.DB, backend schema.DatabaseBackend) error {
 	tables := []struct {
 		name  string
 		query string
@@ -110,7 +110,7 @@ func createAnalysisTables(db *sql.DB, backend schema.CacheBackend) error {
 }
 
 // getCreateAnalysisRunsQuery returns the CREATE TABLE query for hotspot_analysis_runs.
-func getCreateAnalysisRunsQuery(backend schema.CacheBackend) string {
+func getCreateAnalysisRunsQuery(backend schema.DatabaseBackend) string {
 	quotedTableName := quoteTableName(analysisRunsTable, backend)
 
 	switch backend {
@@ -153,7 +153,7 @@ func getCreateAnalysisRunsQuery(backend schema.CacheBackend) string {
 }
 
 // getCreateFileScoresMetricsQuery returns the CREATE TABLE query for hotspot_file_scores_metrics.
-func getCreateFileScoresMetricsQuery(backend schema.CacheBackend) string {
+func getCreateFileScoresMetricsQuery(backend schema.DatabaseBackend) string {
 	quotedTableName := quoteTableName(fileScoresMetricsTable, backend)
 
 	switch backend {
@@ -595,7 +595,7 @@ func (as *AnalysisStoreImpl) GetAllFileScoresMetrics() ([]schema.FileScoresMetri
 }
 
 // formatTime converts a time.Time to the appropriate format for the backend.
-func formatTime(t time.Time, backend schema.CacheBackend) any {
+func formatTime(t time.Time, backend schema.DatabaseBackend) any {
 	switch backend {
 	case schema.SQLiteBackend:
 		return t.Format(time.RFC3339Nano)
