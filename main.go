@@ -290,6 +290,61 @@ func analysisSetupWrapper(_ *cobra.Command, _ []string) error {
 	return analysisSetup()
 }
 
+// analysisMigrateSetup loads minimal configuration needed for migrate operations.
+// This is a specialized setup that does NOT initialize stores or create tables,
+// allowing migrations to run on a fresh database.
+func analysisMigrateSetup() error {
+	// Handle config file
+	if configFile := viper.GetString("config"); configFile != "" {
+		viper.SetConfigFile(configFile)
+	} else {
+		viper.SetConfigName(".hotspot")
+		viper.SetConfigType("yaml")
+		viper.AddConfigPath(".")
+		viper.AddConfigPath("$HOME")
+	}
+
+	// Load config file if present
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return fmt.Errorf("error reading config file: %w", err)
+		}
+		// Config file not found, use defaults/env/flags
+	}
+
+	// Get analysis-related config values
+	backendStr := viper.GetString("analysis-backend")
+	connStr := viper.GetString("analysis-db-connect")
+
+	// Handle empty backend as NoneBackend
+	var backend schema.CacheBackend
+	if backendStr == "" {
+		backend = schema.NoneBackend
+	} else {
+		backend = schema.CacheBackend(backendStr)
+	}
+
+	// Basic validation for database backends
+	if err := contract.ValidateDatabaseConnectionString(backend, connStr); err != nil {
+		return err
+	}
+
+	// For SQLite backend with empty connection string, use default path
+	if backend == schema.SQLiteBackend && connStr == "" {
+		connStr = contract.GetAnalysisDBFilePath()
+	}
+
+	cfg.AnalysisBackend = backend
+	cfg.AnalysisDBConnect = connStr
+
+	return nil
+}
+
+// analysisMigrateSetupWrapper wraps analysisMigrateSetup to provide PreRunE for migrate command.
+func analysisMigrateSetupWrapper(_ *cobra.Command, _ []string) error {
+	return analysisMigrateSetup()
+}
+
 // filesCmd focuses on tactical, file-level analysis.
 var filesCmd = &cobra.Command{
 	Use:     "files [repo-path]",
@@ -513,7 +568,7 @@ var analysisMigrateCmd = &cobra.Command{
 	Short: "Run database schema migrations for the analysis store.",
 	Long: `The migrate command uses golang-migrate to manage database schema evolution for the analysis store.
 By default, it migrates to the latest version. Use --target-version to migrate to a specific version.`,
-	PreRunE: analysisSetupWrapper,
+	PreRunE: analysisMigrateSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		targetVersion := viper.GetInt("target-version")
 		if err := iocache.MigrateAnalysis(cfg.AnalysisBackend, cfg.AnalysisDBConnect, targetVersion); err != nil {

@@ -142,7 +142,9 @@ func (b *MigrationBuilder) buildMigrate() error {
 func executeMigration(m *migrate.Migrate, targetVersion int) error {
 	// Get current version
 	currentVersion, dirty, err := m.Version()
-	if err != nil && err != migrate.ErrNilVersion {
+	// Track if this is a new database with no migrations applied yet
+	isNewDatabase := err == migrate.ErrNilVersion
+	if err != nil && !isNewDatabase {
 		return fmt.Errorf("failed to get current migration version: %w", err)
 	}
 
@@ -162,7 +164,11 @@ func executeMigration(m *migrate.Migrate, targetVersion int) error {
 			fmt.Println("No migration needed. Database is already at the latest version.")
 		} else {
 			newVersion, _, _ := m.Version()
-			fmt.Printf("Successfully migrated from version %d to version %d\n", currentVersion, newVersion)
+			if isNewDatabase {
+				fmt.Printf("Successfully migrated new database to version %d\n", newVersion)
+			} else {
+				fmt.Printf("Successfully migrated from version %d to version %d\n", currentVersion, newVersion)
+			}
 		}
 	case targetVersion == targetInitialVersion:
 		// Special case: migrate all the way down to version 0 (no migrations applied)
@@ -184,7 +190,11 @@ func executeMigration(m *migrate.Migrate, targetVersion int) error {
 		if err == migrate.ErrNoChange {
 			fmt.Printf("No migration needed. Database is already at version %d\n", targetVersion)
 		} else {
-			fmt.Printf("Successfully migrated from version %d to version %d\n", currentVersion, targetVersion)
+			if isNewDatabase {
+				fmt.Printf("Successfully migrated new database to version %d\n", targetVersion)
+			} else {
+				fmt.Printf("Successfully migrated from version %d to version %d\n", currentVersion, targetVersion)
+			}
 		}
 	default:
 		return fmt.Errorf("invalid target version: %d", targetVersion)
