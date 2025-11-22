@@ -102,6 +102,8 @@ func (b *MigrationBuilder) buildDriver() error {
 		if err != nil {
 			return fmt.Errorf("failed to create PostgreSQL migrate driver: %w", err)
 		}
+	default:
+		return fmt.Errorf("unsupported backend: %s", b.backend)
 	}
 	return nil
 }
