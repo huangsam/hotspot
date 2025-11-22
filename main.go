@@ -186,9 +186,8 @@ func sharedSetupWrapper(cmd *cobra.Command, args []string) error {
 	return sharedSetup(rootCtx, cmd, args)
 }
 
-// cacheSetup loads minimal configuration needed for cache operations.
-// This is used by commands that need cache access without full shared setup.
-func cacheSetup() error {
+// loadConfigFile handles config file loading logic common to all setup functions.
+func loadConfigFile() error {
 	// Handle config file
 	if configFile := viper.GetString("config"); configFile != "" {
 		viper.SetConfigFile(configFile)
@@ -199,12 +198,21 @@ func cacheSetup() error {
 		viper.AddConfigPath("$HOME")
 	}
 
-	// Load config file if present (similar to sharedSetup but minimal)
+	// Load config file if present
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 			return fmt.Errorf("error reading config file: %w", err)
 		}
 		// Config file not found, use defaults/env/flags
+	}
+	return nil
+}
+
+// cacheSetup loads minimal configuration needed for cache operations.
+// This is used by commands that need cache access without full shared setup.
+func cacheSetup() error {
+	if err := loadConfigFile(); err != nil {
+		return err
 	}
 
 	// Get cache-related config values
@@ -235,22 +243,8 @@ func cacheSetupWrapper(_ *cobra.Command, _ []string) error {
 // analysisSetup loads minimal configuration needed for analysis operations.
 // This is used by commands that need analysis access without full shared setup.
 func analysisSetup() error {
-	// Handle config file
-	if configFile := viper.GetString("config"); configFile != "" {
-		viper.SetConfigFile(configFile)
-	} else {
-		viper.SetConfigName(".hotspot")
-		viper.SetConfigType("yaml")
-		viper.AddConfigPath(".")
-		viper.AddConfigPath("$HOME")
-	}
-
-	// Load config file if present (similar to sharedSetup but minimal)
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			return fmt.Errorf("error reading config file: %w", err)
-		}
-		// Config file not found, use defaults/env/flags
+	if err := loadConfigFile(); err != nil {
+		return err
 	}
 
 	// Get analysis-related config values
@@ -294,22 +288,8 @@ func analysisSetupWrapper(_ *cobra.Command, _ []string) error {
 // This is a specialized setup that does NOT initialize stores or create tables,
 // allowing migrations to run on a fresh database.
 func analysisMigrateSetup() error {
-	// Handle config file
-	if configFile := viper.GetString("config"); configFile != "" {
-		viper.SetConfigFile(configFile)
-	} else {
-		viper.SetConfigName(".hotspot")
-		viper.SetConfigType("yaml")
-		viper.AddConfigPath(".")
-		viper.AddConfigPath("$HOME")
-	}
-
-	// Load config file if present
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			return fmt.Errorf("error reading config file: %w", err)
-		}
-		// Config file not found, use defaults/env/flags
+	if err := loadConfigFile(); err != nil {
+		return err
 	}
 
 	// Get analysis-related config values

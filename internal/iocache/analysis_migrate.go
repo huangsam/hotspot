@@ -165,9 +165,9 @@ func executeMigration(m *migrate.Migrate, targetVersion int) error {
 		} else {
 			newVersion, _, _ := m.Version()
 			if isNewDatabase {
-				fmt.Printf("Successfully migrated new database to version %d\n", newVersion)
+				fmt.Printf("Successfully migrated new database to version %d.\n", newVersion)
 			} else {
-				fmt.Printf("Successfully migrated from version %d to version %d\n", currentVersion, newVersion)
+				fmt.Printf("Successfully migrated from version %d to version %d.\n", currentVersion, newVersion)
 			}
 		}
 	case targetVersion == targetInitialVersion:
@@ -177,9 +177,9 @@ func executeMigration(m *migrate.Migrate, targetVersion int) error {
 			return fmt.Errorf("failed to roll back to version 0: %w", err)
 		}
 		if err == migrate.ErrNoChange {
-			fmt.Println("No migration needed. Database is already at version 0")
+			fmt.Println("No migration needed. Database is already at version 0.")
 		} else {
-			fmt.Printf("Successfully rolled back from version %d to version 0\n", currentVersion)
+			fmt.Printf("Successfully rolled back from version %d to version 0.\n", currentVersion)
 		}
 	case targetVersion > targetInitialVersion:
 		// Migrate to specific version
@@ -188,12 +188,12 @@ func executeMigration(m *migrate.Migrate, targetVersion int) error {
 			return fmt.Errorf("failed to migrate to version %d: %w", targetVersion, err)
 		}
 		if err == migrate.ErrNoChange {
-			fmt.Printf("No migration needed. Database is already at version %d\n", targetVersion)
+			fmt.Printf("No migration needed. Database is already at version %d.\n", targetVersion)
 		} else {
 			if isNewDatabase {
-				fmt.Printf("Successfully migrated new database to version %d\n", targetVersion)
+				fmt.Printf("Successfully migrated new database to version %d.\n", targetVersion)
 			} else {
-				fmt.Printf("Successfully migrated from version %d to version %d\n", currentVersion, targetVersion)
+				fmt.Printf("Successfully migrated from version %d to version %d.\n", currentVersion, targetVersion)
 			}
 		}
 	default:
