@@ -13,7 +13,7 @@ import (
 func TestMigrateAnalysis_NoneBackend(t *testing.T) {
 	err := MigrateAnalysis(schema.NoneBackend, "", targetLatestVersion)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "migrations are not supported for NoneBackend")
+	assert.Contains(t, err.Error(), "migrations are not supported for 'none' backend")
 }
 
 func TestMigrateAnalysis_SQLite(t *testing.T) {

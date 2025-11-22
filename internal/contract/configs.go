@@ -271,7 +271,7 @@ func ValidateDatabaseConnectionString(backend schema.DatabaseBackend, connStr st
 func validateBackendConfigs(cfg *Config, input *ConfigRawInput) error {
 	// --- Cache Backend Validation ---
 	cfg.CacheBackend = schema.DatabaseBackend(strings.ToLower(input.CacheBackend))
-	if _, ok := schema.ValidCacheBackends[cfg.CacheBackend]; !ok {
+	if _, ok := schema.ValidDatabaseBackends[cfg.CacheBackend]; !ok {
 		return fmt.Errorf("invalid cache backend '%s'. must be sqlite, mysql, postgresql, none", input.CacheBackend)
 	}
 	cfg.CacheDBConnect = input.CacheDBConnect
@@ -282,7 +282,7 @@ func validateBackendConfigs(cfg *Config, input *ConfigRawInput) error {
 	// --- Analysis Backend Validation ---
 	cfg.AnalysisBackend = schema.DatabaseBackend(strings.ToLower(input.AnalysisBackend))
 	if cfg.AnalysisBackend != "" {
-		if _, ok := schema.ValidCacheBackends[cfg.AnalysisBackend]; !ok {
+		if _, ok := schema.ValidDatabaseBackends[cfg.AnalysisBackend]; !ok {
 			return fmt.Errorf("invalid analysis backend '%s'. must be sqlite, mysql, postgresql, none", input.AnalysisBackend)
 		}
 		cfg.AnalysisDBConnect = input.AnalysisDBConnect

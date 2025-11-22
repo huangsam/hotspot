@@ -52,9 +52,9 @@ The `timeseries` subcommand tracks how hotspot scores change over time for a spe
 | Flags | Description |
 |-------|-------------|
 | `--path` | The file or folder path to analyze (required). |
-| `--mode` | Scoring mode (hot, risk, complexity, stale). |
+| `--mode` | Scoring mode (hot, risk, complexity, stale; default: hot). |
 | `--interval` | Total time window (e.g., `6 months`, `1 year`). |
-| `--points` | Number of data points to generate. |
+| `--points` | Number of data points to generate (default: 3). |
 
 ### CI/CD Policy Enforcement
 
@@ -119,10 +119,40 @@ analysis:
 #### Management commands
 
 ```bash
-hotspot cache status    # Check cache backend status
-hotspot cache clear     # Clear cached data
-hotspot analysis status # Check analysis backend status
-hotspot analysis clear  # Clear stored analysis runs
+hotspot cache status     # Check cache backend status
+hotspot cache clear      # Clear cached data
+hotspot analysis status  # Check analysis backend status
+hotspot analysis clear   # Clear stored analysis runs
+hotspot analysis migrate # Migrate analysis database schema
+```
+
+### Database migration
+
+The `analysis migrate` command manages schema updates for analysis backends (SQLite, MySQL, PostgreSQL). Run this after upgrading Hotspot to ensure your database schema is current.
+
+#### Basic migration
+
+```bash
+# Migrate to latest schema version
+hotspot analysis migrate --analysis-backend sqlite
+```
+
+#### Using with different backends
+
+MySQL:
+
+```bash
+hotspot analysis migrate \
+  --analysis-backend mysql \
+  --analysis-db-connect "user:pass@tcp(localhost:3306)/hotspot"
+```
+
+PostgreSQL:
+
+```bash
+hotspot analysis migrate \
+  --analysis-backend postgresql \
+  --analysis-db-connect "host=localhost port=5432 dbname=hotspot"
 ```
 
 ### Exporting to Parquet
@@ -145,12 +175,6 @@ This creates two files:
 - `mydata.file_scores_metrics.parquet` - Per-file metrics and scores
 
 #### Using with different backends
-
-SQLite (default):
-
-```bash
-hotspot analysis export --analysis-backend sqlite --output-file export/data
-```
 
 MySQL:
 

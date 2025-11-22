@@ -84,8 +84,8 @@ var ValidScoringModes = map[ScoringMode]struct{}{
 	StaleMode:      {},
 }
 
-// ValidCacheBackends lists all valid cache backends.
-var ValidCacheBackends = map[DatabaseBackend]struct{}{
+// ValidDatabaseBackends lists all valid database backends.
+var ValidDatabaseBackends = map[DatabaseBackend]struct{}{
 	SQLiteBackend:     {},
 	MySQLBackend:      {},
 	PostgreSQLBackend: {},

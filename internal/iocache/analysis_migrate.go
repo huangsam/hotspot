@@ -210,7 +210,7 @@ func executeMigration(m *migrate.Migrate, targetVersion int) error {
 // If targetVersion is invalid, it returns an error.
 func MigrateAnalysis(backend schema.DatabaseBackend, connStr string, targetVersion int) error {
 	if backend == schema.NoneBackend {
-		return fmt.Errorf("migrations are not supported for NoneBackend")
+		return fmt.Errorf("migrations are not supported for 'none' backend")
 	}
 
 	builder := NewMigrationBuilder(backend, connStr)
