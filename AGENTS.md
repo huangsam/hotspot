@@ -115,6 +115,7 @@ The core package contains the main analysis algorithms, scoring logic, and execu
 **Purpose**: Analyzes hotspot scores over time for a specific file or folder path.
 
 **Key Features**:
+
 - Disjoint time windows spanning total interval
 - Path-specific score extraction
 - Supports both files and folders
@@ -125,6 +126,7 @@ The core package contains the main analysis algorithms, scoring logic, and execu
 **Purpose**: Runs the check command for CI/CD gating with configurable thresholds.
 
 **Key Features**:
+
 - Validates hotspot scores against user-defined thresholds
 - Supports all scoring modes (hot, risk, complexity, stale)
 - Provides informative output for success/failure
@@ -185,6 +187,7 @@ The schema package defines all data structures and constants used throughout the
 Contains all metrics and computed scores for a single file.
 
 **Key Fields**:
+
 - **Git Metrics**: Commits, contributors, churn, Gini coefficient
 - **File Metrics**: Size, lines of code, age
 - **Computed Values**: Score, breakdown, owners, mode
@@ -198,6 +201,7 @@ Aggregated metrics for folders, computed as weighted average of contained files.
 Time-series data for tracking hotspot scores over time.
 
 **Key Fields**:
+
 - **Points**: Array of TimeseriesPoint objects containing the time-series data
 
 #### TimeseriesPoint
@@ -205,6 +209,7 @@ Time-series data for tracking hotspot scores over time.
 Time-series data point representing a single measurement in the timeseries analysis.
 
 **Key Fields**:
+
 - **Period**: Time period label (e.g., "Current (30d)", "30d to 60d Ago")
 - **Score**: Computed hotspot score for this time period
 - **Path**: File or folder path being analyzed
