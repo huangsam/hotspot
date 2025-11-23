@@ -39,22 +39,43 @@ hotspot/
 │   ├── agg/            # Git activity aggregation and caching
 │   │   ├── agg.go          # Git activity aggregation and filtering
 │   │   ├── agg_caching.go  # Caching layer for aggregation
-│   │   └── agg_test.go     # Aggregation tests
+│   │   ├── agg_caching_test.go  # Caching tests
+│   │   ├── agg_parsing_test_utils.go  # Parsing test utilities
+│   │   ├── agg_parsing_test.go  # Parsing tests
+│   │   ├── agg_test.go     # Aggregation tests
+│   │   └── testdata/       # Test data
+│   ├── algo/           # Numerical algorithms for scoring and ranking
+│   │   ├── algo.go         # Algorithm package definition
+│   │   ├── rank.go         # Ranking and sorting utilities
+│   │   ├── rank_test.go    # Ranking tests
+│   │   ├── score.go        # Scoring algorithms and utilities
+│   │   └── score_test.go   # Scoring tests
 │   ├── analysis.go     # Git analysis pipeline and file processing
-│   ├── core.go         # Main execution functions
-│   ├── score.go        # Scoring algorithms and metrics
-│   ├── rank.go         # Ranking and sorting logic
-│   ├── builder.go      # File metrics builder pattern
-│   ├── comparison.go   # Comparison analysis logic
+│   ├── analysis_orchestration_test.go  # Analysis orchestration tests
+│   ├── analysis_test.go # Analysis tests
+│   ├── builder_check.go # Check command builder
+│   ├── builder_check_test.go # Check builder tests
+│   ├── builder_file.go  # File metrics builder pattern
+│   ├── builder_file_test.go # File builder tests
 │   ├── check.go        # Check command for CI/CD gating
-│   └── check_test.go   # Check command tests
+│   ├── check_test.go   # Check command tests
+│   ├── comparison.go   # Comparison analysis logic
+│   ├── comparison_test.go # Comparison tests
+│   ├── context.go      # Context management utilities
+│   ├── core.go         # Main execution functions
+│   ├── core_test.go    # Core execution tests
+│   ├── folders_test.go # Folder analysis tests
+│   └── timeseries_test.go # Timeseries tests
 ├── schema/             # Data structures and constants
 │   ├── schema.go       # Core data models
-│   └── constants.go    # Scoring modes and output formats
+│   ├── constants.go    # Scoring modes and output formats
+│   ├── helpers.go      # Schema helper functions
+│   ├── helpers_test.go # Schema helper tests
 └── internal/           # Internal utilities and helpers
     ├── contract/       # Configuration, Git client interfaces, and utilities
     ├── iocache/        # I/O caching and analysis storage with backend support (SQLite, MySQL, PostgreSQL, None)
-    └── outwriter/      # Output formatting and writing
+    ├── outwriter/      # Output formatting and writing
+    └── parquet/        # Parquet file handling utilities
 ```
 
 ## Main Package (main.go)
@@ -106,7 +127,7 @@ Global flags available on all commands include scoring mode, output format, and 
 
 ## Core Package
 
-The core package contains the main analysis algorithms, scoring logic, and execution functions. Aggregation logic has been separated into the `core/agg` subpackage for better organization.
+The core package contains the main analysis algorithms, scoring logic, and execution functions. Aggregation logic has been separated into the `core/agg` subpackage for better organization. Numerical algorithms for scoring and ranking have been moved to the `core/algo` subpackage.
 
 ### Main Execution Functions
 
@@ -254,6 +275,9 @@ Implements I/O caching and analysis tracking functionality with support for mult
 ### outwriter/
 Handles output formatting and writing for different formats (text tables, JSON, CSV) and analysis types (files, folders, comparisons, timeseries).
 
+### parquet/
+Parquet file handling utilities.
+
 ## Key Design Patterns
 
 ### 1. Builder Pattern
@@ -285,9 +309,9 @@ core.ExecuteHotspotFiles() → runSingleAnalysisCore()
 ↓
 core/agg: CachedAggregateActivity() → BuildFilteredFileList() → analyzeRepo()
 ↓
-score.go: computeScore() for each file
+core/algo: ComputeScore() for each file
 ↓
-rank.go: rankFiles() by score
+core/algo: RankFiles() by score
 ↓
 internal: PrintFileResults() → table/json/csv output
 ```
