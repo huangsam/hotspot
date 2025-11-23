@@ -62,11 +62,11 @@ The `check` command allows you to enforce risk thresholds in CI/CD pipelines, fa
 
 **Example:** Use CI configuration for policy enforcement.
 
-`hotspot check`
+`hotspot check --base-ref v1.9.0 --target-ref v1.10.0`
 
 **Example:** Use CLI overrides for policy enforcement.
 
-`hotspot check --threshold-overrides "hot:75,risk:60,complexity:80,stale:70"`
+`hotspot check --base-ref v1.9.0 --target-ref v1.10.0 --threshold-overrides "hot:75,risk:60,complexity:80,stale:70"`
 
 | Flags | Description |
 |-------|-------------|
