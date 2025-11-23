@@ -1,5 +1,20 @@
 # 🚀 Changelog
 
+## v1.10.2
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.10.1...v1.10.2)
+
+### Improvements
+
+- **Check Output UX**: Enhance success/failure output with max scores and emojis
+- **Documentation**: Update AGENTS.md with structural changes and dev flow
+
+### Development
+
+- **Code Refactor**: Move algorithms to core/algo and refactor check logic
+- **Builder Pattern**: Rename core/builder to core/builder_file
+- **Test Coverage**: Add tests for builder patterns and check enhancements
+
 ## v1.10.1
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.10.0...v1.10.1)
