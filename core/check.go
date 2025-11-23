@@ -51,7 +51,7 @@ func ExecuteHotspotCheck(ctx context.Context, cfg *contract.Config, mgr contract
 
 		// Return error if check failed
 		if !result.Passed {
-			return fmt.Errorf("policy check failed: %d violation(s) found", len(result.FailedFiles))
+			return fmt.Errorf("%d violation(s) found", len(result.FailedFiles))
 		}
 	}
 	return nil
