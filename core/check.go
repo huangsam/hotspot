@@ -39,10 +39,10 @@ func ExecuteHotspotCheck(ctx context.Context, cfg *contract.Config, mgr contract
 	}
 
 	// Compute metrics and check against thresholds
-	maxScores, failedFiles := computeCheckMetrics(fileResults, cfg)
+	maxScores, failedFiles, maxScoreFiles := computeCheckMetrics(fileResults, cfg)
 
 	// Build and print result
-	result := buildCheckResult(filesToAnalyze, cfg, maxScores, failedFiles)
+	result := buildCheckResult(filesToAnalyze, cfg, maxScores, failedFiles, maxScoreFiles)
 	printCheckResult(result, time.Since(start))
 
 	// Return error if check failed
@@ -109,17 +109,34 @@ func runCheckAnalysis(ctx context.Context, cfgTarget *contract.Config, client co
 }
 
 // computeCheckMetrics calculates max scores and identifies failed files.
-func computeCheckMetrics(fileResults []schema.FileResult, cfg *contract.Config) (map[schema.ScoringMode]float64, []schema.CheckFailedFile) {
+func computeCheckMetrics(fileResults []schema.FileResult, cfg *contract.Config) (map[schema.ScoringMode]float64, []schema.CheckFailedFile, map[schema.ScoringMode][]schema.CheckMaxScoreFile) {
 	// Compute max scores for each mode
 	maxScores := make(map[schema.ScoringMode]float64)
+	maxScoreFiles := make(map[schema.ScoringMode][]schema.CheckMaxScoreFile)
+
 	for _, mode := range schema.AllScoringModes {
 		maxScore := 0.0
+		var filesWithMax []schema.CheckMaxScoreFile
+
 		for _, file := range fileResults {
-			if file.AllScores[mode] > maxScore {
-				maxScore = file.AllScores[mode]
+			score := file.AllScores[mode]
+			if score > maxScore {
+				maxScore = score
+				filesWithMax = []schema.CheckMaxScoreFile{{
+					Path:   file.Path,
+					Owners: file.Owners,
+				}}
+			} else if score == maxScore && maxScore > 0 {
+				// Include files that tie for the max score
+				filesWithMax = append(filesWithMax, schema.CheckMaxScoreFile{
+					Path:   file.Path,
+					Owners: file.Owners,
+				})
 			}
 		}
+
 		maxScores[mode] = maxScore
+		maxScoreFiles[mode] = filesWithMax
 	}
 
 	// Check all files against thresholds for all modes
@@ -139,21 +156,22 @@ func computeCheckMetrics(fileResults []schema.FileResult, cfg *contract.Config) 
 		}
 	}
 
-	return maxScores, failedFiles
+	return maxScores, failedFiles, maxScoreFiles
 }
 
 // buildCheckResult constructs the final CheckResult.
-func buildCheckResult(filesToAnalyze []string, cfg *contract.Config, maxScores map[schema.ScoringMode]float64, failedFiles []schema.CheckFailedFile) schema.CheckResult {
+func buildCheckResult(filesToAnalyze []string, cfg *contract.Config, maxScores map[schema.ScoringMode]float64, failedFiles []schema.CheckFailedFile, maxScoreFiles map[schema.ScoringMode][]schema.CheckMaxScoreFile) schema.CheckResult {
 	return schema.CheckResult{
-		Passed:       len(failedFiles) == 0,
-		FailedFiles:  failedFiles,
-		TotalFiles:   len(filesToAnalyze),
-		CheckedModes: schema.AllScoringModes,
-		BaseRef:      cfg.BaseRef,
-		TargetRef:    cfg.TargetRef,
-		Thresholds:   cfg.RiskThresholds,
-		MaxScores:    maxScores,
-		Lookback:     cfg.Lookback,
+		Passed:        len(failedFiles) == 0,
+		FailedFiles:   failedFiles,
+		TotalFiles:    len(filesToAnalyze),
+		CheckedModes:  schema.AllScoringModes,
+		BaseRef:       cfg.BaseRef,
+		TargetRef:     cfg.TargetRef,
+		Thresholds:    cfg.RiskThresholds,
+		MaxScores:     maxScores,
+		MaxScoreFiles: maxScoreFiles,
+		Lookback:      cfg.Lookback,
 	}
 }
 
@@ -170,7 +188,7 @@ func filterChangedFiles(files []string, excludes []string) []string {
 
 // printCheckResult prints the check result in a concise format suitable for CI/CD.
 func printCheckResult(result schema.CheckResult, duration time.Duration) {
-	fmt.Printf("Policy Check Results:\n")
+	fmt.Println("Policy Check Results:")
 
 	// Define labels and values for dynamic padding
 	labels := []string{"Base:", "Target:", "Lookback:", "Thresholds:"}
@@ -203,11 +221,25 @@ func printCheckResult(result schema.CheckResult, duration time.Duration) {
 
 	if result.Passed {
 		fmt.Printf("All files passed policy checks\n\n")
-		fmt.Printf("Max scores observed: hot=%.1f, risk=%.1f, complexity=%.1f, stale=%.1f\n",
-			result.MaxScores[schema.HotMode],
-			result.MaxScores[schema.RiskMode],
-			result.MaxScores[schema.ComplexityMode],
-			result.MaxScores[schema.StaleMode])
+		fmt.Println("Max scores:")
+
+		for _, mode := range result.CheckedModes {
+			score := result.MaxScores[mode]
+			files := result.MaxScoreFiles[mode]
+
+			if len(files) == 0 {
+				fmt.Printf("  %s=%.1f\n", mode, score)
+				continue
+			}
+
+			// Show the primary file that achieved max score (first one if tie)
+			fileName := files[0].Path
+			if len(files) > 1 {
+				fileName += fmt.Sprintf(" (+%d more)", len(files)-1)
+			}
+
+			fmt.Printf("  %s=%.1f (%s)\n", mode, score, fileName)
+		}
 		return
 	}
 
@@ -232,6 +264,4 @@ func printCheckResult(result schema.CheckResult, duration time.Duration) {
 		}
 		fmt.Println()
 	}
-
-	fmt.Println("💡 For scoring mode details and remediation tips, see USERGUIDE.md")
 }
