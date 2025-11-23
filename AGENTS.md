@@ -296,6 +296,66 @@ Time-window specific configurations are created by cloning base config for isola
 
 Common interface for different analysis modes to enable consistent execution patterns.
 
+## Development Workflow
+
+The project uses a comprehensive Makefile to ensure reproducible builds, consistent testing, and standardized development workflows. Always use the Makefile targets instead of running `go` commands directly to maintain consistency across the team.
+
+### Building
+
+```bash
+# Build and install globally (recommended for development)
+make reinstall
+
+# Build the binary locally
+make build
+
+# Clean and rebuild
+make clean build
+```
+
+### Testing
+
+```bash
+# Run unit tests (fast, cached)
+make test
+
+# Run all tests including integration (comprehensive)
+make test-all
+
+# Force fresh test run (bypass cache)
+make test FORCE=1
+```
+
+### Code Quality
+
+```bash
+# Format and lint code
+make format
+
+# Run all checks (format + lint + test)
+make check
+
+# Most thorough check (includes integration tests, bypasses cache)
+make check FORCE=1 INTEGRATION=1
+```
+
+### Development Tips
+
+1. **Use `make reinstall`** for development builds (cleans, builds, and installs globally)
+2. **Use `make test`** for quick feedback, `make test-all` before commits
+3. **Run `make check`** before pushing changes, `make check FORCE=1 INTEGRATION=1` for thorough validation
+4. **Set `FORCE=1`** when tests seem to pass unexpectedly (cache issues)
+
+### Binary Execution
+
+For consistent benchmarking and profiling, use the built binary rather than `go run`:
+
+```bash
+# Build and run
+make build
+./bin/hotspot --help
+```
+
 ## Command Flow Examples
 
 ### Files Analysis
