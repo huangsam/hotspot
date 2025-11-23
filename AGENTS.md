@@ -34,9 +34,11 @@ CLI Args/Config → Validation → Git Analysis → Scoring → Ranking → Outp
 
 ```
 hotspot/
+├── benchmark/          # Benchmarking tools and performance testing
 ├── core/               # Core analysis logic and algorithms
 │   ├── agg/            # Git activity aggregation and caching
 │   └── algo/           # Numerical algorithms for scoring and ranking
+├── integration/        # Integration tests and test repositories
 ├── schema/             # Data structures and constants
 └── internal/           # Internal utilities and helpers
     ├── contract/       # Configuration, Git client interfaces, and utilities
