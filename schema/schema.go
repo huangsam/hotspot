@@ -284,6 +284,9 @@ type CheckResult struct {
 	CheckedModes []ScoringMode
 	TargetRef    string
 	BaseRef      string
+	Thresholds   map[ScoringMode]float64
+	MaxScores    map[ScoringMode]float64
+	Lookback     time.Duration
 }
 
 // CheckFailedFile represents a file that failed the policy check.

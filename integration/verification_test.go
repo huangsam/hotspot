@@ -607,8 +607,8 @@ func TestCheckVerification(t *testing.T) {
 
 		output := stdout.String()
 		assert.Contains(t, output, "Policy Check Results:", "should contain policy check header")
-		assert.Contains(t, output, "Base Ref:", "should contain base ref info")
-		assert.Contains(t, output, "Target Ref:", "should contain target ref info")
+		assert.Contains(t, output, "Base:", "should contain base ref info")
+		assert.Contains(t, output, "Target:", "should contain target ref info")
 		assert.Contains(t, output, "All files passed policy checks", "should indicate success")
 	})
 

@@ -67,6 +67,19 @@ func TestPrintCheckResult(t *testing.T) {
 				CheckedModes: []schema.ScoringMode{schema.HotMode, schema.RiskMode},
 				BaseRef:      "main",
 				TargetRef:    "HEAD",
+				Thresholds: map[schema.ScoringMode]float64{
+					schema.HotMode:        50.0,
+					schema.RiskMode:       50.0,
+					schema.ComplexityMode: 50.0,
+					schema.StaleMode:      50.0,
+				},
+				MaxScores: map[schema.ScoringMode]float64{
+					schema.HotMode:        30.0,
+					schema.RiskMode:       25.0,
+					schema.ComplexityMode: 40.0,
+					schema.StaleMode:      20.0,
+				},
+				Lookback: 180 * 24 * time.Hour,
 			},
 		},
 		{
@@ -85,6 +98,19 @@ func TestPrintCheckResult(t *testing.T) {
 				CheckedModes: []schema.ScoringMode{schema.HotMode, schema.RiskMode},
 				BaseRef:      "main",
 				TargetRef:    "HEAD",
+				Thresholds: map[schema.ScoringMode]float64{
+					schema.HotMode:        50.0,
+					schema.RiskMode:       50.0,
+					schema.ComplexityMode: 50.0,
+					schema.StaleMode:      50.0,
+				},
+				MaxScores: map[schema.ScoringMode]float64{
+					schema.HotMode:        75.5,
+					schema.RiskMode:       45.0,
+					schema.ComplexityMode: 60.0,
+					schema.StaleMode:      30.0,
+				},
+				Lookback: 180 * 24 * time.Hour,
 			},
 		},
 	}
