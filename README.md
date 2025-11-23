@@ -116,4 +116,4 @@ Comprehensive performance benchmarks using [this script](./benchmark/main.go). T
 | [git] | 0.564s / 0.033s | 1.361s / 0.153s | 2.328s / 0.200s |
 | [kubernetes] | 3.129s / 0.111s | 6.980s / 1.543s | 11.010s / 0.615s |
 
-The data shows that Hotspot caches Git analysis results to speed up repeated runs. You can configure different backends (SQLite, MySQL, PostgreSQL) for caching and analysis storage. If you need fresh analysis, clear the cache: `hotspot cache clear`
+The data shows that Hotspot caches Git analysis results to speed up repeated runs.
