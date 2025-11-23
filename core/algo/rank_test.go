@@ -1,4 +1,4 @@
-package core
+package algo
 
 import (
 	"testing"
@@ -17,19 +17,19 @@ func TestRankFiles(t *testing.T) {
 	}
 
 	t.Run("rank and limit", func(t *testing.T) {
-		ranked := rankFiles(files, 2)
+		ranked := RankFiles(files, 2)
 		assert.Equal(t, 2, len(ranked))
 		assert.Equal(t, "critical.go", ranked[0].Path)
 		assert.Equal(t, "high.go", ranked[1].Path)
 	})
 
 	t.Run("limit exceeds length", func(t *testing.T) {
-		ranked := rankFiles(files, 10)
+		ranked := RankFiles(files, 10)
 		assert.Equal(t, 4, len(ranked))
 	})
 
 	t.Run("scores in descending order", func(t *testing.T) {
-		ranked := rankFiles(files, 10)
+		ranked := RankFiles(files, 10)
 		for i := 1; i < len(ranked); i++ {
 			assert.LessOrEqual(t, ranked[i].ModeScore, ranked[i-1].ModeScore)
 		}

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/core/agg"
+	"github.com/huangsam/hotspot/core/algo"
 
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/internal/contract"
@@ -32,10 +33,10 @@ func ExecuteHotspotFiles(ctx context.Context, cfg *contract.Config, mgr contract
 	}
 	resultsToRank := output.FileResults
 	if cfg.Follow && len(resultsToRank) > 0 {
-		rankedForFollow := rankFiles(resultsToRank, cfg.ResultLimit)
+		rankedForFollow := algo.RankFiles(resultsToRank, cfg.ResultLimit)
 		resultsToRank = runFollowPass(ctx, cfg, client, rankedForFollow, output.AggregateOutput)
 	}
-	ranked := rankFiles(resultsToRank, cfg.ResultLimit)
+	ranked := algo.RankFiles(resultsToRank, cfg.ResultLimit)
 	duration := time.Since(start)
 	writer := outwriter.NewOutWriter()
 	return outwriter.WriteWithOutputFile(cfg, func(w io.Writer) error {
@@ -53,7 +54,7 @@ func ExecuteHotspotFolders(ctx context.Context, cfg *contract.Config, mgr contra
 		return err
 	}
 	folderResults := agg.AggregateAndScoreFolders(cfg, output.FileResults)
-	ranked := rankFolders(folderResults, cfg.ResultLimit)
+	ranked := algo.RankFolders(folderResults, cfg.ResultLimit)
 	duration := time.Since(start)
 	writer := outwriter.NewOutWriter()
 	return outwriter.WriteWithOutputFile(cfg, func(w io.Writer) error {

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/core/agg"
+	"github.com/huangsam/hotspot/core/algo"
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
@@ -183,7 +184,7 @@ func runFollowPass(ctx context.Context, cfg *contract.Config, client contract.Gi
 	wg.Wait()
 
 	// re-rank after follow pass
-	return rankFiles(ranked, cfg.ResultLimit)
+	return algo.RankFiles(ranked, cfg.ResultLimit)
 }
 
 // analyzeRepo processes all files in parallel using a worker pool.

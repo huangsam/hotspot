@@ -1,4 +1,4 @@
-package core
+package algo
 
 import (
 	"maps"
@@ -10,9 +10,9 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// getWeightsForMode returns the weight map for a given scoring mode.
+// GetWeightsForMode returns the weight map for a given scoring mode.
 // If custom weights are provided for the mode, they override the defaults.
-func getWeightsForMode(mode schema.ScoringMode, customWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64) map[schema.BreakdownKey]float64 {
+func GetWeightsForMode(mode schema.ScoringMode, customWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64) map[schema.BreakdownKey]float64 {
 	// Start with default weights
 	defaultWeights := schema.GetDefaultWeights(mode)
 
@@ -29,13 +29,13 @@ func getWeightsForMode(mode schema.ScoringMode, customWeights map[schema.Scoring
 	return weights
 }
 
-// computeScore calculates a file's importance score (0-100) based on its metrics.
+// ComputeScore calculates a file's importance score (0-100) based on its metrics.
 // Supports four core scoring modes:
 // - hot: Activity hotspots (high commits, churn, contributors)
 // - risk: Knowledge risk/bus factor (few contributors, high inequality)
 // - complexity: Technical debt candidates (large, old, high total churn)
 // - stale: Maintenance debt (important but untouched).
-func computeScore(m *schema.FileResult, mode schema.ScoringMode, customWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64) float64 {
+func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, customWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64) float64 {
 	// DEFENSIVE CHECK: If the file has no content, its score should be 0.
 	if m.SizeBytes == 0 {
 		return 0.0
@@ -82,7 +82,7 @@ func computeScore(m *schema.FileResult, mode schema.ScoringMode, customWeights m
 	var raw float64
 
 	// Get weights for the mode
-	weights := getWeightsForMode(mode, customWeights)
+	weights := GetWeightsForMode(mode, customWeights)
 
 	// Build breakdown by applying weights to normalized metrics
 	breakdown[schema.BreakdownAge] = weights[schema.BreakdownAge] * nAge
@@ -139,11 +139,11 @@ func computeScore(m *schema.FileResult, mode schema.ScoringMode, customWeights m
 	return score
 }
 
-// gini calculates the Gini coefficient for a set of values.
+// Gini calculates the Gini coefficient for a set of values.
 // The Gini coefficient measures inequality in a distribution, ranging from 0 (perfect equality)
 // to 1 (perfect inequality). It's used here to measure how evenly distributed commits are
 // among contributors.
-func gini(values []float64) float64 {
+func Gini(values []float64) float64 {
 	n := len(values)
 	if n == 0 {
 		return 0

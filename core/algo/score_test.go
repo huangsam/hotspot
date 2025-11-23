@@ -1,4 +1,4 @@
-package core
+package algo
 
 import (
 	"math"
@@ -59,7 +59,7 @@ func TestGini(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := gini(tt.values)
+			result := Gini(tt.values)
 			assert.LessOrEqual(t, math.Abs(result-tt.expected), tt.delta)
 		})
 	}
@@ -84,7 +84,7 @@ func TestComputeScoreAllModes(t *testing.T) {
 
 	for _, mode := range modes {
 		t.Run(string(mode), func(t *testing.T) {
-			score := computeScore(&metrics, mode, nil)
+			score := ComputeScore(&metrics, mode, nil)
 			assert.True(t, score >= 0 && score <= 100)
 			assert.NotEmpty(t, metrics.ModeBreakdown)
 		})
@@ -96,7 +96,7 @@ func BenchmarkGini(b *testing.B) {
 	values := []float64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
 	for b.Loop() {
-		gini(values)
+		Gini(values)
 	}
 }
 
@@ -114,7 +114,7 @@ func BenchmarkComputeScore(b *testing.B) {
 	}
 
 	for b.Loop() {
-		computeScore(&metrics, schema.HotMode, nil)
+		ComputeScore(&metrics, schema.HotMode, nil)
 	}
 }
 
@@ -132,7 +132,7 @@ func TestComputeScoreWithCustomWeights(t *testing.T) {
 	}
 
 	// Get default score
-	defaultScore := computeScore(&metrics, schema.HotMode, nil)
+	defaultScore := ComputeScore(&metrics, schema.HotMode, nil)
 
 	// Test with custom weights that heavily weight commits
 	customWeights := map[schema.ScoringMode]map[schema.BreakdownKey]float64{
@@ -144,7 +144,7 @@ func TestComputeScoreWithCustomWeights(t *testing.T) {
 			schema.BreakdownSize:    0.02,
 		},
 	}
-	customScore := computeScore(&metrics, schema.HotMode, customWeights)
+	customScore := ComputeScore(&metrics, schema.HotMode, customWeights)
 
 	// Scores should be different
 	assert.NotEqual(t, defaultScore, customScore, "Custom weights should produce different score than defaults")
@@ -174,7 +174,7 @@ func TestComputeScoreCustomWeightsAllModes(t *testing.T) {
 	for _, mode := range modes {
 		t.Run(string(mode), func(t *testing.T) {
 			// Get default score
-			defaultScore := computeScore(&metrics, mode, nil)
+			defaultScore := ComputeScore(&metrics, mode, nil)
 
 			// Create custom weights that emphasize different aspects
 			customWeights := map[schema.ScoringMode]map[schema.BreakdownKey]float64{
@@ -198,7 +198,7 @@ func TestComputeScoreCustomWeightsAllModes(t *testing.T) {
 				customWeights[mode][schema.BreakdownAge] = 0.2
 			}
 
-			customScore := computeScore(&metrics, mode, customWeights)
+			customScore := ComputeScore(&metrics, mode, customWeights)
 
 			// Both should be valid scores
 			assert.True(t, defaultScore >= 0 && defaultScore <= 100, "Default score should be valid")
@@ -226,16 +226,16 @@ func TestComputeScoreInvalidCustomWeights(t *testing.T) {
 	}
 
 	// Test with nil custom weights (should use defaults)
-	score := computeScore(&metrics, schema.HotMode, nil)
+	score := ComputeScore(&metrics, schema.HotMode, nil)
 	assert.True(t, score >= 0 && score <= 100, "Score with nil custom weights should be valid")
 
 	// Test with empty custom weights map (should use defaults)
 	emptyWeights := map[schema.ScoringMode]map[schema.BreakdownKey]float64{}
-	score = computeScore(&metrics, schema.HotMode, emptyWeights)
+	score = ComputeScore(&metrics, schema.HotMode, emptyWeights)
 	assert.True(t, score >= 0 && score <= 100, "Score with empty custom weights should be valid")
 }
 
-// FuzzComputeScore fuzzes the computeScore function with random FileResult inputs.
+// FuzzComputeScore fuzzes the ComputeScore function with random FileResult inputs.
 func FuzzComputeScore(f *testing.F) {
 	seeds := []struct {
 		result schema.FileResult
@@ -318,11 +318,11 @@ func FuzzComputeScore(f *testing.F) {
 			RecentCommits:      recentCommits,
 			Mode:               schema.ScoringMode(mode),
 		}
-		_ = computeScore(&result, schema.ScoringMode(mode), nil)
+		_ = ComputeScore(&result, schema.ScoringMode(mode), nil)
 	})
 }
 
-// FuzzGini fuzzes the gini function with random value arrays.
+// FuzzGini fuzzes the Gini function with random value arrays.
 func FuzzGini(f *testing.F) {
 	seeds := []string{
 		"[1,2,3]",
@@ -351,6 +351,6 @@ func FuzzGini(f *testing.F) {
 				}
 			}
 		}
-		_ = gini(values)
+		_ = Gini(values)
 	})
 }

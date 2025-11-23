@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/huangsam/hotspot/core/agg"
+	"github.com/huangsam/hotspot/core/algo"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
@@ -236,7 +237,7 @@ func TestRankFolders(t *testing.T) {
 		{Path: "utils", Score: 20.0, Commits: 40},
 	}
 
-	result := rankFolders(folders, 10)
+	result := algo.RankFolders(folders, 10)
 
 	// Should be sorted by score descending: tests (25), utils (20), src (15), docs (10)
 	assert.Len(t, result, 4)
@@ -258,7 +259,7 @@ func TestRankFolders_WithLimit(t *testing.T) {
 		{Path: "utils", Score: 20.0},
 	}
 
-	result := rankFolders(folders, 2)
+	result := algo.RankFolders(folders, 2)
 
 	// Should return only top 2: tests (25), utils (20)
 	assert.Len(t, result, 2)
@@ -271,7 +272,7 @@ func TestRankFolders_WithLimit(t *testing.T) {
 func TestRankFolders_EmptyInput(t *testing.T) {
 	var folders []schema.FolderResult
 
-	result := rankFolders(folders, 10)
+	result := algo.RankFolders(folders, 10)
 
 	assert.Empty(t, result)
 }
@@ -282,7 +283,7 @@ func TestRankFolders_LimitGreaterThanLength(t *testing.T) {
 		{Path: "tests", Score: 25.0},
 	}
 
-	result := rankFolders(folders, 10)
+	result := algo.RankFolders(folders, 10)
 
 	// Should return all folders when limit > length
 	assert.Len(t, result, 2)
@@ -296,7 +297,7 @@ func TestRankFolders_ZeroLimit(t *testing.T) {
 		{Path: "tests", Score: 25.0},
 	}
 
-	result := rankFolders(folders, 0)
+	result := algo.RankFolders(folders, 0)
 
 	// Should return empty slice when limit is 0
 	assert.Empty(t, result)

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/huangsam/hotspot/core/algo"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 )
@@ -156,7 +157,7 @@ func (b *FileResultBuilder) CalculateDerivedMetrics() *FileResultBuilder {
 	for _, c := range b.contribCount {
 		values = append(values, float64(c))
 	}
-	b.result.Gini = gini(values) // Assuming gini() is a helper function
+	b.result.Gini = algo.Gini(values) // Assuming gini() is a helper function
 
 	return b
 }
@@ -211,7 +212,7 @@ func (b *FileResultBuilder) CalculateOwner() *FileResultBuilder {
 // CalculateScore computes the final composite score.
 func (b *FileResultBuilder) CalculateScore() *FileResultBuilder {
 	// Compute score for current mode
-	b.result.ModeScore = computeScore(b.result, b.cfg.Mode, b.cfg.CustomWeights)
+	b.result.ModeScore = algo.ComputeScore(b.result, b.cfg.Mode, b.cfg.CustomWeights)
 
 	// Compute scores and breakdowns for all modes
 	b.result.AllScores = make(map[schema.ScoringMode]float64)
@@ -220,7 +221,7 @@ func (b *FileResultBuilder) CalculateScore() *FileResultBuilder {
 	for _, mode := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode} {
 		mCopy := *b.result
 		mCopy.Mode = mode
-		score := computeScore(&mCopy, mode, b.cfg.CustomWeights)
+		score := algo.ComputeScore(&mCopy, mode, b.cfg.CustomWeights)
 		b.result.AllScores[mode] = score
 		b.result.AllBreakdowns[mode] = make(map[schema.BreakdownKey]float64)
 		maps.Copy(b.result.AllBreakdowns[mode], mCopy.ModeBreakdown)

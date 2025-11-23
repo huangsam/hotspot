@@ -1,4 +1,4 @@
-package core
+package algo
 
 import (
 	"sort"
@@ -6,10 +6,10 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// rankFiles sorts files by their importance score in descending order
+// RankFiles sorts files by their importance score in descending order
 // and returns the top 'limit' files. If limit is greater than the number
 // of files, all files are returned in sorted order.
-func rankFiles(files []schema.FileResult, limit int) []schema.FileResult {
+func RankFiles(files []schema.FileResult, limit int) []schema.FileResult {
 	sort.Slice(files, func(i, j int) bool {
 		return files[i].ModeScore > files[j].ModeScore
 	})
@@ -19,10 +19,10 @@ func rankFiles(files []schema.FileResult, limit int) []schema.FileResult {
 	return files
 }
 
-// rankFolders sorts folders by their importance score in descending order
+// RankFolders sorts folders by their importance score in descending order
 // and returns the top 'limit' files. If limit is greater than the number
 // of files, all files are returned in sorted order.
-func rankFolders(folders []schema.FolderResult, limit int) []schema.FolderResult {
+func RankFolders(folders []schema.FolderResult, limit int) []schema.FolderResult {
 	sort.Slice(folders, func(i, j int) bool {
 		return folders[i].Score > folders[j].Score
 	})
