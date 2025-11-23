@@ -100,16 +100,65 @@ The core package contains the main analysis algorithms, scoring logic, and execu
 
 ### Main Execution Functions
 
+#### ExecuteHotspotCheck
+
+**Purpose**: Runs the check command for CI/CD gating with configurable thresholds.
+
+**Key Features**:
+
+- Validates hotspot scores against user-defined thresholds
+- Supports all scoring modes (hot, risk, complexity, stale)
+- Provides informative output for success/failure
+- Designed for integration into CI/CD pipelines
+
+#### ExecuteHotspotCompare
+
+**Purpose**: Runs two file-level analyses (Base and Target) based on Git references and computes the delta results.
+
+**Key Steps**:
+
+1. Analyze base reference files
+2. Analyze target reference files
+3. Compare results between references
+4. Calculate deltas and ranking changes
+5. Format and output comparison results
+
+#### ExecuteHotspotCompareFolders
+
+**Purpose**: Runs two folder-level analyses (Base and Target) based on Git references and computes the delta results.
+
+**Key Steps**:
+
+1. Analyze base reference files and aggregate to folders
+2. Analyze target reference files and aggregate to folders
+3. Compare folder results between references
+4. Calculate deltas and ranking changes
+5. Format and output comparison results
+
 #### ExecuteHotspotFiles
 
 **Purpose**: Performs file-level hotspot analysis with optional rename tracking.
 
 **Key Steps**:
+
 1. Aggregate Git activity data
 2. Filter and build file list
 3. Analyze files concurrently
 4. Rank results by score
 5. Optional follow pass for renames
+6. Format and output results
+
+#### ExecuteHotspotFolders
+
+**Purpose**: Performs folder-level hotspot analysis and prints results to stdout.
+
+**Key Steps**:
+
+1. Aggregate Git activity data
+2. Filter and build file list
+3. Analyze files concurrently
+4. Aggregate results to folder level
+5. Rank folders by score
 6. Format and output results
 
 #### ExecuteHotspotTimeseries
@@ -122,17 +171,6 @@ The core package contains the main analysis algorithms, scoring logic, and execu
 - Path-specific score extraction
 - Supports both files and folders
 - Multiple scoring modes
-
-#### ExecuteHotspotCheck
-
-**Purpose**: Runs the check command for CI/CD gating with configurable thresholds.
-
-**Key Features**:
-
-- Validates hotspot scores against user-defined thresholds
-- Supports all scoring modes (hot, risk, complexity, stale)
-- Provides informative output for success/failure
-- Designed for integration into CI/CD pipelines
 
 ### Analysis Pipeline
 
