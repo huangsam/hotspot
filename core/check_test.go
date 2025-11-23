@@ -119,7 +119,7 @@ func TestPrintCheckResult(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Just ensure it doesn't panic
 			assert.NotPanics(t, func() {
-				printCheckResult(tt.result, time.Second)
+				printCheckResult(&tt.result, time.Second)
 			})
 		})
 	}
