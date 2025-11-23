@@ -67,12 +67,15 @@ The root command defines the base CLI structure with help text and default behav
     - `compareFoldersCmd`: Compare folder metrics between Git refs
   - `timeseriesCmd`: Timeseries analysis for specific paths
   - `checkCmd`: CI/CD policy enforcement (`hotspot check [repo-path]`)
+  - `metricsCmd`: Display formal definitions of all scoring modes (`hotspot metrics`)
   - `cacheCmd`: Cache management
     - `cacheStatusCmd`: Show cache status (`hotspot cache status`)
     - `cacheClearCmd`: Clear cache data (`hotspot cache clear`)
   - `analysisCmd`: Analysis management
     - `analysisStatusCmd`: Show analysis status (`hotspot analysis status`)
     - `analysisClearCmd`: Clear analysis data (`hotspot analysis clear`)
+    - `analysisExportCmd`: Export analysis data to Parquet files (`hotspot analysis export`)
+    - `analysisMigrateCmd`: Run database schema migrations (`hotspot analysis migrate`)
   - `versionCmd`: Version information
 
 #### Configuration Management
@@ -160,6 +163,15 @@ The core package contains the main analysis algorithms, scoring logic, and execu
 4. Aggregate results to folder level
 5. Rank folders by score
 6. Format and output results
+
+#### ExecuteHotspotMetrics
+
+**Purpose**: Displays the formal definitions of all scoring modes.
+
+**Key Features**:
+- Static display that does not require Git analysis
+- Shows purpose, factors, and mathematical formulas for all scoring modes
+- Includes custom weights when configured
 
 #### ExecuteHotspotTimeseries
 
