@@ -72,7 +72,7 @@ func TestOutWriter_WriteFolders(t *testing.T) {
 func TestOutWriter_WriteComparison(t *testing.T) {
 	ow := NewOutWriter()
 	comparison := schema.ComparisonResult{
-		Results: []schema.ComparisonDetails{
+		Details: []schema.ComparisonDetail{
 			{
 				Path:         "main.go",
 				BeforeScore:  70.0,

@@ -319,11 +319,11 @@ func TestCompareFolderMetrics(t *testing.T) {
 	result := compareFolderMetrics(baseFolders, targetFolders, 10, "hot")
 
 	assert.NotNil(t, result)
-	assert.NotNil(t, result.Results)
+	assert.NotNil(t, result.Details)
 	assert.NotNil(t, result.Summary)
 
 	// Should have results for paths with significant score changes
-	assert.True(t, len(result.Results) > 0)
+	assert.True(t, len(result.Details) > 0)
 
 	// Check summary
 	assert.True(t, result.Summary.NetScoreDelta > 0)      // Overall score increase
@@ -345,7 +345,7 @@ func TestCompareFolderMetrics_NoChanges(t *testing.T) {
 	result := compareFolderMetrics(baseFolders, targetFolders, 10, "hot")
 
 	assert.NotNil(t, result)
-	assert.Empty(t, result.Results) // No significant changes
+	assert.Empty(t, result.Details) // No significant changes
 
 	// Summary should be zero except for modified files (existing in both)
 	assert.Equal(t, 0.0, result.Summary.NetScoreDelta)
@@ -365,8 +365,8 @@ func TestCompareFolderMetrics_EmptyBase(t *testing.T) {
 	result := compareFolderMetrics(baseFolders, targetFolders, 10, "hot")
 
 	assert.NotNil(t, result)
-	assert.Len(t, result.Results, 1)
-	assert.Equal(t, schema.NewStatus, result.Results[0].Status)
+	assert.Len(t, result.Details, 1)
+	assert.Equal(t, schema.NewStatus, result.Details[0].Status)
 	assert.Equal(t, 1, result.Summary.TotalNewFiles)
 }
 
@@ -379,8 +379,8 @@ func TestCompareFolderMetrics_EmptyTarget(t *testing.T) {
 	result := compareFolderMetrics(baseFolders, targetFolders, 10, "hot")
 
 	assert.NotNil(t, result)
-	assert.Len(t, result.Results, 1)
-	assert.Equal(t, schema.InactiveStatus, result.Results[0].Status)
+	assert.Len(t, result.Details, 1)
+	assert.Equal(t, schema.InactiveStatus, result.Details[0].Status)
 	assert.Equal(t, 1, result.Summary.TotalInactiveFiles)
 }
 
@@ -398,9 +398,9 @@ func TestCompareFolderMetrics_WithLimit(t *testing.T) {
 	result := compareFolderMetrics(baseFolders, targetFolders, 1, "hot")
 
 	// Should return only the top 1 result (largest delta)
-	assert.Len(t, result.Results, 1)
-	assert.Equal(t, "src", result.Results[0].Path)
-	assert.Equal(t, 15.0, result.Results[0].Delta)
+	assert.Len(t, result.Details, 1)
+	assert.Equal(t, "src", result.Details[0].Path)
+	assert.Equal(t, 15.0, result.Details[0].Delta)
 }
 
 func TestCompareFolderMetrics_OwnershipChange(t *testing.T) {
@@ -417,5 +417,5 @@ func TestCompareFolderMetrics_OwnershipChange(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, result.Summary.TotalOwnershipChanges)
 	// No results since score delta is 0
-	assert.Empty(t, result.Results)
+	assert.Empty(t, result.Details)
 }

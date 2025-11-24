@@ -16,7 +16,7 @@ import (
 
 func TestWriteComparisonResultsTable(t *testing.T) {
 	comparison := schema.ComparisonResult{
-		Results: []schema.ComparisonDetails{
+		Details: []schema.ComparisonDetail{
 			{
 				Path:         "main.go",
 				BeforeScore:  70.0,
@@ -91,7 +91,7 @@ func TestWriteComparisonResultsTable(t *testing.T) {
 
 func TestWriteComparisonResultsJSON(t *testing.T) {
 	comparison := schema.ComparisonResult{
-		Results: []schema.ComparisonDetails{
+		Details: []schema.ComparisonDetail{
 			{
 				Path:         "test.go",
 				BeforeScore:  50.0,
@@ -158,7 +158,7 @@ func TestWriteComparisonResultsJSON(t *testing.T) {
 
 func TestWriteComparisonResultsCSV(t *testing.T) {
 	comparison := schema.ComparisonResult{
-		Results: []schema.ComparisonDetails{
+		Details: []schema.ComparisonDetail{
 			{
 				Path:         "example.go",
 				BeforeScore:  40.0,
@@ -216,7 +216,7 @@ func TestWriteComparisonResultsCSV(t *testing.T) {
 
 func TestWriteJSONResultsForComparison(t *testing.T) {
 	comparison := schema.ComparisonResult{
-		Results: []schema.ComparisonDetails{
+		Details: []schema.ComparisonDetail{
 			{
 				Path:         "main.go",
 				BeforeScore:  70.0,
@@ -255,7 +255,7 @@ func TestWriteJSONResultsForComparison(t *testing.T) {
 func TestWriteCSVResultsForComparison(t *testing.T) {
 	fmtFloat, intFmt := createFormatters(2)
 	comparison := schema.ComparisonResult{
-		Results: []schema.ComparisonDetails{
+		Details: []schema.ComparisonDetail{
 			{
 				Path:         "test.go",
 				BeforeScore:  50.0,

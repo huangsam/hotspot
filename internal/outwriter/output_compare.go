@@ -79,7 +79,7 @@ func writeComparisonTable(comparisonResult schema.ComparisonResult, cfg *contrac
 		green = fmt.Sprint
 		yellow = fmt.Sprint
 	}
-	for i, r := range comparisonResult.Results {
+	for i, r := range comparisonResult.Details {
 		var deltaStr string
 		deltaValue := r.Delta
 		switch {
@@ -120,7 +120,7 @@ func writeComparisonTable(comparisonResult schema.ComparisonResult, cfg *contrac
 		return err
 	}
 	// Compute summary stats
-	numItems := len(comparisonResult.Results)
+	numItems := len(comparisonResult.Details)
 	if _, err := fmt.Fprintf(writer, "Showing top %d changes\n", numItems); err != nil {
 		return err
 	}
@@ -161,7 +161,7 @@ func writeCSVResultsForComparison(w *csv.Writer, comparisonResult schema.Compari
 	}
 
 	// 2. Write Data Rows
-	for i, r := range comparisonResult.Results {
+	for i, r := range comparisonResult.Details {
 		row := []string{
 			strconv.Itoa(i + 1),                 // Rank
 			r.Path,                              // Path

@@ -292,7 +292,7 @@ func getMaxTablePathWidth(cfg *contract.Config) int {
 }
 
 // formatOwnershipDiff computes and formats the ownership difference between before and after states.
-func formatOwnershipDiff(r schema.ComparisonDetails) string {
+func formatOwnershipDiff(r schema.ComparisonDetail) string {
 	beforeOwners := r.BeforeOwners
 	afterOwners := r.AfterOwners
 

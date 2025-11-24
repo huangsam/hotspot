@@ -94,8 +94,8 @@ func (f FolderResult) GetOwners() []string {
 	return f.Owners
 }
 
-// ComparisonDetails holds the base info, target info, and their associated deltas.
-type ComparisonDetails struct {
+// ComparisonDetail holds the base info, target info, and their associated deltas.
+type ComparisonDetail struct {
 	Path         string      `json:"path"`          // Relative path to the target in the repository
 	BeforeScore  float64     `json:"before_score"`  // Score from the original/base analysis
 	AfterScore   float64     `json:"after_score"`   // Score from the comparison/new analysis
@@ -130,8 +130,8 @@ type ComparisonSummary struct {
 
 // ComparisonResult holds the comparison details and summary.
 type ComparisonResult struct {
-	Results []ComparisonDetails `json:"details"`
-	Summary ComparisonSummary   `json:"summary"`
+	Details []ComparisonDetail `json:"details"`
+	Summary ComparisonSummary  `json:"summary"`
 }
 
 // FileComparison has file deltas.

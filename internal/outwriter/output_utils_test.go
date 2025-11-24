@@ -315,7 +315,7 @@ func TestWriteFoldersResultsEmpty(t *testing.T) {
 
 func TestWriteComparisonResultsEmpty(t *testing.T) {
 	comparison := schema.ComparisonResult{
-		Results: []schema.ComparisonDetails{},
+		Details: []schema.ComparisonDetail{},
 		Summary: schema.ComparisonSummary{},
 	}
 

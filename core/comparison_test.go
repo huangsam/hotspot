@@ -57,11 +57,11 @@ func TestCompareFileResults_StatusClassification(t *testing.T) {
 	result := compareFileResults(baseResults, targetResults, 10, string(schema.HotMode))
 
 	// Verify we have results for all expected files
-	assert.Len(t, result.Results, 3)
+	assert.Len(t, result.Details, 3)
 
 	// Create a map for easier lookup
-	resultMap := make(map[string]schema.ComparisonDetails)
-	for _, r := range result.Results {
+	resultMap := make(map[string]schema.ComparisonDetail)
+	for _, r := range result.Details {
 		resultMap[r.Path] = r
 	}
 
@@ -133,7 +133,7 @@ func TestCompareFileResults_NoSignificantChanges(t *testing.T) {
 	result := compareFileResults(baseResults, targetResults, 10, string(schema.HotMode))
 
 	// Should have no results since changes are insignificant
-	assert.Len(t, result.Results, 0)
+	assert.Len(t, result.Details, 0)
 	assert.Equal(t, 0, result.Summary.TotalNewFiles)
 	assert.Equal(t, 0, result.Summary.TotalInactiveFiles)
 	assert.Equal(t, 2, result.Summary.TotalModifiedFiles) // Both exist in both, so they're "modified" even with no significant change
@@ -213,14 +213,14 @@ func TestCompareFileResults_OwnershipChanges(t *testing.T) {
 	result := compareFileResults(baseResults, targetResults, 10, string(schema.HotMode))
 
 	// Should have 3 results with significant score changes
-	assert.Len(t, result.Results, 3)
+	assert.Len(t, result.Details, 3)
 
 	// Check ownership changes count
 	assert.Equal(t, 2, result.Summary.TotalOwnershipChanges) // changed_owner.go and multiple_owners_changed.go
 
 	// Check the owners are populated correctly
-	resultMap := make(map[string]schema.ComparisonDetails)
-	for _, r := range result.Results {
+	resultMap := make(map[string]schema.ComparisonDetail)
+	for _, r := range result.Details {
 		resultMap[r.Path] = r
 	}
 

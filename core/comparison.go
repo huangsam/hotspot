@@ -36,7 +36,7 @@ func compareResults[T ComparableResult](baseResults, targetResults []T, limit in
 		allPaths[r.GetPath()] = struct{}{}
 	}
 
-	comparisonResults := make([]schema.ComparisonDetails, 0, len(allPaths))
+	comparisonResults := make([]schema.ComparisonDetail, 0, len(allPaths))
 
 	// Initialize summary accumulators
 	var netScoreDelta float64
@@ -106,7 +106,7 @@ func compareResults[T ComparableResult](baseResults, targetResults []T, limit in
 
 		// Only include results with significant score changes
 		if math.Abs(deltaScore) > 0.01 {
-			details := schema.ComparisonDetails{
+			details := schema.ComparisonDetail{
 				Path:         path,
 				BeforeScore:  baseScore,
 				AfterScore:   targetScore,
@@ -149,7 +149,7 @@ func compareResults[T ComparableResult](baseResults, targetResults []T, limit in
 		comparisonResults = comparisonResults[:limit]
 	}
 
-	return schema.ComparisonResult{Results: comparisonResults, Summary: summary}
+	return schema.ComparisonResult{Details: comparisonResults, Summary: summary}
 }
 
 // determineStatus returns the status based on existence in base and target.
@@ -167,7 +167,7 @@ func determineStatus(baseExists, targetExists bool) schema.Status {
 }
 
 // sortComparisonResults sorts comparison results by absolute delta, then delta sign, then path.
-func sortComparisonResults(results []schema.ComparisonDetails) {
+func sortComparisonResults(results []schema.ComparisonDetail) {
 	sort.Slice(results, func(i, j int) bool {
 		a := results[i]
 		b := results[j]

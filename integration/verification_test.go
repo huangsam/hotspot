@@ -285,11 +285,11 @@ func TestCompareFilesVerification(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify basic structure
-	require.NotEmpty(t, result.Results, "should have comparison results")
+	require.NotEmpty(t, result.Details, "should have comparison results")
 	require.NotNil(t, result.Summary, "should have comparison summary")
 
 	// Verify each comparison detail
-	for i, detail := range result.Results {
+	for i, detail := range result.Details {
 		t.Run(fmt.Sprintf("file_%d_%s", i, filepath.Base(detail.Path)), func(t *testing.T) {
 			// Verify required fields are present
 			assert.NotEmpty(t, detail.Path, "path should not be empty")
@@ -349,11 +349,11 @@ func TestCompareFoldersVerification(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify basic structure
-	require.NotEmpty(t, result.Results, "should have comparison results")
+	require.NotEmpty(t, result.Details, "should have comparison results")
 	require.NotNil(t, result.Summary, "should have comparison summary")
 
 	// Verify each comparison detail
-	for i, detail := range result.Results {
+	for i, detail := range result.Details {
 		t.Run(fmt.Sprintf("folder_%d_%s", i, filepath.Base(detail.Path)), func(t *testing.T) {
 			// Verify required fields are present
 			assert.NotEmpty(t, detail.Path, "path should not be empty")
