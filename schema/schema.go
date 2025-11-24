@@ -18,11 +18,11 @@ type FileResult struct {
 	Gini               float64                                  `json:"gini"`                 // Gini coefficient of commit distribution (0-1, lower is more even)
 	FirstCommit        time.Time                                `json:"first_commit"`         // Timestamp of the file's first commit
 	Owners             []string                                 `json:"owners"`               // Top 2 owners by commit count
-	AllScores          map[ScoringMode]float64                  `json:"scores"`               // All computed scores by mode
-	AllBreakdowns      map[ScoringMode]map[BreakdownKey]float64 `json:"breakdowns,omitempty"` // Score breakdowns for all modes
 	Mode               ScoringMode                              `json:"mode"`                 // Scoring mode used (hot, risk, complexity, stale)
 	ModeScore          float64                                  `json:"score"`                // Computed score for the current mode (0-100)
 	ModeBreakdown      map[BreakdownKey]float64                 `json:"breakdown"`            // Normalized contribution of each metric to the score
+	AllScores          map[ScoringMode]float64                  `json:"scores"`               // All computed scores by mode
+	AllBreakdowns      map[ScoringMode]map[BreakdownKey]float64 `json:"breakdowns,omitempty"` // Score breakdowns for all modes
 }
 
 // GetPath returns the file path.
