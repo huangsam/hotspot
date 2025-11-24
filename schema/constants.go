@@ -14,7 +14,7 @@ type (
 	// ScoringMode represents the scoring mode used.
 	ScoringMode string
 
-	// DatabaseBackend represents the database backend for caching.
+	// DatabaseBackend represents the database used for analysis, migration, etc.
 	DatabaseBackend string
 )
 
