@@ -21,6 +21,7 @@ type CheckResultBuilder struct {
 	maxScores      map[schema.ScoringMode]float64
 	failedFiles    []schema.CheckFailedFile
 	maxScoreFiles  map[schema.ScoringMode][]schema.CheckMaxScoreFile
+	avgScores      map[schema.ScoringMode]float64
 	result         *schema.CheckResult
 }
 
@@ -100,13 +101,17 @@ func (b *CheckResultBuilder) ComputeMetrics() *CheckResultBuilder {
 	// Compute max scores for each mode
 	b.maxScores = make(map[schema.ScoringMode]float64)
 	b.maxScoreFiles = make(map[schema.ScoringMode][]schema.CheckMaxScoreFile)
+	b.avgScores = make(map[schema.ScoringMode]float64)
 
 	for _, mode := range schema.AllScoringModes {
 		maxScore := 0.0
 		var filesWithMax []schema.CheckMaxScoreFile
+		sumScore := 0.0
+		fileCount := len(b.fileResults)
 
 		for _, file := range b.fileResults {
 			score := file.AllScores[mode]
+			sumScore += score
 			if score > maxScore {
 				maxScore = score
 				filesWithMax = []schema.CheckMaxScoreFile{{
@@ -124,6 +129,9 @@ func (b *CheckResultBuilder) ComputeMetrics() *CheckResultBuilder {
 
 		b.maxScores[mode] = maxScore
 		b.maxScoreFiles[mode] = filesWithMax
+		if fileCount > 0 {
+			b.avgScores[mode] = sumScore / float64(fileCount)
+		}
 	}
 
 	// Check all files against thresholds for all modes
@@ -159,6 +167,7 @@ func (b *CheckResultBuilder) BuildResult() *CheckResultBuilder {
 		MaxScores:     b.maxScores,
 		MaxScoreFiles: b.maxScoreFiles,
 		Lookback:      b.cfg.Lookback,
+		AvgScores:     b.avgScores,
 	}
 	return b
 }

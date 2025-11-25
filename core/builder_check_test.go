@@ -163,6 +163,12 @@ func TestCheckResultBuilder_ComputeMetrics(t *testing.T) {
 	assert.Equal(t, 30.0, builder.maxScores[schema.ComplexityMode])
 	assert.Equal(t, 20.0, builder.maxScores[schema.StaleMode])
 
+	// Check avg scores
+	assert.Equal(t, 55.0, builder.avgScores[schema.HotMode])        // (60+50)/2
+	assert.Equal(t, 55.0, builder.avgScores[schema.RiskMode])       // (40+70)/2
+	assert.Equal(t, 27.5, builder.avgScores[schema.ComplexityMode]) // (30+25)/2
+	assert.Equal(t, 17.5, builder.avgScores[schema.StaleMode])      // (20+15)/2
+
 	// Check max score files
 	assert.Equal(t, "file1.go", builder.maxScoreFiles[schema.HotMode][0].Path)
 	assert.Equal(t, "file2.go", builder.maxScoreFiles[schema.RiskMode][0].Path)
@@ -213,6 +219,12 @@ func TestCheckResultBuilder_BuildResult_Success(t *testing.T) {
 		maxScoreFiles: map[schema.ScoringMode][]schema.CheckMaxScoreFile{
 			schema.HotMode: {{Path: "file1.go", Owners: []string{"alice"}}},
 		},
+		avgScores: map[schema.ScoringMode]float64{
+			schema.HotMode:        35.0,
+			schema.RiskMode:       25.0,
+			schema.ComplexityMode: 15.0,
+			schema.StaleMode:      5.0,
+		},
 	}
 
 	builder.BuildResult()
@@ -225,6 +237,7 @@ func TestCheckResultBuilder_BuildResult_Success(t *testing.T) {
 	assert.Equal(t, "main", result.BaseRef)
 	assert.Equal(t, "feature", result.TargetRef)
 	assert.Equal(t, 30*24*time.Hour, result.Lookback)
+	assert.Equal(t, 35.0, result.AvgScores[schema.HotMode])
 }
 
 func TestCheckResultBuilder_BuildResult_Failure(t *testing.T) {
@@ -247,6 +260,9 @@ func TestCheckResultBuilder_BuildResult_Failure(t *testing.T) {
 		maxScoreFiles: map[schema.ScoringMode][]schema.CheckMaxScoreFile{
 			schema.HotMode: {{Path: "file1.go", Owners: []string{"alice"}}},
 		},
+		avgScores: map[schema.ScoringMode]float64{
+			schema.HotMode: 60.0,
+		},
 	}
 
 	builder.BuildResult()
@@ -259,4 +275,5 @@ func TestCheckResultBuilder_BuildResult_Failure(t *testing.T) {
 	assert.Equal(t, schema.HotMode, result.FailedFiles[0].Mode)
 	assert.Equal(t, 60.0, result.FailedFiles[0].Score)
 	assert.Equal(t, 50.0, result.FailedFiles[0].Threshold)
+	assert.Equal(t, 60.0, result.AvgScores[schema.HotMode])
 }

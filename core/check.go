@@ -103,14 +103,15 @@ func printCheckResult(result *schema.CheckResult, duration time.Duration) {
 
 	if result.Passed {
 		fmt.Printf("✅ All files passed policy checks\n\n")
-		fmt.Println("Max scores observed:")
+		fmt.Println("Scores observed:")
 
 		for _, mode := range result.CheckedModes {
 			score := result.MaxScores[mode]
 			files := result.MaxScoreFiles[mode]
+			avgScore := result.AvgScores[mode]
 
 			if len(files) == 0 {
-				fmt.Printf("  %s=%.1f\n", mode, score)
+				fmt.Printf("  %s: max=%.1f, avg=%.1f\n", mode, score, avgScore)
 				continue
 			}
 
@@ -120,13 +121,13 @@ func printCheckResult(result *schema.CheckResult, duration time.Duration) {
 				fileName += fmt.Sprintf(" (+%d more)", len(files)-1)
 			}
 
-			fmt.Printf("  %s=%.1f (%s)\n", mode, score, fileName)
+			fmt.Printf("  %s: max=%.1f (%s), avg=%.1f\n", mode, score, fileName, avgScore)
 		}
 		return
 	}
 
 	// Print failed files grouped by mode
-	fmt.Printf("❌ Policy check failed: %d violation(s) found\n\n", len(result.FailedFiles))
+	fmt.Printf("❌ Policy check failed: %d violation(s) found (%.0f%% of checked files)\n\n", len(result.FailedFiles), float64(len(result.FailedFiles))/float64(result.TotalFiles)*100)
 
 	// Group by mode for better readability
 	modeGroups := make(map[schema.ScoringMode][]schema.CheckFailedFile)
@@ -140,7 +141,7 @@ func printCheckResult(result *schema.CheckResult, duration time.Duration) {
 			continue
 		}
 
-		fmt.Printf("Mode: %s\n", mode)
+		fmt.Printf("Mode: %s (%d violations)\n", mode, len(files))
 		for _, f := range files {
 			fmt.Printf("  - %s (score: %.1f > threshold: %.1f)\n", f.Path, f.Score, f.Threshold)
 		}

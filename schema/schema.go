@@ -289,6 +289,7 @@ type CheckResult struct {
 	MaxScores     map[ScoringMode]float64
 	MaxScoreFiles map[ScoringMode][]CheckMaxScoreFile
 	Lookback      time.Duration
+	AvgScores     map[ScoringMode]float64 // Average score per mode
 }
 
 // CheckMaxScoreFile represents a file that achieved the maximum score for a mode.
