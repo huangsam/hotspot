@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"os"
 	"sort"
 	"time"
 
@@ -52,7 +53,8 @@ func ExecuteHotspotCheck(ctx context.Context, cfg *contract.Config, mgr contract
 
 		// Return error if check failed
 		if !result.Passed {
-			return fmt.Errorf("%d violation(s) found", len(result.FailedFiles))
+			fmt.Printf("%d violation(s) found\n", len(result.FailedFiles))
+			os.Exit(1)
 		}
 	}
 	return nil
@@ -71,6 +73,17 @@ func filterChangedFiles(files []string, excludes []string) []string {
 
 // printCheckResult prints the check result in a concise format suitable for CI/CD.
 func printCheckResult(result *schema.CheckResult, duration time.Duration) {
+	printCheckHeader(result, duration)
+
+	if result.Passed {
+		printCheckSuccess(result)
+	} else {
+		printCheckFailure(result)
+	}
+}
+
+// printCheckHeader prints the common header information for check results.
+func printCheckHeader(result *schema.CheckResult, duration time.Duration) {
 	fmt.Println("Policy Check Results:")
 
 	// Define labels and values for dynamic padding
@@ -101,32 +114,35 @@ func printCheckResult(result *schema.CheckResult, duration time.Duration) {
 	fmt.Println()
 
 	fmt.Printf("Checked %d files in %v\n\n", result.TotalFiles, duration)
+}
 
-	if result.Passed {
-		fmt.Printf("✅ All files passed policy checks\n\n")
-		fmt.Println("Scores observed:")
+// printCheckSuccess prints the success case output.
+func printCheckSuccess(result *schema.CheckResult) {
+	fmt.Printf("✅ All files passed policy checks\n\n")
+	fmt.Println("Scores observed:")
 
-		for _, mode := range result.CheckedModes {
-			score := result.MaxScores[mode]
-			files := result.MaxScoreFiles[mode]
-			avgScore := result.AvgScores[mode]
+	for _, mode := range result.CheckedModes {
+		score := result.MaxScores[mode]
+		files := result.MaxScoreFiles[mode]
+		avgScore := result.AvgScores[mode]
 
-			if len(files) == 0 {
-				fmt.Printf("  %s: max=%.1f, avg=%.1f\n", mode, score, avgScore)
-				continue
-			}
-
-			// Show the primary file that achieved max score (first one if tie)
-			fileName := files[0].Path
-			if len(files) > 1 {
-				fileName += fmt.Sprintf(" (+%d more)", len(files)-1)
-			}
-
-			fmt.Printf("  %s: max=%.1f (%s), avg=%.1f\n", mode, score, fileName, avgScore)
+		if len(files) == 0 {
+			fmt.Printf("  %s: max=%.1f, avg=%.1f\n", mode, score, avgScore)
+			continue
 		}
-		return
-	}
 
+		// Show the primary file that achieved max score (first one if tie)
+		fileName := files[0].Path
+		if len(files) > 1 {
+			fileName += fmt.Sprintf(" (+%d more)", len(files)-1)
+		}
+
+		fmt.Printf("  %s: max=%.1f (%s), avg=%.1f\n", mode, score, fileName, avgScore)
+	}
+}
+
+// printCheckFailure prints the failure case output.
+func printCheckFailure(result *schema.CheckResult) {
 	// Print failed files grouped by mode
 	fmt.Printf("❌ Policy check failed: %d violation(s) found across %d files\n\n", len(result.FailedFiles), result.TotalFiles)
 
