@@ -331,13 +331,10 @@ The project uses a comprehensive Makefile to ensure reproducible builds, consist
 ### Building
 
 ```bash
-# Build and install globally (recommended for development)
+# Build and install globally (useful for system-wide testing)
 make reinstall
 
-# Build the binary locally
-make build
-
-# Clean and rebuild
+# Clean and rebuild binary only (faster for local development)
 make clean build
 ```
 
