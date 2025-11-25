@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/huangsam/hotspot/internal/contract"
@@ -127,7 +128,7 @@ func printCheckResult(result *schema.CheckResult, duration time.Duration) {
 	}
 
 	// Print failed files grouped by mode
-	fmt.Printf("❌ Policy check failed: %d violation(s) found (%.0f%% of checked files)\n\n", len(result.FailedFiles), float64(len(result.FailedFiles))/float64(result.TotalFiles)*100)
+	fmt.Printf("❌ Policy check failed: %d violation(s) found across %d files\n\n", len(result.FailedFiles), result.TotalFiles)
 
 	// Group by mode for better readability
 	modeGroups := make(map[schema.ScoringMode][]schema.CheckFailedFile)
@@ -141,9 +142,26 @@ func printCheckResult(result *schema.CheckResult, duration time.Duration) {
 			continue
 		}
 
+		// Sort by score descending
+		sort.Slice(files, func(i, j int) bool {
+			return files[i].Score > files[j].Score
+		})
+
 		fmt.Printf("Mode: %s (%d violations)\n", mode, len(files))
+
+		// Show top 5 violations, with "+X more" if needed
+		maxToShow := 5
+		shown := 0
 		for _, f := range files {
+			if shown >= maxToShow {
+				remaining := len(files) - shown
+				if remaining > 0 {
+					fmt.Printf("  ... and %d more\n", remaining)
+				}
+				break
+			}
 			fmt.Printf("  - %s (score: %.1f > threshold: %.1f)\n", f.Path, f.Score, f.Threshold)
+			shown++
 		}
 		fmt.Println()
 	}
