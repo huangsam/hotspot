@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 )
@@ -110,4 +111,76 @@ func TestAnalyzeRepo(t *testing.T) {
 		// Note: Breakdown will be empty because SizeBytes is 0 (files don't exist in test)
 		// assert.NotEmpty(t, result.Breakdown)
 	}
+}
+
+// TestGetOwnerString tests the owner string conversion.
+func TestGetOwnerString(t *testing.T) {
+	tests := []struct {
+		name     string
+		owners   []string
+		expected string
+	}{
+		{
+			name:     "empty owners",
+			owners:   []string{},
+			expected: "",
+		},
+		{
+			name:     "single owner",
+			owners:   []string{"alice"},
+			expected: "alice",
+		},
+		{
+			name:     "multiple owners",
+			owners:   []string{"alice", "bob", "charlie"},
+			expected: "alice", // Should return first owner
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := getOwnerString(tt.owners)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// TestRecordFileAnalysis tests the file analysis recording function.
+func TestRecordFileAnalysis(t *testing.T) {
+	ctx := context.Background()
+
+	// Create mock cache manager
+	mockCacheMgr := &iocache.MockCacheManager{}
+	mockCacheMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
+
+	// Create config
+	cfg := &contract.Config{
+		Mode: schema.HotMode,
+	}
+
+	// Create file result with all scores
+	fileResult := &schema.FileResult{
+		Path:               "test.go",
+		Commits:            100,
+		Churn:              500,
+		UniqueContributors: 5,
+		AgeDays:            365,
+		Gini:               0.3,
+		Owners:             []string{"alice", "bob"},
+		AllScores: map[schema.ScoringMode]float64{
+			schema.HotMode:        75.5,
+			schema.RiskMode:       80.2,
+			schema.ComplexityMode: 65.3,
+			schema.StaleMode:      70.1,
+		},
+	}
+
+	// Set up context with cache manager
+	ctx = contextWithCacheManager(ctx, mockCacheMgr)
+
+	// Execute - should not panic
+	recordFileAnalysis(ctx, cfg, 1, "test.go", fileResult)
+
+	// Verify mocks were called
+	mockCacheMgr.AssertExpectations(t)
 }

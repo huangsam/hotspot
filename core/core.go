@@ -174,3 +174,52 @@ func ExecuteHotspotMetrics(_ context.Context, cfg *contract.Config, _ contract.C
 		return writer.WriteMetrics(w, cfg.CustomWeights, cfg)
 	}, "Wrote metrics info")
 }
+
+// ExecuteHotspotCheck runs the check command for CI/CD gating.
+// It analyzes only files changed between base and target refs, checks them against thresholds,
+// and returns a non-zero exit code if any files exceed the thresholds.
+func ExecuteHotspotCheck(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) error {
+	start := time.Now()
+
+	builder := NewCheckResultBuilder(ctx, cfg, mgr)
+
+	// Validate prerequisites
+	_, err := builder.ValidatePrerequisites()
+	if err != nil {
+		return err
+	}
+	if result := builder.GetResult(); result != nil {
+		// Early success case
+		printCheckResult(result, time.Since(start))
+		return nil
+	}
+
+	// Prepare analysis config
+	_, err = builder.PrepareAnalysisConfig()
+	if err != nil {
+		return err
+	}
+
+	// Run analysis
+	_, err = builder.RunAnalysis()
+	if err != nil {
+		return err
+	}
+
+	// Compute metrics
+	builder.ComputeMetrics()
+
+	// Build result
+	builder.BuildResult()
+
+	if result := builder.GetResult(); result != nil {
+		printCheckResult(result, time.Since(start))
+
+		// Return error if check failed
+		if !result.Passed {
+			fmt.Printf("%d violation(s) found\n", len(result.FailedFiles))
+			os.Exit(1)
+		}
+	}
+	return nil
+}

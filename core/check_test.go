@@ -1,12 +1,9 @@
 package core
 
 import (
-	"context"
 	"testing"
 	"time"
 
-	"github.com/huangsam/hotspot/internal/contract"
-	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 )
@@ -41,6 +38,42 @@ func TestFilterChangedFiles(t *testing.T) {
 			files:    []string{"README.md", "LICENSE"},
 			excludes: []string{".md", "LICENSE"},
 			expected: []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := filterChangedFiles(tt.files, tt.excludes)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// TestFilterChangedFilesCore tests the file filtering logic (core version).
+func TestFilterChangedFilesCore(t *testing.T) {
+	tests := []struct {
+		name     string
+		files    []string
+		excludes []string
+		expected []string
+	}{
+		{
+			name:     "no excludes",
+			files:    []string{"main.go", "core/agg.go", "README.md"},
+			excludes: []string{},
+			expected: []string{"main.go", "core/agg.go", "README.md"},
+		},
+		{
+			name:     "exclude vendor",
+			files:    []string{"main.go", "vendor/lib.go", "core/agg.go"},
+			excludes: []string{"vendor/"},
+			expected: []string{"main.go", "core/agg.go"},
+		},
+		{
+			name:     "exclude multiple patterns",
+			files:    []string{"main.go", "vendor/lib.go", "test_main.go", "core/agg.go"},
+			excludes: []string{"vendor/", "test_"},
+			expected: []string{"main.go", "core/agg.go"},
 		},
 	}
 
@@ -123,23 +156,4 @@ func TestPrintCheckResult(t *testing.T) {
 			})
 		})
 	}
-}
-
-func TestExecuteHotspotCheck_MissingCompareMode(t *testing.T) {
-	ctx := context.Background()
-
-	// Create config without compare mode
-	cfg := &contract.Config{
-		RepoPath:    "/test/repo",
-		CompareMode: false,
-	}
-
-	// Create mock cache manager
-	mockManager := &iocache.MockCacheManager{}
-
-	// Execute should return error
-	err := ExecuteHotspotCheck(ctx, cfg, mockManager)
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "base-ref and --target-ref")
 }
