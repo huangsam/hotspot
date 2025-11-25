@@ -309,26 +309,8 @@ func TestFilterChangedFiles(t *testing.T) {
 			excludes: []string{".md", "LICENSE"},
 			expected: []string{},
 		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := filterChangedFiles(tt.files, tt.excludes)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
-// TestFilterChangedFilesCore tests the file filtering logic (core version).
-func TestFilterChangedFilesCore(t *testing.T) {
-	tests := []struct {
-		name     string
-		files    []string
-		excludes []string
-		expected []string
-	}{
 		{
-			name:     "no excludes",
+			name:     "no excludes (core version)",
 			files:    []string{"main.go", "core/agg.go", "README.md"},
 			excludes: []string{},
 			expected: []string{"main.go", "core/agg.go", "README.md"},
