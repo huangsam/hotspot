@@ -277,3 +277,80 @@ func TestCheckResultBuilder_BuildResult_Failure(t *testing.T) {
 	assert.Equal(t, 50.0, result.FailedFiles[0].Threshold)
 	assert.Equal(t, 60.0, result.AvgScores[schema.HotMode])
 }
+
+func TestFilterChangedFiles(t *testing.T) {
+	tests := []struct {
+		name     string
+		files    []string
+		excludes []string
+		expected []string
+	}{
+		{
+			name:     "no excludes",
+			files:    []string{"main.go", "core/check.go", "README.md"},
+			excludes: []string{},
+			expected: []string{"main.go", "core/check.go", "README.md"},
+		},
+		{
+			name:     "exclude by extension",
+			files:    []string{"main.go", "core/check.go", "README.md"},
+			excludes: []string{".md"},
+			expected: []string{"main.go", "core/check.go"},
+		},
+		{
+			name:     "exclude by directory",
+			files:    []string{"main.go", "vendor/lib.go", "dist/app.js"},
+			excludes: []string{"vendor/", "dist/"},
+			expected: []string{"main.go"},
+		},
+		{
+			name:     "all files excluded",
+			files:    []string{"README.md", "LICENSE"},
+			excludes: []string{".md", "LICENSE"},
+			expected: []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := filterChangedFiles(tt.files, tt.excludes)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// TestFilterChangedFilesCore tests the file filtering logic (core version).
+func TestFilterChangedFilesCore(t *testing.T) {
+	tests := []struct {
+		name     string
+		files    []string
+		excludes []string
+		expected []string
+	}{
+		{
+			name:     "no excludes",
+			files:    []string{"main.go", "core/agg.go", "README.md"},
+			excludes: []string{},
+			expected: []string{"main.go", "core/agg.go", "README.md"},
+		},
+		{
+			name:     "exclude vendor",
+			files:    []string{"main.go", "vendor/lib.go", "core/agg.go"},
+			excludes: []string{"vendor/"},
+			expected: []string{"main.go", "core/agg.go"},
+		},
+		{
+			name:     "exclude multiple patterns",
+			files:    []string{"main.go", "vendor/lib.go", "test_main.go", "core/agg.go"},
+			excludes: []string{"vendor/", "test_"},
+			expected: []string{"main.go", "core/agg.go"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := filterChangedFiles(tt.files, tt.excludes)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}

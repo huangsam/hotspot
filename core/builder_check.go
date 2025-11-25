@@ -176,3 +176,14 @@ func (b *CheckResultBuilder) BuildResult() *CheckResultBuilder {
 func (b *CheckResultBuilder) GetResult() *schema.CheckResult {
 	return b.result
 }
+
+// filterChangedFiles filters the list of changed files based on excludes.
+func filterChangedFiles(files []string, excludes []string) []string {
+	filtered := make([]string, 0, len(files))
+	for _, f := range files {
+		if !contract.ShouldIgnore(f, excludes) {
+			filtered = append(filtered, f)
+		}
+	}
+	return filtered
+}

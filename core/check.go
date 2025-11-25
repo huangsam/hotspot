@@ -5,20 +5,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 )
-
-// filterChangedFiles filters the list of changed files based on excludes.
-func filterChangedFiles(files []string, excludes []string) []string {
-	filtered := make([]string, 0, len(files))
-	for _, f := range files {
-		if !contract.ShouldIgnore(f, excludes) {
-			filtered = append(filtered, f)
-		}
-	}
-	return filtered
-}
 
 // printCheckResult prints the check result in a concise format suitable for CI/CD.
 func printCheckResult(result *schema.CheckResult, duration time.Duration) {
