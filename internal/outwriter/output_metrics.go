@@ -52,10 +52,10 @@ func writeMetricsText(w io.Writer, renderModel *schema.MetricsRenderModel, _ *co
 		if _, err := fmt.Fprintf(w, "%s: %s\n", displayName, mode.Purpose); err != nil {
 			return err
 		}
-		if _, err := fmt.Fprintf(w, "   Factors: %s\n", strings.Join(mode.Factors, ", ")); err != nil {
+		if _, err := fmt.Fprintf(w, "  Factors: %s\n", strings.Join(mode.Factors, ", ")); err != nil {
 			return err
 		}
-		if _, err := fmt.Fprintf(w, "   Formula: Score = %s\n", mode.Formula); err != nil {
+		if _, err := fmt.Fprintf(w, "  Formula: Score = %s\n", mode.Formula); err != nil {
 			return err
 		}
 	}
