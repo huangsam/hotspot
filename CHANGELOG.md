@@ -1,5 +1,20 @@
 # 🚀 Changelog
 
+## v1.10.4
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.10.3...v1.10.4)
+
+### Improvements
+
+- **Schema Organization**: Split `schema.go` into multiple focused files
+- **Integration Testing**: Add database integration tests and optimize test setup
+- **Output Formatting**: Reduce metrics indentation
+
+### Development
+
+- **Code Refactoring**: Reorganize schema package and remove external DB rules
+- **Dependencies**: Update Go modules
+
 ## v1.10.3
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.10.2...v1.10.3)
