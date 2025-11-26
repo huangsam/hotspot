@@ -112,7 +112,8 @@ func TestHotspotWithPostgres(t *testing.T) {
 }
 
 func runHotspotCommand(t *testing.T, args ...string) error {
-	cmd := exec.Command("hotspot", args...)
+	hotspotPath := getHotspotBinary()
+	cmd := exec.Command(hotspotPath, args...)
 	cmd.Dir = "../" // Run from project root
 	output, err := cmd.CombinedOutput()
 	if err != nil {
