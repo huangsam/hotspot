@@ -108,6 +108,9 @@ type Config struct {
 	// CustomWeights is a mapping of [ModeName][BreakdownKey] = Weight
 	CustomWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64
 
+	// ComputedWeights is the final weights map for each mode, computed from defaults + custom overrides
+	ComputedWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64
+
 	// RiskThresholds is a mapping of [ModeName] = Threshold score value
 	RiskThresholds map[schema.ScoringMode]float64
 
@@ -179,6 +182,13 @@ func (c *Config) Clone() *Config {
 		for mode, modeMap := range c.CustomWeights {
 			clone.CustomWeights[mode] = make(map[schema.BreakdownKey]float64)
 			maps.Copy(clone.CustomWeights[mode], modeMap)
+		}
+	}
+	if c.ComputedWeights != nil {
+		clone.ComputedWeights = make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
+		for mode, modeMap := range c.ComputedWeights {
+			clone.ComputedWeights[mode] = make(map[schema.BreakdownKey]float64)
+			maps.Copy(clone.ComputedWeights[mode], modeMap)
 		}
 	}
 	if c.RiskThresholds != nil {
@@ -571,12 +581,33 @@ func ProcessWeightsRawInput(weights WeightsRawInput, validateSum bool) (map[sche
 
 // processCustomWeights converts the raw input into the final cfg.CustomWeights map
 // and validates that the provided weights for any mode sum up to 1.0.
+// Also computes the final ComputedWeights for each mode.
 func processCustomWeights(cfg *Config, input *ConfigRawInput) error {
 	weights, err := ProcessWeightsRawInput(input.Weights, true)
 	if err != nil {
 		return err
 	}
 	cfg.CustomWeights = weights
+
+	// Compute final weights for each mode
+	cfg.ComputedWeights = make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
+	for _, mode := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode} {
+		// Start with default weights
+		defaultWeights := schema.GetDefaultWeights(mode)
+
+		// Override with custom weights if provided
+		modeWeights := make(map[schema.BreakdownKey]float64)
+		maps.Copy(modeWeights, defaultWeights)
+
+		if cfg.CustomWeights != nil {
+			if customModeWeights, ok := cfg.CustomWeights[mode]; ok {
+				maps.Copy(modeWeights, customModeWeights)
+			}
+		}
+
+		cfg.ComputedWeights[mode] = modeWeights
+	}
+
 	return nil
 }
 

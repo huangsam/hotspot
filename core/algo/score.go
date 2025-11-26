@@ -35,7 +35,7 @@ func GetWeightsForMode(mode schema.ScoringMode, customWeights map[schema.Scoring
 // - risk: Knowledge risk/bus factor (few contributors, high inequality)
 // - complexity: Technical debt candidates (large, old, high total churn)
 // - stale: Maintenance debt (important but untouched).
-func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, customWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64) float64 {
+func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, weights map[schema.BreakdownKey]float64) float64 {
 	// DEFENSIVE CHECK: If the file has no content, its score should be 0.
 	if m.SizeBytes == 0 {
 		return 0.0
@@ -78,11 +78,30 @@ func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, customWeights m
 
 	// --------------------------------
 
-	breakdown := make(map[schema.BreakdownKey]float64)
 	var raw float64
 
 	// Get weights for the mode
-	weights := GetWeightsForMode(mode, customWeights)
+	// weights := GetWeightsForMode(mode, customWeights)
+
+	// Determine expected number of breakdown keys for this mode
+	expectedSize := 5 // default for HotMode
+	switch mode {
+	case schema.RiskMode:
+		expectedSize = 7
+	case schema.ComplexityMode:
+		expectedSize = 6
+	case schema.StaleMode:
+		expectedSize = 5
+	}
+
+	// Ensure ModeBreakdown is initialized with appropriate capacity
+	if m.ModeBreakdown == nil {
+		m.ModeBreakdown = make(map[schema.BreakdownKey]float64, expectedSize)
+	}
+	breakdown := m.ModeBreakdown
+
+	// Clear any previous entries
+	clear(breakdown)
 
 	// Build breakdown by applying weights to normalized metrics
 	breakdown[schema.BreakdownAge] = weights[schema.BreakdownAge] * nAge
@@ -128,12 +147,9 @@ func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, customWeights m
 		}
 	}
 
-	// Save breakdown (scaled to percent contributions) in the metrics for explain mode.
-	if m.ModeBreakdown == nil {
-		m.ModeBreakdown = make(map[schema.BreakdownKey]float64)
-	}
+	// Scale breakdown values to percent contributions
 	for k, v := range breakdown {
-		m.ModeBreakdown[k] = v * 100.0
+		breakdown[k] = v * 100.0
 	}
 
 	return score

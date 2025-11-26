@@ -212,25 +212,26 @@ func (b *FileResultBuilder) CalculateOwner() *FileResultBuilder {
 // CalculateScore computes the final composite score.
 func (b *FileResultBuilder) CalculateScore() *FileResultBuilder {
 	// Compute score for current mode
-	b.result.ModeScore = algo.ComputeScore(b.result, b.cfg.Mode, b.cfg.CustomWeights)
+	b.result.ModeScore = algo.ComputeScore(b.result, b.cfg.Mode, b.cfg.ComputedWeights[b.cfg.Mode])
 
 	// Compute scores and breakdowns for all modes
 	b.result.AllScores = make(map[schema.ScoringMode]float64)
 	b.result.AllBreakdowns = make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
 
 	for _, mode := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode} {
-		mCopy := *b.result
-		mCopy.Mode = mode
-		score := algo.ComputeScore(&mCopy, mode, b.cfg.CustomWeights)
-		b.result.AllScores[mode] = score
-		b.result.AllBreakdowns[mode] = make(map[schema.BreakdownKey]float64)
-		maps.Copy(b.result.AllBreakdowns[mode], mCopy.ModeBreakdown)
-	}
-
-	// Ensure current mode's breakdown is included
-	if b.result.ModeBreakdown != nil {
-		b.result.AllBreakdowns[b.cfg.Mode] = make(map[schema.BreakdownKey]float64)
-		maps.Copy(b.result.AllBreakdowns[b.cfg.Mode], b.result.ModeBreakdown)
+		if mode == b.cfg.Mode {
+			// Already computed
+			b.result.AllScores[mode] = b.result.ModeScore
+			b.result.AllBreakdowns[mode] = make(map[schema.BreakdownKey]float64, len(b.result.ModeBreakdown))
+			maps.Copy(b.result.AllBreakdowns[mode], b.result.ModeBreakdown)
+		} else {
+			mCopy := *b.result // Shallow copy
+			mCopy.Mode = mode  // Set mode for computation
+			score := algo.ComputeScore(&mCopy, mode, b.cfg.ComputedWeights[mode])
+			b.result.AllScores[mode] = score
+			b.result.AllBreakdowns[mode] = make(map[schema.BreakdownKey]float64, len(mCopy.ModeBreakdown))
+			maps.Copy(b.result.AllBreakdowns[mode], mCopy.ModeBreakdown)
+		}
 	}
 
 	return b
