@@ -23,7 +23,7 @@ INTEGRATION   ?= 0
 # Build and install targets
 .PHONY: all build clean install reinstall
 # Test targets
-.PHONY: test test-all test-integ bench coverage
+.PHONY: test test-all bench coverage
 # Code quality targets
 .PHONY: format lint check
 # Development tools
@@ -67,21 +67,15 @@ reinstall: clean install
 # Run tests
 # FORCE=1: Bypass test cache (default: use cache)
 # INTEGRATION=1: Include integration tests (default: unit tests only)
-# ONLY_INTEGRATION=1: Run only integration tests (internal use)
 test:
-	@if [ "$(ONLY_INTEGRATION)" = "1" ]; then \
-		echo "🧪 Running integration tests only..."; \
-	else \
-		echo "🧪 Running tests..."; \
-	fi; \
-	test_args=""; \
+	@echo "🧪 Running tests..."
+	@test_args=""; \
 	if [ "$(FORCE)" = "1" ]; then test_args="$$test_args -count=1"; echo "💨 Bypassing test cache..."; fi; \
-	if [ "$(ONLY_INTEGRATION)" = "1" ]; then \
-		$(GO) test -tags integration $$test_args ./integration; \
-	elif [ "$(INTEGRATION)" = "1" ]; then \
+	if [ "$(INTEGRATION)" = "1" ]; then \
 		echo "🔗 Including integration tests..."; \
 		$(GO) test $$test_args ./...; \
-		$(GO) test -tags integration $$test_args ./integration; \
+		$(GO) test -tags basic $$test_args ./integration; \
+		$(GO) test -tags database $$test_args ./integration; \
 	else \
 		$(GO) test $$test_args ./...; \
 	fi
@@ -89,8 +83,6 @@ test:
 # Convenience aliases for common test scenarios
 test-all: export INTEGRATION=1
 test-all: test
-test-integ: export ONLY_INTEGRATION=1
-test-integ: test
 
 # Run benchmarks
 bench:
@@ -105,28 +97,15 @@ coverage:
 
 # Run fuzz tests
 # FUZZTIME: Duration to run fuzz tests (default: 10s)
-# FUZZFUNC: Specific fuzz function to run (optional)
 FUZZTIME ?= 10s
 fuzz:
 	@echo "🔬 Running fuzz tests..."
-	@if [ -n "$(FUZZFUNC)" ]; then \
-		echo "Running specific fuzz function: $(FUZZFUNC)"; \
-		for pkg in ./internal ./core; do \
-			$(GO) test -fuzz=$(FUZZFUNC) -fuzztime=$(FUZZTIME) $$pkg || exit 1; \
+	@for pkg in ./internal ./core; do \
+		for fuzzfunc in $$($(GO) test -list=Fuzz $$pkg | grep ^Fuzz); do \
+			echo "Running $$fuzzfunc in $$pkg"; \
+			$(GO) test -fuzz=$$fuzzfunc -fuzztime=$(FUZZTIME) $$pkg || exit 1; \
 		done; \
-		$(GO) test -tags integration -fuzz=$(FUZZFUNC) -fuzztime=$(FUZZTIME) ./integration || exit 1; \
-	else \
-		for pkg in ./internal ./core; do \
-			for fuzzfunc in $$($(GO) test -list=Fuzz $$pkg | grep ^Fuzz); do \
-				echo "Running $$fuzzfunc in $$pkg"; \
-				$(GO) test -fuzz=$$fuzzfunc -fuzztime=$(FUZZTIME) $$pkg || exit 1; \
-			done; \
-		done; \
-		for fuzzfunc in $$($(GO) test -tags integration -list=Fuzz ./integration | grep ^Fuzz); do \
-			echo "Running $$fuzzfunc in ./integration"; \
-			$(GO) test -tags integration -fuzz=$$fuzzfunc -fuzztime=$(FUZZTIME) ./integration || exit 1; \
-		done; \
-	fi
+	done
 	@echo "✅ Fuzz tests complete"
 
 # Run full profiling workflow: build, profile, and show top functions
@@ -164,7 +143,7 @@ format:
 	@$(GOLANGCI_LINT) fmt
 	@if [ "$(INTEGRATION)" = "1" ]; then \
 		echo "📐 Including integration format..."; \
-		$(GOLANGCI_LINT) run --build-tags integration --fix ./integration; \
+		$(GOLANGCI_LINT) run --build-tags 'basic,database' --fix ./integration; \
 	fi
 	@echo "✅ Format complete"
 
@@ -174,7 +153,7 @@ lint:
 	@$(GOLANGCI_LINT) run
 	@if [ "$(INTEGRATION)" = "1" ]; then \
 		echo "🔍 Including integration lint..."; \
-		$(GOLANGCI_LINT) run --build-tags integration ./integration; \
+		$(GOLANGCI_LINT) run --build-tags 'basic,database' ./integration; \
 	fi
 	@echo "✅ Lint complete"
 
@@ -205,7 +184,6 @@ help:
 
 	@echo "  make test                - Runs unit tests (use FORCE=1 to bypass cache)."
 	@echo "  make test-all            - Runs unit + integration tests (use FORCE=1 to bypass cache)."
-	@echo "  make test-integ          - Runs integration tests only (use FORCE=1 to bypass cache)."
 	@echo "  make bench               - Runs Go benchmarks."
 	@echo "  make coverage            - Runs unit tests with coverage."
 

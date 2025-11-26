@@ -1,4 +1,4 @@
-//go:build integration
+//go:build basic
 
 // Package integration contains end-to-end tests for hotspot.
 // These tests verify the complete CLI user experience by building and executing
