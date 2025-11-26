@@ -1,5 +1,26 @@
 # 🚀 Changelog
 
+## v1.10.3
+
+[Full Changelog](https://github.com/huangsam/hotspot/compare/v1.10.2...v1.10.3)
+
+### Improvements
+
+- **Performance**: Optimize memory usage for score calculations
+- **Check Output**: Improve check failure output and add insights to success/failure messages
+- **Schema**: Reorder fields, add line breaks, and refine comments for better structure
+- **Comparison**: Refactor schema terms across multiple files
+- **Documentation**: Update benchmark results, performance details, requirements language, and agentic docs
+
+### Fixes
+
+- **Documentation**: Fix check section references in USERGUIDE and README formatting
+
+### Development
+
+- **Code Refactor**: Reorganize all core tests for readability
+- **Builder Logic**: Migrate filter logic to check builder and split print functions
+
 ## v1.10.2
 
 [Full Changelog](https://github.com/huangsam/hotspot/compare/v1.10.1...v1.10.2)
