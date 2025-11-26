@@ -13,7 +13,7 @@
 ### Development
 
 - **Code Refactoring**: Reorganize schema package and remove external DB rules
-- **Dependencies**: Update Go modules
+- **Dependencies**: Update Go modules and add testcontainers-go
 
 ## v1.10.3
 
