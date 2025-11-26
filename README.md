@@ -87,7 +87,7 @@ This ranking displays the **complexity score** and a colored label based on:
 
 ## Performance
 
-All measurements use default settings with 14 concurrent workers on a MacBook Pro with an M3 Max chip.
+All measurements are done using 14 concurrent workers on a Macbook Pro with the M3 Max chip.
 
 [csv-parser]: https://github.com/vincentlaucsb/csv-parser
 [fd]: https://github.com/sharkdp/fd
