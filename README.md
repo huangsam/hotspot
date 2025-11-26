@@ -42,7 +42,7 @@ Hotspot was born to fix that: providing a transparent, auditable tool for teams 
 ### Requirements
 
 - **Go 1.25+** for building from source
-- **Git 2.2.0+** for `--date=iso-strict` support (used for precise timestamp parsing)
+- **Git 2.2.0+** for repository analysis
 
 ### Install from source
 
