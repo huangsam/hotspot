@@ -315,8 +315,6 @@ func validateBackendConfigs(cfg *Config, input *ConfigRawInput) error {
 				if cacheDBPath == analysisDBPath {
 					return fmt.Errorf("cache and analysis storage must use different SQLite database files. Both resolve to %q", cacheDBPath)
 				}
-			} else if cfg.CacheDBConnect == cfg.AnalysisDBConnect {
-				return fmt.Errorf("cache and analysis storage must use different databases. Both are configured to use the same %s connection", cfg.CacheBackend)
 			}
 		}
 	}

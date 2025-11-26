@@ -42,24 +42,36 @@ func TestHotspotWithMySQL(t *testing.T) {
 	port, err := mysqlC.MappedPort(ctx, "3306")
 	require.NoError(t, err)
 
-	connStr := fmt.Sprintf("root:secret123@tcp(%s:%s)/hotspot", host, port.Port())
+	connStr := fmt.Sprintf("root:secret123@tcp(%s:%s)/hotspot?parseTime=true", host, port.Port())
 
 	// Set environment variables
 	_ = os.Setenv("HOTSPOT_CACHE_BACKEND", "mysql")
 	_ = os.Setenv("HOTSPOT_CACHE_DB_CONNECT", connStr)
+	_ = os.Setenv("HOTSPOT_ANALYSIS_BACKEND", "mysql")
+	_ = os.Setenv("HOTSPOT_ANALYSIS_DB_CONNECT", connStr)
 	defer func() { _ = os.Unsetenv("HOTSPOT_CACHE_BACKEND") }()
 	defer func() { _ = os.Unsetenv("HOTSPOT_CACHE_DB_CONNECT") }()
+	defer func() { _ = os.Unsetenv("HOTSPOT_ANALYSIS_BACKEND") }()
+	defer func() { _ = os.Unsetenv("HOTSPOT_ANALYSIS_DB_CONNECT") }()
 
 	// Run hotspot cache clear
 	err = runHotspotCommand(t, "cache", "clear")
 	require.NoError(t, err)
 
+	// Run hotspot analysis clear
+	err = runHotspotCommand(t, "analysis", "clear")
+	require.NoError(t, err)
+
 	// Run hotspot files (on current dir)
-	err = runHotspotCommand(t, "files")
+	err = runHotspotCommand(t, "files", "--limit", "5")
 	require.NoError(t, err)
 
 	// Run hotspot cache status
 	err = runHotspotCommand(t, "cache", "status")
+	require.NoError(t, err)
+
+	// Run hotspot analysis status
+	err = runHotspotCommand(t, "analysis", "status")
 	require.NoError(t, err)
 }
 
@@ -95,19 +107,31 @@ func TestHotspotWithPostgres(t *testing.T) {
 	// Set environment variables
 	_ = os.Setenv("HOTSPOT_CACHE_BACKEND", "postgresql")
 	_ = os.Setenv("HOTSPOT_CACHE_DB_CONNECT", connStr)
+	_ = os.Setenv("HOTSPOT_ANALYSIS_BACKEND", "postgresql")
+	_ = os.Setenv("HOTSPOT_ANALYSIS_DB_CONNECT", connStr)
 	defer func() { _ = os.Unsetenv("HOTSPOT_CACHE_BACKEND") }()
 	defer func() { _ = os.Unsetenv("HOTSPOT_CACHE_DB_CONNECT") }()
+	defer func() { _ = os.Unsetenv("HOTSPOT_ANALYSIS_BACKEND") }()
+	defer func() { _ = os.Unsetenv("HOTSPOT_ANALYSIS_DB_CONNECT") }()
 
 	// Run hotspot cache clear
 	err = runHotspotCommand(t, "cache", "clear")
 	require.NoError(t, err)
 
+	// Run hotspot analysis clear
+	err = runHotspotCommand(t, "analysis", "clear")
+	require.NoError(t, err)
+
 	// Run hotspot files (on current dir)
-	err = runHotspotCommand(t, "files")
+	err = runHotspotCommand(t, "files", "--limit", "5")
 	require.NoError(t, err)
 
 	// Run hotspot cache status
 	err = runHotspotCommand(t, "cache", "status")
+	require.NoError(t, err)
+
+	// Run hotspot analysis status
+	err = runHotspotCommand(t, "analysis", "status")
 	require.NoError(t, err)
 }
 

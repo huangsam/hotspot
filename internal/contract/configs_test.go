@@ -408,7 +408,7 @@ func TestProcessAndValidate(t *testing.T) {
 			},
 		},
 		{
-			name: "analysis backend same as cache backend with same db should fail",
+			name: "analysis backend same as cache backend with same db should not fail for mysql",
 			input: &ConfigRawInput{
 				Limit:             10,
 				Workers:           4,
@@ -424,8 +424,11 @@ func TestProcessAndValidate(t *testing.T) {
 				Emoji:             "no",
 				Color:             "yes",
 			},
-			expectError: true,
-			setupMock:   nil,
+			expectError: false,
+			setupMock: func(mock *MockGitClient, workDir string) {
+				ctx := context.Background()
+				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
+			},
 		},
 		{
 			name: "invalid analysis backend",
