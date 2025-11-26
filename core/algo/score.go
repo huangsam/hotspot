@@ -1,7 +1,6 @@
 package algo
 
 import (
-	"maps"
 	"math"
 	"path/filepath"
 	"slices"
@@ -9,25 +8,6 @@ import (
 
 	"github.com/huangsam/hotspot/schema"
 )
-
-// GetWeightsForMode returns the weight map for a given scoring mode.
-// If custom weights are provided for the mode, they override the defaults.
-func GetWeightsForMode(mode schema.ScoringMode, customWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64) map[schema.BreakdownKey]float64 {
-	// Start with default weights
-	defaultWeights := schema.GetDefaultWeights(mode)
-
-	// Override with custom weights if provided
-	weights := make(map[schema.BreakdownKey]float64)
-	maps.Copy(weights, defaultWeights)
-
-	if customWeights != nil {
-		if modeWeights, ok := customWeights[mode]; ok {
-			maps.Copy(weights, modeWeights)
-		}
-	}
-
-	return weights
-}
 
 // ComputeScore calculates a file's importance score (0-100) based on its metrics.
 // Supports four core scoring modes:
@@ -83,20 +63,9 @@ func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, weights map[sch
 	// Get weights for the mode
 	// weights := GetWeightsForMode(mode, customWeights)
 
-	// Determine expected number of breakdown keys for this mode
-	expectedSize := 5 // default for HotMode
-	switch mode {
-	case schema.RiskMode:
-		expectedSize = 7
-	case schema.ComplexityMode:
-		expectedSize = 6
-	case schema.StaleMode:
-		expectedSize = 5
-	}
-
 	// Ensure ModeBreakdown is initialized with appropriate capacity
 	if m.ModeBreakdown == nil {
-		m.ModeBreakdown = make(map[schema.BreakdownKey]float64, expectedSize)
+		m.ModeBreakdown = make(map[schema.BreakdownKey]float64, 8) // max across all modes
 	}
 	breakdown := m.ModeBreakdown
 

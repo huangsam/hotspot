@@ -1,6 +1,7 @@
 package algo
 
 import (
+	"maps"
 	"math"
 	"strconv"
 	"strings"
@@ -10,6 +11,26 @@ import (
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 )
+
+// getWeightsForMode returns the weight map for a given scoring mode.
+// If custom weights are provided for the mode, they override the defaults.
+// This is a test helper function.
+func getWeightsForMode(mode schema.ScoringMode, customWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64) map[schema.BreakdownKey]float64 {
+	// Start with default weights
+	defaultWeights := schema.GetDefaultWeights(mode)
+
+	// Override with custom weights if provided
+	weights := make(map[schema.BreakdownKey]float64)
+	maps.Copy(weights, defaultWeights)
+
+	if customWeights != nil {
+		if modeWeights, ok := customWeights[mode]; ok {
+			maps.Copy(weights, modeWeights)
+		}
+	}
+
+	return weights
+}
 
 // TestGini tests the Gini coefficient calculation.
 func TestGini(t *testing.T) {
@@ -84,7 +105,7 @@ func TestComputeScoreAllModes(t *testing.T) {
 
 	for _, mode := range modes {
 		t.Run(string(mode), func(t *testing.T) {
-			weights := GetWeightsForMode(mode, nil)
+			weights := getWeightsForMode(mode, nil)
 			score := ComputeScore(&metrics, mode, weights)
 			assert.True(t, score >= 0 && score <= 100)
 			assert.NotEmpty(t, metrics.ModeBreakdown)
@@ -114,7 +135,7 @@ func BenchmarkComputeScore(b *testing.B) {
 		Mode:               schema.HotMode,
 	}
 
-	weights := GetWeightsForMode(schema.HotMode, nil)
+	weights := getWeightsForMode(schema.HotMode, nil)
 
 	for b.Loop() {
 		ComputeScore(&metrics, schema.HotMode, weights)
@@ -135,7 +156,7 @@ func TestComputeScoreWithCustomWeights(t *testing.T) {
 	}
 
 	// Get default score
-	defaultWeights := GetWeightsForMode(schema.HotMode, nil)
+	defaultWeights := getWeightsForMode(schema.HotMode, nil)
 	defaultScore := ComputeScore(&metrics, schema.HotMode, defaultWeights)
 
 	// Test with custom weights that heavily weight commits
@@ -148,7 +169,7 @@ func TestComputeScoreWithCustomWeights(t *testing.T) {
 			schema.BreakdownSize:    0.02,
 		},
 	}
-	customModeWeights := GetWeightsForMode(schema.HotMode, customWeights)
+	customModeWeights := getWeightsForMode(schema.HotMode, customWeights)
 	customScore := ComputeScore(&metrics, schema.HotMode, customModeWeights)
 
 	// Scores should be different
@@ -179,7 +200,7 @@ func TestComputeScoreCustomWeightsAllModes(t *testing.T) {
 	for _, mode := range modes {
 		t.Run(string(mode), func(t *testing.T) {
 			// Get default score
-			defaultWeights := GetWeightsForMode(mode, nil)
+			defaultWeights := getWeightsForMode(mode, nil)
 			defaultScore := ComputeScore(&metrics, mode, defaultWeights)
 
 			// Create custom weights that emphasize different aspects
@@ -204,7 +225,7 @@ func TestComputeScoreCustomWeightsAllModes(t *testing.T) {
 				customWeights[mode][schema.BreakdownAge] = 0.2
 			}
 
-			customModeWeights := GetWeightsForMode(mode, customWeights)
+			customModeWeights := getWeightsForMode(mode, customWeights)
 			customScore := ComputeScore(&metrics, mode, customModeWeights)
 
 			// Both should be valid scores
@@ -233,13 +254,13 @@ func TestComputeScoreInvalidCustomWeights(t *testing.T) {
 	}
 
 	// Test with nil custom weights (should use defaults)
-	defaultWeights := GetWeightsForMode(schema.HotMode, nil)
+	defaultWeights := getWeightsForMode(schema.HotMode, nil)
 	score := ComputeScore(&metrics, schema.HotMode, defaultWeights)
 	assert.True(t, score >= 0 && score <= 100, "Score with nil custom weights should be valid")
 
 	// Test with empty custom weights map (should use defaults)
 	emptyWeights := map[schema.ScoringMode]map[schema.BreakdownKey]float64{}
-	emptyModeWeights := GetWeightsForMode(schema.HotMode, emptyWeights)
+	emptyModeWeights := getWeightsForMode(schema.HotMode, emptyWeights)
 	score = ComputeScore(&metrics, schema.HotMode, emptyModeWeights)
 	assert.True(t, score >= 0 && score <= 100, "Score with empty custom weights should be valid")
 }
@@ -327,7 +348,7 @@ func FuzzComputeScore(f *testing.F) {
 			RecentCommits:      recentCommits,
 			Mode:               schema.ScoringMode(mode),
 		}
-		_ = ComputeScore(&result, schema.ScoringMode(mode), GetWeightsForMode(schema.ScoringMode(mode), nil))
+		_ = ComputeScore(&result, schema.ScoringMode(mode), getWeightsForMode(schema.ScoringMode(mode), nil))
 	})
 }
 
