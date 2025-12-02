@@ -85,10 +85,10 @@ For complex or repetitive commands, Hotspot can read all flags from a configurat
 
 This allows you to manage settings without long command-line strings. Flags always override file settings. We provide four documented examples in the `examples/` directory to cover common use cases:
 
-1.  [hotspot.basic.yml](./examples/hotspot.basic.yml): Quick setup for local development
-2.  [hotspot.ci.yml](./examples/hotspot.ci.yml): Optimized settings for CI/CD policy enforcement
-3.  [hotspot.docs.yml](./examples/hotspot.docs.yml): The canonical template listing every available setting
-4.  [hotspot.weights.yml](./examples/hotspot.weights.yml): Advanced customization of scoring algorithm weights
+1. [hotspot.basic.yml](./examples/hotspot.basic.yml): Quick setup for local development
+2. [hotspot.ci.yml](./examples/hotspot.ci.yml): Optimized settings for CI/CD policy enforcement
+3. [hotspot.docs.yml](./examples/hotspot.docs.yml): The canonical template listing every available setting
+4. [hotspot.weights.yml](./examples/hotspot.weights.yml): Advanced customization of scoring algorithm weights
 
 ### Backend configuration
 
