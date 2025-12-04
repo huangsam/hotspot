@@ -571,15 +571,15 @@ func init() {
 	rootCmd.AddCommand(cacheCmd)
 	rootCmd.AddCommand(analysisCmd)
 
-	// Add the file comparison subcommand to the parent compare command
+	// Add the compare subcommands to the parent compare command
 	compareCmd.AddCommand(compareFilesCmd)
 	compareCmd.AddCommand(compareFoldersCmd)
 
-	// Add the clear subcommand to the parent cache command
+	// Add the cache subcommands to the parent cache command
 	cacheCmd.AddCommand(cacheClearCmd)
 	cacheCmd.AddCommand(cacheStatusCmd)
 
-	// Add the clear subcommand to the parent analysis command
+	// Add the analysis subcommands to the parent analysis command
 	analysisCmd.AddCommand(analysisClearCmd)
 	analysisCmd.AddCommand(analysisStatusCmd)
 	analysisCmd.AddCommand(analysisExportCmd)
