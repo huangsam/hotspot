@@ -1,4 +1,4 @@
-# 🤝 Contributing to Hotspot
+# Contributing to Hotspot
 
 We warmly welcome contributions to Hotspot! Whether you're reporting a bug, suggesting a new feature, or submitting a code change, your input helps make Hotspot a better tool for everyone.
 
