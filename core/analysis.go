@@ -2,7 +2,6 @@ package core
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -62,7 +61,16 @@ func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client con
 	// --- 2. File List Building and Filtering ---
 	files := agg.BuildFilteredFileList(cfg, output)
 	if len(files) == 0 {
-		return nil, errors.New("no files found")
+		var suggestion string
+		switch {
+		case cfg.PathFilter != "":
+			suggestion = fmt.Sprintf(" (try removing --filter '%s' or using --exclude differently)", cfg.PathFilter)
+		case len(cfg.Excludes) > 0:
+			suggestion = fmt.Sprintf(" (try adjusting excludes: %v)", cfg.Excludes)
+		default:
+			suggestion = " (ensure your repository has tracked files in the analysis time range)"
+		}
+		return nil, fmt.Errorf("no files found for analysis at %s%s", cfg.RepoPath, suggestion)
 	}
 
 	// --- 3. Core Analysis ---

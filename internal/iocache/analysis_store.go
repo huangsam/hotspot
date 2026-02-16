@@ -40,7 +40,7 @@ func NewAnalysisStore(backend schema.DatabaseBackend, connStr string) (contract.
 		}
 		db, err = sql.Open(driverName, dbPath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to open SQLite database: %w", err)
+			return nil, fmt.Errorf("failed to open SQLite database at %q: %w. Check that the directory is writable", dbPath, err)
 		}
 		// Limit SQLite to a single open connection to avoid "database is locked" errors
 		db.SetMaxOpenConns(1)
@@ -49,14 +49,14 @@ func NewAnalysisStore(backend schema.DatabaseBackend, connStr string) (contract.
 		driverName = "mysql"
 		db, err = sql.Open(driverName, connStr)
 		if err != nil {
-			return nil, fmt.Errorf("failed to open MySQL database: %w", err)
+			return nil, fmt.Errorf("failed to open MySQL database: %w. Check connection string format: user:password@tcp(host:port)/dbname", err)
 		}
 
 	case schema.PostgreSQLBackend:
 		driverName = "pgx"
 		db, err = sql.Open(driverName, connStr)
 		if err != nil {
-			return nil, fmt.Errorf("failed to open PostgreSQL database: %w", err)
+			return nil, fmt.Errorf("failed to open PostgreSQL database: %w. Check connection string format: postgres://user:password@host:port/dbname", err)
 		}
 
 	case schema.NoneBackend:
@@ -74,7 +74,16 @@ func NewAnalysisStore(backend schema.DatabaseBackend, connStr string) (contract.
 	// Ping to verify connection
 	if err := db.Ping(); err != nil {
 		_ = db.Close()
-		return nil, fmt.Errorf("failed to ping %s database: %w", backend, err)
+		var connDetail string
+		switch backend {
+		case schema.MySQLBackend:
+			connDetail = "Check that MySQL is running and the connection string is correct. Ensure user/password are valid."
+		case schema.PostgreSQLBackend:
+			connDetail = "Check that PostgreSQL is running and the connection string is correct. Ensure user/password are valid."
+		default:
+			connDetail = "Verify the database server is running and accessible."
+		}
+		return nil, fmt.Errorf("failed to connect to %s database: %w. %s", backend, err, connDetail)
 	}
 
 	// Create the table schemas

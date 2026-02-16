@@ -126,13 +126,13 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *contract.Config, mgr con
 	numPoints := cfg.TimeseriesPoints
 
 	if path == "" {
-		return errors.New("--path is required")
+		return errors.New("--path is required for timeseries analysis (e.g., 'src/main.go' or 'pkg/mypackage')")
 	}
 	if interval == 0 {
-		return errors.New("--interval is required")
+		return errors.New("--interval is required (e.g., --interval 6months or --interval 180d)")
 	}
 	if numPoints < 1 {
-		return errors.New("--points must be at least 1")
+		return fmt.Errorf("--points must be at least 1 (received %d). Use --points 3 to --points 10 for meaningful trends", numPoints)
 	}
 
 	now := time.Now()
@@ -141,14 +141,14 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *contract.Config, mgr con
 	// Normalize and validate the path relative to repo root
 	normalizedPath, err := contract.NormalizeTimeseriesPath(cfg.RepoPath, path)
 	if err != nil {
-		return fmt.Errorf("invalid path: %w", err)
+		return fmt.Errorf("invalid path %q: %w. Path must be relative to the repository root (%s)", path, err, cfg.RepoPath)
 	}
 
 	// Check if path exists and determine if it's a file or folder
 	fullPath := filepath.Join(cfg.RepoPath, normalizedPath)
 	info, err := os.Stat(fullPath)
 	if err != nil {
-		return fmt.Errorf("path does not exist: %s", normalizedPath)
+		return fmt.Errorf("path %q does not exist in repository. Use 'hotspot files' to see available paths", path)
 	}
 	isFolder := info.IsDir()
 

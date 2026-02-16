@@ -178,7 +178,7 @@ func TestExecuteHotspotCheck(t *testing.T) {
 	}
 	err := ExecuteHotspotCheck(ctx, cfg, mockCacheMgr)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "check requires --base-ref and --target-ref flags")
+	assert.Contains(t, err.Error(), "check command requires --base-ref and --target-ref flags")
 
 	// Test with compare mode but non-existent repo (should fail)
 	cfg = &contract.Config{

@@ -255,23 +255,23 @@ func ValidateDatabaseConnectionString(backend schema.DatabaseBackend, connStr st
 		return nil
 	case schema.MySQLBackend:
 		if connStr == "" {
-			return fmt.Errorf("cache-db-connect is required when using %s backend", backend)
+			return fmt.Errorf("--cache-db-connect is required for MySQL backend. Example: 'user:password@tcp(localhost:3306)/hotspot'")
 		}
 		if !strings.Contains(connStr, "@tcp(") {
-			return fmt.Errorf("MySQL connection string must contain '@tcp(' for host:port specification")
+			return fmt.Errorf("MySQL connection string must contain '@tcp(' for host:port specification. Format: 'user:password@tcp(host:port)/dbname'. Got: %q", connStr)
 		}
 		if !strings.Contains(connStr, "/") {
-			return fmt.Errorf("MySQL connection string must contain '/' followed by database name")
+			return fmt.Errorf("MySQL connection string must contain '/' followed by database name. Format: 'user:password@tcp(host:port)/dbname'. Got: %q", connStr)
 		}
 	case schema.PostgreSQLBackend:
 		if connStr == "" {
-			return fmt.Errorf("cache-db-connect is required when using %s backend", backend)
+			return fmt.Errorf("--cache-db-connect is required for PostgreSQL backend. Example: 'postgres://user:password@localhost:5432/hotspot?sslmode=disable'")
 		}
 		if !strings.Contains(connStr, "host=") {
-			return fmt.Errorf("PostgreSQL connection string must contain 'host=' parameter")
+			return fmt.Errorf("PostgreSQL connection string must contain 'host=' parameter. Format: 'postgres://user:password@host:port/dbname?sslmode=disable'. Got: %q", connStr)
 		}
 		if !strings.Contains(connStr, "dbname=") {
-			return fmt.Errorf("PostgreSQL connection string must contain 'dbname=' parameter")
+			return fmt.Errorf("PostgreSQL connection string must contain 'dbname=' parameter. Format: 'postgres://user:password@host:port/dbname?sslmode=disable'. Got: %q", connStr)
 		}
 	}
 	return nil
@@ -282,7 +282,7 @@ func validateBackendConfigs(cfg *Config, input *ConfigRawInput) error {
 	// --- Cache Backend Validation ---
 	cfg.CacheBackend = schema.DatabaseBackend(strings.ToLower(input.CacheBackend))
 	if _, ok := schema.ValidDatabaseBackends[cfg.CacheBackend]; !ok {
-		return fmt.Errorf("invalid cache backend '%s'. must be sqlite, mysql, postgresql, none", input.CacheBackend)
+		return fmt.Errorf("invalid cache backend '%s'. Must be one of: sqlite (default), mysql, postgresql, none", input.CacheBackend)
 	}
 	cfg.CacheDBConnect = input.CacheDBConnect
 	if err := ValidateDatabaseConnectionString(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
@@ -293,7 +293,7 @@ func validateBackendConfigs(cfg *Config, input *ConfigRawInput) error {
 	cfg.AnalysisBackend = schema.DatabaseBackend(strings.ToLower(input.AnalysisBackend))
 	if cfg.AnalysisBackend != "" {
 		if _, ok := schema.ValidDatabaseBackends[cfg.AnalysisBackend]; !ok {
-			return fmt.Errorf("invalid analysis backend '%s'. must be sqlite, mysql, postgresql, none", input.AnalysisBackend)
+			return fmt.Errorf("invalid analysis backend '%s'. Must be one of: sqlite, mysql, postgresql, none", input.AnalysisBackend)
 		}
 		cfg.AnalysisDBConnect = input.AnalysisDBConnect
 		if err := ValidateDatabaseConnectionString(cfg.AnalysisBackend, cfg.AnalysisDBConnect); err != nil {
@@ -349,31 +349,31 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 
 	// --- 1. ResultLimit Validation ---
 	if input.Limit <= 0 || input.Limit > MaxResultLimit {
-		return fmt.Errorf("limit must be greater than 0 and cannot exceed %d (received %d)", MaxResultLimit, input.Limit)
+		return fmt.Errorf("--limit (%d) must be between 1 and %d. Limit controls how many results to display", input.Limit, MaxResultLimit)
 	}
 	cfg.ResultLimit = input.Limit
 
 	// --- 2. Workers Validation ---
 	if input.Workers <= 0 {
-		return fmt.Errorf("workers must be greater than 0 (received %d)", input.Workers)
+		return fmt.Errorf("--workers (%d) must be greater than 0. Recommend 1-%d based on your CPU cores", input.Workers, runtime.NumCPU())
 	}
 	cfg.Workers = input.Workers
 
 	// --- 3. Mode Validation ---
 	cfg.Mode = schema.ScoringMode(strings.ToLower(input.Mode))
 	if _, ok := schema.ValidScoringModes[cfg.Mode]; !ok {
-		return fmt.Errorf("invalid mode '%s'. must be hot, risk, complexity, stale", input.Mode)
+		return fmt.Errorf("invalid mode '%s'. Must be one of: hot (activity), risk (knowledge distribution), complexity (technical debt), stale (maintenance debt)", input.Mode)
 	}
 
 	// --- 4. Precision and Output Validation ---
 	if input.Precision < 1 || input.Precision > 2 {
-		return fmt.Errorf("precision must be 1 or 2 (received %d)", input.Precision)
+		return fmt.Errorf("--precision (%d) must be 1 or 2 (controls decimal places in output)", input.Precision)
 	}
 	cfg.Precision = input.Precision
 
 	cfg.Output = schema.OutputMode(strings.ToLower(input.Output))
 	if _, ok := schema.ValidOutputModes[cfg.Output]; !ok {
-		return fmt.Errorf("invalid output format '%s'. must be text, csv, json", cfg.Output)
+		return fmt.Errorf("invalid output format '%s'. Must be one of: text (pretty table), csv (comma-separated), json (structured), parquet (analytics)", cfg.Output)
 	}
 
 	// --- 5. Backend Validation ---
@@ -464,7 +464,7 @@ func processCompareMode(cfg *Config, input *ConfigRawInput) error {
 	cfg.CompareMode = true
 
 	if cfg.BaseRef == "" {
-		return fmt.Errorf("must specify --base-ref when running the compare command")
+		return fmt.Errorf("--base-ref is required for compare command. Example: hotspot compare files --base-ref main --target-ref feature")
 	}
 	if cfg.TargetRef == "" {
 		cfg.TargetRef = "HEAD"

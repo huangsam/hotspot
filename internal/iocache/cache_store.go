@@ -44,7 +44,7 @@ func NewCacheStore(tableName string, backend schema.DatabaseBackend, connStr str
 		}
 		db, err = sql.Open(driverName, dbPath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to open SQLite database: %w", err)
+			return nil, fmt.Errorf("failed to initialize SQLite cache at %q: %w. Ensure the directory is writable", dbPath, err)
 		}
 		// Limit SQLite to a single open connection to avoid "database is locked" errors
 		db.SetMaxOpenConns(1)
@@ -55,7 +55,7 @@ func NewCacheStore(tableName string, backend schema.DatabaseBackend, connStr str
 		driverName = "mysql"
 		db, err = sql.Open(driverName, connStr)
 		if err != nil {
-			return nil, fmt.Errorf("failed to open MySQL database: %w", err)
+			return nil, fmt.Errorf("failed to connect to MySQL cache: %w. Check connection format: user:password@tcp(host:port)/dbname", err)
 		}
 
 	case schema.PostgreSQLBackend:
@@ -64,7 +64,7 @@ func NewCacheStore(tableName string, backend schema.DatabaseBackend, connStr str
 		driverName = "pgx"
 		db, err = sql.Open(driverName, connStr)
 		if err != nil {
-			return nil, fmt.Errorf("failed to open PostgreSQL database: %w", err)
+			return nil, fmt.Errorf("failed to connect to PostgreSQL cache: %w. Check connection format: host=localhost port=5432 user=postgres dbname=mydb", err)
 		}
 
 	case schema.NoneBackend:
@@ -78,13 +78,13 @@ func NewCacheStore(tableName string, backend schema.DatabaseBackend, connStr str
 		}, nil
 
 	default:
-		return nil, fmt.Errorf("unsupported cache backend: %s", backend)
+		return nil, fmt.Errorf("unsupported cache backend: %s. Must be sqlite, mysql, postgresql, or none", backend)
 	}
 
 	// Ping to verify connection (skip for NoneBackend)
 	if err := db.Ping(); err != nil {
 		_ = db.Close()
-		return nil, fmt.Errorf("failed to ping %s database: %w", backend, err)
+		return nil, fmt.Errorf("failed to connect to %s database. Check that the server is running and connection parameters are valid: %w", backend, err)
 	}
 
 	// Create the table schema

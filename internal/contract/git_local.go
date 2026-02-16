@@ -27,9 +27,10 @@ func (c *LocalGitClient) Run(_ context.Context, repoPath string, args ...string)
 	out, err := cmd.Output()
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
-		return nil, fmt.Errorf("git '%v' exit: %s", strings.Join(fullArgs, " "), strings.TrimSpace(string(exitErr.Stderr)))
+		stderr := strings.TrimSpace(string(exitErr.Stderr))
+		return nil, fmt.Errorf("git command failed in %q: %s. If this is not a Git repository, verify the path or run 'git init'", repoPath, stderr)
 	} else if err != nil {
-		return nil, fmt.Errorf("git '%v' unknown: %w", strings.Join(fullArgs, " "), err)
+		return nil, fmt.Errorf("git command failed: %w. Ensure Git is installed and available on your PATH", err)
 	}
 	return out, nil
 }

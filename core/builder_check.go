@@ -39,13 +39,13 @@ func NewCheckResultBuilder(ctx context.Context, cfg *contract.Config, mgr contra
 func (b *CheckResultBuilder) ValidatePrerequisites() (*CheckResultBuilder, error) {
 	// Validate that compare mode is enabled
 	if !b.cfg.CompareMode {
-		return nil, fmt.Errorf("check requires --base-ref and --target-ref flags")
+		return nil, fmt.Errorf("check command requires --base-ref and --target-ref flags. Example: hotspot check --base-ref main --target-ref feature")
 	}
 
 	// Get the list of changed files between base and target refs
 	changedFiles, err := b.client.GetChangedFilesBetweenRefs(b.ctx, b.cfg.RepoPath, b.cfg.BaseRef, b.cfg.TargetRef)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get changed files: %w", err)
+		return nil, fmt.Errorf("failed to get changed files between %q and %q: %w. Verify both refs exist in the repository", b.cfg.BaseRef, b.cfg.TargetRef, err)
 	}
 
 	if len(changedFiles) == 0 {
@@ -70,7 +70,7 @@ func (b *CheckResultBuilder) PrepareAnalysisConfig() (*CheckResultBuilder, error
 	// Get the time window for the target ref
 	_, targetEndTime, err := getAnalysisWindowForRef(b.ctx, b.client, b.cfg.RepoPath, b.cfg.TargetRef, b.cfg.Lookback)
 	if err != nil {
-		return nil, fmt.Errorf("failed to resolve time window for target ref '%s': %w", b.cfg.TargetRef, err)
+		return nil, fmt.Errorf("failed to analyze target ref %q: %w. Verify the ref exists and has commits", b.cfg.TargetRef, err)
 	}
 
 	// Create config for target ref analysis
@@ -85,7 +85,7 @@ func (b *CheckResultBuilder) RunAnalysis() (*CheckResultBuilder, error) {
 	// Run aggregation once (shared for all modes)
 	output, err := agg.CachedAggregateActivity(b.ctx, b.cfgTarget, b.client, b.mgr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to aggregate activity: %w", err)
+		return nil, fmt.Errorf("failed to analyze repository activity: %w. Verify the repository has Git history and is readable", err)
 	}
 
 	// Analyze files once (all scores are computed upfront in FileResult)
