@@ -237,6 +237,7 @@ func runBenchmark(config BenchmarkConfig, repoPath, command, extraArgs, cacheBac
 	return sum / float64(len(times))
 }
 
+// parseArgs parses a string of command-line arguments into a slice.
 func parseArgs(argsStr string) []string {
 	var args []string
 	var current strings.Builder
