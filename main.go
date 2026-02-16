@@ -361,9 +361,33 @@ var compareCmd = &cobra.Command{
 
 // checkCmd focused on CI/CD policy enforcement.
 var checkCmd = &cobra.Command{
-	Use:     "check [repo-path]",
-	Short:   "Check files changed between refs against risk thresholds for CI/CD gating.",
-	Long:    `The check command analyzes only files changed between two Git references and enforces policy thresholds. Designed specifically for CI/CD pipelines, it fails with a non-zero exit code if any file exceeds configured risk thresholds (default: 50.0 for all modes).`,
+	Use:   "check [repo-path]",
+	Short: "Enforce risk thresholds for CI/CD pipelines (fails build on violations)",
+	Long: `Analyze ONLY changed files between Git references and enforce risk policy thresholds.
+
+Designed specifically for CI/CD integration - fails with non-zero exit code when files
+exceed acceptable risk levels. Analyzes only the changed files, making it fast and focused.
+
+Default thresholds: 50.0 for all modes (hot, risk, complexity, stale)
+
+Use cases:
+- Pull request gates - block merges with high-risk changes
+- Release validation - ensure no critical files before deployment
+- Quality enforcement - maintain code health standards
+- Prevent regression - catch risk increases automatically
+
+Examples:
+  # Check PR changes against main branch
+  hotspot check --base-ref origin/main --target-ref HEAD
+
+  # Custom thresholds per mode
+  hotspot check --base-ref main --target-ref feature --thresholds-override "hot:75,risk:60,complexity:80,stale:70"
+
+  # Check release candidate
+  hotspot check --base-ref v1.0.0 --target-ref v1.1.0-rc1
+
+  # Focus on complexity in recent changes
+  hotspot check --mode complexity --lookback "7 days" --thresholds-override "complexity:70"`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
@@ -386,9 +410,30 @@ func checkCompareAndExecute(executeFunc core.ExecutorFunc) {
 
 // compareFilesCmd looks at file deltas.
 var compareFilesCmd = &cobra.Command{
-	Use:     "files [repo-path]",
-	Short:   "Compare file-level risk metrics (the default unit of comparison).",
-	Long:    `The files subcommand runs two separate file analyses (Base vs. Target) and reports change in risk scores.`,
+	Use:   "files [repo-path]",
+	Short: "Compare file-level risk metrics between Git references",
+	Long: `Compare individual file risk scores between two points in repository history.
+
+This helps you understand which files have become riskier or safer, making it ideal for:
+- Release audits - see what changed between versions
+- Refactoring validation - verify improvements actually reduced risk
+- Sprint reviews - track risk trends over development cycles
+- Pre-merge checks - ensure PRs don't introduce high-risk files
+
+The comparison shows before/after scores, deltas, and ranking changes for each file.
+
+Examples:
+  # Compare files between releases
+  hotspot compare files --base-ref v1.0.0 --target-ref v1.1.0
+
+  # See complexity changes in feature branch
+  hotspot compare files --mode complexity --base-ref main --target-ref feature-xyz
+
+  # Check last 30 days of changes
+  hotspot compare files --lookback "30 days"
+
+  # Export comparison to CSV for tracking
+  hotspot compare files --base-ref v1.0.0 --target-ref HEAD --output csv --output-file comparison.csv`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
@@ -398,9 +443,25 @@ var compareFilesCmd = &cobra.Command{
 
 // compareFoldersCmd looks at folder deltas.
 var compareFoldersCmd = &cobra.Command{
-	Use:     "folders [repo-path]",
-	Short:   "Compare folder-level risk metrics (the default unit of comparison).",
-	Long:    `The folders subcommand runs two separate folder analyses (Base vs. Target) and reports change in risk scores.`,
+	Use:   "folders [repo-path]",
+	Short: "Compare folder-level risk metrics between Git references",
+	Long: `Compare folder/directory risk scores between two points in repository history.
+
+Provides a high-level view of subsystem health changes, ideal for:
+- Architecture reviews - identify which subsystems are deteriorating
+- Team allocation - find areas needing more attention
+- Migration planning - track improvements during rewrites
+- Quarterly planning - strategic risk assessment
+
+Examples:
+  # Compare subsystem health between releases
+  hotspot compare folders --base-ref v2.0.0 --target-ref v2.1.0
+
+  # Check if refactoring improved core modules
+  hotspot compare folders --mode complexity --base-ref before-refactor --target-ref after-refactor
+
+  # Monitor risk trends over 6 months
+  hotspot compare folders --lookback "6 months"`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
@@ -423,9 +484,30 @@ var versionCmd = &cobra.Command{
 
 // metricsCmd displays the formal definitions of all scoring modes.
 var metricsCmd = &cobra.Command{
-	Use:     "metrics",
-	Short:   "Display formal definitions of all scoring modes.",
-	Long:    `The metrics command shows the purpose, factors, and mathematical formulas for all four core scoring modes without performing Git analysis.`,
+	Use:   "metrics",
+	Short: "Display mathematical formulas and definitions for all scoring modes",
+	Long: `Show the formal definitions, formulas, and factor weights for all scoring modes.
+
+Provides complete transparency into how files are ranked, including:
+- Scoring mode purpose and focus
+- Factor names and their contribution weights
+- Mathematical formula for score calculation
+- Custom weights if configured via .hotspot.yaml
+
+No Git analysis is performed - this is purely informational.
+
+Use this to:
+- Understand what each scoring mode measures
+- Explain scoring logic to your team
+- Validate custom weight configurations
+- Document scoring methodology
+
+Examples:
+  # Show default scoring formulas
+  hotspot metrics
+
+  # View with custom weights from config file
+  hotspot metrics --config .hotspot.yaml`,
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := core.ExecuteHotspotMetrics(rootCtx, cfg, cacheManager); err != nil {
@@ -436,9 +518,31 @@ var metricsCmd = &cobra.Command{
 
 // timeseriesCmd analyzes the timeseries of hotspot scores for a specific path.
 var timeseriesCmd = &cobra.Command{
-	Use:     "timeseries [repo-path]",
-	Short:   "Show timeseries of hotspot scores for a specific path.",
-	Long:    `The timeseries command analyzes the hotspot score over time for a single file or folder.`,
+	Use:   "timeseries [repo-path]",
+	Short: "Track how risk scores change over time for a specific file or folder",
+	Long: `Analyze the trend of hotspot scores over time for a single file or folder path.
+
+Shows score evolution across multiple time periods, helping you:
+- Identify when risk started increasing
+- Validate that refactoring reduced risk over time
+- Track maintenance debt accumulation
+- Understand long-term file health trends
+
+The analysis divides your specified interval into equal time windows and computes
+the score for each period, showing the complete historical trajectory.
+
+Examples:
+  # Track complexity of main.go over 6 months (3 data points)
+  hotspot timeseries --path main.go --mode complexity --interval "6 months" --points 3
+
+  # See how core/ folder risk evolved over a year
+  hotspot timeseries --path core/ --mode risk --interval "1 year" --points 4
+
+  # Monitor stale score changes recently
+  hotspot timeseries --path src/api.go --mode stale --interval "90 days" --points 6
+
+  # Check if refactoring improved utils/ folder
+  hotspot timeseries --path internal/utils/ --interval "120 days" --points 4`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
@@ -455,15 +559,47 @@ var timeseriesCmd = &cobra.Command{
 // and complex config processing for simple cache operations.
 var cacheCmd = &cobra.Command{
 	Use:   "cache",
-	Short: "Manage cache operations.",
-	Long:  `The cache command provides subcommands for managing the application's cache.`,
+	Short: "Manage Git activity cache (improves performance)",
+	Long: `Manage the Git activity cache that speeds up repeated analyses.
+
+Hotspot caches Git log aggregation results to avoid re-parsing history on every run.
+This dramatically improves performance when analyzing the same repository multiple times.
+
+Supported backends: SQLite (default), MySQL, PostgreSQL, or None (in-memory)
+
+Subcommands:
+  status - Show cache statistics and connection info
+  clear  - Remove all cached data
+
+Examples:
+  # Check cache status
+  hotspot cache status
+
+  # Clear cache after major repository changes
+  hotspot cache clear`,
 }
 
 // cacheClearCmd clears the cache.
 var cacheClearCmd = &cobra.Command{
-	Use:     "clear",
-	Short:   "Clear the cache for the configured backend.",
-	Long:    `The clear subcommand removes all cached data for the current backend configuration.`,
+	Use:   "clear",
+	Short: "Remove all cached Git activity data",
+	Long: `Delete all cached Git activity data from the configured backend.
+
+Use this when:
+- Repository history was rewritten (rebase, force push)
+- Cache may be stale or corrupted
+- Testing performance without cache
+- Switching analysis time ranges significantly
+
+For SQLite: Deletes the database file
+For MySQL/PostgreSQL: Drops the cache table
+
+Examples:
+  # Clear SQLite cache (default)
+  hotspot cache clear
+
+  # Clear MySQL cache
+  HOTSPOT_CACHE_BACKEND=mysql HOTSPOT_CACHE_DB_CONNECT="user:pass@tcp(localhost:3306)/hotspot" hotspot cache clear`,
 	PreRunE: cacheSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := iocache.ClearCache(cfg.CacheBackend, contract.GetCacheDBFilePath(), cfg.CacheDBConnect); err != nil {
@@ -475,9 +611,25 @@ var cacheClearCmd = &cobra.Command{
 
 // cacheStatusCmd shows cache status.
 var cacheStatusCmd = &cobra.Command{
-	Use:     "status",
-	Short:   "Show cache status information.",
-	Long:    `The status subcommand displays information about the cache store including total entries, last run, and connection status.`,
+	Use:   "status",
+	Short: "Display cache statistics and connection details",
+	Long: `Show detailed information about the Git activity cache.
+
+Displays:
+- Backend type and connection status
+- Total number of cached entries
+- Last and oldest cache entry timestamps
+- Cache database size
+
+Use this to:
+- Verify cache is working and connected
+- Monitor cache growth over time
+- Check when cache was last updated
+- Debug cache-related issues
+
+Examples:
+  # Check cache status
+  hotspot cache status`,
 	PreRunE: cacheSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		status, err := iocache.Manager.GetActivityStore().GetStatus()
@@ -495,15 +647,58 @@ var cacheStatusCmd = &cobra.Command{
 // and complex config processing for simple analysis operations.
 var analysisCmd = &cobra.Command{
 	Use:   "analysis",
-	Short: "Manage analysis data operations.",
-	Long:  `The analysis command provides subcommands for managing the application's analysis data.`,
+	Short: "Manage historical analysis tracking and exports",
+	Long: `Manage historical analysis data used for trend tracking and reporting.
+
+When enabled, Hotspot tracks every analysis run, storing:
+- Run metadata (timestamp, configuration, duration)
+- File scores across all modes (hot, risk, complexity, stale)
+- Raw Git metrics (commits, churn, contributors, etc.)
+
+This enables longitudinal analysis, trend detection, and data export for BI tools.
+
+Supported backends: SQLite (default), MySQL, PostgreSQL, or None (disabled)
+
+Subcommands:
+  status  - Show analysis tracking statistics
+  export  - Export data to Parquet for analytics
+  clear   - Remove all tracking data
+  migrate - Run database schema migrations
+
+Examples:
+  # Check tracking status
+  hotspot analysis status
+
+  # Export for analysis in pandas/DuckDB
+  hotspot analysis export --output-file analysis-data.parquet`,
 }
 
 // analysisClearCmd clears the analysis data.
 var analysisClearCmd = &cobra.Command{
-	Use:     "clear",
-	Short:   "Clear the analysis data for the configured backend.",
-	Long:    `The clear subcommand removes all analysis tracking data for the current backend configuration.`,
+	Use:   "clear",
+	Short: "Remove all historical analysis tracking data",
+	Long: `Delete all stored analysis runs and file score history.
+
+This removes:
+- All analysis run metadata
+- Historical file scores across all modes
+- Raw Git metrics for analyzed files
+
+⚠️  WARNING: This action cannot be undone. Consider exporting data first.
+
+Use this when:
+- Resetting trend tracking
+- Database storage is full
+- Starting fresh analysis history
+- Testing analysis features
+
+Examples:
+  # Export before clearing
+  hotspot analysis export --output-file backup.parquet
+  hotspot analysis clear
+
+  # Clear and start fresh
+  hotspot analysis clear`,
 	PreRunE: analysisSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := iocache.ClearAnalysis(cfg.AnalysisBackend, contract.GetAnalysisDBFilePath(), cfg.AnalysisDBConnect); err != nil {
@@ -515,9 +710,26 @@ var analysisClearCmd = &cobra.Command{
 
 // analysisStatusCmd shows analysis status.
 var analysisStatusCmd = &cobra.Command{
-	Use:     "status",
-	Short:   "Show analysis status information.",
-	Long:    `The status subcommand displays information about the analysis store including total runs, last run, and connection status.`,
+	Use:   "status",
+	Short: "Display analysis tracking statistics and connection details",
+	Long: `Show detailed information about historical analysis tracking.
+
+Displays:
+- Backend type and connection status
+- Total number of analysis runs stored
+- Last and oldest analysis run timestamps
+- Total files analyzed across all runs
+- Database table sizes
+
+Use this to:
+- Verify analysis tracking is enabled and working
+- Monitor data accumulation over time
+- Check database connection health
+- Estimate storage requirements
+
+Examples:
+  # Check analysis tracking status
+  hotspot analysis status`,
 	PreRunE: analysisSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		status, err := iocache.Manager.GetAnalysisStore().GetStatus()
@@ -530,9 +742,35 @@ var analysisStatusCmd = &cobra.Command{
 
 // analysisExportCmd exports analysis data to Parquet files.
 var analysisExportCmd = &cobra.Command{
-	Use:     "export",
-	Short:   "Export analysis data to Parquet files.",
-	Long:    `The export command reads analysis data and exports it to Parquet for analytics via Spark, Pandas, and DuckDB. Requires --output-file.`,
+	Use:   "export",
+	Short: "Export historical data to Parquet for BI tools and analytics",
+	Long: `Export all stored analysis data to Parquet format for use with analytics tools.
+
+Exports two datasets:
+- Analysis runs - metadata about each analysis execution
+- File scores/metrics - detailed scores and Git metrics per file
+
+Parquet format enables:
+- Fast querying with DuckDB, Apache Spark, pandas
+- Efficient storage with columnar compression
+- Schema evolution for future data additions
+- Direct import into BI tools (Tableau, Metabase, etc.)
+
+Requires: --output-file parameter
+
+Use cases:
+- Trend analysis across multiple runs
+- Custom dashboards and visualizations
+- ML model training on code metrics
+- Executive reporting and KPIs
+
+Examples:
+  # Export all data
+  hotspot analysis export --output-file hotspot-data.parquet
+
+  # Use with DuckDB for analysis
+  hotspot analysis export --output-file data.parquet
+  duckdb -c "SELECT * FROM read_parquet('data.parquet/runs.parquet') LIMIT 10"`,
 	PreRunE: analysisSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := iocache.ExecuteAnalysisExport(cfg.OutputFile); err != nil {
@@ -543,9 +781,27 @@ var analysisExportCmd = &cobra.Command{
 
 // analysisMigrateCmd runs database migrations for the analysis store.
 var analysisMigrateCmd = &cobra.Command{
-	Use:     "migrate",
-	Short:   "Run database schema migrations for the analysis store.",
-	Long:    `The migrate command manages database schema evolution for the analysis store. By default, it migrates to the latest version.`,
+	Use:   "migrate",
+	Short: "Run database schema migrations (upgrades/downgrades)",
+	Long: `Manage database schema versions for the analysis tracking store.
+
+Migrations allow:
+- Upgrading to new schema versions when Hotspot is updated
+- Safely modifying database structure without data loss
+- Rolling back schema changes if needed
+- Testing new features on specific schema versions
+
+By default, migrates to the latest version. Use --target-version for specific versions.
+
+Examples:
+  # Migrate to latest version (default)
+  hotspot analysis migrate
+
+  # Migrate to specific version
+  hotspot analysis migrate --target-version 2
+
+  # Rollback to previous version
+  hotspot analysis migrate --target-version 0`,
 	PreRunE: analysisMigrateSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		targetVersion := viper.GetInt("target-version")
