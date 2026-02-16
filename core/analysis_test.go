@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -110,6 +111,66 @@ func TestAnalyzeRepo(t *testing.T) {
 		assert.True(t, result.ModeScore >= 0 && result.ModeScore <= 100)
 		// Note: Breakdown will be empty because SizeBytes is 0 (files don't exist in test)
 		// assert.NotEmpty(t, result.Breakdown)
+	}
+}
+
+// TestAnalyzeRepo_ConcurrentWorkers tests that analyzeRepo works correctly with multiple concurrent workers
+// and doesn't have race conditions when accessing shared data structures.
+func TestAnalyzeRepo_ConcurrentWorkers(t *testing.T) {
+	ctx := context.Background()
+
+	// Create mock client
+	mockClient := &contract.MockGitClient{}
+
+	// Create config with multiple workers
+	cfg := &contract.Config{
+		RepoPath:  "/test/repo",
+		StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+		Mode:      schema.HotMode,
+		Workers:   4, // Test with multiple workers
+	}
+
+	// Create aggregate output with many files to test concurrency
+	commitMap := make(map[string]int)
+	churnMap := make(map[string]int)
+	contribMap := make(map[string]map[string]int)
+	firstCommitMap := make(map[string]time.Time)
+
+	files := make([]string, 20) // Test with 20 files
+	for i := range 20 {
+		fileName := fmt.Sprintf("file%d.go", i)
+		files[i] = fileName
+		commitMap[fileName] = i + 1
+		churnMap[fileName] = (i + 1) * 2
+		contribMap[fileName] = map[string]int{"alice": i + 1}
+		firstCommitMap[fileName] = time.Date(2023, 1, 15, 10, 30, 0, 0, time.UTC)
+	}
+
+	aggOutput := &schema.AggregateOutput{
+		CommitMap:      commitMap,
+		ChurnMap:       churnMap,
+		ContribMap:     contribMap,
+		FirstCommitMap: firstCommitMap,
+	}
+
+	// Execute with multiple workers
+	results := analyzeRepo(ctx, cfg, mockClient, aggOutput, files)
+
+	// Assert
+	assert.Len(t, results, 20)
+
+	// Check that all files are present and results are consistent
+	resultMap := make(map[string]schema.FileResult)
+	for _, result := range results {
+		resultMap[result.Path] = result
+	}
+
+	for _, file := range files {
+		result, exists := resultMap[file]
+		assert.True(t, exists, "File %s should be in results", file)
+		assert.Equal(t, file, result.Path)
+		assert.True(t, result.ModeScore >= 0 && result.ModeScore <= 100)
 	}
 }
 

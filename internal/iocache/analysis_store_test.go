@@ -1,6 +1,7 @@
 package iocache
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -418,4 +419,94 @@ func TestAnalysisStore_RecordFileMetricsAndScores(t *testing.T) {
 	assert.Equal(t, int32(metrics.TotalCommits), record.TotalCommits)
 	assert.Equal(t, scores.HotScore, record.ScoreHot)
 	assert.Equal(t, scores.ScoreLabel, record.ScoreLabel)
+}
+
+// TestAnalysisStoreConcurrentOperations tests concurrent database operations
+// to ensure thread safety when multiple workers write analysis data simultaneously.
+func TestAnalysisStoreConcurrentOperations(t *testing.T) {
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	require.NoError(t, err)
+	require.NotNil(t, store)
+	defer func() { _ = store.Close() }()
+
+	const numGoroutines = 10
+	const filesPerGoroutine = 5
+	done := make(chan bool, numGoroutines)
+
+	for i := range numGoroutines {
+		go func(workerID int) {
+			defer func() { done <- true }()
+
+			// Each worker starts its own analysis
+			startTime := time.Now()
+			configParams := map[string]any{
+				"worker": workerID,
+				"mode":   "hot",
+			}
+			analysisID, err := store.BeginAnalysis(startTime, configParams)
+			if err != nil {
+				t.Errorf("Worker %d: BeginAnalysis failed: %v", workerID, err)
+				return
+			}
+
+			// Each worker records multiple files
+			for j := range filesPerGoroutine {
+				filePath := fmt.Sprintf("worker%d/file%d.go", workerID, j)
+				metrics := schema.FileMetrics{
+					AnalysisTime:     time.Now(),
+					TotalCommits:     workerID*filesPerGoroutine + j + 1,
+					TotalChurn:       (workerID*filesPerGoroutine + j + 1) * 2,
+					ContributorCount: workerID + 1,
+					AgeDays:          float64(workerID*10 + j),
+					GiniCoefficient:  0.5,
+					FileOwner:        fmt.Sprintf("owner%d", workerID),
+				}
+				scores := schema.FileScores{
+					HotScore:        float64(50 + workerID + j),
+					RiskScore:       float64(40 + workerID + j),
+					ComplexityScore: float64(60 + workerID + j),
+					StaleScore:      float64(30 + workerID + j),
+					ScoreLabel:      "hot",
+				}
+
+				err = store.RecordFileMetricsAndScores(analysisID, filePath, metrics, scores)
+				if err != nil {
+					t.Errorf("Worker %d: RecordFileMetricsAndScores failed for %s: %v", workerID, filePath, err)
+					return
+				}
+			}
+
+			// End the analysis
+			endTime := time.Now()
+			err = store.EndAnalysis(analysisID, endTime, filesPerGoroutine)
+			if err != nil {
+				t.Errorf("Worker %d: EndAnalysis failed: %v", workerID, err)
+				return
+			}
+		}(i)
+	}
+
+	// Wait for all goroutines to complete
+	for range numGoroutines {
+		<-done
+	}
+
+	// Verify all data was stored correctly
+	allRuns, err := store.GetAllAnalysisRuns()
+	assert.NoError(t, err)
+	assert.Len(t, allRuns, numGoroutines)
+
+	allMetrics, err := store.GetAllFileScoresMetrics()
+	assert.NoError(t, err)
+	assert.Len(t, allMetrics, numGoroutines*filesPerGoroutine)
+
+	// Verify no data corruption occurred
+	uniqueAnalysisIDs := make(map[int64]bool)
+	for _, run := range allRuns {
+		if uniqueAnalysisIDs[run.AnalysisID] {
+			t.Errorf("Duplicate analysis ID: %d", run.AnalysisID)
+		}
+		uniqueAnalysisIDs[run.AnalysisID] = true
+		assert.Equal(t, int32(filesPerGoroutine), run.TotalFilesAnalyzed)
+	}
 }

@@ -71,6 +71,7 @@ test:
 	@echo "🧪 Running tests..."
 	@test_args=""; \
 	if [ "$(FORCE)" = "1" ]; then test_args="$$test_args -count=1"; echo "💨 Bypassing test cache..."; fi; \
+	if [ "$(RACE)" = "1" ]; then test_args="$$test_args -race"; echo "🏁 Running with race detection..."; fi; \
 	if [ "$(INTEGRATION)" = "1" ]; then \
 		echo "🔗 Including integration tests..."; \
 		$(GO) test $$test_args ./...; \
@@ -83,6 +84,9 @@ test:
 # Convenience aliases for common test scenarios
 test-all: export INTEGRATION=1
 test-all: test
+
+test-race: export RACE=1
+test-race: test
 
 # Run benchmarks
 bench:
