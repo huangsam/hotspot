@@ -55,7 +55,7 @@ func printCheckHeader(result *schema.CheckResult, duration time.Duration) {
 
 // printCheckSuccess prints the success case output.
 func printCheckSuccess(result *schema.CheckResult) {
-	fmt.Printf("✅ All files passed policy checks\n\n")
+	fmt.Printf("PASS: All files passed policy checks\n\n")
 	fmt.Println("Scores observed:")
 
 	for _, mode := range result.CheckedModes {
@@ -81,7 +81,7 @@ func printCheckSuccess(result *schema.CheckResult) {
 // printCheckFailure prints the failure case output.
 func printCheckFailure(result *schema.CheckResult) {
 	// Print failed files grouped by mode
-	fmt.Printf("❌ Policy check failed: %d violation(s) found across %d files\n\n", len(result.FailedFiles), result.TotalFiles)
+	fmt.Printf("FAIL: Policy check failed: %d violation(s) found across %d files\n\n", len(result.FailedFiles), result.TotalFiles)
 
 	// Group by mode for better readability
 	modeGroups := make(map[schema.ScoringMode][]schema.CheckFailedFile)

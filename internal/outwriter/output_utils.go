@@ -32,11 +32,7 @@ func WriteWithOutputFile(cfg *contract.Config, writer func(io.Writer) error, suc
 	}
 
 	if file != os.Stdout {
-		if cfg.UseEmojis {
-			_, _ = fmt.Fprintf(os.Stdout, "💾 %s to %s\n", successMsg, cfg.OutputFile)
-		} else {
-			_, _ = fmt.Fprintf(os.Stdout, "%s to %s\n", successMsg, cfg.OutputFile)
-		}
+		_, _ = fmt.Fprintf(os.Stdout, "%s to %s\n", successMsg, cfg.OutputFile)
 	}
 	return nil
 }
@@ -90,7 +86,7 @@ func formatWeights(weights map[string]float64, factorKeys []string) string {
 	return strings.Join(parts, "+")
 }
 
-// getDisplayNameForMode returns the display name with emoji for a given mode name.
+// getDisplayNameForMode returns the display name for a given mode name.
 func getDisplayNameForMode(modeName string) string {
 	switch modeName {
 	case "hot":

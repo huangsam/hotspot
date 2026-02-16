@@ -47,7 +47,6 @@ func writeMetricsText(w io.Writer, renderModel *schema.MetricsRenderModel, _ *co
 	}
 
 	for _, mode := range renderModel.Modes {
-		// Add emoji prefix for display
 		displayName := getDisplayNameForMode(mode.Name)
 		if _, err := fmt.Fprintf(w, "%s: %s\n", displayName, mode.Purpose); err != nil {
 			return err

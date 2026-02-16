@@ -170,11 +170,7 @@ func runFollowPass(ctx context.Context, cfg *contract.Config, client contract.Gi
 	}
 
 	if !shouldSuppressHeader(ctx) {
-		if cfg.UseEmojis {
-			fmt.Printf("🔁 Running --follow re-analysis for top %d files...\n", n)
-		} else {
-			fmt.Printf("Running --follow re-analysis for top %d files...\n", n)
-		}
+		fmt.Printf("Running --follow re-analysis for top %d files...\n", n)
 	}
 
 	var wg sync.WaitGroup

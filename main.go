@@ -127,7 +127,6 @@ func initConfig() {
 	viper.SetDefault("cache-db-connect", "")
 	viper.SetDefault("analysis-backend", "")
 	viper.SetDefault("analysis-db-connect", "")
-	viper.SetDefault("emoji", "no")
 	viper.SetDefault("color", "yes")
 }
 
@@ -684,7 +683,7 @@ This removes:
 - Historical file scores across all modes
 - Raw Git metrics for analyzed files
 
-⚠️  WARNING: This action cannot be undone. Consider exporting data first.
+WARNING: This action cannot be undone. Consider exporting data first.
 
 Use this when:
 - Resetting trend tracking
@@ -861,7 +860,6 @@ func init() {
 	rootCmd.PersistentFlags().String("analysis-backend", "", "Analysis tracking backend: sqlite or mysql or postgresql or none")
 	rootCmd.PersistentFlags().String("analysis-db-connect", "", "Database connection string for analysis tracking (must differ from cache-db-connect)")
 	rootCmd.PersistentFlags().String("color", "yes", "Enable colored labels in output (yes/no/true/false/1/0)")
-	rootCmd.PersistentFlags().String("emoji", "no", "Enable emojis in output headers (yes/no/true/false/1/0)")
 	rootCmd.PersistentFlags().String("lookback", "6 months", "Time duration to look back from Base/Target ref commit time")
 	rootCmd.PersistentFlags().String("base-ref", "", "Base Git reference for the BEFORE state")
 	rootCmd.PersistentFlags().String("target-ref", "", "Target Git reference for the AFTER state")

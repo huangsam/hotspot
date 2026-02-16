@@ -114,7 +114,6 @@ type Config struct {
 	// RiskThresholds is a mapping of [ModeName] = Threshold score value
 	RiskThresholds map[schema.ScoringMode]float64
 
-	UseEmojis bool // Enable emojis in output headers
 	UseColors bool // Enable colored labels in table output
 }
 
@@ -142,7 +141,6 @@ type ConfigRawInput struct {
 	CacheDBConnect    string `mapstructure:"cache-db-connect"`
 	AnalysisBackend   string `mapstructure:"analysis-backend"`
 	AnalysisDBConnect string `mapstructure:"analysis-db-connect"`
-	Emoji             string `mapstructure:"emoji"`
 	Color             string `mapstructure:"color"`
 
 	// --- Fields from filesCmd.Flags() ---
@@ -332,13 +330,6 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	cfg.Owner = input.Owner
 	cfg.Follow = input.Follow
 	cfg.Width = input.Width
-
-	// Parse emoji flag
-	emojis, err := ParseBoolString(input.Emoji)
-	if err != nil {
-		return fmt.Errorf("invalid --emoji value: %w", err)
-	}
-	cfg.UseEmojis = emojis
 
 	// Parse color flag
 	colors, err := ParseBoolString(input.Color)
