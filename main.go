@@ -336,9 +336,8 @@ Analyzes the entire history of each file to compute risk metrics, helping you:
 - Locate large, complex files that are difficult to maintain
 - Discover important files that haven't been maintained recently
 
-The analysis scores files based on your selected mode (hot, risk, complexity, stale),
-ranking them from highest to lowest risk. Optional metadata shows contributors,
-lines of code, file age, and score breakdowns.
+Scores files based on your selected mode (hot, risk, complexity, stale),
+ranking them from highest to lowest risk.
 
 Examples:
   # Find the most active/volatile files
@@ -373,16 +372,14 @@ var foldersCmd = &cobra.Command{
 	Short: "Show the top folders ranked by risk score.",
 	Long: `Perform deep Git analysis and rank directories/folders by risk score.
 
-Aggregates file-level analysis to the folder level, providing a high-level view of
-subsystem health. Helps you:
+Aggregates file-level analysis to folder level. Helps you:
 - Identify which subsystems are risky or volatile
 - Assess team/module boundaries
 - Find areas that need architectural attention
 - Plan refactoring efforts strategically
 - Allocate maintenance resources effectively
 
-Each folder's score is computed from the files it contains, weighted by file size
-and activity. This gives subsystems an aggregate risk score.
+Each folder's score is weighted by file size and activity.
 
 Examples:
   # Find the riskiest subsystems
@@ -412,26 +409,20 @@ Examples:
 var compareCmd = &cobra.Command{
 	Use:   "compare [repo-path]",
 	Short: "Compare analysis results between two Git references.",
-	Long: `Compare analysis results between two Git references to understand how risk has evolved.
-
-Helps you track whether changes are improving or degrading your codebase health.
+	Long: `Compare analysis results between two Git references to track how risk has evolved.
 
 Ideal for:
 - Release comparisons - see what changed between versions
-- Refactoring validation - verify that changes actually reduced risk
+- Refactoring validation - verify changes reduced risk
 - Feature branch reviews - ensure PRs don't introduce high-risk files
-- Progress tracking - monitor cumulative improvements over time
+- Progress tracking - monitor improvements over time
 - Regression detection - catch files becoming riskier
 
 Available comparison types:
   compare files   - Track individual file risk changes
   compare folders - Monitor subsystem health changes
 
-Each comparison shows:
-- Before score (at base reference)
-- After score (at target reference)
-- Delta (change in score)
-- Ranking (position change in ranked list)`,
+Each comparison shows before/after scores, deltas, and ranking changes.`,
 }
 
 // checkCmd focused on CI/CD policy enforcement.
@@ -551,7 +542,7 @@ var versionCmd = &cobra.Command{
 	Long: `Display version information including build details.
 
 Shows:
-- Release version (from git tags)
+- Release version
 - Git commit hash
 - Build timestamp
 - Go runtime version
@@ -685,8 +676,8 @@ Examples:
   # Clear SQLite cache (default)
   hotspot cache clear
 
-  # Clear MySQL cache
-  HOTSPOT_CACHE_BACKEND=mysql HOTSPOT_CACHE_DB_CONNECT="user:pass@tcp(localhost:3306)/hotspot" hotspot cache clear`,
+  # Clear MySQL cache (set connection string via env variable)
+  HOTSPOT_CACHE_BACKEND=mysql HOTSPOT_CACHE_DB_CONNECT="..." hotspot cache clear`,
 	PreRunE: cacheSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := iocache.ClearCache(cfg.CacheBackend, contract.GetCacheDBFilePath(), cfg.CacheDBConnect); err != nil {
