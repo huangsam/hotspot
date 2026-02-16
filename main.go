@@ -325,9 +325,39 @@ func analysisMigrateSetupWrapper(_ *cobra.Command, _ []string) error {
 
 // filesCmd focuses on tactical, file-level analysis.
 var filesCmd = &cobra.Command{
-	Use:     "files [repo-path]",
-	Short:   "Show the top files ranked by risk score.",
-	Long:    `The files command performs deep Git analysis and ranks individual files.`,
+	Use:   "files [repo-path]",
+	Short: "Show the top files ranked by risk score.",
+	Long: `Perform deep Git analysis and rank individual files by risk score.
+
+Analyzes the entire history of each file to compute risk metrics, helping you:
+- Identify which files are most critical to your codebase
+- Find files that are changing too frequently (churn hotspots)
+- Spot files with uneven ownership and knowledge silos
+- Locate large, complex files that are difficult to maintain
+- Discover important files that haven't been maintained recently
+
+The analysis scores files based on your selected mode (hot, risk, complexity, stale),
+ranking them from highest to lowest risk. Optional metadata shows contributors,
+lines of code, file age, and score breakdowns.
+
+Examples:
+  # Find the most active/volatile files
+  hotspot files --mode hot --limit 20
+
+  # Identify files with knowledge concentration risk
+  hotspot files --mode risk
+
+  # Find complex files by age and size
+  hotspot files --mode complexity
+
+  # Show stale but important files
+  hotspot files --mode stale
+
+  # Include detailed metrics and component breakdown
+  hotspot files --detail --explain --owner
+
+  # Export findings to CSV for tracking
+  hotspot files --mode hot --output csv --output-file hotspots.csv`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
@@ -339,9 +369,36 @@ var filesCmd = &cobra.Command{
 
 // foldersCmd focuses on tactical, folder-level analysis.
 var foldersCmd = &cobra.Command{
-	Use:     "folders [repo-path]",
-	Short:   "Show the top folders ranked by risk score.",
-	Long:    `The folders command performs deep Git analysis and ranks individual folders.`,
+	Use:   "folders [repo-path]",
+	Short: "Show the top folders ranked by risk score.",
+	Long: `Perform deep Git analysis and rank directories/folders by risk score.
+
+Aggregates file-level analysis to the folder level, providing a high-level view of
+subsystem health. Helps you:
+- Identify which subsystems are risky or volatile
+- Assess team/module boundaries
+- Find areas that need architectural attention
+- Plan refactoring efforts strategically
+- Allocate maintenance resources effectively
+
+Each folder's score is computed from the files it contains, weighted by file size
+and activity. This gives subsystems an aggregate risk score.
+
+Examples:
+  # Find the riskiest subsystems
+  hotspot folders --mode hot
+
+  # See which modules have knowledge concentration issues
+  hotspot folders --mode risk
+
+  # Identify complex subsystems worth refactoring
+  hotspot folders --mode complexity
+
+  # Find neglected important modules
+  hotspot folders --mode stale
+
+  # Include metrics and owner information
+  hotspot folders --detail --owner`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
@@ -355,7 +412,26 @@ var foldersCmd = &cobra.Command{
 var compareCmd = &cobra.Command{
 	Use:   "compare [repo-path]",
 	Short: "Compare analysis results between two Git references.",
-	Long:  `The compare command provides insight into how risk metrics have changed for different units (files, folders, etc.).`,
+	Long: `Compare analysis results between two Git references to understand how risk has evolved.
+
+Helps you track whether changes are improving or degrading your codebase health.
+
+Ideal for:
+- Release comparisons - see what changed between versions
+- Refactoring validation - verify that changes actually reduced risk
+- Feature branch reviews - ensure PRs don't introduce high-risk files
+- Progress tracking - monitor cumulative improvements over time
+- Regression detection - catch files becoming riskier
+
+Available comparison types:
+  compare files   - Track individual file risk changes
+  compare folders - Monitor subsystem health changes
+
+Each comparison shows:
+- Before score (at base reference)
+- After score (at target reference)
+- Delta (change in score)
+- Ranking (position change in ranked list)`,
 }
 
 // checkCmd focused on CI/CD policy enforcement.
@@ -472,6 +548,18 @@ Examples:
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number of hotspot.",
+	Long: `Display version information including build details.
+
+Shows:
+- Release version (from git tags)
+- Git commit hash
+- Build timestamp
+- Go runtime version
+
+Useful for:
+- Debugging compatibility issues
+- Verifying correct binary installation
+- Reporting bugs with version details`,
 	Run: func(cmd *cobra.Command, _ []string) {
 		cmd.Printf("hotspot CLI\n")
 		cmd.Printf("  Version: %s\n", version)
