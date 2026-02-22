@@ -81,6 +81,9 @@ func GetHotspotFoldersResults(ctx context.Context, cfg *contract.Config, mgr con
 // ExecuteHotspotCompare runs two file-level analyses (Base and Target)
 // based on Git references and computes the delta results.
 func ExecuteHotspotCompare(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) error {
+	// Print single header for the comparison
+	internal.LogCompareHeader(cfg)
+
 	comparisonResult, duration, err := GetHotspotCompareResults(ctx, cfg, mgr)
 	if err != nil {
 		return err
@@ -95,9 +98,6 @@ func ExecuteHotspotCompare(ctx context.Context, cfg *contract.Config, mgr contra
 func GetHotspotCompareResults(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) (schema.ComparisonResult, time.Duration, error) {
 	start := time.Now()
 	client := contract.NewLocalGitClient()
-
-	// Print single header for the comparison (only for CLI use cases, but safe to keep here)
-	internal.LogCompareHeader(cfg)
 
 	baseOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.BaseRef, mgr)
 	if err != nil {
@@ -144,6 +144,10 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *contract.Config, mgr con
 	if err != nil {
 		return err
 	}
+
+	// Print single header for the entire timeseries analysis
+	internal.LogTimeseriesHeader(cfg, cfg.TimeseriesInterval, cfg.TimeseriesPoints)
+
 	writer := outwriter.NewOutWriter()
 	return outwriter.WriteWithOutputFile(cfg, func(w io.Writer) error {
 		return writer.WriteTimeseries(w, result, cfg, duration)
@@ -185,9 +189,6 @@ func GetHotspotTimeseriesResults(ctx context.Context, cfg *contract.Config, mgr 
 		return schema.TimeseriesResult{}, 0, fmt.Errorf("path %q does not exist in repository. Use 'hotspot files' to see available paths", path)
 	}
 	isFolder := info.IsDir()
-
-	// Print single header for the entire timeseries analysis
-	internal.LogTimeseriesHeader(cfg, interval, numPoints)
 
 	// Execute the timeseries analysis
 	timeseriesPoints := runTimeseriesAnalysis(ctx, cfg, client, normalizedPath, isFolder, now, interval, numPoints, mgr)
