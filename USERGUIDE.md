@@ -56,7 +56,7 @@ The `timeseries` subcommand tracks how hotspot scores change over time for a spe
 | `--interval` | Total time window (e.g., `6 months`, `1 year`). |
 | `--points` | Number of data points to generate (default: 3). |
 
-### CI/CD Policy Enforcement
+## CI/CD Policy Enforcement
 
 The `check` command allows you to enforce risk thresholds in CI/CD pipelines, failing builds when files exceed acceptable risk levels. If no thresholds are specified, it defaults to 50.0 for all scoring modes.
 
@@ -76,6 +76,43 @@ The `check` command allows you to enforce risk thresholds in CI/CD pipelines, fa
 | `--thresholds-override` | Custom risk thresholds per scoring mode (format: `hot:50,risk:50,complexity:50,stale:50`). |
 
 The [example CI config](./examples/hotspot.ci.yml) shows how custom thresholds can be configured for each scoring mode and is useful for maintaining code quality standards specific to your team.
+
+## Model Context Protocol (MCP) Server
+
+Hotspot can run as an [MCP](https://modelcontextprotocol.io/) server, exposing its diagnostic capabilities via `mcp-go` to compatible AI agents (like Claude Desktop, Cursor, or Zed). This allows an LLM to automatically explore technical debt and risk without you having to manually run CLI commands.
+
+### Starting the Server
+
+The server communicates via standard input/output (stdio), which is standard for local MCP clients.
+
+```bash
+hotspot mcp
+```
+
+### Example: Claude Desktop Configuration
+
+To use Hotspot with Claude Desktop, add it to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "hotspot": {
+      "command": "hotspot",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+*Note: Ensure `hotspot` is in your system `$PATH`, or provide the absolute path to the binary in the `command` field.*
+
+### Supported MCP Tools
+
+The server exposes the following tools to the AI agent:
+- `get_files_hotspots`: Rank files by hot, risk, complexity, or stale modes.
+- `get_folders_hotspots`: Same as above, but aggregated at the folder level.
+- `compare_hotspots`: Compare changes in technical debt between two Git references.
+- `get_timeseries`: Track the trend of a specific file or folder over time.
 
 ## Configuration
 

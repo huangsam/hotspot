@@ -67,9 +67,19 @@ hotspot folders
 hotspot files /path/to/repo/pkg
 ```
 
-For detailed usage, configuration options, and common workflows, see [USERGUIDE.md](./USERGUIDE.md).
+### AI Agent Integration (MCP)
 
-For guidance on using this data to foster a healthy engineering culture, see [PLAYBOOK.md](./PLAYBOOK.md).
+Hotspot includes a built-in [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server. This allows AI agents (like Claude Desktop or Cursor) to analyze your repositories directly!
+
+```bash
+# Start the MCP server (stdio)
+hotspot mcp
+```
+
+### Full Documentation
+
+- **[USERGUIDE.md](./USERGUIDE.md)**: Detailed commands, configuration options, backend setup, data exports, and common workflows.
+- **[PLAYBOOK.md](./PLAYBOOK.md)**: Actionable guidance on using this data to foster a healthy engineering culture.
 
 ### Live demo
 
