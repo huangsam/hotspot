@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-02-21
+
+### Added
+- Tests to check for race conditions
+
+### Changed
+- Split monolithic `main.go` into `cmd/` package
+- Improve command documentation and verbiage across commands
+- Remove emojis from CLI outputs for cleaner presentation
+- Enhance error messages across core and internal packages
+- Update Go dependencies and bump multiple modules
+- Update GitHub Actions checkout action to v6
+
+### Fixed
+- Fix comments and whitespace in initialization logic
+
 ## [1.10.4] - 2025-11-26
 
 ### Added
@@ -512,6 +528,7 @@ Initial development covered core functionality including:
 - Code quality and maintainability refactoring
 - Proper package structure architecture
 
+[1.11.0]: https://github.com/huangsam/hotspot
 [1.10.4]: https://github.com/huangsam/hotspot/compare/v1.10.3...v1.10.4
 [1.10.3]: https://github.com/huangsam/hotspot/compare/v1.10.2...v1.10.3
 [1.10.2]: https://github.com/huangsam/hotspot/compare/v1.10.1...v1.10.2
