@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2026-02-22
+
+### Added
+- Model Context Protocol (MCP) server for native AI Agent integration
+- `hotspot mcp` subcommand to expose `get_files_hotspots`, `get_folders_hotspots`, `compare_hotspots`, and `get_timeseries` tools
+- Agentic documentation (AGENTS.md) and playbook examples for MCP setup
+
+### Changed
+- Extract core analytical dependencies into a modular `toolHandler` structure for MCP
+- Abstract stdout rendering away from core getter methods to guarantee seamless JSON-RPC transport
+- Update Go setup to 1.26 in GitHub Actions CI
+
+### Fixed
+- Eliminate plain-text stdout pollution during backend analysis
+- Fix Goreleaser linker flag injections resulting from CLI package refactor
+
 ## [1.11.0] - 2026-02-21
 
 ### Added
@@ -528,6 +544,7 @@ Initial development covered core functionality including:
 - Code quality and maintainability refactoring
 - Proper package structure architecture
 
+[1.12.0]: https://github.com/huangsam/hotspot/compare/v1.11.0...v1.12.0
 [1.11.0]: https://github.com/huangsam/hotspot/compare/v1.10.4...v1.11.0
 [1.10.4]: https://github.com/huangsam/hotspot/compare/v1.10.3...v1.10.4
 [1.10.3]: https://github.com/huangsam/hotspot/compare/v1.10.2...v1.10.3
