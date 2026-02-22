@@ -6,7 +6,7 @@ This document provides comprehensive documentation for the Hotspot CLI tool, spe
 
 1. [Architecture Overview](#architecture-overview)
 2. [Package Structure](#package-structure)
-3. [Main Package (main.go)](#main-package-maingo)
+3. [Cmd Package (cmd/)](#cmd-package)
 4. [Core Package](#core-package)
 5. [Schema Package](#schema-package)
 6. [Key Design Patterns](#key-design-patterns)
@@ -28,13 +28,16 @@ Hotspot is a Git repository analysis CLI tool that identifies code hotspots thro
 
 ```
 CLI Args/Config → Validation → Git Analysis → Scoring → Ranking → Output
+(Alternative Flow) MCP Request → Tool Handler → Git Analysis → Schema Enrichment → JSON Response
 ```
 
 ## Package Structure
 
 ```
 hotspot/
+├── main.go             # Slim entrypoint that delegates to cmd
 ├── benchmark/          # Benchmarking tools and performance testing
+├── cmd/                # CLI commands and entrypoints
 ├── core/               # Core analysis logic and algorithms
 │   ├── agg/            # Git activity aggregation and caching
 │   └── algo/           # Numerical algorithms for scoring and ranking
@@ -43,13 +46,14 @@ hotspot/
 └── internal/           # Internal utilities and helpers
     ├── contract/       # Configuration, Git client interfaces, and utilities
     ├── iocache/        # I/O caching and analysis storage with backend support
+    ├── mcp/            # Model Context Protocol server implementation
     ├── outwriter/      # Output formatting and writing
     └── parquet/        # Parquet file handling utilities
 ```
 
-## Main Package (main.go)
+## Cmd Package (cmd/) and main.go
 
-The main package serves as the CLI entry point, defining commands, flags, and configuration management.
+The `main.go` file at the root is a slim entrypoint that immediately delegates to the `cmd` package. The `cmd` package itself defines the detailed commands, flags, and configuration management for the CLI.
 
 ### Key Components
 
@@ -76,11 +80,12 @@ The root command defines the base CLI structure with help text and default behav
     - `analysisClearCmd`: Clear analysis data (`hotspot analysis clear`)
     - `analysisExportCmd`: Export analysis data to Parquet files (`hotspot analysis export`)
     - `analysisMigrateCmd`: Run database schema migrations (`hotspot analysis migrate`)
+  - `mcpCmd`: Start the Model Context Protocol server (`hotspot mcp`)
   - `versionCmd`: Version information
 
 #### Configuration Management
 
-The main package uses Viper for configuration management with multiple sources:
+The `cmd` package uses Viper for configuration management with multiple sources:
 
 1. **Command-line flags** (highest priority)
 2. **Environment variables** (prefixed with `HOTSPOT_`)
@@ -298,6 +303,10 @@ Contains configuration management, Git client interfaces, time utilities, and ge
 
 Implements I/O caching and analysis tracking functionality with support for multiple database backends (SQLite, MySQL, PostgreSQL).
 
+### mcp/
+
+Provides a Model Context Protocol (MCP) server implementation (`mcp_server.go`) using `mark3labs/mcp-go`. This exposes core getters as JSON-RPC tools (`get_files_hotspots`, `get_folders_hotspots`, `compare_hotspots`, `get_timeseries`) for direct use by AI agents.
+
 ### outwriter/
 
 Handles output formatting and writing for different formats (text tables, JSON, CSV) and analysis types (files, folders, comparisons, timeseries).
@@ -388,7 +397,7 @@ make build
 ```
 CLI: hotspot files --mode hot --limit 10
 ↓
-main.go: sharedSetup() → validation → config population
+cmd: sharedSetup() → validation → config population
 ↓
 core.ExecuteHotspotFiles() → runSingleAnalysisCore()
 ↓
@@ -406,7 +415,7 @@ internal: PrintFileResults() → table/json/csv output
 ```
 CLI: hotspot timeseries --path src/main.go --interval 180d --points 4
 ↓
-main.go: sharedSetup() → parameter validation
+cmd: sharedSetup() → parameter validation
 ↓
 core.ExecuteHotspotTimeseries() → time window calculation
 ↓
@@ -422,7 +431,7 @@ internal: PrintTimeseriesResults() → period/score/mode/path output
 ```
 CLI: hotspot compare files --base-ref main --target-ref feature --lookback "6 months"
 ↓
-main.go: sharedSetup() → compare mode validation
+cmd: sharedSetup() → compare mode validation
 ↓
 core.ExecuteHotspotCompare() → runCompareAnalysisForRef() for base and target
 ↓
@@ -436,11 +445,25 @@ internal: PrintComparisonResults() → before/after/delta output
 ```
 CLI: hotspot check --thresholds-override "hot:50,risk:50"
 ↓
-main.go: sharedSetup() → threshold validation
+cmd: sharedSetup() → threshold validation
 ↓
 core.ExecuteHotspotCheck() → runSingleAnalysisCore() → validate against thresholds
 ↓
 Output success/failure with details for CI/CD gating
 ```
 
-This documentation provides a comprehensive overview of the hotspot CLI's core architecture, focusing on the main.go, core, and schema packages. The design emphasizes concurrent processing, flexible scoring modes, and clean separation of concerns between data aggregation, analysis, and presentation.
+### MCP Analysis (e.g., get_files_hotspots)
+
+```
+MCP Request: CallTool(get_files_hotspots)
+↓
+internal/mcp: Tool Handler → Parameter parsing and config cloning
+↓
+core.GetHotspotFilesResults() → runSingleAnalysisCore() without string formatting
+↓
+schema.EnrichFiles() → adds PlainLabel and Rank to raw data
+↓
+internal/mcp: JSON Marshalling → Returns mcp.ToolResultText
+```
+
+This documentation provides a comprehensive overview of the hotspot CLI's core architecture, focusing on the `main.go` entrypoint, the `cmd`, `core`, and `schema` packages. The design emphasizes concurrent processing, flexible scoring modes, and clean separation of concerns between data aggregation, analysis, and presentation.
