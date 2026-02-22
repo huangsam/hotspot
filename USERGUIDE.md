@@ -126,6 +126,7 @@ This allows you to manage settings without long command-line strings. Flags alwa
 2. [hotspot.ci.yml](./examples/hotspot.ci.yml): Optimized settings for CI/CD policy enforcement
 3. [hotspot.docs.yml](./examples/hotspot.docs.yml): The canonical template listing every available setting
 4. [hotspot.weights.yml](./examples/hotspot.weights.yml): Advanced customization of scoring algorithm weights
+5. [hotspot.mcp.yml](./examples/hotspot.mcp.yml): Optimized settings for AI Agent (MCP) server
 
 ### Backend configuration
 

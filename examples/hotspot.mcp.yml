@@ -1,0 +1,30 @@
+# examples/hotspot.mcp.yaml
+#
+# A configuration file optimized for running Hotspot as an MCP server.
+# This setup configures caching and analysis backends so that the AI agent
+# can perform deep analysis quickly without repeatedly waiting on Git commands.
+
+# --- Global Settings ---
+# workers: Use maximum generic workers to speed up background AI requests.
+workers: 8
+# limit: A sensible default limit so the AI does not get overwhelmed with context window size.
+limit: 20
+
+# --- Advanced Features ---
+# owner: Helpful context for the AI agent to know who to ping for specific files.
+owner: true
+# follow: Keep rename tracking active to ensure accurate historical tracking.
+follow: true
+# threads: Increase the number of concurrent git log processes.
+threads: 4
+
+# --- Database / Backend Settings ---
+# By default, local SQLite works well, but if you have a team, you might configure
+# a centralized database here so the LLM pulls from the same cache and analysis runs
+# as the rest of your engineering team.
+cache:
+  backend: sqlite
+  db_connect: ".hotspot_cache.db"
+analysis:
+  backend: sqlite
+  db_connect: ".hotspot_analysis.db"
