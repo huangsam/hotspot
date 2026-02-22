@@ -15,8 +15,8 @@ const (
 	analysisIDKey     contextKey = "analysisID"
 )
 
-// withSuppressHeader sets whether headers should be suppressed in the context.
-func withSuppressHeader(ctx context.Context) context.Context {
+// WithSuppressHeader sets whether headers should be suppressed in the context.
+func WithSuppressHeader(ctx context.Context) context.Context {
 	return context.WithValue(ctx, suppressHeaderKey, true)
 }
 

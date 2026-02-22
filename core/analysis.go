@@ -423,7 +423,7 @@ func analyzeTimeseriesPoint(
 	isFolder bool,
 	mgr contract.CacheManager,
 ) (float64, []string) {
-	suppressCtx := withSuppressHeader(ctx)
+	suppressCtx := WithSuppressHeader(ctx)
 	output, err := runSingleAnalysisCore(suppressCtx, cfg, client, mgr)
 	if err != nil {
 		// If no data in this window (e.g. no commits), score is 0

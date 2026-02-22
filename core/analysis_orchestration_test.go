@@ -13,7 +13,7 @@ import (
 )
 
 func TestRunSingleAnalysisCore_Success(t *testing.T) {
-	ctx := withSuppressHeader(context.Background())
+	ctx := WithSuppressHeader(context.Background())
 	mockClient := &contract.MockGitClient{}
 	mockMgr := &iocache.MockCacheManager{}
 
@@ -45,7 +45,7 @@ func TestRunSingleAnalysisCore_Success(t *testing.T) {
 }
 
 func TestRunSingleAnalysisCore_NoFilesFound(t *testing.T) {
-	ctx := withSuppressHeader(context.Background())
+	ctx := WithSuppressHeader(context.Background())
 	mockClient := &contract.MockGitClient{}
 	mockMgr := &iocache.MockCacheManager{}
 
@@ -74,7 +74,7 @@ func TestRunSingleAnalysisCore_NoFilesFound(t *testing.T) {
 }
 
 func TestRunSingleAnalysisCore_AggregationError(t *testing.T) {
-	ctx := withSuppressHeader(context.Background())
+	ctx := WithSuppressHeader(context.Background())
 	mockClient := &contract.MockGitClient{}
 	mockMgr := &iocache.MockCacheManager{}
 
@@ -226,7 +226,7 @@ func TestAnalyzeAllFilesAtRef_EmptyAfterFiltering(t *testing.T) {
 }
 
 func TestRunFollowPass(t *testing.T) {
-	ctx := withSuppressHeader(context.Background())
+	ctx := WithSuppressHeader(context.Background())
 	mockClient := &contract.MockGitClient{}
 
 	// Create test data
@@ -274,7 +274,7 @@ func TestRunFollowPass(t *testing.T) {
 }
 
 func TestRunFollowPass_EmptyInput(t *testing.T) {
-	ctx := withSuppressHeader(context.Background())
+	ctx := WithSuppressHeader(context.Background())
 	mockClient := &contract.MockGitClient{}
 
 	var ranked []schema.FileResult

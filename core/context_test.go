@@ -17,7 +17,7 @@ func TestContextConcurrentAccess(t *testing.T) {
 	done := make(chan bool, numGoroutines)
 
 	// Set up context with various values
-	ctx = withSuppressHeader(ctx)
+	ctx = WithSuppressHeader(ctx)
 	ctx = withUseFollow(ctx, true)
 	ctx = withAnalysisID(ctx, 12345)
 
@@ -51,7 +51,7 @@ func TestContextIsolation(t *testing.T) {
 	// Create multiple contexts with different values
 	ctx1 := withAnalysisID(baseCtx, 1)
 	ctx2 := withAnalysisID(baseCtx, 2)
-	ctx3 := withSuppressHeader(baseCtx)
+	ctx3 := WithSuppressHeader(baseCtx)
 
 	// Test concurrent access to different contexts
 	var wg sync.WaitGroup
