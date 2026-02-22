@@ -18,9 +18,9 @@ This tool operates as a **data-driven development intelligence.** While traditio
 
 For years, I've managed projects where everyone *knew* which files were the maintenance nightmares—the ones where a small change led to a two-day debugging session. As engineers, we invest heavily in **Code Correctness** - we run linters, use SCA tools, and write comprehensive unit tests.
 
-However, these traditional QA methods often fail against **System Resilience**. Outages rarely stem from syntax errors; they're caused by code that's too complex, too fragile, or owned by too few people.
+However, these traditional QA methods often fail against **System Resilience** and **Team Sustainability**. Outages rarely stem from syntax errors; they're caused by code that's too complex, too fragile, or owned by too few people.
 
-Hotspot was born to fix that: providing a transparent, auditable tool for teams to diagnose the **technical debt** and **knowledge risk** that truly drive production instability.
+Hotspot was born to provide a transparent, auditable tool for teams to diagnose the **technical debt** and **knowledge risk** that truly drive production instability—and, more importantly, to start the conversations needed to fix them.
 
 ### Key features
 
@@ -68,6 +68,8 @@ hotspot files /path/to/repo/pkg
 ```
 
 For detailed usage, configuration options, and common workflows, see [USERGUIDE.md](./USERGUIDE.md).
+
+For guidance on using this data to foster a healthy engineering culture, see [PLAYBOOK.md](./PLAYBOOK.md).
 
 ### Live demo
 
