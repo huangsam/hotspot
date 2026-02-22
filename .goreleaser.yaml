@@ -20,7 +20,7 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+      - -s -w -X github.com/huangsam/hotspot/cmd.version={{.Version}} -X github.com/huangsam/hotspot/cmd.commit={{.Commit}} -X github.com/huangsam/hotspot/cmd.date={{.Date}}
 
 # https://goreleaser.com/customization/changelog/
 changelog:
