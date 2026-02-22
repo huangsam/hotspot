@@ -17,6 +17,7 @@ type toolHandler struct {
 	mgr     contract.CacheManager
 }
 
+// handleGetFilesHotspots handles the get_files_hotspots tool.
 func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	cfg := h.baseCfg.Clone()
 	if p := request.GetString("repo_path", ""); p != "" {
@@ -40,6 +41,7 @@ func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.Ca
 	return mcp.NewToolResultText(string(jsonData)), nil
 }
 
+// handleGetFoldersHotspots handles the get_folders_hotspots tool.
 func (h *toolHandler) handleGetFoldersHotspots(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	cfg := h.baseCfg.Clone()
 	if p := request.GetString("repo_path", ""); p != "" {
@@ -63,6 +65,7 @@ func (h *toolHandler) handleGetFoldersHotspots(ctx context.Context, request mcp.
 	return mcp.NewToolResultText(string(jsonData)), nil
 }
 
+// handleCompareHotspots handles the compare_hotspots tool.
 func (h *toolHandler) handleCompareHotspots(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	cfg := h.baseCfg.Clone()
 	cfg.BaseRef = request.GetString("base_ref", "")
@@ -88,6 +91,7 @@ func (h *toolHandler) handleCompareHotspots(ctx context.Context, request mcp.Cal
 	return mcp.NewToolResultText(string(jsonData)), nil
 }
 
+// handleGetTimeseries handles the get_timeseries tool.
 func (h *toolHandler) handleGetTimeseries(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	cfg := h.baseCfg.Clone()
 	cfg.TimeseriesPath = request.GetString("path", "")
