@@ -1029,3 +1029,93 @@ func TestValidateDatabaseConnectionString(t *testing.T) {
 		})
 	}
 }
+
+func TestRevalidateCompare(t *testing.T) {
+	tests := []struct {
+		name        string
+		cfg         *Config
+		lookbackStr string
+		expectError bool
+	}{
+		{
+			name:        "valid lookback and base ref",
+			cfg:         &Config{BaseRef: "main"},
+			lookbackStr: "30 days",
+			expectError: false,
+		},
+		{
+			name:        "empty lookback but valid base ref",
+			cfg:         &Config{BaseRef: "main"},
+			lookbackStr: "",
+			expectError: false,
+		},
+		{
+			name:        "invalid lookback string",
+			cfg:         &Config{BaseRef: "main"},
+			lookbackStr: "invalid_duration",
+			expectError: true,
+		},
+		{
+			name:        "missing base ref",
+			cfg:         &Config{BaseRef: ""},
+			lookbackStr: "30 days",
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := RevalidateCompare(tt.cfg, tt.lookbackStr)
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestRevalidateTimeseries(t *testing.T) {
+	tests := []struct {
+		name        string
+		cfg         *Config
+		intervalStr string
+		expectError bool
+	}{
+		{
+			name:        "valid interval and valid points",
+			cfg:         &Config{TimeseriesPoints: 5},
+			intervalStr: "1 week",
+			expectError: false,
+		},
+		{
+			name:        "empty interval",
+			cfg:         &Config{TimeseriesPoints: 5},
+			intervalStr: "",
+			expectError: false,
+		},
+		{
+			name:        "invalid interval string",
+			cfg:         &Config{TimeseriesPoints: 5},
+			intervalStr: "invalid_duration",
+			expectError: true,
+		},
+		{
+			name:        "invalid points (<1)",
+			cfg:         &Config{TimeseriesPoints: -1},
+			intervalStr: "1 week",
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := RevalidateTimeseries(tt.cfg, tt.intervalStr)
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}

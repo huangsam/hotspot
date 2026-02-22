@@ -167,22 +167,6 @@ func writeCSVResultsForFiles(w *csv.Writer, files []schema.FileResult, fmtFloat 
 
 // writeJSONResultsForFiles writes the analysis results in JSON format.
 func writeJSONResultsForFiles(w io.Writer, files []schema.FileResult) error {
-	// 1. Prepare the data structure for JSON with rank and label added
-	type JSONFileResult struct {
-		Rank  int    `json:"rank"`
-		Label string `json:"label"`
-		schema.FileResult
-	}
-
-	output := make([]JSONFileResult, len(files))
-	for i, f := range files {
-		output[i] = JSONFileResult{
-			Rank:       i + 1,
-			Label:      contract.GetPlainLabel(f.ModeScore),
-			FileResult: f,
-		}
-	}
-
-	// 2. Use the generic JSON writer
-	return writeJSON(w, output)
+	// Use the shared enrichment logic and generic JSON writer
+	return writeJSON(w, schema.EnrichFiles(files))
 }

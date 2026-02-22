@@ -443,6 +443,36 @@ func processTimeRange(cfg *Config, input *ConfigRawInput) error {
 	return nil
 }
 
+// RevalidateCompare re-parses and validates comparison parameters.
+func RevalidateCompare(cfg *Config, lookbackStr string) error {
+	if lookbackStr != "" {
+		lookback, err := ParseLookbackDuration(lookbackStr)
+		if err != nil {
+			return err
+		}
+		cfg.Lookback = lookback
+	}
+	if cfg.BaseRef == "" {
+		return fmt.Errorf("--base-ref is required for compare")
+	}
+	return nil
+}
+
+// RevalidateTimeseries re-parses and validates timeseries parameters.
+func RevalidateTimeseries(cfg *Config, intervalStr string) error {
+	if intervalStr != "" {
+		interval, err := ParseLookbackDuration(intervalStr)
+		if err != nil {
+			return fmt.Errorf("invalid interval: %w", err)
+		}
+		cfg.TimeseriesInterval = interval
+	}
+	if cfg.TimeseriesPoints < 1 && cfg.TimeseriesPoints != 0 {
+		return fmt.Errorf("--points must be at least 1")
+	}
+	return nil
+}
+
 // processCompareMode handles the comparison references and lookback.
 func processCompareMode(cfg *Config, input *ConfigRawInput) error {
 	cfg.BaseRef = strings.TrimSpace(input.BaseRef)

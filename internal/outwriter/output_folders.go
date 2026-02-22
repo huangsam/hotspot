@@ -114,24 +114,8 @@ func writeFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFl
 
 // writeJSONResultsForFolders marshals the schema.FolderResults slice to JSON and writes it.
 func writeJSONResultsForFolders(w io.Writer, results []schema.FolderResult) error {
-	// 1. Prepare the data structure for JSON with rank and label added
-	type JSONFolderResult struct {
-		Rank  int    `json:"rank"`
-		Label string `json:"label"`
-		schema.FolderResult
-	}
-
-	output := make([]JSONFolderResult, len(results))
-	for i, r := range results {
-		output[i] = JSONFolderResult{
-			Rank:         i + 1,
-			Label:        contract.GetPlainLabel(r.Score),
-			FolderResult: r,
-		}
-	}
-
-	// 2. Use the generic JSON writer
-	return writeJSON(w, output)
+	// Use the shared enrichment logic and generic JSON writer
+	return writeJSON(w, schema.EnrichFolders(results))
 }
 
 // writeCSVResultsForFolders writes the schema.FolderResults data to a CSV writer.

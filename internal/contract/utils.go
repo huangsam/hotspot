@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/huangsam/hotspot/schema"
 )
 
 // Scoring label constants.
@@ -30,16 +31,7 @@ var (
 // based on the file's importance score. This is the core logic used for
 // CSV, JSON, and table printing.
 func GetPlainLabel(score float64) string {
-	switch {
-	case score >= 80:
-		return CriticalValue
-	case score >= 60:
-		return HighValue
-	case score >= 40:
-		return ModerateValue
-	default:
-		return LowValue
-	}
+	return schema.GetPlainLabel(score)
 }
 
 // GetColorLabel returns a colored text label for console output (table).
