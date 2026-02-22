@@ -33,7 +33,7 @@ func NewAnalysisStore(backend schema.DatabaseBackend, connStr string) (contract.
 
 	switch backend {
 	case schema.SQLiteBackend:
-		driverName = "sqlite3"
+		driverName = "sqlite"
 		dbPath := connStr
 		if dbPath == "" {
 			dbPath = GetAnalysisDBFilePath()

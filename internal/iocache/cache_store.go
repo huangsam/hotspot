@@ -10,7 +10,7 @@ import (
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	_ "github.com/jackc/pgx/v5/stdlib" // PostgreSQL driver
-	_ "github.com/mattn/go-sqlite3"    // SQLite driver
+	_ "modernc.org/sqlite"             // Pure-Go SQLite driver
 )
 
 // CacheStoreImpl handles durable storage operations using various database backends.
@@ -37,7 +37,7 @@ func NewCacheStore(tableName string, backend schema.DatabaseBackend, connStr str
 
 	switch backend {
 	case schema.SQLiteBackend:
-		driverName = "sqlite3"
+		driverName = "sqlite"
 		dbPath := connStr
 		if dbPath == "" {
 			dbPath = GetDBFilePath()

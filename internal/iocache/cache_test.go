@@ -492,7 +492,7 @@ func TestClearCache(t *testing.T) {
 		dbPath := filepath.Join(tmpDir, "test_clear.db")
 
 		// Create the database file directly with sql.Open
-		db, err := sql.Open("sqlite3", dbPath)
+		db, err := sql.Open("sqlite", dbPath)
 		assert.NoError(t, err, "Failed to create database")
 		defer func() { _ = db.Close() }()
 

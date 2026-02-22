@@ -10,7 +10,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/database"
 	"github.com/golang-migrate/migrate/v4/database/mysql"
 	"github.com/golang-migrate/migrate/v4/database/pgx/v5"
-	"github.com/golang-migrate/migrate/v4/database/sqlite3"
+	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/huangsam/hotspot/schema"
@@ -50,7 +50,7 @@ func (b *MigrationBuilder) buildDatabase() error {
 
 	switch b.backend {
 	case schema.SQLiteBackend:
-		driverName = "sqlite3"
+		driverName = "sqlite"
 		dbPath := b.connStr
 		if dbPath == "" {
 			dbPath = GetAnalysisDBFilePath()
@@ -92,7 +92,7 @@ func (b *MigrationBuilder) buildDriver() error {
 	var err error
 	switch b.backend {
 	case schema.SQLiteBackend:
-		b.driver, err = sqlite3.WithInstance(b.db, &sqlite3.Config{})
+		b.driver, err = sqlite.WithInstance(b.db, &sqlite.Config{})
 		if err != nil {
 			return fmt.Errorf("failed to create SQLite migrate driver: %w", err)
 		}
