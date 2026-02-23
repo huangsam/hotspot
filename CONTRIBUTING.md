@@ -21,19 +21,49 @@ We have defined separate templates to make sure we get the necessary information
 - **🐛 Bug Reports:** Use the Bug Report template if you encounter a crash, an unexpected error, or if the output is demonstrably incorrect (e.g., a file's score is wrong). We need the exact command you ran and your system details to reproduce the issue.
 - **✨ Feature Requests & Feedback:** Use the Feature Request template to propose a new scoring mode, a new output format, or to offer general usability feedback. Explain the problem you are trying to solve and your suggested solution.
 
-## Testing
+## Development Workflow
 
-Hotspot uses Go's standard testing framework. Run tests with:
+The project uses a comprehensive Makefile to ensure reproducible builds, consistent testing, and standardized development workflows. Always use the Makefile targets instead of running `go` commands directly to maintain consistency across the team.
+
+### Building
 
 ```bash
-# Run unit tests only
+# Build and install globally (useful for system-wide testing)
+make reinstall
+
+# Clean and rebuild binary only (faster for local development)
+make clean build
+```
+
+### Testing
+
+Hotspot uses Go's standard testing framework. Default testing commands:
+
+```bash
+# Run unit tests (fast, cached)
 make test
 
-# Run all tests
+# Run all tests including integration (comprehensive)
 make test-all
+
+# Force fresh test run (bypass cache)
+make test FORCE=1
 ```
 
 Integration tests are tagged with `//go:build integration` and are excluded from the default test suite to prevent them from running in CI or during normal development. They verify that hotspot's output matches `git log` exactly for both internal and external repositories.
+
+### Code Quality
+
+```bash
+# Format and lint code
+make format
+
+# Run all checks (format + lint + test)
+make check
+
+# Most thorough check (includes integration tests, bypasses cache)
+make check FORCE=1 INTEGRATION=1
+```
 
 ## Submitting Code Changes
 
