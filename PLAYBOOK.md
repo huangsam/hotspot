@@ -10,8 +10,6 @@ The core mission of `hotspot` is to surface **technical debt** and **knowledge r
 
 If you use Hotspot to ask "Why did you write such complex code?" or "Why are you the only one who knows this module?", you have already failed. This leads to metric gaming, hidden debt, and developer burnout.
 
----
-
 ## Remediation Strategies
 
 ### Area 1: High Complexity Score (The "Nightmare" File)
@@ -24,17 +22,44 @@ If you use Hotspot to ask "Why did you write such complex code?" or "Why are you
 
 ### Area 2: High Risk Score (The "Knowledge Island")
 
-**The Signal**: One person owns 90% of a critical path.
+**The Signal**: One person owns 90% of a critical path (High Bus Factor).
 - **Supportive Action**:
     - **Shadowing**: Have another dev shadow the owner for a week.
     - **Rotation**: Temporarily rotate the owner out of that module to force knowledge transfer.
-    - **Documentation**: Ask the owner to record "Architecture Decison Records" (ADRs) for that area.
+    - **Documentation**: Ask the owner to record "Architecture Decision Records" (ADRs) for that area.
 
----
+### Area 3: High Stale Score (The "Lurking Dragon")
+
+**The Signal**: Large, old files with high historical importance that haven't been touched recently.
+- **The Risk**: These are often "load-bearing" legacy files that no one dares to touch. When they eventually *must* change, they cause outages.
+- **Supportive Action**:
+    - **Modernization Spike**: Dedicate a spike to analyze if the logic is still needed or can be ported to a newer service.
+    - **Verification Loop**: Ensure unit tests still run and pass against current dependencies.
+
+### Area 4: High Hot Score (The "Active Volcano")
+
+**The Signal**: Extreme recent activity and churn.
+- **The Context**: This is normal during a feature launch, but dangerous if it persists for months.
+- **Supportive Action**:
+    - **Complexity Check**: Run `hotspot files --mode complexity` on the same path. If both are high, the file is likely a "God Object" that needs splitting.
+    - **Cool-down Period**: If the churn is driven by bug-fix loops, pause feature work to stabilize the architecture.
+
+## Closing the Loop: Measuring Success
+
+Data is only useful if it shows progress. Use these commands to quantify your impact:
+
+- **Audit a Refactor**: Run `hotspot compare files --base-ref v1.0 --target-ref HEAD --mode complexity`. A successful refactor should show a significant delta decrease in complexity scores.
+- **Track Trends**: Use `hotspot timeseries --path <path> --mode risk` to prove that "Knowledge Islands" are shrinking over time as ownership is shared.
+
+## Hotspot in Agile Rituals
+
+- **Sprint Planning**: Before starting work on a legacy module, run `hotspot check`. If it fails thresholds, add "Technical Debt Cleanup" as a sub-task for the story.
+- **Retrospectives**: Share the `timeseries` for the team's core subsystem. Celebrate when the trend line for "Risk" or "Complexity" goes down.
+- **Onboarding**: Give new joins a list of "High Risk" files from Hotspot so they know where to ask for extra review.
 
 ## Managing Upward (The "Ambiguity" Guide)
 
-Communication with leadership can be tough, especially when they demand "zero risk" or "perfect scores." Use these scripts to handle common leadership ambiguities:
+Communication with leadership can be tough. Use these scripts to handle common leadership ambiguities:
 
 ### "Why didn't we see this complexity earlier?"
 
@@ -44,7 +69,13 @@ Communication with leadership can be tough, especially when they demand "zero ri
 
 **The Reframe**: "A score of zero isn't the goal—balanced risk is. Some high-activity areas (Hot) are healthy during a feature launch. We are focusing our energy on the 'Complexity' and 'Risk' silos that actually threaten our stability, rather than chasing a vanity metric."
 
----
+## Policy Enforcement Ethics (CI/CD)
+
+The `hotspot check` command is a powerful tool, but it must be used with care:
+
+1. **Start with "Soft Fails"**: When first introducing Hotspot to a pipeline, configure it to report results without failing the build. This allows the team to calibrate thresholds.
+2. **Exemptions are Healthy**: Provide a mechanism (like `hotspot.yaml` excludes) for legacy files that the team has explicitly decided *not* to refactor yet.
+3. **Discussion over Blocking**: Use a "High Risk" alert as a prompt for a senior engineer to provide a more detailed code review, rather than a robotic "Request Changes."
 
 ## The Empathy Ethics
 
