@@ -9,7 +9,7 @@ require (
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/jackc/pgx/v5 v5.8.0
-	github.com/mark3labs/mcp-go v0.44.1
+	github.com/mark3labs/mcp-go v0.45.0
 	github.com/olekukonko/tablewriter v1.1.3
 	github.com/parquet-go/parquet-go v0.28.0
 	github.com/spf13/cobra v1.10.2
