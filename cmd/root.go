@@ -127,7 +127,7 @@ func initConfig() {
 }
 
 // sharedSetup unmarshals config and runs validation.
-func sharedSetup(ctx context.Context, _ *cobra.Command, args []string) error {
+func sharedSetup(ctx context.Context, cmd *cobra.Command, args []string) error {
 	// Handle profiling flag
 	profilePrefix := viper.GetString("profile")
 	if err := contract.ProcessProfilingConfig(profile, profilePrefix); err != nil {
@@ -164,7 +164,9 @@ func sharedSetup(ctx context.Context, _ *cobra.Command, args []string) error {
 	// This function now populates the global 'cfg' from 'input'.
 	client := contract.NewLocalGitClient()
 	if err := contract.ProcessAndValidate(ctx, cfg, client, input); err != nil {
-		return err
+		if cmd == nil || cmd.Name() != "mcp" {
+			return err
+		}
 	}
 
 	// 5. Initialize persistence layer with validated config

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/mcp"
 	"github.com/spf13/cobra"
 )
@@ -16,7 +17,8 @@ var mcpCmd = &cobra.Command{
 		return sharedSetup(rootCtx, cmd, args)
 	},
 	RunE: func(_ *cobra.Command, _ []string) error {
-		return mcp.StartMCPServer(rootCtx, cfg, cacheManager)
+		client := contract.NewLocalGitClient()
+		return mcp.StartMCPServer(rootCtx, cfg, cacheManager, client)
 	},
 }
 

@@ -15,13 +15,20 @@ import (
 type toolHandler struct {
 	baseCfg *contract.Config
 	mgr     contract.CacheManager
+	client  contract.GitClient
 }
 
 // handleGetFilesHotspots handles the get_files_hotspots tool.
 func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	cfg := h.baseCfg.Clone()
-	if p := request.GetString("repo_path", ""); p != "" {
-		cfg.RepoPath = p
+	repoPath := request.GetString("repo_path", "")
+	if repoPath == "" && cfg.RepoPath == "" {
+		repoPath = "."
+	}
+	if repoPath != "" {
+		if err := contract.ResolveGitPathAndFilter(ctx, cfg, h.client, &contract.ConfigRawInput{RepoPathStr: repoPath}); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("invalid repo path: %v", err)), nil
+		}
 	}
 	if m := request.GetString("mode", ""); m != "" {
 		cfg.Mode = schema.ScoringMode(m)
@@ -44,8 +51,14 @@ func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.Ca
 // handleGetFoldersHotspots handles the get_folders_hotspots tool.
 func (h *toolHandler) handleGetFoldersHotspots(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	cfg := h.baseCfg.Clone()
-	if p := request.GetString("repo_path", ""); p != "" {
-		cfg.RepoPath = p
+	repoPath := request.GetString("repo_path", "")
+	if repoPath == "" && cfg.RepoPath == "" {
+		repoPath = "."
+	}
+	if repoPath != "" {
+		if err := contract.ResolveGitPathAndFilter(ctx, cfg, h.client, &contract.ConfigRawInput{RepoPathStr: repoPath}); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("invalid repo path: %v", err)), nil
+		}
 	}
 	if m := request.GetString("mode", ""); m != "" {
 		cfg.Mode = schema.ScoringMode(m)
@@ -71,8 +84,14 @@ func (h *toolHandler) handleCompareHotspots(ctx context.Context, request mcp.Cal
 	cfg.BaseRef = request.GetString("base_ref", "")
 	cfg.TargetRef = request.GetString("target_ref", "")
 	lookbackStr := request.GetString("lookback", "")
-	if p := request.GetString("repo_path", ""); p != "" {
-		cfg.RepoPath = p
+	repoPath := request.GetString("repo_path", "")
+	if repoPath == "" && cfg.RepoPath == "" {
+		repoPath = "."
+	}
+	if repoPath != "" {
+		if err := contract.ResolveGitPathAndFilter(ctx, cfg, h.client, &contract.ConfigRawInput{RepoPathStr: repoPath}); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("invalid repo path: %v", err)), nil
+		}
 	}
 	if m := request.GetString("mode", ""); m != "" {
 		cfg.Mode = schema.ScoringMode(m)
@@ -98,8 +117,14 @@ func (h *toolHandler) handleGetTimeseries(ctx context.Context, request mcp.CallT
 	cfg.TimeseriesPoints = request.GetInt("points", 0)
 	intervalStr := request.GetString("interval", "")
 
-	if p := request.GetString("repo_path", ""); p != "" {
-		cfg.RepoPath = p
+	repoPath := request.GetString("repo_path", "")
+	if repoPath == "" && cfg.RepoPath == "" {
+		repoPath = "."
+	}
+	if repoPath != "" {
+		if err := contract.ResolveGitPathAndFilter(ctx, cfg, h.client, &contract.ConfigRawInput{RepoPathStr: repoPath}); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("invalid repo path: %v", err)), nil
+		}
 	}
 	if m := request.GetString("mode", ""); m != "" {
 		cfg.Mode = schema.ScoringMode(m)

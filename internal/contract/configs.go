@@ -239,7 +239,7 @@ func ProcessAndValidate(ctx context.Context, cfg *Config, client GitClient, inpu
 	if err := processRiskThresholds(cfg, input); err != nil {
 		return err
 	}
-	if err := resolveGitPathAndFilter(ctx, cfg, client, input); err != nil {
+	if err := ResolveGitPathAndFilter(ctx, cfg, client, input); err != nil {
 		return err
 	}
 	return nil
@@ -686,8 +686,8 @@ func ProcessProfilingConfig(profile *ProfileConfig, profilePrefix string) error 
 	return nil
 }
 
-// resolveGitPathAndFilter resolves the Git repository path and set the implicit path filter.
-func resolveGitPathAndFilter(ctx context.Context, cfg *Config, client GitClient, input *ConfigRawInput) error {
+// ResolveGitPathAndFilter resolves the Git repository path and set the implicit path filter.
+func ResolveGitPathAndFilter(ctx context.Context, cfg *Config, client GitClient, input *ConfigRawInput) error {
 	// (Implementation unchanged, as it already reads from input.RepoPathStr)
 	searchPath := input.RepoPathStr
 	absSearchPath, err := filepath.Abs(searchPath)

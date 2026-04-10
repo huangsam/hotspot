@@ -11,7 +11,7 @@ import (
 
 // NewMCPServer initializes and configures the Hotspot MCP server without starting it.
 // This is exposed for unit testing.
-func NewMCPServer(baseCfg *contract.Config, mgr contract.CacheManager) *server.MCPServer {
+func NewMCPServer(baseCfg *contract.Config, mgr contract.CacheManager, client contract.GitClient) *server.MCPServer {
 	s := server.NewMCPServer(
 		"Hotspot Analysis Server",
 		"1.0.0",
@@ -21,6 +21,7 @@ func NewMCPServer(baseCfg *contract.Config, mgr contract.CacheManager) *server.M
 	h := &toolHandler{
 		baseCfg: baseCfg,
 		mgr:     mgr,
+		client:  client,
 	}
 
 	// --- 1. Tool: get_files_hotspots ---
@@ -63,7 +64,7 @@ func NewMCPServer(baseCfg *contract.Config, mgr contract.CacheManager) *server.M
 }
 
 // StartMCPServer starts the Hotspot MCP server.
-func StartMCPServer(_ context.Context, baseCfg *contract.Config, mgr contract.CacheManager) error {
-	s := NewMCPServer(baseCfg, mgr)
+func StartMCPServer(_ context.Context, baseCfg *contract.Config, mgr contract.CacheManager, client contract.GitClient) error {
+	s := NewMCPServer(baseCfg, mgr, client)
 	return server.ServeStdio(s)
 }

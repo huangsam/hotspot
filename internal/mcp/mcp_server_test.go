@@ -17,9 +17,10 @@ func TestMCPServerHandlers_ValidationErrors(t *testing.T) {
 		Mode:     "hot",
 	}
 
-	// Create a dummy manager, though we shouldn't hit it because we test validation errors
+	// Create a dummy manager and mock client
 	var mgr contract.CacheManager
-	s := mcp_internal.NewMCPServer(baseCfg, mgr)
+	client := &contract.MockGitClient{}
+	s := mcp_internal.NewMCPServer(baseCfg, mgr, client)
 
 	ctx := context.Background()
 
