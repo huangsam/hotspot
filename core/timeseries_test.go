@@ -59,7 +59,7 @@ func TestRunTimeseriesAnalysis_Success(t *testing.T) {
 		},
 	}
 
-	result := runTimeseriesAnalysis(ctx, cfg, mockClient, path, false, now, interval, numPoints, mockMgr)
+	result := runTimeseriesAnalysis(ctx, cfg.Git, cfg.Scoring, mockClient, path, false, now, interval, numPoints, mockMgr)
 
 	assert.Len(t, result, numPoints)
 
@@ -114,7 +114,7 @@ func TestRunTimeseriesAnalysis_GetOldestCommitError(t *testing.T) {
 		},
 	}
 
-	result := runTimeseriesAnalysis(ctx, cfg, mockClient, path, false, now, interval, numPoints, mockMgr)
+	result := runTimeseriesAnalysis(ctx, cfg.Git, cfg.Scoring, mockClient, path, false, now, interval, numPoints, mockMgr)
 
 	assert.Len(t, result, numPoints)
 
@@ -159,7 +159,7 @@ func TestAnalyzeTimeseriesPoint_File(t *testing.T) {
 		},
 	}
 
-	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, false, mockMgr)
+	score, owners := analyzeTimeseriesPoint(ctx, cfg.Git, cfg.Scoring, mockClient, path, false, mockMgr)
 
 	assert.True(t, score >= 0 && score <= 100)
 	assert.NotNil(t, owners)
@@ -200,7 +200,7 @@ func TestAnalyzeTimeseriesPoint_Folder(t *testing.T) {
 		},
 	}
 
-	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, true, mockMgr)
+	score, owners := analyzeTimeseriesPoint(ctx, cfg.Git, cfg.Scoring, mockClient, path, true, mockMgr)
 
 	assert.True(t, score >= 0 && score <= 100)
 	assert.NotNil(t, owners)
@@ -237,7 +237,7 @@ func TestAnalyzeTimeseriesPoint_NoData(t *testing.T) {
 		},
 	}
 
-	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, false, mockMgr)
+	score, owners := analyzeTimeseriesPoint(ctx, cfg.Git, cfg.Scoring, mockClient, path, false, mockMgr)
 
 	assert.Equal(t, 0.0, score)
 	assert.Empty(t, owners)
@@ -274,7 +274,7 @@ func TestAnalyzeTimeseriesPoint_PathNotFound(t *testing.T) {
 		},
 	}
 
-	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, false, mockMgr)
+	score, owners := analyzeTimeseriesPoint(ctx, cfg.Git, cfg.Scoring, mockClient, path, false, mockMgr)
 
 	assert.Equal(t, 0.0, score)
 	assert.Empty(t, owners)

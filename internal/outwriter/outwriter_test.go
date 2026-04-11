@@ -30,7 +30,7 @@ func TestOutWriter_WriteFiles(t *testing.T) {
 
 	var buf bytes.Buffer
 	duration := 10 * time.Millisecond
-	err := ow.WriteFiles(&buf, files, cfg, duration)
+	err := ow.WriteFiles(&buf, files, cfg.Output, cfg.Runtime, duration)
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -62,7 +62,7 @@ func TestOutWriter_WriteFolders(t *testing.T) {
 
 	var buf bytes.Buffer
 	duration := 20 * time.Millisecond
-	err := ow.WriteFolders(&buf, folders, cfg, duration)
+	err := ow.WriteFolders(&buf, folders, cfg.Output, cfg.Runtime, duration)
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -111,7 +111,7 @@ func TestOutWriter_WriteComparison(t *testing.T) {
 
 	var buf bytes.Buffer
 	duration := 30 * time.Millisecond
-	err := ow.WriteComparison(&buf, comparison, cfg, duration)
+	err := ow.WriteComparison(&buf, comparison, cfg.Output, cfg.Runtime, duration)
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -147,7 +147,7 @@ func TestOutWriter_WriteTimeseries(t *testing.T) {
 
 	var buf bytes.Buffer
 	duration := 40 * time.Millisecond
-	err := ow.WriteTimeseries(&buf, result, cfg, duration)
+	err := ow.WriteTimeseries(&buf, result, cfg.Output, cfg.Runtime, duration)
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -173,7 +173,7 @@ func TestOutWriter_WriteMetrics(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err := ow.WriteMetrics(&buf, activeWeights, cfg)
+	err := ow.WriteMetrics(&buf, activeWeights, cfg.Output)
 	require.NoError(t, err)
 
 	output := buf.String()

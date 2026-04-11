@@ -12,11 +12,11 @@ import (
 
 // WriteMetricsDefinitions displays the formal definitions of all scoring modes.
 // This is a static display that does not require Git analysis.
-func WriteMetricsDefinitions(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, cfg *contract.Config) error {
+func WriteMetricsDefinitions(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, output contract.OutputSettings) error {
 	// Build the complete render model with all processed data
 	renderModel := buildMetricsRenderModel(activeWeights)
 
-	switch cfg.Output.Format {
+	switch output.GetFormat() {
 	case schema.JSONOut:
 		return writeJSONMetrics(w, renderModel)
 	case schema.CSVOut:
@@ -24,12 +24,12 @@ func WriteMetricsDefinitions(w io.Writer, activeWeights map[schema.ScoringMode]m
 		defer csvWriter.Flush()
 		return writeCSVMetrics(csvWriter, renderModel)
 	default:
-		return writeMetricsText(w, renderModel, cfg)
+		return writeMetricsText(w, renderModel, output)
 	}
 }
 
 // writeMetricsText displays metrics in human-readable text format.
-func writeMetricsText(w io.Writer, renderModel *schema.MetricsRenderModel, _ *contract.Config) error {
+func writeMetricsText(w io.Writer, renderModel *schema.MetricsRenderModel, _ contract.OutputSettings) error {
 	if _, err := fmt.Fprintf(w, "Hotspot Scoring Modes\n"); err != nil {
 		return err
 	}

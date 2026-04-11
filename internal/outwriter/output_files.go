@@ -16,12 +16,12 @@ import (
 )
 
 // WriteFileResults outputs the analysis results, dispatching based on the output format configured.
-func WriteFileResults(w io.Writer, files []schema.FileResult, cfg *contract.Config, duration time.Duration) error {
+func WriteFileResults(w io.Writer, files []schema.FileResult, output contract.OutputSettings, runtime contract.RuntimeSettings, duration time.Duration) error {
 	// Create formatters using helper
-	fmtFloat, intFmt := createFormatters(cfg.Output.Precision)
+	fmtFloat, intFmt := createFormatters(output.GetPrecision())
 
 	// Dispatcher: Handle different output formats
-	switch cfg.Output.Format {
+	switch output.GetFormat() {
 	case schema.JSONOut:
 		if err := writeJSONResultsForFiles(w, files); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
@@ -34,25 +34,25 @@ func WriteFileResults(w io.Writer, files []schema.FileResult, cfg *contract.Conf
 		}
 	default:
 		// Default to human-readable table
-		return writeFileTable(files, cfg, fmtFloat, intFmt, duration, w)
+		return writeFileTable(files, output, runtime, fmtFloat, intFmt, duration, w)
 	}
 	return nil
 }
 
 // writeFileTable generates and writes the human-readable table.
-func writeFileTable(files []schema.FileResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
+func writeFileTable(files []schema.FileResult, output contract.OutputSettings, runtime contract.RuntimeSettings, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
 	table := tablewriter.NewWriter(writer)
 	defer func() { _ = table.Close() }()
 
 	// 1. Define Headers
 	headers := []string{"Rank", "Path", "Score", "Label"}
-	if cfg.Output.Detail {
+	if output.IsDetail() {
 		headers = append(headers, "Contrib", "Commits", "LOC", "Churn", "Age", "Gini")
 	}
-	if cfg.Output.Explain {
+	if output.IsExplain() {
 		headers = append(headers, "Explain")
 	}
-	if cfg.Output.Owner {
+	if output.IsOwner() {
 		headers = append(headers, "Owner")
 	}
 	table.Header(headers)
@@ -67,16 +67,16 @@ func writeFileTable(files []schema.FileResult, cfg *contract.Config, fmtFloat fu
 	for i, f := range files {
 		// Prepare the row data as a slice of strings
 		label := contract.GetPlainLabel(f.ModeScore)
-		if cfg.Output.UseColors {
+		if output.IsUseColors() {
 			label = contract.GetColorLabel(f.ModeScore)
 		}
 		row := []string{
 			strconv.Itoa(i + 1), // Rank
-			contract.TruncatePath(f.Path, getMaxTablePathWidth(cfg)), // File
+			contract.TruncatePath(f.Path, getMaxTablePathWidth(output)), // File
 			fmtFloat(f.ModeScore), // Score
 			label,                 // Label
 		}
-		if cfg.Output.Detail {
+		if output.IsDetail() {
 			row = append(
 				row,
 				fmt.Sprintf(intFmt, f.UniqueContributors), // Contrib
@@ -87,11 +87,11 @@ func writeFileTable(files []schema.FileResult, cfg *contract.Config, fmtFloat fu
 				fmtFloat(f.Gini),                          // Gini
 			)
 		}
-		if cfg.Output.Explain {
+		if output.IsExplain() {
 			topOnes := formatTopMetricBreakdown(&f)
 			row = append(row, topOnes) // Breakdown explanation
 		}
-		if cfg.Output.Owner {
+		if output.IsOwner() {
 			row = append(row, schema.FormatOwners(f.Owners)) // Top 2 owners
 		}
 		data = append(data, row)
@@ -115,7 +115,7 @@ func writeFileTable(files []schema.FileResult, cfg *contract.Config, fmtFloat fu
 	if _, err := fmt.Fprintf(writer, "Showing top %d files (total commits: %d, total churn: %d)\n", numFiles, totalCommits, totalChurn); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(writer, "Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Runtime.Workers, cfg.Runtime.CacheBackend); err != nil {
+	if _, err := fmt.Fprintf(writer, "Analysis completed in %v with %d workers. Cache backend: %s\n", duration, runtime.GetWorkers(), runtime.GetCacheBackend()); err != nil {
 		return err
 	}
 	return nil

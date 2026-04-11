@@ -17,12 +17,13 @@ import (
 
 // FileResultBuilder builds the file metric from Git output.
 type FileResultBuilder struct {
-	cfg    *contract.Config
-	git    contract.GitClient
-	result *schema.FileResult
-	output *schema.AggregateOutput
-	path   string
-	ctx    context.Context
+	gitSettings     contract.GitSettings
+	scoringSettings contract.ScoringSettings
+	git             contract.GitClient
+	result          *schema.FileResult
+	output          *schema.AggregateOutput
+	path            string
+	ctx             context.Context
 
 	// Internal data collected during the build process
 	contribCount map[string]int
@@ -30,15 +31,23 @@ type FileResultBuilder struct {
 }
 
 // NewFileMetricsBuilder is the starting point for building file metrics.
-func NewFileMetricsBuilder(ctx context.Context, cfg *contract.Config, client contract.GitClient, path string, output *schema.AggregateOutput) *FileResultBuilder {
+func NewFileMetricsBuilder(
+	ctx context.Context,
+	gitSettings contract.GitSettings,
+	scoringSettings contract.ScoringSettings,
+	client contract.GitClient,
+	path string,
+	output *schema.AggregateOutput,
+) *FileResultBuilder {
 	return &FileResultBuilder{
-		cfg:          cfg,
-		git:          client,
-		result:       &schema.FileResult{Path: path, Mode: cfg.Scoring.Mode},
-		output:       output,
-		path:         path,
-		ctx:          ctx,
-		contribCount: make(map[string]int),
+		gitSettings:     gitSettings,
+		scoringSettings: scoringSettings,
+		git:             client,
+		result:          &schema.FileResult{Path: path, Mode: scoringSettings.GetMode()},
+		output:          output,
+		path:            path,
+		ctx:             ctx,
+		contribCount:    make(map[string]int),
 	}
 }
 
@@ -68,10 +77,10 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 		// For follow analysis, run git log with --follow to get complete history
 		out, err := b.git.GetFileActivityLog(
 			b.ctx,
-			b.cfg.Git.RepoPath,
+			b.gitSettings.GetRepoPath(),
 			b.path,
-			b.cfg.Git.StartTime,
-			b.cfg.Git.EndTime,
+			b.gitSettings.GetStartTime(),
+			b.gitSettings.GetEndTime(),
 			useFollow,
 		)
 		if err == nil {
@@ -128,7 +137,7 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 
 // FetchFileStats reads the file to populate SizeBytes and LinesOfCode (PLOC).
 func (b *FileResultBuilder) FetchFileStats() *FileResultBuilder {
-	fullPath := filepath.Join(b.cfg.Git.RepoPath, b.path)
+	fullPath := filepath.Join(b.gitSettings.GetRepoPath(), b.path)
 	content, err := os.ReadFile(fullPath)
 	if err != nil {
 		return b
@@ -212,25 +221,28 @@ func (b *FileResultBuilder) CalculateOwner() *FileResultBuilder {
 // CalculateScore computes the final composite score.
 func (b *FileResultBuilder) CalculateScore() *FileResultBuilder {
 	// Compute score for current mode
-	b.result.ModeScore = algo.ComputeScore(b.result, b.cfg.Scoring.Mode, b.cfg.Scoring.ComputedWeights[b.cfg.Scoring.Mode])
+	mode := b.scoringSettings.GetMode()
+	weights := b.scoringSettings.GetComputedWeights()[mode]
+	b.result.ModeScore = algo.ComputeScore(b.result, mode, weights)
 
 	// Compute scores and breakdowns for all modes
 	b.result.AllScores = make(map[schema.ScoringMode]float64)
 	b.result.AllBreakdowns = make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
 
-	for _, mode := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode} {
-		if mode == b.cfg.Scoring.Mode {
+	computedWeights := b.scoringSettings.GetComputedWeights()
+	for _, m := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode} {
+		if m == mode {
 			// Already computed
-			b.result.AllScores[mode] = b.result.ModeScore
-			b.result.AllBreakdowns[mode] = make(map[schema.BreakdownKey]float64, len(b.result.ModeBreakdown))
-			maps.Copy(b.result.AllBreakdowns[mode], b.result.ModeBreakdown)
+			b.result.AllScores[m] = b.result.ModeScore
+			b.result.AllBreakdowns[m] = make(map[schema.BreakdownKey]float64, len(b.result.ModeBreakdown))
+			maps.Copy(b.result.AllBreakdowns[m], b.result.ModeBreakdown)
 		} else {
 			mCopy := *b.result // Shallow copy
-			mCopy.Mode = mode  // Set mode for computation
-			score := algo.ComputeScore(&mCopy, mode, b.cfg.Scoring.ComputedWeights[mode])
-			b.result.AllScores[mode] = score
-			b.result.AllBreakdowns[mode] = make(map[schema.BreakdownKey]float64, len(mCopy.ModeBreakdown))
-			maps.Copy(b.result.AllBreakdowns[mode], mCopy.ModeBreakdown)
+			mCopy.Mode = m     // Set mode for computation
+			score := algo.ComputeScore(&mCopy, m, computedWeights[m])
+			b.result.AllScores[m] = score
+			b.result.AllBreakdowns[m] = make(map[schema.BreakdownKey]float64, len(mCopy.ModeBreakdown))
+			maps.Copy(b.result.AllBreakdowns[m], mCopy.ModeBreakdown)
 		}
 	}
 

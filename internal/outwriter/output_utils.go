@@ -17,8 +17,8 @@ import (
 
 // WriteWithOutputFile handles the common pattern of opening a file, writing to it, and cleaning up.
 // It accepts a writer function that takes an io.Writer and returns an error.
-func WriteWithOutputFile(cfg *contract.Config, writer func(io.Writer) error, successMsg string) error {
-	file, err := contract.SelectOutputFile(cfg.Output.OutputFile)
+func WriteWithOutputFile(output contract.OutputSettings, writer func(io.Writer) error, successMsg string) error {
+	file, err := contract.SelectOutputFile(output.GetOutputFile())
 	if err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ func WriteWithOutputFile(cfg *contract.Config, writer func(io.Writer) error, suc
 	}
 
 	if file != os.Stdout {
-		_, _ = fmt.Fprintf(os.Stdout, "%s to %s\n", successMsg, cfg.Output.OutputFile)
+		_, _ = fmt.Fprintf(os.Stdout, "%s to %s\n", successMsg, output.GetOutputFile())
 	}
 	return nil
 }
@@ -234,12 +234,12 @@ func buildMetricsRenderModel(activeWeights map[schema.ScoringMode]map[schema.Bre
 
 // getMaxTablePathWidth calculates the maximum width for file paths in table output
 // based on terminal width and table configuration.
-func getMaxTablePathWidth(cfg *contract.Config) int {
+func getMaxTablePathWidth(output contract.OutputSettings) int {
 	var termWidth int
 
 	// Check for absolute width override from flag/env
-	if cfg.Output.Width > 0 {
-		termWidth = cfg.Output.Width
+	if output.GetWidth() > 0 {
+		termWidth = output.GetWidth()
 	}
 
 	if termWidth == 0 { // Not set by override
@@ -257,17 +257,17 @@ func getMaxTablePathWidth(cfg *contract.Config) int {
 	baseWidth := 25 // Rank + Score + Label with borders/padding
 
 	// Add detail columns with formatting
-	if cfg.Output.Detail {
+	if output.IsDetail() {
 		baseWidth += 55 // All detail columns (Contrib + Commits + LOC + Churn + Age + Gini) with formatting
 	}
 
 	// Add explain column
-	if cfg.Output.Explain {
+	if output.IsExplain() {
 		baseWidth += 35 // Explain column with formatting
 	}
 
 	// Add owner column
-	if cfg.Output.Owner {
+	if output.IsOwner() {
 		baseWidth += 25 // Owner column with formatting
 	}
 

@@ -11,41 +11,51 @@ import (
 
 // CheckResultBuilder builds the check result using a builder pattern.
 type CheckResultBuilder struct {
-	cfg            *contract.Config
-	client         contract.GitClient
-	mgr            contract.CacheManager
-	ctx            context.Context
-	filesToAnalyze []string
-	cfgTarget      *contract.Config
-	fileResults    []schema.FileResult
-	maxScores      map[schema.ScoringMode]float64
-	failedFiles    []schema.CheckFailedFile
-	maxScoreFiles  map[schema.ScoringMode][]schema.CheckMaxScoreFile
-	avgScores      map[schema.ScoringMode]float64
-	result         *schema.CheckResult
+	gitSettings     contract.GitSettings
+	scoringSettings contract.ScoringSettings
+	compareSettings contract.ComparisonSettings
+	client          contract.GitClient
+	mgr             contract.CacheManager
+	ctx             context.Context
+	filesToAnalyze  []string
+	cfgTarget       *contract.Config
+	fileResults     []schema.FileResult
+	maxScores       map[schema.ScoringMode]float64
+	failedFiles     []schema.CheckFailedFile
+	maxScoreFiles   map[schema.ScoringMode][]schema.CheckMaxScoreFile
+	avgScores       map[schema.ScoringMode]float64
+	result          *schema.CheckResult
 }
 
 // NewCheckResultBuilder creates a new builder for check results.
-func NewCheckResultBuilder(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) *CheckResultBuilder {
+func NewCheckResultBuilder(
+	ctx context.Context,
+	gitSettings contract.GitSettings,
+	scoringSettings contract.ScoringSettings,
+	compareSettings contract.ComparisonSettings,
+	mgr contract.CacheManager,
+) *CheckResultBuilder {
 	return &CheckResultBuilder{
-		cfg:    cfg,
-		client: contract.NewLocalGitClient(),
-		mgr:    mgr,
-		ctx:    ctx,
+		gitSettings:     gitSettings,
+		scoringSettings: scoringSettings,
+		compareSettings: compareSettings,
+		client:          contract.NewLocalGitClient(),
+		mgr:             mgr,
+		ctx:             ctx,
 	}
 }
 
 // ValidatePrerequisites validates config and gets files to analyze.
 func (b *CheckResultBuilder) ValidatePrerequisites() (*CheckResultBuilder, error) {
 	// Validate that compare mode is enabled
-	if !b.cfg.Compare.Enabled {
+	if !b.compareSettings.IsEnabled() {
 		return nil, fmt.Errorf("check command requires --base-ref and --target-ref flags. Example: hotspot check --base-ref main --target-ref feature")
 	}
 
 	// Get the list of changed files between base and target refs
-	changedFiles, err := b.client.GetChangedFilesBetweenRefs(b.ctx, b.cfg.Git.RepoPath, b.cfg.Compare.BaseRef, b.cfg.Compare.TargetRef)
+	changedFiles, err := b.client.GetChangedFilesBetweenRefs(b.ctx, b.gitSettings.GetRepoPath(), b.compareSettings.GetBaseRef(), b.compareSettings.GetTargetRef())
 	if err != nil {
-		return nil, fmt.Errorf("failed to get changed files between %q and %q: %w. Verify both refs exist in the repository", b.cfg.Compare.BaseRef, b.cfg.Compare.TargetRef, err)
+		return nil, fmt.Errorf("failed to get changed files between %q and %q: %w. Verify both refs exist in the repository", b.compareSettings.GetBaseRef(), b.compareSettings.GetTargetRef(), err)
 	}
 
 	if len(changedFiles) == 0 {
@@ -55,7 +65,7 @@ func (b *CheckResultBuilder) ValidatePrerequisites() (*CheckResultBuilder, error
 	}
 
 	// Filter changed files to only include those we want to analyze
-	b.filesToAnalyze = filterChangedFiles(changedFiles, b.cfg.Git.Excludes)
+	b.filesToAnalyze = filterChangedFiles(changedFiles, b.gitSettings.GetExcludes())
 	if len(b.filesToAnalyze) == 0 {
 		fmt.Println("No relevant files to check (all excluded) - check passed")
 		b.result = &schema.CheckResult{Passed: true}
@@ -68,14 +78,28 @@ func (b *CheckResultBuilder) ValidatePrerequisites() (*CheckResultBuilder, error
 // PrepareAnalysisConfig sets up the time window for analysis.
 func (b *CheckResultBuilder) PrepareAnalysisConfig() (*CheckResultBuilder, error) {
 	// Get the time window for the target ref
-	_, targetEndTime, err := getAnalysisWindowForRef(b.ctx, b.client, b.cfg.Git.RepoPath, b.cfg.Compare.TargetRef, b.cfg.Compare.Lookback)
+	_, targetEndTime, err := getAnalysisWindowForRef(b.ctx, b.client, b.gitSettings.GetRepoPath(), b.compareSettings.GetTargetRef(), b.compareSettings.GetLookback())
 	if err != nil {
-		return nil, fmt.Errorf("failed to analyze target ref %q: %w. Verify the ref exists and has commits", b.cfg.Compare.TargetRef, err)
+		return nil, fmt.Errorf("failed to analyze target ref %q: %w. Verify the ref exists and has commits", b.compareSettings.GetTargetRef(), err)
 	}
 
 	// Create config for target ref analysis
-	targetStartTime := targetEndTime.Add(-b.cfg.Compare.Lookback)
-	b.cfgTarget = b.cfg.CloneWithTimeWindow(targetStartTime, targetEndTime)
+	targetStartTime := targetEndTime.Add(-b.compareSettings.GetLookback())
+
+	// Create dynamic time window settings
+	b.cfgTarget = &contract.Config{
+		Git: contract.GitConfig{
+			RepoPath:   b.gitSettings.GetRepoPath(),
+			StartTime:  targetStartTime,
+			EndTime:    targetEndTime,
+			PathFilter: b.gitSettings.GetPathFilter(),
+			Excludes:   b.gitSettings.GetExcludes(),
+			Follow:     b.gitSettings.IsFollow(),
+		},
+		Scoring: b.scoringSettings.(contract.ScoringConfig), // Safe cast since we know the implementation
+		Runtime: contract.RuntimeConfig{Workers: 1},         // Sequential for check
+		Compare: b.compareSettings.(contract.CompareConfig),
+	}
 
 	return b, nil
 }
@@ -83,15 +107,13 @@ func (b *CheckResultBuilder) PrepareAnalysisConfig() (*CheckResultBuilder, error
 // RunAnalysis performs the aggregation and file analysis.
 func (b *CheckResultBuilder) RunAnalysis() (*CheckResultBuilder, error) {
 	// Run aggregation once (shared for all modes)
-	output, err := agg.CachedAggregateActivity(b.ctx, b.cfgTarget, b.client, b.mgr)
+	output, err := agg.CachedAggregateActivity(b.ctx, b.cfgTarget.Git, b.cfgTarget.Compare, b.client, b.mgr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to analyze repository activity: %w. Verify the repository has Git history and is readable", err)
 	}
 
 	// Analyze files once (all scores are computed upfront in FileResult)
-	cfgDefault := b.cfgTarget.Clone()
-	cfgDefault.Scoring.Mode = schema.HotMode // Mode doesn't matter since all scores are computed
-	b.fileResults = analyzeRepo(b.ctx, cfgDefault, b.client, output, b.filesToAnalyze)
+	b.fileResults = analyzeRepo(b.ctx, b.cfgTarget.Git, b.cfgTarget.Scoring, b.cfgTarget.Runtime, b.client, output, b.filesToAnalyze)
 
 	return b, nil
 }
@@ -136,10 +158,11 @@ func (b *CheckResultBuilder) ComputeMetrics() *CheckResultBuilder {
 
 	// Check all files against thresholds for all modes
 	b.failedFiles = []schema.CheckFailedFile{}
+	thresholds := b.scoringSettings.GetRiskThresholds()
 	for _, file := range b.fileResults {
 		for _, mode := range schema.AllScoringModes {
 			score := file.AllScores[mode]
-			threshold := b.cfg.Scoring.RiskThresholds[mode]
+			threshold := thresholds[mode]
 			if score > threshold {
 				b.failedFiles = append(b.failedFiles, schema.CheckFailedFile{
 					Path:      file.Path,
@@ -161,12 +184,12 @@ func (b *CheckResultBuilder) BuildResult() *CheckResultBuilder {
 		FailedFiles:   b.failedFiles,
 		TotalFiles:    len(b.filesToAnalyze),
 		CheckedModes:  schema.AllScoringModes,
-		BaseRef:       b.cfg.Compare.BaseRef,
-		TargetRef:     b.cfg.Compare.TargetRef,
-		Thresholds:    b.cfg.Scoring.RiskThresholds,
+		BaseRef:       b.compareSettings.GetBaseRef(),
+		TargetRef:     b.compareSettings.GetTargetRef(),
+		Thresholds:    b.scoringSettings.GetRiskThresholds(),
 		MaxScores:     b.maxScores,
 		MaxScoreFiles: b.maxScoreFiles,
-		Lookback:      b.cfg.Compare.Lookback,
+		Lookback:      b.compareSettings.GetLookback(),
 		AvgScores:     b.avgScores,
 	}
 	return b

@@ -22,9 +22,18 @@ const (
 )
 
 // runSingleAnalysisCore performs the common Aggregation, Filtering, and Analysis steps.
-func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client contract.GitClient, mgr contract.CacheManager) (*schema.SingleAnalysisOutput, error) {
+func runSingleAnalysisCore(
+	ctx context.Context,
+	gitSettings contract.GitSettings,
+	scoringSettings contract.ScoringSettings,
+	runtimeSettings contract.RuntimeSettings,
+	outputSettings contract.OutputSettings,
+	compareSettings contract.ComparisonSettings,
+	client contract.GitClient,
+	mgr contract.CacheManager,
+) (*schema.SingleAnalysisOutput, error) {
 	if !shouldSuppressHeader(ctx) {
-		internal.LogAnalysisHeader(cfg)
+		internal.LogAnalysisHeader(gitSettings, scoringSettings, runtimeSettings, outputSettings)
 	}
 
 	// Add cache manager to context for use in worker goroutines
@@ -36,11 +45,11 @@ func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client con
 	if analysisStore != nil {
 		startTime := time.Now()
 		configParams := map[string]any{
-			"mode":         string(cfg.Scoring.Mode),
-			"lookback":     cfg.Compare.Lookback.String(),
-			"repo_path":    cfg.Git.RepoPath,
-			"workers":      cfg.Runtime.Workers,
-			"result_limit": cfg.Output.ResultLimit,
+			"mode":         string(scoringSettings.GetMode()),
+			"lookback":     compareSettings.GetLookback().String(),
+			"repo_path":    gitSettings.GetRepoPath(),
+			"workers":      runtimeSettings.GetWorkers(),
+			"result_limit": outputSettings.GetResultLimit(),
 		}
 		var err error
 		analysisID, err = analysisStore.BeginAnalysis(startTime, configParams)
@@ -53,28 +62,28 @@ func runSingleAnalysisCore(ctx context.Context, cfg *contract.Config, client con
 	}
 
 	// --- 1. Aggregation Phase (with caching) ---
-	output, err := agg.CachedAggregateActivity(ctx, cfg, client, mgr)
+	output, err := agg.CachedAggregateActivity(ctx, gitSettings, compareSettings, client, mgr)
 	if err != nil {
 		return nil, err
 	}
 
 	// --- 2. File List Building and Filtering ---
-	files := agg.BuildFilteredFileList(cfg.Git, output)
+	files := agg.BuildFilteredFileList(gitSettings, output)
 	if len(files) == 0 {
 		var suggestion string
 		switch {
-		case cfg.Git.PathFilter != "":
-			suggestion = fmt.Sprintf(" (try removing --filter '%s' or using --exclude differently)", cfg.Git.PathFilter)
-		case len(cfg.Git.Excludes) > 0:
-			suggestion = fmt.Sprintf(" (try adjusting excludes: %v)", cfg.Git.Excludes)
+		case gitSettings.GetPathFilter() != "":
+			suggestion = fmt.Sprintf(" (try removing --filter '%s' or using --exclude differently)", gitSettings.GetPathFilter())
+		case len(gitSettings.GetExcludes()) > 0:
+			suggestion = fmt.Sprintf(" (try adjusting excludes: %v)", gitSettings.GetExcludes())
 		default:
 			suggestion = " (ensure your repository has tracked files in the analysis time range)"
 		}
-		return nil, fmt.Errorf("no files found for analysis at %s%s", cfg.Git.RepoPath, suggestion)
+		return nil, fmt.Errorf("no files found for analysis at %s%s", gitSettings.GetRepoPath(), suggestion)
 	}
 
 	// --- 3. Core Analysis ---
-	fileResults := analyzeRepo(ctx, cfg, client, output, files)
+	fileResults := analyzeRepo(ctx, gitSettings, scoringSettings, runtimeSettings, client, output, files)
 
 	// --- 4. End Analysis Tracking ---
 	if analysisStore != nil && analysisID > 0 {
@@ -103,7 +112,7 @@ func runCompareAnalysisForRef(ctx context.Context, cfg *contract.Config, client 
 	cfgRef := cfg.CloneWithTimeWindow(baseStartTime, baseEndTime)
 
 	// 3. Run file analysis
-	fileResults, err := analyzeAllFilesAtRef(ctx, cfgRef, client, ref, mgr)
+	fileResults, err := analyzeAllFilesAtRef(ctx, cfgRef.Git, cfgRef.Scoring, cfgRef.Runtime, client, ref, mgr)
 	if err != nil {
 		return nil, fmt.Errorf("analysis failed for ref %s", ref)
 	}
@@ -119,24 +128,32 @@ func runCompareAnalysisForRef(ctx context.Context, cfg *contract.Config, client 
 
 // analyzeAllFilesAtRef performs file analysis for all files that exist at a specific Git reference.
 // Headers are always suppressed in compare mode.
-func analyzeAllFilesAtRef(ctx context.Context, cfg *contract.Config, client contract.GitClient, ref string, mgr contract.CacheManager) ([]schema.FileResult, error) {
+func analyzeAllFilesAtRef(
+	ctx context.Context,
+	gitSettings contract.GitSettings,
+	scoringSettings contract.ScoringSettings,
+	runtimeSettings contract.RuntimeSettings,
+	client contract.GitClient,
+	ref string,
+	mgr contract.CacheManager,
+) ([]schema.FileResult, error) {
 	// --- 1. Get all files at the reference ---
-	files, err := client.ListFilesAtRef(ctx, cfg.Git.RepoPath, ref)
+	files, err := client.ListFilesAtRef(ctx, gitSettings.GetRepoPath(), ref)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list files at ref %s: %w", ref, err)
 	}
 
 	// Apply path filter and excludes
 	filteredFiles := make([]string, 0, len(files))
-	pathFilterSet := cfg.Git.PathFilter != ""
+	pathFilterSet := gitSettings.GetPathFilter() != ""
 	for _, f := range files {
 		// Apply path filter check only if the filter is set
-		if pathFilterSet && !strings.HasPrefix(f, cfg.Git.PathFilter) {
+		if pathFilterSet && !strings.HasPrefix(f, gitSettings.GetPathFilter()) {
 			continue
 		}
 
 		// Apply excludes filter
-		if contract.ShouldIgnore(f, cfg.Git.Excludes) {
+		if contract.ShouldIgnore(f, gitSettings.GetExcludes()) {
 			continue
 		}
 
@@ -148,13 +165,15 @@ func analyzeAllFilesAtRef(ctx context.Context, cfg *contract.Config, client cont
 	}
 
 	// --- 2. Aggregation Phase (with caching) ---
-	output, err := agg.CachedAggregateActivity(ctx, cfg, client, mgr)
+	// Create dummy comparison settings for the internal aggregation call
+	comp := contract.CompareConfig{Enabled: false}
+	output, err := agg.CachedAggregateActivity(ctx, gitSettings, comp, client, mgr)
 	if err != nil {
 		return nil, err
 	}
 
 	// --- 3. Core Analysis ---
-	results := analyzeRepo(ctx, cfg, client, output, filteredFiles)
+	results := analyzeRepo(ctx, gitSettings, scoringSettings, runtimeSettings, client, output, filteredFiles)
 
 	// --- 4. Return Data ---
 	return results, nil
@@ -162,9 +181,17 @@ func analyzeAllFilesAtRef(ctx context.Context, cfg *contract.Config, client cont
 
 // runFollowPass re-analyzes the top N ranked files using 'git --follow'
 // to account for renames, and then returns a new, re-ranked list.
-func runFollowPass(ctx context.Context, cfg *contract.Config, client contract.GitClient, ranked []schema.FileResult, output *schema.AggregateOutput) []schema.FileResult {
+func runFollowPass(
+	ctx context.Context,
+	gitSettings contract.GitSettings,
+	scoringSettings contract.ScoringSettings,
+	outputSettings contract.OutputSettings,
+	client contract.GitClient,
+	ranked []schema.FileResult,
+	output *schema.AggregateOutput,
+) []schema.FileResult {
 	// Determine the number of files to re-analyze
-	n := min(cfg.Output.ResultLimit, len(ranked))
+	n := min(outputSettings.GetResultLimit(), len(ranked))
 	if n == 0 {
 		return ranked // Nothing to do
 	}
@@ -181,32 +208,40 @@ func runFollowPass(ctx context.Context, cfg *contract.Config, client contract.Gi
 			// but each goroutine writes to a *unique* index (ranked[idx]), which is safe.
 			rankedFile := ranked[idx]
 			followCtx := withUseFollow(ctx, true)
-			rean := analyzeFileCommon(followCtx, cfg, client, rankedFile.Path, output)
+			rean := analyzeFileCommon(followCtx, gitSettings, scoringSettings, client, rankedFile.Path, output)
 			ranked[idx] = rean
 		})
 	}
 	wg.Wait()
 
 	// re-rank after follow pass
-	return algo.RankFiles(ranked, cfg.Output.ResultLimit)
+	return algo.RankFiles(ranked, outputSettings.GetResultLimit())
 }
 
 // analyzeRepo processes all files in parallel using a worker pool.
-// It spawns cfg.Workers number of goroutines to analyze files concurrently
+// It spawns runtimeSettings.GetWorkers() number of goroutines to analyze files concurrently
 // and aggregates their results into a single slice of schema.FileMetrics.
-func analyzeRepo(ctx context.Context, cfg *contract.Config, client contract.GitClient, output *schema.AggregateOutput, files []string) []schema.FileResult {
+func analyzeRepo(
+	ctx context.Context,
+	gitSettings contract.GitSettings,
+	scoringSettings contract.ScoringSettings,
+	runtimeSettings contract.RuntimeSettings,
+	client contract.GitClient,
+	output *schema.AggregateOutput,
+	files []string,
+) []schema.FileResult {
 	// Initialize channels based on the final number of files to be processed.
 	fileCh := make(chan string, len(files))
 	fileResultCh := make(chan schema.FileResult, len(files))
 	var wg sync.WaitGroup
 
 	// Start worker pool
-	for range cfg.Runtime.Workers {
+	for range runtimeSettings.GetWorkers() {
 		// Add one to wait group for each worker
 		wg.Go(func() {
 			for f := range fileCh {
 				// Analysis with useFollow=false for initial run (default context behavior)
-				result := analyzeFileCommon(ctx, cfg, client, f, output)
+				result := analyzeFileCommon(ctx, gitSettings, scoringSettings, client, f, output)
 				fileResultCh <- result
 			}
 		})
@@ -234,11 +269,18 @@ func analyzeRepo(ctx context.Context, cfg *contract.Config, client contract.GitC
 // analyzeFileCommon computes all metrics for a single file in the repository.
 // It gathers Git history data (commits, authors, dates), file size, and calculates
 // derived metrics like churn and the Gini coefficient of author contributions.
-// The analysis is constrained by the time range in cfg if specified.
+// The analysis is constrained by the time range in gitSettings if specified.
 // Git follow behavior is controlled by the context.
-func analyzeFileCommon(ctx context.Context, cfg *contract.Config, client contract.GitClient, path string, output *schema.AggregateOutput) schema.FileResult {
+func analyzeFileCommon(
+	ctx context.Context,
+	gitSettings contract.GitSettings,
+	scoringSettings contract.ScoringSettings,
+	client contract.GitClient,
+	path string,
+	output *schema.AggregateOutput,
+) schema.FileResult {
 	// 1. Initialize the builder
-	builder := NewFileMetricsBuilder(ctx, cfg, client, path, output)
+	builder := NewFileMetricsBuilder(ctx, gitSettings, scoringSettings, client, path, output)
 
 	// 2. Execute the required steps in order (Method Chaining)
 	builder.
@@ -255,14 +297,14 @@ func analyzeFileCommon(ctx context.Context, cfg *contract.Config, client contrac
 	// 4. Record metrics and scores to database (if analysis tracking is enabled)
 	if analysisID, ok := getAnalysisID(ctx); ok && analysisID > 0 {
 		// Get the analysis store from the context via the cache manager
-		recordFileAnalysis(ctx, cfg, analysisID, path, &result)
+		recordFileAnalysis(ctx, scoringSettings, analysisID, path, &result)
 	}
 
 	return result
 }
 
 // recordFileAnalysis records file metrics and scores to the database.
-func recordFileAnalysis(ctx context.Context, cfg *contract.Config, analysisID int64, path string, result *schema.FileResult) {
+func recordFileAnalysis(ctx context.Context, scoringSettings contract.ScoringSettings, analysisID int64, path string, result *schema.FileResult) {
 	// Get the cache manager from context
 	mgr := cacheManagerFromContext(ctx)
 	if mgr == nil {
@@ -297,7 +339,7 @@ func recordFileAnalysis(ctx context.Context, cfg *contract.Config, analysisID in
 		RiskScore:       allScores[schema.RiskMode],
 		ComplexityScore: allScores[schema.ComplexityMode],
 		StaleScore:      allScores[schema.StaleMode],
-		ScoreLabel:      string(cfg.Scoring.Mode),
+		ScoreLabel:      string(scoringSettings.GetMode()),
 	}
 
 	// Record both metrics and scores in one operation
@@ -339,7 +381,8 @@ func getAnalysisWindowForRef(ctx context.Context, client contract.GitClient, rep
 // runTimeseriesAnalysis performs the core timeseries analysis logic.
 func runTimeseriesAnalysis(
 	ctx context.Context,
-	cfg *contract.Config,
+	gitSettings contract.GitSettings,
+	scoringSettings contract.ScoringSettings,
 	client contract.GitClient,
 	normalizedPath string,
 	isFolder bool,
@@ -362,7 +405,7 @@ func runTimeseriesAnalysis(
 		// The Git search will be confined to [currentEnd - maxSearchDuration, currentEnd]
 		commitTime, err := client.GetOldestCommitDateForPath(
 			ctx,
-			cfg.Git.RepoPath,
+			gitSettings.GetRepoPath(),
 			normalizedPath,
 			currentEnd,
 			minCommits,
@@ -382,10 +425,15 @@ func runTimeseriesAnalysis(
 		lookbackDuration := max(minLookback, lookbackFromCommits)
 		startTime := currentEnd.Add(-lookbackDuration)
 
-		cfgWindow := cfg.CloneWithTimeWindow(startTime, currentEnd)
+		// Create dynamic time window settings
+		gitWin := contract.GitConfig{
+			RepoPath:  gitSettings.GetRepoPath(),
+			StartTime: startTime,
+			EndTime:   currentEnd,
+		}
 
 		// --- Execute Analysis Core ---
-		score, owners := analyzeTimeseriesPoint(ctx, cfgWindow, client, normalizedPath, isFolder, mgr)
+		score, owners := analyzeTimeseriesPoint(ctx, gitWin, scoringSettings, client, normalizedPath, isFolder, mgr)
 		// --- End Execute Analysis Core ---
 
 		// 4. Generate period label
@@ -406,7 +454,7 @@ func runTimeseriesAnalysis(
 			Score:    score,
 			Path:     normalizedPath,
 			Owners:   owners,
-			Mode:     cfg.Scoring.Mode,
+			Mode:     scoringSettings.GetMode(),
 			Lookback: lookbackDuration,
 		})
 	}
@@ -417,14 +465,21 @@ func runTimeseriesAnalysis(
 // analyzeTimeseriesPoint performs the analysis for a single timeseries point.
 func analyzeTimeseriesPoint(
 	ctx context.Context,
-	cfg *contract.Config,
+	gitSettings contract.GitSettings,
+	scoringSettings contract.ScoringSettings,
 	client contract.GitClient,
 	path string,
 	isFolder bool,
 	mgr contract.CacheManager,
 ) (float64, []string) {
 	suppressCtx := WithSuppressHeader(ctx)
-	output, err := runSingleAnalysisCore(suppressCtx, cfg, client, mgr)
+	// OutputSettings and RuntimeSettings/ComparisonSettings are needed for runSingleAnalysisCore.
+	// We'll create defaults for those that aren't critical for a single point scoring.
+	runtime := contract.RuntimeConfig{Workers: 1}
+	outputCfg := contract.OutputConfig{ResultLimit: 10}
+	compare := contract.CompareConfig{Enabled: false}
+
+	output, err := runSingleAnalysisCore(suppressCtx, gitSettings, scoringSettings, runtime, outputCfg, compare, client, mgr)
 	if err != nil {
 		// If no data in this window (e.g. no commits), score is 0
 		return 0, []string{}
@@ -432,7 +487,7 @@ func analyzeTimeseriesPoint(
 
 	// Extract score and owners from analysis output
 	if isFolder {
-		folderResults := agg.AggregateAndScoreFolders(cfg.Git, cfg.Scoring, output.FileResults)
+		folderResults := agg.AggregateAndScoreFolders(gitSettings, scoringSettings, output.FileResults)
 		for _, fr := range folderResults {
 			if fr.Path == path {
 				return fr.Score, fr.Owners

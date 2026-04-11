@@ -14,12 +14,12 @@ import (
 )
 
 // WriteTimeseriesResults outputs the timeseries results, dispatching based on the output format configured.
-func WriteTimeseriesResults(w io.Writer, result schema.TimeseriesResult, cfg *contract.Config, duration time.Duration) error {
+func WriteTimeseriesResults(w io.Writer, result schema.TimeseriesResult, output contract.OutputSettings, runtime contract.RuntimeSettings, duration time.Duration) error {
 	// Create formatters using helper
-	fmtFloat, _ := createFormatters(cfg.Output.Precision)
+	fmtFloat, _ := createFormatters(output.GetPrecision())
 
 	// Dispatcher: Handle different output formats
-	switch cfg.Output.Format {
+	switch output.GetFormat() {
 	case schema.JSONOut:
 		if err := writeJSONResultsForTimeseries(w, result); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
@@ -32,13 +32,13 @@ func WriteTimeseriesResults(w io.Writer, result schema.TimeseriesResult, cfg *co
 		}
 	default:
 		// Default to human-readable table
-		return writeTimeseriesTable(result, cfg, fmtFloat, duration, w)
+		return writeTimeseriesTable(result, output, runtime, fmtFloat, duration, w)
 	}
 	return nil
 }
 
 // writeTimeseriesTable writes the timeseries in a four-column table.
-func writeTimeseriesTable(result schema.TimeseriesResult, cfg *contract.Config, fmtFloat func(float64) string, duration time.Duration, writer io.Writer) error {
+func writeTimeseriesTable(result schema.TimeseriesResult, output contract.OutputSettings, runtime contract.RuntimeSettings, fmtFloat func(float64) string, duration time.Duration, writer io.Writer) error {
 	table := tablewriter.NewWriter(writer)
 	defer func() { _ = table.Close() }()
 
@@ -61,7 +61,7 @@ func writeTimeseriesTable(result schema.TimeseriesResult, cfg *contract.Config, 
 			ownersStr = "No owners"
 		}
 		row := []string{
-			contract.TruncatePath(p.Path, getMaxTablePathWidth(cfg)),
+			contract.TruncatePath(p.Path, getMaxTablePathWidth(output)),
 			p.Period,
 			fmtFloat(p.Score),
 			string(p.Mode),
@@ -78,7 +78,7 @@ func writeTimeseriesTable(result schema.TimeseriesResult, cfg *contract.Config, 
 		return err
 	}
 
-	if _, err := fmt.Fprintf(writer, "Timeseries analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Runtime.Workers, cfg.Runtime.CacheBackend); err != nil {
+	if _, err := fmt.Fprintf(writer, "Timeseries analysis completed in %v with %d workers. Cache backend: %s\n", duration, runtime.GetWorkers(), runtime.GetCacheBackend()); err != nil {
 		return err
 	}
 	return nil

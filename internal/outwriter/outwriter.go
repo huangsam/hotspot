@@ -19,26 +19,26 @@ func NewOutWriter() *OutWriter {
 }
 
 // WriteFiles writes file analysis results using the configured output format.
-func (ow *OutWriter) WriteFiles(w io.Writer, results []schema.FileResult, cfg *contract.Config, duration time.Duration) error {
-	return WriteFileResults(w, results, cfg, duration)
+func (ow *OutWriter) WriteFiles(w io.Writer, results []schema.FileResult, output contract.OutputSettings, runtime contract.RuntimeSettings, duration time.Duration) error {
+	return WriteFileResults(w, results, output, runtime, duration)
 }
 
 // WriteFolders writes folder analysis results using the configured output format.
-func (ow *OutWriter) WriteFolders(w io.Writer, results []schema.FolderResult, cfg *contract.Config, duration time.Duration) error {
-	return WriteFolderResults(w, results, cfg, duration)
+func (ow *OutWriter) WriteFolders(w io.Writer, results []schema.FolderResult, output contract.OutputSettings, runtime contract.RuntimeSettings, duration time.Duration) error {
+	return WriteFolderResults(w, results, output, runtime, duration)
 }
 
 // WriteComparison writes comparison analysis results using the configured output format.
-func (ow *OutWriter) WriteComparison(w io.Writer, results schema.ComparisonResult, cfg *contract.Config, duration time.Duration) error {
-	return WriteComparisonResults(w, results, cfg, duration)
+func (ow *OutWriter) WriteComparison(w io.Writer, results schema.ComparisonResult, output contract.OutputSettings, runtime contract.RuntimeSettings, duration time.Duration) error {
+	return WriteComparisonResults(w, results, output, runtime, duration)
 }
 
 // WriteTimeseries writes timeseries analysis results using the configured output format.
-func (ow *OutWriter) WriteTimeseries(w io.Writer, result schema.TimeseriesResult, cfg *contract.Config, duration time.Duration) error {
-	return WriteTimeseriesResults(w, result, cfg, duration)
+func (ow *OutWriter) WriteTimeseries(w io.Writer, result schema.TimeseriesResult, output contract.OutputSettings, runtime contract.RuntimeSettings, duration time.Duration) error {
+	return WriteTimeseriesResults(w, result, output, runtime, duration)
 }
 
 // WriteMetrics writes metrics definitions using the configured output format.
-func (ow *OutWriter) WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, cfg *contract.Config) error {
-	return WriteMetricsDefinitions(w, activeWeights, cfg)
+func (ow *OutWriter) WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, output contract.OutputSettings) error {
+	return WriteMetricsDefinitions(w, activeWeights, output)
 }

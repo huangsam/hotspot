@@ -15,14 +15,20 @@ import (
 const currentCacheVersion = 1
 
 // CachedAggregateActivity - Simplified and validated using DB columns.
-func CachedAggregateActivity(ctx context.Context, cfg *contract.Config, client contract.GitClient, mgr contract.CacheManager) (*schema.AggregateOutput, error) {
+func CachedAggregateActivity(
+	ctx context.Context,
+	gitSettings contract.GitSettings,
+	compareSettings contract.ComparisonSettings,
+	client contract.GitClient,
+	mgr contract.CacheManager,
+) (*schema.AggregateOutput, error) {
 	activity := mgr.GetActivityStore()
 	if activity == nil {
 		// Fallback to direct computation
-		return aggregateActivity(ctx, cfg.Git, client)
+		return aggregateActivity(ctx, gitSettings, client)
 	}
 
-	key := generateCacheKey(ctx, cfg.Git, cfg.Compare, client)
+	key := generateCacheKey(ctx, gitSettings, compareSettings, client)
 
 	// Check for cache hit
 	if result := checkCacheHit(activity, key); result != nil {
@@ -30,7 +36,7 @@ func CachedAggregateActivity(ctx context.Context, cfg *contract.Config, client c
 	}
 
 	// Cache miss: compute and store
-	return computeAndStore(ctx, cfg.Git, client, activity, key)
+	return computeAndStore(ctx, gitSettings, client, activity, key)
 }
 
 // checkCacheHit attempts to retrieve and validate a cached result.

@@ -40,7 +40,7 @@ func TestRunSingleAnalysisCore_Success(t *testing.T) {
 		},
 	}
 
-	result, err := runSingleAnalysisCore(ctx, cfg, mockClient, mockMgr)
+	result, err := runSingleAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, mockClient, mockMgr)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
@@ -77,7 +77,7 @@ func TestRunSingleAnalysisCore_NoFilesFound(t *testing.T) {
 		},
 	}
 
-	result, err := runSingleAnalysisCore(ctx, cfg, mockClient, mockMgr)
+	result, err := runSingleAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, mockClient, mockMgr)
 
 	assert.Error(t, err)
 	assert.Nil(t, result)
@@ -112,7 +112,7 @@ func TestRunSingleAnalysisCore_AggregationError(t *testing.T) {
 		},
 	}
 
-	result, err := runSingleAnalysisCore(ctx, cfg, mockClient, mockMgr)
+	result, err := runSingleAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, mockClient, mockMgr)
 
 	assert.Error(t, err)
 	assert.Nil(t, result)
@@ -222,7 +222,7 @@ func TestAnalyzeAllFilesAtRef(t *testing.T) {
 		},
 	}
 
-	result, err := analyzeAllFilesAtRef(ctx, cfg, mockClient, ref, mockMgr)
+	result, err := analyzeAllFilesAtRef(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, mockClient, ref, mockMgr)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
@@ -263,7 +263,7 @@ func TestAnalyzeAllFilesAtRef_EmptyAfterFiltering(t *testing.T) {
 		},
 	}
 
-	result, err := analyzeAllFilesAtRef(ctx, cfg, mockClient, ref, mockMgr)
+	result, err := analyzeAllFilesAtRef(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, mockClient, ref, mockMgr)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(result)) // Should return empty slice, not error
@@ -317,7 +317,7 @@ func TestRunFollowPass(t *testing.T) {
 	mockClient.On("GetFileActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "core/agg.go", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time"), true).
 		Return([]byte("--follow456|Bob|2024-01-01T00:00:00Z\nDELIMITER_COMMIT_STARTBob|2024-01-01T00:00:00Z\n1\t0\tcore/agg.go\n"), nil)
 
-	result := runFollowPass(ctx, cfg, mockClient, ranked, output)
+	result := runFollowPass(ctx, cfg.Git, cfg.Scoring, cfg.Output, mockClient, ranked, output)
 
 	assert.NotNil(t, result)
 	assert.Len(t, result, 2)
@@ -340,7 +340,7 @@ func TestRunFollowPass_EmptyInput(t *testing.T) {
 		},
 	}
 
-	result := runFollowPass(ctx, cfg, mockClient, ranked, output)
+	result := runFollowPass(ctx, cfg.Git, cfg.Scoring, cfg.Output, mockClient, ranked, output)
 
 	assert.Equal(t, ranked, result) // Should return input unchanged
 

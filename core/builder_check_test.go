@@ -28,7 +28,7 @@ func TestCheckResultBuilder_ValidatePrerequisites_NoFilesChanged(t *testing.T) {
 	mockGitClient := &contract.MockGitClient{}
 	mockGitClient.On("GetChangedFilesBetweenRefs", ctx, "/test/repo", "main", "feature").Return([]string{}, nil)
 
-	builder := NewCheckResultBuilder(ctx, cfg, &iocache.MockCacheManager{})
+	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, &iocache.MockCacheManager{})
 	builder.client = mockGitClient
 
 	_, err := builder.ValidatePrerequisites()
@@ -54,7 +54,7 @@ func TestCheckResultBuilder_ValidatePrerequisites_AllFilesExcluded(t *testing.T)
 	mockGitClient := &contract.MockGitClient{}
 	mockGitClient.On("GetChangedFilesBetweenRefs", ctx, "/test/repo", "main", "feature").Return([]string{"main.go", "test.go"}, nil)
 
-	builder := NewCheckResultBuilder(ctx, cfg, &iocache.MockCacheManager{})
+	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, &iocache.MockCacheManager{})
 	builder.client = mockGitClient
 
 	_, err := builder.ValidatePrerequisites()
@@ -81,7 +81,7 @@ func TestCheckResultBuilder_ValidatePrerequisites_WithValidFiles(t *testing.T) {
 	mockGitClient := &contract.MockGitClient{}
 	mockGitClient.On("GetChangedFilesBetweenRefs", ctx, "/test/repo", "main", "feature").Return([]string{"main.go", "README.md"}, nil)
 
-	builder := NewCheckResultBuilder(ctx, cfg, &iocache.MockCacheManager{})
+	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, &iocache.MockCacheManager{})
 	builder.client = mockGitClient
 
 	_, err := builder.ValidatePrerequisites()
@@ -101,7 +101,7 @@ func TestCheckResultBuilder_ValidatePrerequisites_MissingCompareMode(t *testing.
 		},
 	}
 
-	builder := NewCheckResultBuilder(ctx, cfg, &iocache.MockCacheManager{})
+	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, &iocache.MockCacheManager{})
 
 	_, err := builder.ValidatePrerequisites()
 	assert.Error(t, err)
@@ -126,7 +126,7 @@ func TestCheckResultBuilder_PrepareAnalysisConfig(t *testing.T) {
 	mockGitClient := &contract.MockGitClient{}
 	mockGitClient.On("GetCommitTime", ctx, "/test/repo", "feature").Return(targetTime, nil)
 
-	builder := NewCheckResultBuilder(ctx, cfg, &iocache.MockCacheManager{})
+	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, &iocache.MockCacheManager{})
 	builder.client = mockGitClient
 
 	_, err := builder.PrepareAnalysisConfig()
@@ -175,7 +175,7 @@ func TestCheckResultBuilder_ComputeMetrics(t *testing.T) {
 	}
 
 	builder.fileResults = fileResults
-	builder.cfg = cfg
+	builder.scoringSettings = cfg.Scoring
 
 	builder.ComputeMetrics()
 
@@ -218,24 +218,26 @@ func TestCheckResultBuilder_ComputeMetrics(t *testing.T) {
 }
 
 func TestCheckResultBuilder_BuildResult_Success(t *testing.T) {
-	builder := &CheckResultBuilder{
-		filesToAnalyze: []string{"file1.go", "file2.go"},
-		cfg: &contract.Config{
-			Compare: contract.CompareConfig{
-				BaseRef:   "main",
-				TargetRef: "feature",
-				Lookback:  30 * 24 * time.Hour,
-			},
-			Scoring: contract.ScoringConfig{
-				RiskThresholds: map[schema.ScoringMode]float64{
-					schema.HotMode:        50.0,
-					schema.RiskMode:       50.0,
-					schema.ComplexityMode: 50.0,
-					schema.StaleMode:      50.0,
-				},
+	cfg := &contract.Config{
+		Compare: contract.CompareConfig{
+			BaseRef:   "main",
+			TargetRef: "feature",
+			Lookback:  30 * 24 * time.Hour,
+		},
+		Scoring: contract.ScoringConfig{
+			RiskThresholds: map[schema.ScoringMode]float64{
+				schema.HotMode:        50.0,
+				schema.RiskMode:       50.0,
+				schema.ComplexityMode: 50.0,
+				schema.StaleMode:      50.0,
 			},
 		},
-		failedFiles: []schema.CheckFailedFile{}, // No failures
+	}
+	builder := &CheckResultBuilder{
+		filesToAnalyze:  []string{"file1.go", "file2.go"},
+		compareSettings: cfg.Compare,
+		scoringSettings: cfg.Scoring,
+		failedFiles:     []schema.CheckFailedFile{}, // No failures
 		maxScores: map[schema.ScoringMode]float64{
 			schema.HotMode:        40.0,
 			schema.RiskMode:       30.0,
@@ -267,20 +269,22 @@ func TestCheckResultBuilder_BuildResult_Success(t *testing.T) {
 }
 
 func TestCheckResultBuilder_BuildResult_Failure(t *testing.T) {
-	builder := &CheckResultBuilder{
-		filesToAnalyze: []string{"file1.go"},
-		cfg: &contract.Config{
-			Compare: contract.CompareConfig{
-				BaseRef:   "main",
-				TargetRef: "feature",
-				Lookback:  30 * 24 * time.Hour,
-			},
-			Scoring: contract.ScoringConfig{
-				RiskThresholds: map[schema.ScoringMode]float64{
-					schema.HotMode: 50.0,
-				},
+	cfg := &contract.Config{
+		Compare: contract.CompareConfig{
+			BaseRef:   "main",
+			TargetRef: "feature",
+			Lookback:  30 * 24 * time.Hour,
+		},
+		Scoring: contract.ScoringConfig{
+			RiskThresholds: map[schema.ScoringMode]float64{
+				schema.HotMode: 50.0,
 			},
 		},
+	}
+	builder := &CheckResultBuilder{
+		filesToAnalyze:  []string{"file1.go"},
+		compareSettings: cfg.Compare,
+		scoringSettings: cfg.Scoring,
 		failedFiles: []schema.CheckFailedFile{
 			{Path: "file1.go", Mode: schema.HotMode, Score: 60.0, Threshold: 50.0},
 		},

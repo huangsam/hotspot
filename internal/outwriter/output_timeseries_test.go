@@ -59,7 +59,7 @@ func TestWriteTimeseriesResultsTable(t *testing.T) {
 
 	var buf bytes.Buffer
 	duration := 100 * time.Millisecond
-	err := WriteTimeseriesResults(&buf, result, cfg, duration)
+	err := WriteTimeseriesResults(&buf, result, cfg.Output, cfg.Runtime, duration)
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -99,7 +99,7 @@ func TestWriteTimeseriesResultsJSON(t *testing.T) {
 
 	var buf bytes.Buffer
 	duration := 50 * time.Millisecond
-	err := WriteTimeseriesResults(&buf, result, cfg, duration)
+	err := WriteTimeseriesResults(&buf, result, cfg.Output, cfg.Runtime, duration)
 	require.NoError(t, err)
 
 	var parsed map[string]any
@@ -145,7 +145,7 @@ func TestWriteTimeseriesResultsCSV(t *testing.T) {
 
 	var buf bytes.Buffer
 	duration := 75 * time.Millisecond
-	err := WriteTimeseriesResults(&buf, result, cfg, duration)
+	err := WriteTimeseriesResults(&buf, result, cfg.Output, cfg.Runtime, duration)
 	require.NoError(t, err)
 
 	lines := strings.Split(strings.TrimSpace(buf.String()), "\n")

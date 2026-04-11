@@ -49,7 +49,7 @@ func TestWriteFoldersResultsTable(t *testing.T) {
 
 	var buf bytes.Buffer
 	duration := 100 * time.Millisecond
-	err := WriteFolderResults(&buf, folders, cfg, duration)
+	err := WriteFolderResults(&buf, folders, cfg.Output, cfg.Runtime, duration)
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -87,7 +87,7 @@ func TestWriteFoldersResultsJSON(t *testing.T) {
 
 	var buf bytes.Buffer
 	duration := 50 * time.Millisecond
-	err := WriteFolderResults(&buf, folders, cfg, duration)
+	err := WriteFolderResults(&buf, folders, cfg.Output, cfg.Runtime, duration)
 	require.NoError(t, err)
 
 	var result []map[string]any
@@ -127,7 +127,7 @@ func TestWriteFoldersResultsCSV(t *testing.T) {
 
 	var buf bytes.Buffer
 	duration := 75 * time.Millisecond
-	err := WriteFolderResults(&buf, folders, cfg, duration)
+	err := WriteFolderResults(&buf, folders, cfg.Output, cfg.Runtime, duration)
 	require.NoError(t, err)
 
 	lines := strings.Split(strings.TrimSpace(buf.String()), "\n")

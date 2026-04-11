@@ -65,7 +65,7 @@ func TestWriteComparisonResultsTable(t *testing.T) {
 
 	var buf bytes.Buffer
 	duration := 100 * time.Millisecond
-	err := WriteComparisonResults(&buf, comparison, cfg, duration)
+	err := WriteComparisonResults(&buf, comparison, cfg.Output, cfg.Runtime, duration)
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -126,7 +126,7 @@ func TestWriteComparisonResultsJSON(t *testing.T) {
 
 	var buf bytes.Buffer
 	duration := 50 * time.Millisecond
-	err := WriteComparisonResults(&buf, comparison, cfg, duration)
+	err := WriteComparisonResults(&buf, comparison, cfg.Output, cfg.Runtime, duration)
 	require.NoError(t, err)
 
 	var result map[string]any
@@ -195,7 +195,7 @@ func TestWriteComparisonResultsCSV(t *testing.T) {
 
 	var buf bytes.Buffer
 	duration := 75 * time.Millisecond
-	err := WriteComparisonResults(&buf, comparison, cfg, duration)
+	err := WriteComparisonResults(&buf, comparison, cfg.Output, cfg.Runtime, duration)
 	require.NoError(t, err)
 
 	lines := strings.Split(strings.TrimSpace(buf.String()), "\n")

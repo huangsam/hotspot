@@ -35,7 +35,7 @@ func TestWriteMetricsTable(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err := WriteMetricsDefinitions(&buf, activeWeights, cfg)
+	err := WriteMetricsDefinitions(&buf, activeWeights, cfg.Output)
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -62,7 +62,7 @@ func TestWriteMetricsJSON(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err := WriteMetricsDefinitions(&buf, activeWeights, cfg)
+	err := WriteMetricsDefinitions(&buf, activeWeights, cfg.Output)
 	require.NoError(t, err)
 
 	var result map[string]any
@@ -93,7 +93,7 @@ func TestWriteMetricsCSV(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err := WriteMetricsDefinitions(&buf, activeWeights, cfg)
+	err := WriteMetricsDefinitions(&buf, activeWeights, cfg.Output)
 	require.NoError(t, err)
 
 	lines := strings.Split(strings.TrimSpace(buf.String()), "\n")

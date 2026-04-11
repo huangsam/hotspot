@@ -15,12 +15,12 @@ import (
 )
 
 // WriteFolderResults outputs the analysis results, dispatching based on the output format configured.
-func WriteFolderResults(w io.Writer, results []schema.FolderResult, cfg *contract.Config, duration time.Duration) error {
+func WriteFolderResults(w io.Writer, results []schema.FolderResult, output contract.OutputSettings, runtime contract.RuntimeSettings, duration time.Duration) error {
 	// Create formatters using helper
-	fmtFloat, intFmt := createFormatters(cfg.Output.Precision)
+	fmtFloat, intFmt := createFormatters(output.GetPrecision())
 
 	// Dispatcher: Handle different output formats
-	switch cfg.Output.Format {
+	switch output.GetFormat() {
 	case schema.JSONOut:
 		if err := writeJSONResultsForFolders(w, results); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
@@ -33,23 +33,23 @@ func WriteFolderResults(w io.Writer, results []schema.FolderResult, cfg *contrac
 		}
 	default:
 		// Default to human-readable table
-		return writeFolderTable(results, cfg, fmtFloat, intFmt, duration, w)
+		return writeFolderTable(results, output, runtime, fmtFloat, intFmt, duration, w)
 	}
 	return nil
 }
 
 // writeFolderTable writes the results in the custom folder-centric format,
 // using the tablewriter API.
-func writeFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
+func writeFolderTable(results []schema.FolderResult, output contract.OutputSettings, runtime contract.RuntimeSettings, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
 	table := tablewriter.NewWriter(writer)
 	defer func() { _ = table.Close() }()
 
 	// 1. Define Headers (Folder Mode - Custom)
 	headers := []string{"Rank", "Path", "Score", "Label"}
-	if cfg.Output.Detail {
+	if output.IsDetail() {
 		headers = append(headers, "Commits", "Churn", "LOC")
 	}
-	if cfg.Output.Owner {
+	if output.IsOwner() {
 		headers = append(headers, "Owner")
 	}
 	table.Header(headers)
@@ -64,23 +64,23 @@ func writeFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFl
 	for i, r := range results {
 		// Prepare the row data as a slice of strings
 		label := contract.GetPlainLabel(r.Score)
-		if cfg.Output.UseColors {
+		if output.IsUseColors() {
 			label = contract.GetColorLabel(r.Score)
 		}
 		row := []string{
 			strconv.Itoa(i + 1), // Rank
-			contract.TruncatePath(r.Path, getMaxTablePathWidth(cfg)), // Folder Path
+			contract.TruncatePath(r.Path, getMaxTablePathWidth(output)), // Folder Path
 			fmtFloat(r.Score), // Score
 			label,             // Label
 		}
-		if cfg.Output.Detail {
+		if output.IsDetail() {
 			row = append(row,
 				fmt.Sprintf(intFmt, r.Commits),  // Total Commits
 				fmt.Sprintf(intFmt, r.Churn),    // Total Churn
 				fmt.Sprintf(intFmt, r.TotalLOC), // Total LOC
 			)
 		}
-		if cfg.Output.Owner {
+		if output.IsOwner() {
 			row = append(row, schema.FormatOwners(r.Owners)) // Top 2 owners
 		}
 		data = append(data, row)
@@ -106,7 +106,7 @@ func writeFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFl
 	if _, err := fmt.Fprintf(writer, "Showing top %d folders (total commits: %d, total churn: %d, total LOC: %d)\n", numFolders, totalCommits, totalChurn, totalLOC); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(writer, "Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Runtime.Workers, cfg.Runtime.CacheBackend); err != nil {
+	if _, err := fmt.Fprintf(writer, "Analysis completed in %v with %d workers. Cache backend: %s\n", duration, runtime.GetWorkers(), runtime.GetCacheBackend()); err != nil {
 		return err
 	}
 	return nil

@@ -30,8 +30,8 @@ func ExecuteHotspotFiles(ctx context.Context, cfg *contract.Config, mgr contract
 		return err
 	}
 	writer := outwriter.NewOutWriter()
-	return outwriter.WriteWithOutputFile(cfg, func(w io.Writer) error {
-		return writer.WriteFiles(w, ranked, cfg, duration)
+	return outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
+		return writer.WriteFiles(w, ranked, cfg.Output, cfg.Runtime, duration)
 	}, "Wrote files table")
 }
 
@@ -39,14 +39,14 @@ func ExecuteHotspotFiles(ctx context.Context, cfg *contract.Config, mgr contract
 func GetHotspotFilesResults(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) ([]schema.FileResult, time.Duration, error) {
 	start := time.Now()
 	client := contract.NewLocalGitClient()
-	output, err := runSingleAnalysisCore(ctx, cfg, client, mgr)
+	output, err := runSingleAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, client, mgr)
 	if err != nil {
 		return nil, 0, err
 	}
 	resultsToRank := output.FileResults
 	if cfg.Git.Follow && len(resultsToRank) > 0 {
 		rankedForFollow := algo.RankFiles(resultsToRank, cfg.Output.ResultLimit)
-		resultsToRank = runFollowPass(ctx, cfg, client, rankedForFollow, output.AggregateOutput)
+		resultsToRank = runFollowPass(ctx, cfg.Git, cfg.Scoring, cfg.Output, client, rankedForFollow, output.AggregateOutput)
 	}
 	ranked := algo.RankFiles(resultsToRank, cfg.Output.ResultLimit)
 	return ranked, time.Since(start), nil
@@ -60,8 +60,8 @@ func ExecuteHotspotFolders(ctx context.Context, cfg *contract.Config, mgr contra
 		return err
 	}
 	writer := outwriter.NewOutWriter()
-	return outwriter.WriteWithOutputFile(cfg, func(w io.Writer) error {
-		return writer.WriteFolders(w, ranked, cfg, duration)
+	return outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
+		return writer.WriteFolders(w, ranked, cfg.Output, cfg.Runtime, duration)
 	}, "Wrote folders table")
 }
 
@@ -69,7 +69,7 @@ func ExecuteHotspotFolders(ctx context.Context, cfg *contract.Config, mgr contra
 func GetHotspotFoldersResults(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) ([]schema.FolderResult, time.Duration, error) {
 	start := time.Now()
 	client := contract.NewLocalGitClient()
-	output, err := runSingleAnalysisCore(ctx, cfg, client, mgr)
+	output, err := runSingleAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, client, mgr)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -82,15 +82,15 @@ func GetHotspotFoldersResults(ctx context.Context, cfg *contract.Config, mgr con
 // based on Git references and computes the delta results.
 func ExecuteHotspotCompare(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) error {
 	// Print single header for the comparison
-	internal.LogCompareHeader(cfg)
+	internal.LogCompareHeader(cfg.Git, cfg.Scoring, cfg.Compare)
 
 	comparisonResult, duration, err := GetHotspotCompareResults(ctx, cfg, mgr)
 	if err != nil {
 		return err
 	}
 	writer := outwriter.NewOutWriter()
-	return outwriter.WriteWithOutputFile(cfg, func(w io.Writer) error {
-		return writer.WriteComparison(w, comparisonResult, cfg, duration)
+	return outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
+		return writer.WriteComparison(w, comparisonResult, cfg.Output, cfg.Runtime, duration)
 	}, "Wrote file comparison table")
 }
 
@@ -120,7 +120,7 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *contract.Config, mgr
 	client := contract.NewLocalGitClient()
 
 	// Print single header for the comparison
-	internal.LogCompareHeader(cfg)
+	internal.LogCompareHeader(cfg.Git, cfg.Scoring, cfg.Compare)
 
 	baseOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.Compare.BaseRef, mgr)
 	if err != nil {
@@ -133,8 +133,8 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *contract.Config, mgr
 	comparisonResult := compareFolderMetrics(baseOutput.FolderResults, targetOutput.FolderResults, cfg.Output.ResultLimit, string(cfg.Scoring.Mode))
 	duration := time.Since(start)
 	writer := outwriter.NewOutWriter()
-	return outwriter.WriteWithOutputFile(cfg, func(w io.Writer) error {
-		return writer.WriteComparison(w, comparisonResult, cfg, duration)
+	return outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
+		return writer.WriteComparison(w, comparisonResult, cfg.Output, cfg.Runtime, duration)
 	}, "Wrote folder comparison table")
 }
 
@@ -146,11 +146,11 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *contract.Config, mgr con
 	}
 
 	// Print single header for the entire timeseries analysis
-	internal.LogTimeseriesHeader(cfg, cfg.Timeseries.Interval, cfg.Timeseries.Points)
+	internal.LogTimeseriesHeader(cfg.Git, cfg.Scoring, cfg.Timeseries)
 
 	writer := outwriter.NewOutWriter()
-	return outwriter.WriteWithOutputFile(cfg, func(w io.Writer) error {
-		return writer.WriteTimeseries(w, result, cfg, duration)
+	return outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
+		return writer.WriteTimeseries(w, result, cfg.Output, cfg.Runtime, duration)
 	}, "Wrote timeseries table")
 }
 
@@ -191,7 +191,7 @@ func GetHotspotTimeseriesResults(ctx context.Context, cfg *contract.Config, mgr 
 	isFolder := info.IsDir()
 
 	// Execute the timeseries analysis
-	timeseriesPoints := runTimeseriesAnalysis(ctx, cfg, client, normalizedPath, isFolder, now, interval, numPoints, mgr)
+	timeseriesPoints := runTimeseriesAnalysis(ctx, cfg.Git, cfg.Scoring, client, normalizedPath, isFolder, now, interval, numPoints, mgr)
 
 	result := schema.TimeseriesResult{Points: timeseriesPoints}
 	return result, time.Since(start), nil
@@ -201,8 +201,8 @@ func GetHotspotTimeseriesResults(ctx context.Context, cfg *contract.Config, mgr 
 // This is a static display that does not require Git analysis.
 func ExecuteHotspotMetrics(_ context.Context, cfg *contract.Config, _ contract.CacheManager) error {
 	writer := outwriter.NewOutWriter()
-	return outwriter.WriteWithOutputFile(cfg, func(w io.Writer) error {
-		return writer.WriteMetrics(w, cfg.Scoring.CustomWeights, cfg)
+	return outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
+		return writer.WriteMetrics(w, cfg.Scoring.CustomWeights, cfg.Output)
 	}, "Wrote metrics info")
 }
 
@@ -212,7 +212,7 @@ func ExecuteHotspotMetrics(_ context.Context, cfg *contract.Config, _ contract.C
 func ExecuteHotspotCheck(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) error {
 	start := time.Now()
 
-	builder := NewCheckResultBuilder(ctx, cfg, mgr)
+	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, mgr)
 
 	// Validate prerequisites
 	_, err := builder.ValidatePrerequisites()

@@ -191,7 +191,7 @@ func TestCachedAggregateActivity_CacheHit(t *testing.T) {
 		},
 	}
 
-	result, err := CachedAggregateActivity(ctx, cfg, mockClient, mockMgr)
+	result, err := CachedAggregateActivity(ctx, cfg.Git, cfg.Compare, mockClient, mockMgr)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
@@ -226,7 +226,7 @@ func TestCachedAggregateActivity_CacheMiss(t *testing.T) {
 		},
 	}
 
-	result, err := CachedAggregateActivity(ctx, cfg, mockClient, mockMgr)
+	result, err := CachedAggregateActivity(ctx, cfg.Git, cfg.Compare, mockClient, mockMgr)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
@@ -257,7 +257,7 @@ func TestCachedAggregateActivity_NoCacheManager(t *testing.T) {
 		},
 	}
 
-	result, err := CachedAggregateActivity(ctx, cfg, mockClient, mockMgr)
+	result, err := CachedAggregateActivity(ctx, cfg.Git, cfg.Compare, mockClient, mockMgr)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
@@ -289,7 +289,7 @@ func TestCachedAggregateActivity_AggregateError(t *testing.T) {
 		},
 	}
 
-	result, err := CachedAggregateActivity(ctx, cfg, mockClient, mockMgr)
+	result, err := CachedAggregateActivity(ctx, cfg.Git, cfg.Compare, mockClient, mockMgr)
 
 	assert.Error(t, err)
 	assert.Nil(t, result)

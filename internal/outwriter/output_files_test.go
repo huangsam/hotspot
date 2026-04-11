@@ -239,7 +239,7 @@ func TestWriteFileResultsTable(t *testing.T) {
 
 	var buf bytes.Buffer
 	duration := 100 * time.Millisecond
-	err := WriteFileResults(&buf, files, cfg, duration)
+	err := WriteFileResults(&buf, files, cfg.Output, cfg.Runtime, duration)
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -273,7 +273,7 @@ func TestWriteFileResultsJSON(t *testing.T) {
 
 	var buf bytes.Buffer
 	duration := 50 * time.Millisecond
-	err := WriteFileResults(&buf, files, cfg, duration)
+	err := WriteFileResults(&buf, files, cfg.Output, cfg.Runtime, duration)
 	require.NoError(t, err)
 
 	var result []map[string]any
@@ -313,7 +313,7 @@ func TestWriteFileResultsCSV(t *testing.T) {
 
 	var buf bytes.Buffer
 	duration := 75 * time.Millisecond
-	err := WriteFileResults(&buf, files, cfg, duration)
+	err := WriteFileResults(&buf, files, cfg.Output, cfg.Runtime, duration)
 	require.NoError(t, err)
 
 	lines := strings.Split(strings.TrimSpace(buf.String()), "\n")
@@ -339,7 +339,7 @@ func TestWriteFileResultsEmpty(t *testing.T) {
 
 	var buf bytes.Buffer
 	duration := 5 * time.Millisecond
-	err := WriteFileResults(&buf, files, cfg, duration)
+	err := WriteFileResults(&buf, files, cfg.Output, cfg.Runtime, duration)
 	require.NoError(t, err)
 
 	output := buf.String()

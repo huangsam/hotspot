@@ -40,7 +40,7 @@ func TestFileResultBuilder_BasicChaining(t *testing.T) {
 		},
 	}
 
-	builder := NewFileMetricsBuilder(ctx, cfg, nil, "test.go", output)
+	builder := NewFileMetricsBuilder(ctx, cfg.Git, cfg.Scoring, nil, "test.go", output)
 
 	// Test that builder returns itself for chaining
 	result := builder.FetchAllGitMetrics()
@@ -90,7 +90,7 @@ func TestFileResultBuilder_EmptyContribMap(t *testing.T) {
 		ContribMap: map[string]map[string]int{}, // Empty contrib map
 	}
 
-	builder := NewFileMetricsBuilder(ctx, cfg, nil, "test.go", output)
+	builder := NewFileMetricsBuilder(ctx, cfg.Git, cfg.Scoring, nil, "test.go", output)
 
 	builder.FetchAllGitMetrics().CalculateOwner()
 
@@ -114,7 +114,7 @@ func TestFileResultBuilder_ZeroFirstCommit(t *testing.T) {
 		FirstCommitMap: map[string]time.Time{}, // No first commit
 	}
 
-	builder := NewFileMetricsBuilder(ctx, cfg, nil, "test.go", output)
+	builder := NewFileMetricsBuilder(ctx, cfg.Git, cfg.Scoring, nil, "test.go", output)
 
 	builder.FetchAllGitMetrics().CalculateDerivedMetrics()
 

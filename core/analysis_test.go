@@ -48,7 +48,7 @@ func TestAnalyzeFileCommon(t *testing.T) {
 	}
 
 	// Execute
-	result := analyzeFileCommon(ctx, cfg, mockClient, "main.go", aggOutput)
+	result := analyzeFileCommon(ctx, cfg.Git, cfg.Scoring, mockClient, "main.go", aggOutput)
 
 	// Assert
 	assert.Equal(t, "main.go", result.Path)
@@ -106,7 +106,7 @@ func TestAnalyzeRepo(t *testing.T) {
 	files := []string{"main.go", "core/agg.go"}
 
 	// Execute
-	results := analyzeRepo(ctx, cfg, mockClient, aggOutput, files)
+	results := analyzeRepo(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, mockClient, aggOutput, files)
 
 	// Assert
 	assert.Len(t, results, 2)
@@ -174,7 +174,7 @@ func TestAnalyzeRepo_ConcurrentWorkers(t *testing.T) {
 	}
 
 	// Execute with multiple workers
-	results := analyzeRepo(ctx, cfg, mockClient, aggOutput, files)
+	results := analyzeRepo(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, mockClient, aggOutput, files)
 
 	// Assert
 	assert.Len(t, results, 20)
@@ -261,7 +261,7 @@ func TestRecordFileAnalysis(t *testing.T) {
 	ctx = contextWithCacheManager(ctx, mockCacheMgr)
 
 	// Execute - should not panic
-	recordFileAnalysis(ctx, cfg, 1, "test.go", fileResult)
+	recordFileAnalysis(ctx, cfg.Scoring, 1, "test.go", fileResult)
 
 	// Verify mocks were called
 	mockCacheMgr.AssertExpectations(t)
