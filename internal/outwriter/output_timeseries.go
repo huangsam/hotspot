@@ -16,10 +16,10 @@ import (
 // WriteTimeseriesResults outputs the timeseries results, dispatching based on the output format configured.
 func WriteTimeseriesResults(w io.Writer, result schema.TimeseriesResult, cfg *contract.Config, duration time.Duration) error {
 	// Create formatters using helper
-	fmtFloat, _ := createFormatters(cfg.Precision)
+	fmtFloat, _ := createFormatters(cfg.Output.Precision)
 
 	// Dispatcher: Handle different output formats
-	switch cfg.Output {
+	switch cfg.Output.Format {
 	case schema.JSONOut:
 		if err := writeJSONResultsForTimeseries(w, result); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
@@ -78,7 +78,7 @@ func writeTimeseriesTable(result schema.TimeseriesResult, cfg *contract.Config, 
 		return err
 	}
 
-	if _, err := fmt.Fprintf(writer, "Timeseries analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend); err != nil {
+	if _, err := fmt.Fprintf(writer, "Timeseries analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Runtime.Workers, cfg.Runtime.CacheBackend); err != nil {
 		return err
 	}
 	return nil

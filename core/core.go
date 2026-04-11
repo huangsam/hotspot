@@ -44,11 +44,11 @@ func GetHotspotFilesResults(ctx context.Context, cfg *contract.Config, mgr contr
 		return nil, 0, err
 	}
 	resultsToRank := output.FileResults
-	if cfg.Follow && len(resultsToRank) > 0 {
-		rankedForFollow := algo.RankFiles(resultsToRank, cfg.ResultLimit)
+	if cfg.Git.Follow && len(resultsToRank) > 0 {
+		rankedForFollow := algo.RankFiles(resultsToRank, cfg.Output.ResultLimit)
 		resultsToRank = runFollowPass(ctx, cfg, client, rankedForFollow, output.AggregateOutput)
 	}
-	ranked := algo.RankFiles(resultsToRank, cfg.ResultLimit)
+	ranked := algo.RankFiles(resultsToRank, cfg.Output.ResultLimit)
 	return ranked, time.Since(start), nil
 }
 
@@ -73,8 +73,8 @@ func GetHotspotFoldersResults(ctx context.Context, cfg *contract.Config, mgr con
 	if err != nil {
 		return nil, 0, err
 	}
-	folderResults := agg.AggregateAndScoreFolders(cfg, output.FileResults)
-	ranked := algo.RankFolders(folderResults, cfg.ResultLimit)
+	folderResults := agg.AggregateAndScoreFolders(cfg.Git, cfg.Scoring, output.FileResults)
+	ranked := algo.RankFolders(folderResults, cfg.Output.ResultLimit)
 	return ranked, time.Since(start), nil
 }
 
@@ -99,15 +99,15 @@ func GetHotspotCompareResults(ctx context.Context, cfg *contract.Config, mgr con
 	start := time.Now()
 	client := contract.NewLocalGitClient()
 
-	baseOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.BaseRef, mgr)
+	baseOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.Compare.BaseRef, mgr)
 	if err != nil {
 		return schema.ComparisonResult{}, 0, err
 	}
-	targetOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.TargetRef, mgr)
+	targetOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.Compare.TargetRef, mgr)
 	if err != nil {
 		return schema.ComparisonResult{}, 0, err
 	}
-	comparisonResult := compareFileResults(baseOutput.FileResults, targetOutput.FileResults, cfg.ResultLimit, string(cfg.Mode))
+	comparisonResult := compareFileResults(baseOutput.FileResults, targetOutput.FileResults, cfg.Output.ResultLimit, string(cfg.Scoring.Mode))
 	return comparisonResult, time.Since(start), nil
 }
 
@@ -122,15 +122,15 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *contract.Config, mgr
 	// Print single header for the comparison
 	internal.LogCompareHeader(cfg)
 
-	baseOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.BaseRef, mgr)
+	baseOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.Compare.BaseRef, mgr)
 	if err != nil {
 		return err
 	}
-	targetOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.TargetRef, mgr)
+	targetOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.Compare.TargetRef, mgr)
 	if err != nil {
 		return err
 	}
-	comparisonResult := compareFolderMetrics(baseOutput.FolderResults, targetOutput.FolderResults, cfg.ResultLimit, string(cfg.Mode))
+	comparisonResult := compareFolderMetrics(baseOutput.FolderResults, targetOutput.FolderResults, cfg.Output.ResultLimit, string(cfg.Scoring.Mode))
 	duration := time.Since(start)
 	writer := outwriter.NewOutWriter()
 	return outwriter.WriteWithOutputFile(cfg, func(w io.Writer) error {
@@ -146,7 +146,7 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *contract.Config, mgr con
 	}
 
 	// Print single header for the entire timeseries analysis
-	internal.LogTimeseriesHeader(cfg, cfg.TimeseriesInterval, cfg.TimeseriesPoints)
+	internal.LogTimeseriesHeader(cfg, cfg.Timeseries.Interval, cfg.Timeseries.Points)
 
 	writer := outwriter.NewOutWriter()
 	return outwriter.WriteWithOutputFile(cfg, func(w io.Writer) error {
@@ -159,9 +159,9 @@ func GetHotspotTimeseriesResults(ctx context.Context, cfg *contract.Config, mgr 
 	start := time.Now()
 
 	// Get timeseries-specific parameters from config
-	path := cfg.TimeseriesPath
-	interval := cfg.TimeseriesInterval
-	numPoints := cfg.TimeseriesPoints
+	path := cfg.Timeseries.Path
+	interval := cfg.Timeseries.Interval
+	numPoints := cfg.Timeseries.Points
 
 	if path == "" {
 		return schema.TimeseriesResult{}, 0, errors.New("--path is required for timeseries analysis (e.g., 'src/main.go' or 'pkg/mypackage')")
@@ -177,13 +177,13 @@ func GetHotspotTimeseriesResults(ctx context.Context, cfg *contract.Config, mgr 
 	client := contract.NewLocalGitClient()
 
 	// Normalize and validate the path relative to repo root
-	normalizedPath, err := contract.NormalizeTimeseriesPath(cfg.RepoPath, path)
+	normalizedPath, err := contract.NormalizeTimeseriesPath(cfg.Git.RepoPath, path)
 	if err != nil {
-		return schema.TimeseriesResult{}, 0, fmt.Errorf("invalid path %q: %w. Path must be relative to the repository root (%s)", path, err, cfg.RepoPath)
+		return schema.TimeseriesResult{}, 0, fmt.Errorf("invalid path %q: %w. Path must be relative to the repository root (%s)", path, err, cfg.Git.RepoPath)
 	}
 
 	// Check if path exists and determine if it's a file or folder
-	fullPath := filepath.Join(cfg.RepoPath, normalizedPath)
+	fullPath := filepath.Join(cfg.Git.RepoPath, normalizedPath)
 	info, err := os.Stat(fullPath)
 	if err != nil {
 		return schema.TimeseriesResult{}, 0, fmt.Errorf("path %q does not exist in repository. Use 'hotspot files' to see available paths", path)
@@ -202,7 +202,7 @@ func GetHotspotTimeseriesResults(ctx context.Context, cfg *contract.Config, mgr 
 func ExecuteHotspotMetrics(_ context.Context, cfg *contract.Config, _ contract.CacheManager) error {
 	writer := outwriter.NewOutWriter()
 	return outwriter.WriteWithOutputFile(cfg, func(w io.Writer) error {
-		return writer.WriteMetrics(w, cfg.CustomWeights, cfg)
+		return writer.WriteMetrics(w, cfg.Scoring.CustomWeights, cfg)
 	}, "Wrote metrics info")
 }
 

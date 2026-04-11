@@ -18,10 +18,10 @@ import (
 // WriteComparisonResults outputs the analysis results, dispatching based on the output format configured.
 func WriteComparisonResults(w io.Writer, comparisonResult schema.ComparisonResult, cfg *contract.Config, duration time.Duration) error {
 	// Create formatters using helper
-	fmtFloat, intFmt := createFormatters(cfg.Precision)
+	fmtFloat, intFmt := createFormatters(cfg.Output.Precision)
 
 	// Dispatcher: Handle different output formats
-	switch cfg.Output {
+	switch cfg.Output.Format {
 	case schema.JSONOut:
 		if err := writeJSONResultsForComparison(w, comparisonResult); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
@@ -54,10 +54,10 @@ func writeComparisonTable(comparisonResult schema.ComparisonResult, cfg *contrac
 		"Delta",
 		"Status",
 	}
-	if cfg.Detail {
+	if cfg.Output.Detail {
 		headers = append(headers, "Δ Churn")
 	}
-	if cfg.Owner {
+	if cfg.Output.Owner {
 		headers = append(headers, "Ownership")
 	}
 	table.Header(headers)
@@ -70,7 +70,7 @@ func writeComparisonTable(comparisonResult schema.ComparisonResult, cfg *contrac
 	// --- 3. Prepare Data Rows ---
 	var data [][]string
 	var red, green, yellow func(...any) string
-	if cfg.UseColors {
+	if cfg.Output.UseColors {
 		red = color.New(color.FgRed).SprintFunc()
 		green = color.New(color.FgGreen).SprintFunc()
 		yellow = color.New(color.FgYellow).SprintFunc()
@@ -85,13 +85,13 @@ func writeComparisonTable(comparisonResult schema.ComparisonResult, cfg *contrac
 		switch {
 		case deltaValue > 0:
 			// Explicitly add + sign
-			deltaStr = red(fmt.Sprintf("+%.*f ▲", cfg.Precision, deltaValue))
+			deltaStr = red(fmt.Sprintf("+%.*f ▲", cfg.Output.Precision, deltaValue))
 		case deltaValue < 0:
 			// Keeps the - sign from the float
-			deltaStr = green(fmt.Sprintf("%.*f ▼", cfg.Precision, deltaValue))
+			deltaStr = green(fmt.Sprintf("%.*f ▼", cfg.Output.Precision, deltaValue))
 		default:
 			// For 0.0 deltas, format simply without an indicator
-			deltaStr = yellow(fmt.Sprintf("%.*f", cfg.Precision, 0.0))
+			deltaStr = yellow(fmt.Sprintf("%.*f", cfg.Output.Precision, 0.0))
 		}
 
 		// Prepare the row data as a slice of strings
@@ -103,10 +103,10 @@ func writeComparisonTable(comparisonResult schema.ComparisonResult, cfg *contrac
 			deltaStr,                                                 // Delta Score
 			string(r.Status),                                         // Status
 		}
-		if cfg.Detail {
+		if cfg.Output.Detail {
 			row = append(row, fmt.Sprintf(intFmt, r.DeltaChurn))
 		}
-		if cfg.Owner {
+		if cfg.Output.Owner {
 			row = append(row, formatOwnershipDiff(r))
 		}
 		data = append(data, row)
@@ -124,13 +124,13 @@ func writeComparisonTable(comparisonResult schema.ComparisonResult, cfg *contrac
 	if _, err := fmt.Fprintf(writer, "Showing top %d changes\n", numItems); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(writer, "Net score delta: %.*f, Net churn delta: %d\n", cfg.Precision, comparisonResult.Summary.NetScoreDelta, comparisonResult.Summary.NetChurnDelta); err != nil {
+	if _, err := fmt.Fprintf(writer, "Net score delta: %.*f, Net churn delta: %d\n", cfg.Output.Precision, comparisonResult.Summary.NetScoreDelta, comparisonResult.Summary.NetChurnDelta); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintf(writer, "New files: %d, Inactive files: %d, Modified files: %d, Ownership changes: %d\n", comparisonResult.Summary.TotalNewFiles, comparisonResult.Summary.TotalInactiveFiles, comparisonResult.Summary.TotalModifiedFiles, comparisonResult.Summary.TotalOwnershipChanges); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(writer, "Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend); err != nil {
+	if _, err := fmt.Fprintf(writer, "Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Runtime.Workers, cfg.Runtime.CacheBackend); err != nil {
 		return err
 	}
 	return nil

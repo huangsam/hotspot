@@ -19,10 +19,10 @@ func CachedAggregateActivity(ctx context.Context, cfg *contract.Config, client c
 	activity := mgr.GetActivityStore()
 	if activity == nil {
 		// Fallback to direct computation
-		return aggregateActivity(ctx, cfg, client)
+		return aggregateActivity(ctx, cfg.Git, client)
 	}
 
-	key := generateCacheKey(ctx, cfg, client)
+	key := generateCacheKey(ctx, cfg.Git, cfg.Compare, client)
 
 	// Check for cache hit
 	if result := checkCacheHit(activity, key); result != nil {
@@ -30,7 +30,7 @@ func CachedAggregateActivity(ctx context.Context, cfg *contract.Config, client c
 	}
 
 	// Cache miss: compute and store
-	return computeAndStore(ctx, cfg, client, activity, key)
+	return computeAndStore(ctx, cfg.Git, client, activity, key)
 }
 
 // checkCacheHit attempts to retrieve and validate a cached result.
@@ -55,8 +55,8 @@ func checkCacheHit(activity contract.CacheStore, key string) *schema.AggregateOu
 }
 
 // computeAndStore computes the result and stores it in cache.
-func computeAndStore(ctx context.Context, cfg *contract.Config, client contract.GitClient, activity contract.CacheStore, key string) (*schema.AggregateOutput, error) {
-	result, err := aggregateActivity(ctx, cfg, client)
+func computeAndStore(ctx context.Context, gitSettings contract.GitSettings, client contract.GitClient, activity contract.CacheStore, key string) (*schema.AggregateOutput, error) {
+	result, err := aggregateActivity(ctx, gitSettings, client)
 	if err != nil {
 		return nil, err
 	}
@@ -70,20 +70,20 @@ func computeAndStore(ctx context.Context, cfg *contract.Config, client contract.
 }
 
 // generateCacheKey creates a unique key based on analysis parameters.
-func generateCacheKey(ctx context.Context, cfg *contract.Config, client contract.GitClient) string {
-	// Use canonical helpers from internal.Config to ensure consistent time granularity
-	startHour := cfg.GetAnalysisStartTime()
-	endHour := cfg.GetAnalysisEndTime()
+func generateCacheKey(ctx context.Context, gitSettings contract.GitSettings, compareSettings contract.ComparisonSettings, client contract.GitClient) string {
+	// Truncate to the caching granularity
+	startHour := gitSettings.GetStartTime().Truncate(contract.CacheGranularity)
+	endHour := gitSettings.GetEndTime().Truncate(contract.CacheGranularity)
 
 	// Include repo hash to invalidate cache when repository state changes
-	repoHash, err := client.GetRepoHash(ctx, cfg.RepoPath)
+	repoHash, err := client.GetRepoHash(ctx, gitSettings.GetRepoPath())
 	if err != nil {
 		repoHash = ""
 	}
 
-	key := fmt.Sprintf("%s:%s:%d:%d:%s",
-		cfg.RepoPath,
-		cfg.Lookback,
+	key := fmt.Sprintf("%s:%d:%d:%d:%s",
+		gitSettings.GetRepoPath(),
+		int64(compareSettings.GetLookback()),
 		startHour.Unix(),
 		endHour.Unix(),
 		repoHash,

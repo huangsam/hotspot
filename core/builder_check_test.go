@@ -14,11 +14,15 @@ import (
 func TestCheckResultBuilder_ValidatePrerequisites_NoFilesChanged(t *testing.T) {
 	ctx := context.Background()
 	cfg := &contract.Config{
-		RepoPath:    "/test/repo",
-		CompareMode: true,
-		BaseRef:     "main",
-		TargetRef:   "feature",
-		Excludes:    []string{},
+		Git: contract.GitConfig{
+			RepoPath: "/test/repo",
+			Excludes: []string{},
+		},
+		Compare: contract.CompareConfig{
+			Enabled:   true,
+			BaseRef:   "main",
+			TargetRef: "feature",
+		},
 	}
 
 	mockGitClient := &contract.MockGitClient{}
@@ -36,11 +40,15 @@ func TestCheckResultBuilder_ValidatePrerequisites_NoFilesChanged(t *testing.T) {
 func TestCheckResultBuilder_ValidatePrerequisites_AllFilesExcluded(t *testing.T) {
 	ctx := context.Background()
 	cfg := &contract.Config{
-		RepoPath:    "/test/repo",
-		CompareMode: true,
-		BaseRef:     "main",
-		TargetRef:   "feature",
-		Excludes:    []string{"*.go"},
+		Git: contract.GitConfig{
+			RepoPath: "/test/repo",
+			Excludes: []string{"*.go"},
+		},
+		Compare: contract.CompareConfig{
+			Enabled:   true,
+			BaseRef:   "main",
+			TargetRef: "feature",
+		},
 	}
 
 	mockGitClient := &contract.MockGitClient{}
@@ -59,11 +67,15 @@ func TestCheckResultBuilder_ValidatePrerequisites_AllFilesExcluded(t *testing.T)
 func TestCheckResultBuilder_ValidatePrerequisites_WithValidFiles(t *testing.T) {
 	ctx := context.Background()
 	cfg := &contract.Config{
-		RepoPath:    "/test/repo",
-		CompareMode: true,
-		BaseRef:     "main",
-		TargetRef:   "feature",
-		Excludes:    []string{"*.md"},
+		Git: contract.GitConfig{
+			RepoPath: "/test/repo",
+			Excludes: []string{"*.md"},
+		},
+		Compare: contract.CompareConfig{
+			Enabled:   true,
+			BaseRef:   "main",
+			TargetRef: "feature",
+		},
 	}
 
 	mockGitClient := &contract.MockGitClient{}
@@ -81,8 +93,12 @@ func TestCheckResultBuilder_ValidatePrerequisites_WithValidFiles(t *testing.T) {
 func TestCheckResultBuilder_ValidatePrerequisites_MissingCompareMode(t *testing.T) {
 	ctx := context.Background()
 	cfg := &contract.Config{
-		RepoPath:    "/test/repo",
-		CompareMode: false,
+		Git: contract.GitConfig{
+			RepoPath: "/test/repo",
+		},
+		Compare: contract.CompareConfig{
+			Enabled: false,
+		},
 	}
 
 	builder := NewCheckResultBuilder(ctx, cfg, &iocache.MockCacheManager{})
@@ -95,11 +111,15 @@ func TestCheckResultBuilder_ValidatePrerequisites_MissingCompareMode(t *testing.
 func TestCheckResultBuilder_PrepareAnalysisConfig(t *testing.T) {
 	ctx := context.Background()
 	cfg := &contract.Config{
-		RepoPath:    "/test/repo",
-		CompareMode: true,
-		BaseRef:     "main",
-		TargetRef:   "feature",
-		Lookback:    30 * 24 * time.Hour,
+		Git: contract.GitConfig{
+			RepoPath: "/test/repo",
+		},
+		Compare: contract.CompareConfig{
+			Enabled:   true,
+			BaseRef:   "main",
+			TargetRef: "feature",
+			Lookback:  30 * 24 * time.Hour,
+		},
 	}
 
 	targetTime := time.Now()
@@ -112,8 +132,8 @@ func TestCheckResultBuilder_PrepareAnalysisConfig(t *testing.T) {
 	_, err := builder.PrepareAnalysisConfig()
 	assert.NoError(t, err)
 	assert.NotNil(t, builder.cfgTarget)
-	assert.Equal(t, targetTime.Add(-30*24*time.Hour), builder.cfgTarget.StartTime)
-	assert.Equal(t, targetTime, builder.cfgTarget.EndTime)
+	assert.Equal(t, targetTime.Add(-30*24*time.Hour), builder.cfgTarget.Git.StartTime)
+	assert.Equal(t, targetTime, builder.cfgTarget.Git.EndTime)
 }
 
 func TestCheckResultBuilder_ComputeMetrics(t *testing.T) {
@@ -144,11 +164,13 @@ func TestCheckResultBuilder_ComputeMetrics(t *testing.T) {
 	}
 
 	cfg := &contract.Config{
-		RiskThresholds: map[schema.ScoringMode]float64{
-			schema.HotMode:        55.0,
-			schema.RiskMode:       45.0,
-			schema.ComplexityMode: 35.0,
-			schema.StaleMode:      25.0,
+		Scoring: contract.ScoringConfig{
+			RiskThresholds: map[schema.ScoringMode]float64{
+				schema.HotMode:        55.0,
+				schema.RiskMode:       45.0,
+				schema.ComplexityMode: 35.0,
+				schema.StaleMode:      25.0,
+			},
 		},
 	}
 
@@ -199,14 +221,18 @@ func TestCheckResultBuilder_BuildResult_Success(t *testing.T) {
 	builder := &CheckResultBuilder{
 		filesToAnalyze: []string{"file1.go", "file2.go"},
 		cfg: &contract.Config{
-			BaseRef:   "main",
-			TargetRef: "feature",
-			Lookback:  30 * 24 * time.Hour,
-			RiskThresholds: map[schema.ScoringMode]float64{
-				schema.HotMode:        50.0,
-				schema.RiskMode:       50.0,
-				schema.ComplexityMode: 50.0,
-				schema.StaleMode:      50.0,
+			Compare: contract.CompareConfig{
+				BaseRef:   "main",
+				TargetRef: "feature",
+				Lookback:  30 * 24 * time.Hour,
+			},
+			Scoring: contract.ScoringConfig{
+				RiskThresholds: map[schema.ScoringMode]float64{
+					schema.HotMode:        50.0,
+					schema.RiskMode:       50.0,
+					schema.ComplexityMode: 50.0,
+					schema.StaleMode:      50.0,
+				},
 			},
 		},
 		failedFiles: []schema.CheckFailedFile{}, // No failures
@@ -244,11 +270,15 @@ func TestCheckResultBuilder_BuildResult_Failure(t *testing.T) {
 	builder := &CheckResultBuilder{
 		filesToAnalyze: []string{"file1.go"},
 		cfg: &contract.Config{
-			BaseRef:   "main",
-			TargetRef: "feature",
-			Lookback:  30 * 24 * time.Hour,
-			RiskThresholds: map[schema.ScoringMode]float64{
-				schema.HotMode: 50.0,
+			Compare: contract.CompareConfig{
+				BaseRef:   "main",
+				TargetRef: "feature",
+				Lookback:  30 * 24 * time.Hour,
+			},
+			Scoring: contract.ScoringConfig{
+				RiskThresholds: map[schema.ScoringMode]float64{
+					schema.HotMode: 50.0,
+				},
 			},
 		},
 		failedFiles: []schema.CheckFailedFile{

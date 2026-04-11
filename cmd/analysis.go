@@ -42,9 +42,9 @@ func analysisSetup() error {
 		return fmt.Errorf("failed to initialize analysis: %w", err)
 	}
 
-	cfg.AnalysisBackend = backend
-	cfg.AnalysisDBConnect = connStr
-	cfg.OutputFile = outputFile
+	cfg.Runtime.AnalysisBackend = backend
+	cfg.Runtime.AnalysisDBConnect = connStr
+	cfg.Output.OutputFile = outputFile
 
 	return nil
 }
@@ -84,8 +84,8 @@ func analysisMigrateSetup() error {
 		connStr = contract.GetAnalysisDBFilePath()
 	}
 
-	cfg.AnalysisBackend = backend
-	cfg.AnalysisDBConnect = connStr
+	cfg.Runtime.AnalysisBackend = backend
+	cfg.Runtime.AnalysisDBConnect = connStr
 
 	return nil
 }
@@ -156,7 +156,7 @@ Examples:
   hotspot analysis clear`,
 	PreRunE: analysisSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := iocache.ClearAnalysis(cfg.AnalysisBackend, contract.GetAnalysisDBFilePath(), cfg.AnalysisDBConnect); err != nil {
+		if err := iocache.ClearAnalysis(cfg.Runtime.AnalysisBackend, contract.GetAnalysisDBFilePath(), cfg.Runtime.AnalysisDBConnect); err != nil {
 			contract.LogFatal("Failed to clear analysis data", err)
 		}
 		fmt.Println("Analysis data cleared successfully.")
@@ -228,7 +228,7 @@ Examples:
   duckdb -c "SELECT * FROM read_parquet('data.parquet/runs.parquet') LIMIT 10"`,
 	PreRunE: analysisSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := iocache.ExecuteAnalysisExport(cfg.OutputFile); err != nil {
+		if err := iocache.ExecuteAnalysisExport(cfg.Output.OutputFile); err != nil {
 			contract.LogFatal("Failed to export analysis data", err)
 		}
 	},
@@ -260,7 +260,7 @@ Examples:
 	PreRunE: analysisMigrateSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		targetVersion := viper.GetInt("target-version")
-		if err := iocache.MigrateAnalysis(cfg.AnalysisBackend, cfg.AnalysisDBConnect, targetVersion); err != nil {
+		if err := iocache.MigrateAnalysis(cfg.Runtime.AnalysisBackend, cfg.Runtime.AnalysisDBConnect, targetVersion); err != nil {
 			contract.LogFatal("Failed to run migrations", err)
 		}
 	},

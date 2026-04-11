@@ -31,13 +31,15 @@ func TestAggregateActivity(t *testing.T) {
 
 	// Create config
 	cfg := &contract.Config{
-		RepoPath:  "/test/repo",
-		StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+		Git: contract.GitConfig{
+			RepoPath:  "/test/repo",
+			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+		},
 	}
 
 	// Execute
-	output, err := aggregateActivity(ctx, cfg, mockClient)
+	output, err := aggregateActivity(ctx, cfg.Git, mockClient)
 
 	// Assert
 	assert.NoError(t, err)
@@ -112,11 +114,13 @@ func TestBuildFilteredFileList(t *testing.T) {
 	}
 
 	cfg := &contract.Config{
-		PathFilter: "",
-		Excludes:   []string{"test_*", "*.md"},
+		Git: contract.GitConfig{
+			PathFilter: "",
+			Excludes:   []string{"test_*", "*.md"},
+		},
 	}
 
-	files := BuildFilteredFileList(cfg, output)
+	files := BuildFilteredFileList(cfg.Git, output)
 
 	// Should include main.go, core/agg.go, core/analysis.go
 	// Should exclude test_main.go (matches test_*), README.md (matches *.md)
@@ -152,11 +156,13 @@ func TestBuildFilteredFileList_WithPathFilter(t *testing.T) {
 	}
 
 	cfg := &contract.Config{
-		PathFilter: "core/",
-		Excludes:   []string{},
+		Git: contract.GitConfig{
+			PathFilter: "core/",
+			Excludes:   []string{},
+		},
 	}
 
-	files := BuildFilteredFileList(cfg, output)
+	files := BuildFilteredFileList(cfg.Git, output)
 
 	// Should only include files starting with "core/"
 	assert.Len(t, files, 2)
@@ -219,11 +225,15 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		}
 
 		cfg := &contract.Config{
-			PathFilter: "",
-			Mode:       schema.HotMode,
+			Git: contract.GitConfig{
+				PathFilter: "",
+			},
+			Scoring: contract.ScoringConfig{
+				Mode: schema.HotMode,
+			},
 		}
 
-		folders := AggregateAndScoreFolders(cfg, fileResults)
+		folders := AggregateAndScoreFolders(cfg.Git, cfg.Scoring, fileResults)
 
 		// Should have 1 folder: "core" (root files are skipped when PathFilter is empty)
 		assert.Len(t, folders, 1)
@@ -267,11 +277,15 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		}
 
 		cfg := &contract.Config{
-			PathFilter: "",
-			Mode:       schema.HotMode,
+			Git: contract.GitConfig{
+				PathFilter: "",
+			},
+			Scoring: contract.ScoringConfig{
+				Mode: schema.HotMode,
+			},
 		}
 
-		folders := AggregateAndScoreFolders(cfg, fileResults)
+		folders := AggregateAndScoreFolders(cfg.Git, cfg.Scoring, fileResults)
 
 		assert.Len(t, folders, 1)
 		folder := folders[0]
@@ -290,11 +304,15 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		fileResults := []schema.FileResult{}
 
 		cfg := &contract.Config{
-			PathFilter: "",
-			Mode:       schema.HotMode,
+			Git: contract.GitConfig{
+				PathFilter: "",
+			},
+			Scoring: contract.ScoringConfig{
+				Mode: schema.HotMode,
+			},
 		}
 
-		folders := AggregateAndScoreFolders(cfg, fileResults)
+		folders := AggregateAndScoreFolders(cfg.Git, cfg.Scoring, fileResults)
 
 		assert.Len(t, folders, 0)
 	})
@@ -312,11 +330,15 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		}
 
 		cfg := &contract.Config{
-			PathFilter: "",
-			Mode:       schema.HotMode,
+			Git: contract.GitConfig{
+				PathFilter: "",
+			},
+			Scoring: contract.ScoringConfig{
+				Mode: schema.HotMode,
+			},
 		}
 
-		folders := AggregateAndScoreFolders(cfg, fileResults)
+		folders := AggregateAndScoreFolders(cfg.Git, cfg.Scoring, fileResults)
 
 		assert.Len(t, folders, 1)
 		folder := folders[0]
@@ -350,11 +372,15 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		}
 
 		cfg := &contract.Config{
-			PathFilter: "src/", // Non-empty enables root folder inclusion
-			Mode:       schema.HotMode,
+			Git: contract.GitConfig{
+				PathFilter: "src/", // Non-empty enables root folder inclusion
+			},
+			Scoring: contract.ScoringConfig{
+				Mode: schema.HotMode,
+			},
 		}
 
-		folders := AggregateAndScoreFolders(cfg, fileResults)
+		folders := AggregateAndScoreFolders(cfg.Git, cfg.Scoring, fileResults)
 
 		// Root folder should be included since PathFilter is set
 		assert.Len(t, folders, 1)
@@ -389,11 +415,15 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		}
 
 		cfg := &contract.Config{
-			PathFilter: ".", // Non-empty enables root folder inclusion
-			Mode:       schema.HotMode,
+			Git: contract.GitConfig{
+				PathFilter: ".", // Non-empty enables root folder inclusion
+			},
+			Scoring: contract.ScoringConfig{
+				Mode: schema.HotMode,
+			},
 		}
 
-		folders := AggregateAndScoreFolders(cfg, fileResults)
+		folders := AggregateAndScoreFolders(cfg.Git, cfg.Scoring, fileResults)
 
 		// Root folder should be included when PathFilter is set
 		assert.Len(t, folders, 1)
@@ -428,11 +458,15 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		}
 
 		cfg := &contract.Config{
-			PathFilter: "",
-			Mode:       schema.HotMode,
+			Git: contract.GitConfig{
+				PathFilter: "",
+			},
+			Scoring: contract.ScoringConfig{
+				Mode: schema.HotMode,
+			},
 		}
 
-		folders := AggregateAndScoreFolders(cfg, fileResults)
+		folders := AggregateAndScoreFolders(cfg.Git, cfg.Scoring, fileResults)
 
 		assert.Len(t, folders, 1)
 		folder := folders[0]
@@ -468,11 +502,15 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		}
 
 		cfg := &contract.Config{
-			PathFilter: "",
-			Mode:       schema.HotMode,
+			Git: contract.GitConfig{
+				PathFilter: "",
+			},
+			Scoring: contract.ScoringConfig{
+				Mode: schema.HotMode,
+			},
 		}
 
-		folders := AggregateAndScoreFolders(cfg, fileResults)
+		folders := AggregateAndScoreFolders(cfg.Git, cfg.Scoring, fileResults)
 
 		assert.Len(t, folders, 1)
 		folder := folders[0]
@@ -526,11 +564,15 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		}
 
 		cfg := &contract.Config{
-			PathFilter: "",
-			Mode:       schema.HotMode,
+			Git: contract.GitConfig{
+				PathFilter: "",
+			},
+			Scoring: contract.ScoringConfig{
+				Mode: schema.HotMode,
+			},
 		}
 
-		folders := AggregateAndScoreFolders(cfg, fileResults)
+		folders := AggregateAndScoreFolders(cfg.Git, cfg.Scoring, fileResults)
 
 		assert.Len(t, folders, 2) // api and db (root excluded when PathFilter is empty)
 

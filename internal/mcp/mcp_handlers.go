@@ -22,7 +22,7 @@ type toolHandler struct {
 func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	cfg := h.baseCfg.Clone()
 	repoPath := request.GetString("repo_path", "")
-	if repoPath == "" && cfg.RepoPath == "" {
+	if repoPath == "" && cfg.Git.RepoPath == "" {
 		repoPath = "."
 	}
 	if repoPath != "" {
@@ -31,10 +31,10 @@ func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.Ca
 		}
 	}
 	if m := request.GetString("mode", ""); m != "" {
-		cfg.Mode = schema.ScoringMode(m)
+		cfg.Scoring.Mode = schema.ScoringMode(m)
 	}
 	if l := request.GetInt("limit", 0); l > 0 {
-		cfg.ResultLimit = l
+		cfg.Output.ResultLimit = l
 	}
 
 	ranked, _, err := core.GetHotspotFilesResults(core.WithSuppressHeader(ctx), cfg, h.mgr)
@@ -52,7 +52,7 @@ func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.Ca
 func (h *toolHandler) handleGetFoldersHotspots(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	cfg := h.baseCfg.Clone()
 	repoPath := request.GetString("repo_path", "")
-	if repoPath == "" && cfg.RepoPath == "" {
+	if repoPath == "" && cfg.Git.RepoPath == "" {
 		repoPath = "."
 	}
 	if repoPath != "" {
@@ -61,10 +61,10 @@ func (h *toolHandler) handleGetFoldersHotspots(ctx context.Context, request mcp.
 		}
 	}
 	if m := request.GetString("mode", ""); m != "" {
-		cfg.Mode = schema.ScoringMode(m)
+		cfg.Scoring.Mode = schema.ScoringMode(m)
 	}
 	if l := request.GetInt("limit", 0); l > 0 {
-		cfg.ResultLimit = l
+		cfg.Output.ResultLimit = l
 	}
 
 	ranked, _, err := core.GetHotspotFoldersResults(core.WithSuppressHeader(ctx), cfg, h.mgr)
@@ -81,11 +81,11 @@ func (h *toolHandler) handleGetFoldersHotspots(ctx context.Context, request mcp.
 // handleCompareHotspots handles the compare_hotspots tool.
 func (h *toolHandler) handleCompareHotspots(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	cfg := h.baseCfg.Clone()
-	cfg.BaseRef = request.GetString("base_ref", "")
-	cfg.TargetRef = request.GetString("target_ref", "")
+	cfg.Compare.BaseRef = request.GetString("base_ref", "")
+	cfg.Compare.TargetRef = request.GetString("target_ref", "")
 	lookbackStr := request.GetString("lookback", "")
 	repoPath := request.GetString("repo_path", "")
-	if repoPath == "" && cfg.RepoPath == "" {
+	if repoPath == "" && cfg.Git.RepoPath == "" {
 		repoPath = "."
 	}
 	if repoPath != "" {
@@ -94,7 +94,7 @@ func (h *toolHandler) handleCompareHotspots(ctx context.Context, request mcp.Cal
 		}
 	}
 	if m := request.GetString("mode", ""); m != "" {
-		cfg.Mode = schema.ScoringMode(m)
+		cfg.Scoring.Mode = schema.ScoringMode(m)
 	}
 
 	if err := contract.RevalidateCompare(cfg, lookbackStr); err != nil {
@@ -113,12 +113,12 @@ func (h *toolHandler) handleCompareHotspots(ctx context.Context, request mcp.Cal
 // handleGetTimeseries handles the get_timeseries tool.
 func (h *toolHandler) handleGetTimeseries(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	cfg := h.baseCfg.Clone()
-	cfg.TimeseriesPath = request.GetString("path", "")
-	cfg.TimeseriesPoints = request.GetInt("points", 0)
+	cfg.Timeseries.Path = request.GetString("path", "")
+	cfg.Timeseries.Points = request.GetInt("points", 0)
 	intervalStr := request.GetString("interval", "")
 
 	repoPath := request.GetString("repo_path", "")
-	if repoPath == "" && cfg.RepoPath == "" {
+	if repoPath == "" && cfg.Git.RepoPath == "" {
 		repoPath = "."
 	}
 	if repoPath != "" {
@@ -127,7 +127,7 @@ func (h *toolHandler) handleGetTimeseries(ctx context.Context, request mcp.CallT
 		}
 	}
 	if m := request.GetString("mode", ""); m != "" {
-		cfg.Mode = schema.ScoringMode(m)
+		cfg.Scoring.Mode = schema.ScoringMode(m)
 	}
 
 	// Re-validate specifically for timeseries interval parsing

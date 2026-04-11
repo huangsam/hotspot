@@ -472,8 +472,8 @@ func TestProcessAndValidate(t *testing.T) {
 			} else {
 				assert.NoError(t, err, "contract.ProcessAndValidate should not return an error for %s", tt.name)
 				// Basic validation that config was populated
-				assert.Equal(t, tt.input.Limit, cfg.ResultLimit)
-				assert.Equal(t, schema.ScoringMode(tt.input.Mode), cfg.Mode)
+				assert.Equal(t, tt.input.Limit, cfg.Output.ResultLimit)
+				assert.Equal(t, schema.ScoringMode(tt.input.Mode), cfg.Scoring.Mode)
 			}
 
 			if tt.setupMock != nil {
@@ -758,7 +758,7 @@ func TestProcessCustomWeights(t *testing.T) {
 				require.Error(t, err, "processCustomWeights() expected an error, but got nil")
 			} else {
 				require.NoError(t, err, "processCustomWeights() unexpected error: %v", err)
-				assert.Equal(t, tt.expected, cfg.CustomWeights, "CustomWeights mismatch")
+				assert.Equal(t, tt.expected, cfg.Scoring.CustomWeights, "CustomWeights mismatch")
 			}
 		})
 	}
@@ -766,35 +766,47 @@ func TestProcessCustomWeights(t *testing.T) {
 
 func TestConfigClone(t *testing.T) {
 	original := &Config{
-		ResultLimit: 10,
-		Workers:     4,
-		Mode:        schema.HotMode,
-		Precision:   1,
-		Output:      schema.TextOut,
-		Excludes:    []string{"*.tmp", "*.log"},
-		CustomWeights: map[schema.ScoringMode]map[schema.BreakdownKey]float64{
-			schema.HotMode: {
-				schema.BreakdownCommits: 0.5,
-				schema.BreakdownChurn:   0.5,
+		Output: OutputConfig{
+			ResultLimit: 10,
+			Precision:   1,
+			Format:      schema.TextOut,
+			OutputFile:  "output.txt",
+			Detail:      true,
+			Explain:     true,
+			Owner:       true,
+			Width:       120,
+		},
+		Runtime: RuntimeConfig{
+			Workers: 4,
+		},
+		Scoring: ScoringConfig{
+			Mode: schema.HotMode,
+			CustomWeights: map[schema.ScoringMode]map[schema.BreakdownKey]float64{
+				schema.HotMode: {
+					schema.BreakdownCommits: 0.5,
+					schema.BreakdownChurn:   0.5,
+				},
 			},
 		},
-		PathFilter:         "src/",
-		OutputFile:         "output.txt",
-		Detail:             true,
-		Explain:            true,
-		Owner:              true,
-		Follow:             true,
-		Width:              120,
-		StartTime:          time.Now().Add(-24 * time.Hour),
-		EndTime:            time.Now(),
-		BaseRef:            "main",
-		TargetRef:          "feature",
-		CompareMode:        true,
-		Lookback:           30 * 24 * time.Hour,
-		TimeseriesPath:     "src/main.go",
-		TimeseriesPoints:   4,
-		TimeseriesInterval: 7 * 24 * time.Hour,
-		RepoPath:           "/path/to/repo",
+		Git: GitConfig{
+			Excludes:   []string{"*.tmp", "*.log"},
+			PathFilter: "src/",
+			StartTime:  time.Now().Add(-24 * time.Hour),
+			EndTime:    time.Now(),
+			Follow:     true,
+			RepoPath:   "/path/to/repo",
+		},
+		Compare: CompareConfig{
+			BaseRef:   "main",
+			TargetRef: "feature",
+			Enabled:   true,
+			Lookback:  30 * 24 * time.Hour,
+		},
+		Timeseries: TimeseriesConfig{
+			Path:     "src/main.go",
+			Points:   4,
+			Interval: 7 * 24 * time.Hour,
+		},
 	}
 
 	clone := original.Clone()
@@ -804,27 +816,33 @@ func TestConfigClone(t *testing.T) {
 	assert.NotSame(t, original, clone)
 
 	// Test that slices are deep copied
-	assert.NotSame(t, &original.Excludes, &clone.Excludes)
-	assert.Equal(t, original.Excludes, clone.Excludes)
+	assert.NotSame(t, &original.Git.Excludes, &clone.Git.Excludes)
+	assert.Equal(t, original.Git.Excludes, clone.Git.Excludes)
 
 	// Test that maps are deep copied
-	assert.NotSame(t, &original.CustomWeights, &clone.CustomWeights)
-	assert.Equal(t, original.CustomWeights, clone.CustomWeights)
+	assert.NotSame(t, &original.Scoring.CustomWeights, &clone.Scoring.CustomWeights)
+	assert.Equal(t, original.Scoring.CustomWeights, clone.Scoring.CustomWeights)
 
 	// Modify original and ensure clone is unaffected
-	original.Excludes[0] = "modified.tmp"
-	original.CustomWeights[schema.HotMode][schema.BreakdownCommits] = 0.7
+	original.Git.Excludes[0] = "modified.tmp"
+	original.Scoring.CustomWeights[schema.HotMode][schema.BreakdownCommits] = 0.7
 
-	assert.NotEqual(t, original.Excludes[0], clone.Excludes[0])
-	assert.NotEqual(t, original.CustomWeights[schema.HotMode][schema.BreakdownCommits], clone.CustomWeights[schema.HotMode][schema.BreakdownCommits])
+	assert.NotEqual(t, original.Git.Excludes[0], clone.Git.Excludes[0])
+	assert.NotEqual(t, original.Scoring.CustomWeights[schema.HotMode][schema.BreakdownCommits], clone.Scoring.CustomWeights[schema.HotMode][schema.BreakdownCommits])
 }
 
 func TestConfigCloneWithTimeWindow(t *testing.T) {
 	original := &Config{
-		ResultLimit: 10,
-		Mode:        schema.HotMode,
-		StartTime:   time.Now().Add(-7 * 24 * time.Hour),
-		EndTime:     time.Now(),
+		Output: OutputConfig{
+			ResultLimit: 10,
+		},
+		Scoring: ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Git: GitConfig{
+			StartTime: time.Now().Add(-7 * 24 * time.Hour),
+			EndTime:   time.Now(),
+		},
 	}
 
 	newStart := time.Now().Add(-24 * time.Hour)
@@ -833,12 +851,12 @@ func TestConfigCloneWithTimeWindow(t *testing.T) {
 	clone := original.CloneWithTimeWindow(newStart, newEnd)
 
 	// Test that other fields are preserved
-	assert.Equal(t, original.ResultLimit, clone.ResultLimit)
-	assert.Equal(t, original.Mode, clone.Mode)
+	assert.Equal(t, original.Output.ResultLimit, clone.Output.ResultLimit)
+	assert.Equal(t, original.Scoring.Mode, clone.Scoring.Mode)
 
 	// Test that times are updated
-	assert.WithinDuration(t, newStart, clone.StartTime, time.Millisecond)
-	assert.WithinDuration(t, newEnd, clone.EndTime, time.Millisecond)
+	assert.WithinDuration(t, newStart, clone.Git.StartTime, time.Millisecond)
+	assert.WithinDuration(t, newEnd, clone.Git.EndTime, time.Millisecond)
 }
 
 func TestProcessProfilingConfig(t *testing.T) {
@@ -887,8 +905,10 @@ func TestGetAnalysisStartAndEndTime(t *testing.T) {
 	startTime := now.AddDate(0, 0, -365)
 
 	cfg := &Config{
-		StartTime: startTime,
-		EndTime:   now,
+		Git: GitConfig{
+			StartTime: startTime,
+			EndTime:   now,
+		},
 	}
 
 	// Test that GetAnalysisStartTime truncates to the hour
@@ -1039,25 +1059,25 @@ func TestRevalidateCompare(t *testing.T) {
 	}{
 		{
 			name:        "valid lookback and base ref",
-			cfg:         &Config{BaseRef: "main"},
+			cfg:         &Config{Compare: CompareConfig{BaseRef: "main"}},
 			lookbackStr: "30 days",
 			expectError: false,
 		},
 		{
 			name:        "empty lookback but valid base ref",
-			cfg:         &Config{BaseRef: "main"},
+			cfg:         &Config{Compare: CompareConfig{BaseRef: "main"}},
 			lookbackStr: "",
 			expectError: false,
 		},
 		{
 			name:        "invalid lookback string",
-			cfg:         &Config{BaseRef: "main"},
+			cfg:         &Config{Compare: CompareConfig{BaseRef: "main"}},
 			lookbackStr: "invalid_duration",
 			expectError: true,
 		},
 		{
 			name:        "missing base ref",
-			cfg:         &Config{BaseRef: ""},
+			cfg:         &Config{Compare: CompareConfig{BaseRef: ""}},
 			lookbackStr: "30 days",
 			expectError: true,
 		},
@@ -1084,25 +1104,25 @@ func TestRevalidateTimeseries(t *testing.T) {
 	}{
 		{
 			name:        "valid interval and valid points",
-			cfg:         &Config{TimeseriesPoints: 5},
+			cfg:         &Config{Timeseries: TimeseriesConfig{Points: 5}},
 			intervalStr: "1 week",
 			expectError: false,
 		},
 		{
 			name:        "empty interval",
-			cfg:         &Config{TimeseriesPoints: 5},
+			cfg:         &Config{Timeseries: TimeseriesConfig{Points: 5}},
 			intervalStr: "",
 			expectError: false,
 		},
 		{
 			name:        "invalid interval string",
-			cfg:         &Config{TimeseriesPoints: 5},
+			cfg:         &Config{Timeseries: TimeseriesConfig{Points: 5}},
 			intervalStr: "invalid_duration",
 			expectError: true,
 		},
 		{
 			name:        "invalid points (<1)",
-			cfg:         &Config{TimeseriesPoints: -1},
+			cfg:         &Config{Timeseries: TimeseriesConfig{Points: -1}},
 			intervalStr: "1 week",
 			expectError: true,
 		},

@@ -22,10 +22,17 @@ func TestAnalyzeFileCommon(t *testing.T) {
 
 	// Create config
 	cfg := &contract.Config{
-		RepoPath:  "/test/repo",
-		StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
-		Mode:      schema.HotMode,
+		Git: contract.GitConfig{
+			RepoPath:  "/test/repo",
+			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 2,
+		},
 	}
 
 	// Create aggregate output
@@ -63,11 +70,17 @@ func TestAnalyzeRepo(t *testing.T) {
 
 	// Create config
 	cfg := &contract.Config{
-		RepoPath:  "/test/repo",
-		StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
-		Mode:      schema.HotMode,
-		Workers:   2,
+		Git: contract.GitConfig{
+			RepoPath:  "/test/repo",
+			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 2,
+		},
 	}
 
 	// Create aggregate output
@@ -124,11 +137,17 @@ func TestAnalyzeRepo_ConcurrentWorkers(t *testing.T) {
 
 	// Create config with multiple workers
 	cfg := &contract.Config{
-		RepoPath:  "/test/repo",
-		StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
-		Mode:      schema.HotMode,
-		Workers:   4, // Test with multiple workers
+		Git: contract.GitConfig{
+			RepoPath:  "/test/repo",
+			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 4,
+		},
 	}
 
 	// Create aggregate output with many files to test concurrency
@@ -216,7 +235,9 @@ func TestRecordFileAnalysis(t *testing.T) {
 
 	// Create config
 	cfg := &contract.Config{
-		Mode: schema.HotMode,
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
 	}
 
 	// Create file result with all scores

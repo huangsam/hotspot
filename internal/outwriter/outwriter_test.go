@@ -22,8 +22,10 @@ func TestOutWriter_WriteFiles(t *testing.T) {
 	}
 
 	cfg := &contract.Config{
-		Output:    schema.TextOut,
-		Precision: 2,
+		Output: contract.OutputConfig{
+			Format:    schema.TextOut,
+			Precision: 2,
+		},
 	}
 
 	var buf bytes.Buffer
@@ -51,9 +53,11 @@ func TestOutWriter_WriteFolders(t *testing.T) {
 	}
 
 	cfg := &contract.Config{
-		Output:    schema.TextOut,
-		Precision: 2,
-		Detail:    true,
+		Output: contract.OutputConfig{
+			Format:    schema.TextOut,
+			Precision: 2,
+			Detail:    true,
+		},
 	}
 
 	var buf bytes.Buffer
@@ -97,10 +101,12 @@ func TestOutWriter_WriteComparison(t *testing.T) {
 	}
 
 	cfg := &contract.Config{
-		Output:    schema.TextOut,
-		Precision: 2,
-		Detail:    true,
-		Owner:     true,
+		Output: contract.OutputConfig{
+			Format:    schema.TextOut,
+			Precision: 2,
+			Detail:    true,
+			Owner:     true,
+		},
 	}
 
 	var buf bytes.Buffer
@@ -133,8 +139,10 @@ func TestOutWriter_WriteTimeseries(t *testing.T) {
 	}
 
 	cfg := &contract.Config{
-		Output:    schema.TextOut,
-		Precision: 2,
+		Output: contract.OutputConfig{
+			Format:    schema.TextOut,
+			Precision: 2,
+		},
 	}
 
 	var buf bytes.Buffer
@@ -159,7 +167,9 @@ func TestOutWriter_WriteMetrics(t *testing.T) {
 	}
 
 	cfg := &contract.Config{
-		Output: schema.TextOut,
+		Output: contract.OutputConfig{
+			Format: schema.TextOut,
+		},
 	}
 
 	var buf bytes.Buffer

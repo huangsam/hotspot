@@ -13,8 +13,12 @@ import (
 
 func TestMCPServerHandlers_ValidationErrors(t *testing.T) {
 	baseCfg := &contract.Config{
-		RepoPath: ".",
-		Mode:     "hot",
+		Git: contract.GitConfig{
+			RepoPath: ".",
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: "hot",
+		},
 	}
 
 	// Create a dummy manager and mock client

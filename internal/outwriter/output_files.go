@@ -18,10 +18,10 @@ import (
 // WriteFileResults outputs the analysis results, dispatching based on the output format configured.
 func WriteFileResults(w io.Writer, files []schema.FileResult, cfg *contract.Config, duration time.Duration) error {
 	// Create formatters using helper
-	fmtFloat, intFmt := createFormatters(cfg.Precision)
+	fmtFloat, intFmt := createFormatters(cfg.Output.Precision)
 
 	// Dispatcher: Handle different output formats
-	switch cfg.Output {
+	switch cfg.Output.Format {
 	case schema.JSONOut:
 		if err := writeJSONResultsForFiles(w, files); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
@@ -46,13 +46,13 @@ func writeFileTable(files []schema.FileResult, cfg *contract.Config, fmtFloat fu
 
 	// 1. Define Headers
 	headers := []string{"Rank", "Path", "Score", "Label"}
-	if cfg.Detail {
+	if cfg.Output.Detail {
 		headers = append(headers, "Contrib", "Commits", "LOC", "Churn", "Age", "Gini")
 	}
-	if cfg.Explain {
+	if cfg.Output.Explain {
 		headers = append(headers, "Explain")
 	}
-	if cfg.Owner {
+	if cfg.Output.Owner {
 		headers = append(headers, "Owner")
 	}
 	table.Header(headers)
@@ -67,7 +67,7 @@ func writeFileTable(files []schema.FileResult, cfg *contract.Config, fmtFloat fu
 	for i, f := range files {
 		// Prepare the row data as a slice of strings
 		label := contract.GetPlainLabel(f.ModeScore)
-		if cfg.UseColors {
+		if cfg.Output.UseColors {
 			label = contract.GetColorLabel(f.ModeScore)
 		}
 		row := []string{
@@ -76,7 +76,7 @@ func writeFileTable(files []schema.FileResult, cfg *contract.Config, fmtFloat fu
 			fmtFloat(f.ModeScore), // Score
 			label,                 // Label
 		}
-		if cfg.Detail {
+		if cfg.Output.Detail {
 			row = append(
 				row,
 				fmt.Sprintf(intFmt, f.UniqueContributors), // Contrib
@@ -87,11 +87,11 @@ func writeFileTable(files []schema.FileResult, cfg *contract.Config, fmtFloat fu
 				fmtFloat(f.Gini),                          // Gini
 			)
 		}
-		if cfg.Explain {
+		if cfg.Output.Explain {
 			topOnes := formatTopMetricBreakdown(&f)
 			row = append(row, topOnes) // Breakdown explanation
 		}
-		if cfg.Owner {
+		if cfg.Output.Owner {
 			row = append(row, schema.FormatOwners(f.Owners)) // Top 2 owners
 		}
 		data = append(data, row)
@@ -115,7 +115,7 @@ func writeFileTable(files []schema.FileResult, cfg *contract.Config, fmtFloat fu
 	if _, err := fmt.Fprintf(writer, "Showing top %d files (total commits: %d, total churn: %d)\n", numFiles, totalCommits, totalChurn); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(writer, "Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend); err != nil {
+	if _, err := fmt.Fprintf(writer, "Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Runtime.Workers, cfg.Runtime.CacheBackend); err != nil {
 		return err
 	}
 	return nil

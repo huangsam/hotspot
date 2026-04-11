@@ -15,11 +15,11 @@ import (
 
 // aggregateActivity performs a single repository-wide git log and aggregates per-file
 // commits, churn and contributors. It runs over the entire history if
-// cfg.StartTime is zero, or runs since cfg.StartTime otherwise.
+// gitSettings.GetStartTime() is zero, or runs since gitSettings.GetStartTime() otherwise.
 // It filters out files that no longer exist in a single pass.
-func aggregateActivity(ctx context.Context, cfg *contract.Config, client contract.GitClient) (*schema.AggregateOutput, error) {
+func aggregateActivity(ctx context.Context, gitSettings contract.GitSettings, client contract.GitClient) (*schema.AggregateOutput, error) {
 	// 1. Get the list of currently existing files
-	currentFiles, err := client.ListFilesAtRef(ctx, cfg.RepoPath, "HEAD")
+	currentFiles, err := client.ListFilesAtRef(ctx, gitSettings.GetRepoPath(), "HEAD")
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func aggregateActivity(ctx context.Context, cfg *contract.Config, client contrac
 	commitsMap, churnMap, contribMap, firstCommitMap := initializeAggregationMaps()
 
 	// 3. Run the git log command
-	out, err := client.GetActivityLog(ctx, cfg.RepoPath, cfg.StartTime, cfg.EndTime)
+	out, err := client.GetActivityLog(ctx, gitSettings.GetRepoPath(), gitSettings.GetStartTime(), gitSettings.GetEndTime())
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +218,7 @@ func aggregateForPath(path string, churn int, author string, date time.Time, com
 
 // BuildFilteredFileList creates a unified list of files from activity maps
 // and filters them based on the configuration.
-func BuildFilteredFileList(cfg *contract.Config, output *schema.AggregateOutput) []string {
+func BuildFilteredFileList(gitSettings contract.GitSettings, output *schema.AggregateOutput) []string {
 	// 1. Estimate capacity for 'seen'. Use a good guess based on the largest map.
 	capacity := max(
 		len(output.ContribMap), max(
@@ -248,16 +248,17 @@ func BuildFilteredFileList(cfg *contract.Config, output *schema.AggregateOutput)
 	files := make([]string, 0, len(seen))
 
 	// Pre-calculate filter state (only if PathFilter is set)
-	pathFilterSet := cfg.PathFilter != ""
+	pathFilter := gitSettings.GetPathFilter()
+	pathFilterSet := pathFilter != ""
 
 	for f := range seen {
 		// Apply path filter check only if the filter is set
-		if pathFilterSet && !strings.HasPrefix(f, cfg.PathFilter) {
+		if pathFilterSet && !strings.HasPrefix(f, pathFilter) {
 			continue
 		}
 
 		// Apply excludes filter
-		if contract.ShouldIgnore(f, cfg.Excludes) {
+		if contract.ShouldIgnore(f, gitSettings.GetExcludes()) {
 			continue
 		}
 
@@ -268,24 +269,27 @@ func BuildFilteredFileList(cfg *contract.Config, output *schema.AggregateOutput)
 }
 
 // AggregateAndScoreFolders correctly aggregates file results into folders.
-func AggregateAndScoreFolders(cfg *contract.Config, fileResults []schema.FileResult) []schema.FolderResult {
+func AggregateAndScoreFolders(gitSettings contract.GitSettings, scoringSettings contract.ScoringSettings, fileResults []schema.FileResult) []schema.FolderResult {
 	folderResults := make(map[string]*schema.FolderResult)
 
 	// Map to track the aggregate commit count per author per folder:
 	// folderPath -> authorName -> totalCommitsByAuthorInFolder
 	folderAuthorContributions := make(map[string]map[string]int)
 
+	pathFilter := gitSettings.GetPathFilter()
+	scoringMode := scoringSettings.GetMode()
+
 	for _, fr := range fileResults {
 		// 1. Determine the folder path
 		folderPath := filepath.Dir(fr.Path)
-		if cfg.PathFilter == "" && folderPath == "." {
+		if pathFilter == "" && folderPath == "." {
 			continue // Skip the root if not filtered
 		}
 
 		if _, ok := folderResults[folderPath]; !ok {
 			folderResults[folderPath] = &schema.FolderResult{
 				Path: folderPath,
-				Mode: cfg.Mode,
+				Mode: scoringMode,
 			}
 		}
 

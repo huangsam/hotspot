@@ -38,14 +38,14 @@ func NewCheckResultBuilder(ctx context.Context, cfg *contract.Config, mgr contra
 // ValidatePrerequisites validates config and gets files to analyze.
 func (b *CheckResultBuilder) ValidatePrerequisites() (*CheckResultBuilder, error) {
 	// Validate that compare mode is enabled
-	if !b.cfg.CompareMode {
+	if !b.cfg.Compare.Enabled {
 		return nil, fmt.Errorf("check command requires --base-ref and --target-ref flags. Example: hotspot check --base-ref main --target-ref feature")
 	}
 
 	// Get the list of changed files between base and target refs
-	changedFiles, err := b.client.GetChangedFilesBetweenRefs(b.ctx, b.cfg.RepoPath, b.cfg.BaseRef, b.cfg.TargetRef)
+	changedFiles, err := b.client.GetChangedFilesBetweenRefs(b.ctx, b.cfg.Git.RepoPath, b.cfg.Compare.BaseRef, b.cfg.Compare.TargetRef)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get changed files between %q and %q: %w. Verify both refs exist in the repository", b.cfg.BaseRef, b.cfg.TargetRef, err)
+		return nil, fmt.Errorf("failed to get changed files between %q and %q: %w. Verify both refs exist in the repository", b.cfg.Compare.BaseRef, b.cfg.Compare.TargetRef, err)
 	}
 
 	if len(changedFiles) == 0 {
@@ -55,7 +55,7 @@ func (b *CheckResultBuilder) ValidatePrerequisites() (*CheckResultBuilder, error
 	}
 
 	// Filter changed files to only include those we want to analyze
-	b.filesToAnalyze = filterChangedFiles(changedFiles, b.cfg.Excludes)
+	b.filesToAnalyze = filterChangedFiles(changedFiles, b.cfg.Git.Excludes)
 	if len(b.filesToAnalyze) == 0 {
 		fmt.Println("No relevant files to check (all excluded) - check passed")
 		b.result = &schema.CheckResult{Passed: true}
@@ -68,13 +68,13 @@ func (b *CheckResultBuilder) ValidatePrerequisites() (*CheckResultBuilder, error
 // PrepareAnalysisConfig sets up the time window for analysis.
 func (b *CheckResultBuilder) PrepareAnalysisConfig() (*CheckResultBuilder, error) {
 	// Get the time window for the target ref
-	_, targetEndTime, err := getAnalysisWindowForRef(b.ctx, b.client, b.cfg.RepoPath, b.cfg.TargetRef, b.cfg.Lookback)
+	_, targetEndTime, err := getAnalysisWindowForRef(b.ctx, b.client, b.cfg.Git.RepoPath, b.cfg.Compare.TargetRef, b.cfg.Compare.Lookback)
 	if err != nil {
-		return nil, fmt.Errorf("failed to analyze target ref %q: %w. Verify the ref exists and has commits", b.cfg.TargetRef, err)
+		return nil, fmt.Errorf("failed to analyze target ref %q: %w. Verify the ref exists and has commits", b.cfg.Compare.TargetRef, err)
 	}
 
 	// Create config for target ref analysis
-	targetStartTime := targetEndTime.Add(-b.cfg.Lookback)
+	targetStartTime := targetEndTime.Add(-b.cfg.Compare.Lookback)
 	b.cfgTarget = b.cfg.CloneWithTimeWindow(targetStartTime, targetEndTime)
 
 	return b, nil
@@ -90,7 +90,7 @@ func (b *CheckResultBuilder) RunAnalysis() (*CheckResultBuilder, error) {
 
 	// Analyze files once (all scores are computed upfront in FileResult)
 	cfgDefault := b.cfgTarget.Clone()
-	cfgDefault.Mode = schema.HotMode // Mode doesn't matter since all scores are computed
+	cfgDefault.Scoring.Mode = schema.HotMode // Mode doesn't matter since all scores are computed
 	b.fileResults = analyzeRepo(b.ctx, cfgDefault, b.client, output, b.filesToAnalyze)
 
 	return b, nil
@@ -139,7 +139,7 @@ func (b *CheckResultBuilder) ComputeMetrics() *CheckResultBuilder {
 	for _, file := range b.fileResults {
 		for _, mode := range schema.AllScoringModes {
 			score := file.AllScores[mode]
-			threshold := b.cfg.RiskThresholds[mode]
+			threshold := b.cfg.Scoring.RiskThresholds[mode]
 			if score > threshold {
 				b.failedFiles = append(b.failedFiles, schema.CheckFailedFile{
 					Path:      file.Path,
@@ -161,12 +161,12 @@ func (b *CheckResultBuilder) BuildResult() *CheckResultBuilder {
 		FailedFiles:   b.failedFiles,
 		TotalFiles:    len(b.filesToAnalyze),
 		CheckedModes:  schema.AllScoringModes,
-		BaseRef:       b.cfg.BaseRef,
-		TargetRef:     b.cfg.TargetRef,
-		Thresholds:    b.cfg.RiskThresholds,
+		BaseRef:       b.cfg.Compare.BaseRef,
+		TargetRef:     b.cfg.Compare.TargetRef,
+		Thresholds:    b.cfg.Scoring.RiskThresholds,
 		MaxScores:     b.maxScores,
 		MaxScoreFiles: b.maxScoreFiles,
-		Lookback:      b.cfg.Lookback,
+		Lookback:      b.cfg.Compare.Lookback,
 		AvgScores:     b.avgScores,
 	}
 	return b

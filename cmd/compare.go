@@ -30,7 +30,7 @@ Each comparison shows before/after scores, deltas, and ranking changes.`,
 
 // checkCompareAndExecute validates compare mode and executes the given function.
 func checkCompareAndExecute(executeFunc core.ExecutorFunc) {
-	if !cfg.CompareMode {
+	if !cfg.Compare.Enabled {
 		contract.LogFatal("Cannot run compare analysis", errors.New("base and target refs must be provided"))
 	}
 	if err := executeFunc(rootCtx, cfg, cacheManager); err != nil {

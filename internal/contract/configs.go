@@ -14,6 +14,63 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
+// --- Settings Interfaces (Strangler Fig Pattern) ---
+
+// GitSettings defines requirements for repository and filtering configuration.
+type GitSettings interface {
+	GetRepoPath() string
+	GetStartTime() time.Time
+	GetEndTime() time.Time
+	GetPathFilter() string
+	GetExcludes() []string
+	IsFollow() bool
+}
+
+// ScoringSettings defines requirements for algorithm and weight configuration.
+type ScoringSettings interface {
+	GetMode() schema.ScoringMode
+	GetCustomWeights() map[schema.ScoringMode]map[schema.BreakdownKey]float64
+	GetComputedWeights() map[schema.ScoringMode]map[schema.BreakdownKey]float64
+	GetRiskThresholds() map[schema.ScoringMode]float64
+}
+
+// OutputSettings defines requirements for presentation and export configuration.
+type OutputSettings interface {
+	GetResultLimit() int
+	GetPrecision() int
+	GetFormat() schema.OutputMode
+	GetOutputFile() string
+	GetWidth() int
+	IsUseColors() bool
+	IsDetail() bool
+	IsExplain() bool
+	IsOwner() bool
+}
+
+// RuntimeSettings defines requirements for execution and persistence configuration.
+type RuntimeSettings interface {
+	GetWorkers() int
+	GetCacheBackend() schema.DatabaseBackend
+	GetCacheDBConnect() string
+	GetAnalysisBackend() schema.DatabaseBackend
+	GetAnalysisDBConnect() string
+}
+
+// ComparisonSettings defines requirements for reference comparison configuration.
+type ComparisonSettings interface {
+	IsEnabled() bool
+	GetBaseRef() string
+	GetTargetRef() string
+	GetLookback() time.Duration
+}
+
+// TimeseriesSettings defines requirements for trend analysis configuration.
+type TimeseriesSettings interface {
+	GetPath() string
+	GetInterval() time.Duration
+	GetPoints() int
+}
+
 // Default values for configuration.
 const (
 	DefaultLookbackDays = 180
@@ -33,88 +90,169 @@ var DefaultWorkers = runtime.GOMAXPROCS(0)
 // DateTimeFormat is the default date time representation.
 var DateTimeFormat = time.RFC3339
 
-// ProfileConfig holds profiling settings.
-type ProfileConfig struct {
-	Enabled bool
-	Prefix  string
+// GitConfig holds repository and filtering settings.
+type GitConfig struct {
+	RepoPath   string
+	StartTime  time.Time
+	EndTime    time.Time
+	PathFilter string
+	Excludes   []string
+	Follow     bool
 }
 
-// ModeWeightsRaw holds the custom weights for a single scoring mode (e.g., 'stale').
-// Only fields that might be customized are included. Use float64 pointers for optional fields.
-type ModeWeightsRaw struct {
-	InvRecent       *float64 `mapstructure:"inv_recent"`
-	Size            *float64 `mapstructure:"size"`
-	Age             *float64 `mapstructure:"age"`
-	Commits         *float64 `mapstructure:"commits"`
-	Contributors    *float64 `mapstructure:"contrib"`
-	InvContributors *float64 `mapstructure:"inv_contrib"`
-	Churn           *float64 `mapstructure:"churn"`
-	Gini            *float64 `mapstructure:"gini"`
-	LOC             *float64 `mapstructure:"loc"`
-	LowRecent       *float64 `mapstructure:"low_recent"`
+// GetRepoPath returns the repository path.
+func (c GitConfig) GetRepoPath() string { return c.RepoPath }
+
+// GetStartTime returns the start time for analysis.
+func (c GitConfig) GetStartTime() time.Time { return c.StartTime }
+
+// GetEndTime returns the end time for analysis.
+func (c GitConfig) GetEndTime() time.Time { return c.EndTime }
+
+// GetPathFilter returns the path filter string.
+func (c GitConfig) GetPathFilter() string { return c.PathFilter }
+
+// GetExcludes returns the list of excluded paths.
+func (c GitConfig) GetExcludes() []string { return c.Excludes }
+
+// IsFollow returns whether to follow renames.
+func (c GitConfig) IsFollow() bool { return c.Follow }
+
+// ScoringConfig holds algorithm and weight settings.
+type ScoringConfig struct {
+	Mode            schema.ScoringMode
+	CustomWeights   map[schema.ScoringMode]map[schema.BreakdownKey]float64
+	ComputedWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64
+	RiskThresholds  map[schema.ScoringMode]float64
 }
 
-// WeightsRawInput holds all custom scoring definitions from the YAML config file.
-type WeightsRawInput struct {
-	Stale      *ModeWeightsRaw `mapstructure:"stale"`
-	Risk       *ModeWeightsRaw `mapstructure:"risk"`
-	Hot        *ModeWeightsRaw `mapstructure:"hot"`
-	Complexity *ModeWeightsRaw `mapstructure:"complexity"`
+// GetMode returns the current scoring mode.
+func (c ScoringConfig) GetMode() schema.ScoringMode { return c.Mode }
+
+// GetCustomWeights returns the map of custom scoring weights.
+func (c ScoringConfig) GetCustomWeights() map[schema.ScoringMode]map[schema.BreakdownKey]float64 {
+	return c.CustomWeights
 }
 
-// ThresholdsRawInput holds risk threshold definitions from the YAML config file.
-type ThresholdsRawInput struct {
-	Hot        *float64 `mapstructure:"hot"`
-	Risk       *float64 `mapstructure:"risk"`
-	Complexity *float64 `mapstructure:"complexity"`
-	Stale      *float64 `mapstructure:"stale"`
+// GetComputedWeights returns the map of computed scoring weights.
+func (c ScoringConfig) GetComputedWeights() map[schema.ScoringMode]map[schema.BreakdownKey]float64 {
+	return c.ComputedWeights
 }
+
+// GetRiskThresholds returns the map of risk thresholds for each mode.
+func (c ScoringConfig) GetRiskThresholds() map[schema.ScoringMode]float64 { return c.RiskThresholds }
+
+// OutputConfig holds presentation and export settings.
+type OutputConfig struct {
+	ResultLimit int
+	Precision   int
+	Format      schema.OutputMode
+	OutputFile  string
+	Width       int // Terminal width override (0 = auto-detect)
+	UseColors   bool
+	Detail      bool
+	Explain     bool
+	Owner       bool
+}
+
+// GetResultLimit returns the maximum number of results to return.
+func (c OutputConfig) GetResultLimit() int { return c.ResultLimit }
+
+// GetPrecision returns the decimal precision for scores.
+func (c OutputConfig) GetPrecision() int { return c.Precision }
+
+// GetFormat returns the output format mode.
+func (c OutputConfig) GetFormat() schema.OutputMode { return c.Format }
+
+// GetOutputFile returns the path to the output file.
+func (c OutputConfig) GetOutputFile() string { return c.OutputFile }
+
+// GetWidth returns the terminal width override.
+func (c OutputConfig) GetWidth() int { return c.Width }
+
+// IsUseColors returns whether to use colors in output.
+func (c OutputConfig) IsUseColors() bool { return c.UseColors }
+
+// IsDetail returns whether to show detailed breakdown.
+func (c OutputConfig) IsDetail() bool { return c.Detail }
+
+// IsExplain returns whether to show scoring explanations.
+func (c OutputConfig) IsExplain() bool { return c.Explain }
+
+// IsOwner returns whether to show ownership statistics.
+func (c OutputConfig) IsOwner() bool { return c.Owner }
+
+// RuntimeConfig holds execution and persistence settings.
+type RuntimeConfig struct {
+	Workers           int
+	CacheBackend      schema.DatabaseBackend
+	CacheDBConnect    string
+	AnalysisBackend   schema.DatabaseBackend
+	AnalysisDBConnect string
+}
+
+// GetWorkers returns the number of concurrent workers.
+func (c RuntimeConfig) GetWorkers() int { return c.Workers }
+
+// GetCacheBackend returns the cache database backend.
+func (c RuntimeConfig) GetCacheBackend() schema.DatabaseBackend { return c.CacheBackend }
+
+// GetCacheDBConnect returns the cache connection string.
+func (c RuntimeConfig) GetCacheDBConnect() string { return c.CacheDBConnect }
+
+// GetAnalysisBackend returns the analysis database backend.
+func (c RuntimeConfig) GetAnalysisBackend() schema.DatabaseBackend {
+	return c.AnalysisBackend
+}
+
+// GetAnalysisDBConnect returns the analysis connection string.
+func (c RuntimeConfig) GetAnalysisDBConnect() string { return c.AnalysisDBConnect }
+
+// CompareConfig holds settings for reference comparisons.
+type CompareConfig struct {
+	Enabled   bool
+	BaseRef   string
+	TargetRef string
+	Lookback  time.Duration
+}
+
+// IsEnabled returns whether comparison is enabled.
+func (c CompareConfig) IsEnabled() bool { return c.Enabled }
+
+// GetBaseRef returns the base git reference for comparison.
+func (c CompareConfig) GetBaseRef() string { return c.BaseRef }
+
+// GetTargetRef returns the target git reference for comparison.
+func (c CompareConfig) GetTargetRef() string { return c.TargetRef }
+
+// GetLookback returns the time lookback for comparison.
+func (c CompareConfig) GetLookback() time.Duration { return c.Lookback }
+
+// TimeseriesConfig holds settings for trend analysis.
+type TimeseriesConfig struct {
+	Path     string
+	Interval time.Duration
+	Points   int
+}
+
+// GetPath returns the file or folder path for trend analysis.
+func (c TimeseriesConfig) GetPath() string { return c.Path }
+
+// GetInterval returns the time interval between points.
+func (c TimeseriesConfig) GetInterval() time.Duration { return c.Interval }
+
+// GetPoints returns the number of time points to analyze.
+func (c TimeseriesConfig) GetPoints() int { return c.Points }
 
 // Config holds the runtime configuration for the analysis.
 // This struct remains the "final, validated" config.
 type Config struct {
-	RepoPath    string
-	StartTime   time.Time
-	EndTime     time.Time
-	PathFilter  string
-	ResultLimit int
-	Workers     int
-	Mode        schema.ScoringMode
-	Excludes    []string
-	Detail      bool
-	Explain     bool
-	Precision   int
-	Output      schema.OutputMode
-	OutputFile  string
-	Follow      bool
-	Owner       bool
-	Width       int // Terminal width override (0 = auto-detect)
-
-	CompareMode bool
-	BaseRef     string
-	TargetRef   string
-	Lookback    time.Duration
-
-	TimeseriesPath     string
-	TimeseriesInterval time.Duration
-	TimeseriesPoints   int
-
-	CacheBackend   schema.DatabaseBackend
-	CacheDBConnect string // Please use env var as this is plaintext
-
-	AnalysisBackend   schema.DatabaseBackend
-	AnalysisDBConnect string // Please use env var as this is plaintext
-
-	// CustomWeights is a mapping of [ModeName][BreakdownKey] = Weight
-	CustomWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64
-
-	// ComputedWeights is the final weights map for each mode, computed from defaults + custom overrides
-	ComputedWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64
-
-	// RiskThresholds is a mapping of [ModeName] = Threshold score value
-	RiskThresholds map[schema.ScoringMode]float64
-
-	UseColors bool // Enable colored labels in table output
+	Git        GitConfig
+	Scoring    ScoringConfig
+	Output     OutputConfig
+	Runtime    RuntimeConfig
+	Compare    CompareConfig
+	Timeseries TimeseriesConfig
 }
 
 // ConfigRawInput holds the raw inputs from all sources (flags, env, config file).
@@ -169,52 +307,50 @@ type ConfigRawInput struct {
 
 // Clone returns a deep copy of the Config struct.
 func (c *Config) Clone() *Config {
-	// (Implementation unchanged)
 	clone := *c
-	if c.Excludes != nil {
-		clone.Excludes = make([]string, len(c.Excludes))
-		copy(clone.Excludes, c.Excludes)
+	if c.Git.Excludes != nil {
+		clone.Git.Excludes = make([]string, len(c.Git.Excludes))
+		copy(clone.Git.Excludes, c.Git.Excludes)
 	}
-	if c.CustomWeights != nil {
-		clone.CustomWeights = make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
-		for mode, modeMap := range c.CustomWeights {
-			clone.CustomWeights[mode] = make(map[schema.BreakdownKey]float64)
-			maps.Copy(clone.CustomWeights[mode], modeMap)
+	if c.Scoring.CustomWeights != nil {
+		clone.Scoring.CustomWeights = make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
+		for mode, modeMap := range c.Scoring.CustomWeights {
+			clone.Scoring.CustomWeights[mode] = make(map[schema.BreakdownKey]float64)
+			maps.Copy(clone.Scoring.CustomWeights[mode], modeMap)
 		}
 	}
-	if c.ComputedWeights != nil {
-		clone.ComputedWeights = make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
-		for mode, modeMap := range c.ComputedWeights {
-			clone.ComputedWeights[mode] = make(map[schema.BreakdownKey]float64)
-			maps.Copy(clone.ComputedWeights[mode], modeMap)
+	if c.Scoring.ComputedWeights != nil {
+		clone.Scoring.ComputedWeights = make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
+		for mode, modeMap := range c.Scoring.ComputedWeights {
+			clone.Scoring.ComputedWeights[mode] = make(map[schema.BreakdownKey]float64)
+			maps.Copy(clone.Scoring.ComputedWeights[mode], modeMap)
 		}
 	}
-	if c.RiskThresholds != nil {
-		clone.RiskThresholds = make(map[schema.ScoringMode]float64)
-		maps.Copy(clone.RiskThresholds, c.RiskThresholds)
+	if c.Scoring.RiskThresholds != nil {
+		clone.Scoring.RiskThresholds = make(map[schema.ScoringMode]float64)
+		maps.Copy(clone.Scoring.RiskThresholds, c.Scoring.RiskThresholds)
 	}
 	return &clone
 }
 
 // CloneWithTimeWindow creates a copy of the Config and sets the new StartTime and EndTime.
 func (c *Config) CloneWithTimeWindow(start time.Time, end time.Time) *Config {
-	// (Implementation unchanged)
 	clone := c.Clone()
-	clone.StartTime = start
-	clone.EndTime = end
+	clone.Git.StartTime = start
+	clone.Git.EndTime = end
 	return clone
 }
 
 // GetAnalysisStartTime returns the configured start time, truncated to the caching granularity.
 // This ensures consistent time window alignment across the application and tests.
 func (c *Config) GetAnalysisStartTime() time.Time {
-	return c.StartTime.Truncate(CacheGranularity)
+	return c.Git.StartTime.Truncate(CacheGranularity)
 }
 
 // GetAnalysisEndTime returns the configured end time, truncated to the caching granularity.
 // This ensures consistent time window alignment across the application and tests.
 func (c *Config) GetAnalysisEndTime() time.Time {
-	return c.EndTime.Truncate(CacheGranularity)
+	return c.Git.EndTime.Truncate(CacheGranularity)
 }
 
 // ProcessAndValidate performs all complex parsing and validation on the raw inputs
@@ -253,7 +389,7 @@ func ValidateDatabaseConnectionString(backend schema.DatabaseBackend, connStr st
 		return nil
 	case schema.MySQLBackend:
 		if connStr == "" {
-			return fmt.Errorf("--cache-db-connect is required for MySQL backend. Example: 'user:password@tcp(localhost:3306)/hotspot'")
+			return fmt.Errorf("database connection string is required for MySQL backend. Example: 'user:password@tcp(localhost:3306)/hotspot'")
 		}
 		if !strings.Contains(connStr, "@tcp(") {
 			return fmt.Errorf("MySQL connection string must contain '@tcp(' for host:port specification. Format: 'user:password@tcp(host:port)/dbname'. Got: %q", connStr)
@@ -263,7 +399,7 @@ func ValidateDatabaseConnectionString(backend schema.DatabaseBackend, connStr st
 		}
 	case schema.PostgreSQLBackend:
 		if connStr == "" {
-			return fmt.Errorf("--cache-db-connect is required for PostgreSQL backend. Example: 'postgres://user:password@localhost:5432/hotspot?sslmode=disable'")
+			return fmt.Errorf("database connection string is required for PostgreSQL backend. Example: 'postgres://user:password@localhost:5432/hotspot?sslmode=disable'")
 		}
 		if !strings.Contains(connStr, "host=") {
 			return fmt.Errorf("PostgreSQL connection string must contain 'host=' parameter. Format: 'postgres://user:password@host:port/dbname?sslmode=disable'. Got: %q", connStr)
@@ -278,35 +414,35 @@ func ValidateDatabaseConnectionString(backend schema.DatabaseBackend, connStr st
 // validateBackendConfigs validates cache and analysis backend configurations.
 func validateBackendConfigs(cfg *Config, input *ConfigRawInput) error {
 	// --- Cache Backend Validation ---
-	cfg.CacheBackend = schema.DatabaseBackend(strings.ToLower(input.CacheBackend))
-	if _, ok := schema.ValidDatabaseBackends[cfg.CacheBackend]; !ok {
+	cfg.Runtime.CacheBackend = schema.DatabaseBackend(strings.ToLower(input.CacheBackend))
+	if _, ok := schema.ValidDatabaseBackends[cfg.Runtime.CacheBackend]; !ok {
 		return fmt.Errorf("invalid cache backend '%s'. Must be one of: sqlite (default), mysql, postgresql, none", input.CacheBackend)
 	}
-	cfg.CacheDBConnect = input.CacheDBConnect
-	if err := ValidateDatabaseConnectionString(cfg.CacheBackend, cfg.CacheDBConnect); err != nil {
+	cfg.Runtime.CacheDBConnect = input.CacheDBConnect
+	if err := ValidateDatabaseConnectionString(cfg.Runtime.CacheBackend, cfg.Runtime.CacheDBConnect); err != nil {
 		return err
 	}
 
 	// --- Analysis Backend Validation ---
-	cfg.AnalysisBackend = schema.DatabaseBackend(strings.ToLower(input.AnalysisBackend))
-	if cfg.AnalysisBackend != "" {
-		if _, ok := schema.ValidDatabaseBackends[cfg.AnalysisBackend]; !ok {
+	cfg.Runtime.AnalysisBackend = schema.DatabaseBackend(strings.ToLower(input.AnalysisBackend))
+	if cfg.Runtime.AnalysisBackend != "" {
+		if _, ok := schema.ValidDatabaseBackends[cfg.Runtime.AnalysisBackend]; !ok {
 			return fmt.Errorf("invalid analysis backend '%s'. Must be one of: sqlite, mysql, postgresql, none", input.AnalysisBackend)
 		}
-		cfg.AnalysisDBConnect = input.AnalysisDBConnect
-		if err := ValidateDatabaseConnectionString(cfg.AnalysisBackend, cfg.AnalysisDBConnect); err != nil {
+		cfg.Runtime.AnalysisDBConnect = input.AnalysisDBConnect
+		if err := ValidateDatabaseConnectionString(cfg.Runtime.AnalysisBackend, cfg.Runtime.AnalysisDBConnect); err != nil {
 			return err
 		}
 
 		// Validate that cache and analysis use different databases
-		if cfg.CacheBackend == cfg.AnalysisBackend && cfg.CacheBackend != schema.NoneBackend {
+		if cfg.Runtime.CacheBackend == cfg.Runtime.AnalysisBackend && cfg.Runtime.CacheBackend != schema.NoneBackend {
 			// For SQLite, resolve to actual file paths to catch default path conflicts
-			if cfg.CacheBackend == schema.SQLiteBackend {
-				cacheDBPath := cfg.CacheDBConnect
+			if cfg.Runtime.CacheBackend == schema.SQLiteBackend {
+				cacheDBPath := cfg.Runtime.CacheDBConnect
 				if cacheDBPath == "" {
 					cacheDBPath = GetCacheDBFilePath()
 				}
-				analysisDBPath := cfg.AnalysisDBConnect
+				analysisDBPath := cfg.Runtime.AnalysisDBConnect
 				if analysisDBPath == "" {
 					analysisDBPath = GetAnalysisDBFilePath()
 				}
@@ -323,36 +459,36 @@ func validateBackendConfigs(cfg *Config, input *ConfigRawInput) error {
 // validateSimpleInputs processes and validates all non-path related fields.
 func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	// --- 0. Transfer simple non-validated fields from input -> cfg ---
-	cfg.PathFilter = input.Filter
-	cfg.OutputFile = input.OutputFile
-	cfg.Detail = input.Detail
-	cfg.Explain = input.Explain
-	cfg.Owner = input.Owner
-	cfg.Follow = input.Follow
-	cfg.Width = input.Width
+	cfg.Git.PathFilter = input.Filter
+	cfg.Output.OutputFile = input.OutputFile
+	cfg.Output.Detail = input.Detail
+	cfg.Output.Explain = input.Explain
+	cfg.Output.Owner = input.Owner
+	cfg.Git.Follow = input.Follow
+	cfg.Output.Width = input.Width
 
 	// Parse color flag
 	colors, err := ParseBoolString(input.Color)
 	if err != nil {
 		return fmt.Errorf("invalid --color value: %w", err)
 	}
-	cfg.UseColors = colors
+	cfg.Output.UseColors = colors
 
 	// --- 1. ResultLimit Validation ---
 	if input.Limit <= 0 || input.Limit > MaxResultLimit {
 		return fmt.Errorf("--limit (%d) must be between 1 and %d. Limit controls how many results to display", input.Limit, MaxResultLimit)
 	}
-	cfg.ResultLimit = input.Limit
+	cfg.Output.ResultLimit = input.Limit
 
 	// --- 2. Workers Validation ---
 	if input.Workers <= 0 {
 		return fmt.Errorf("--workers (%d) must be greater than 0. Recommend 1-%d based on your CPU cores", input.Workers, runtime.NumCPU())
 	}
-	cfg.Workers = input.Workers
+	cfg.Runtime.Workers = input.Workers
 
 	// --- 3. Mode Validation ---
-	cfg.Mode = schema.ScoringMode(strings.ToLower(input.Mode))
-	if _, ok := schema.ValidScoringModes[cfg.Mode]; !ok {
+	cfg.Scoring.Mode = schema.ScoringMode(strings.ToLower(input.Mode))
+	if _, ok := schema.ValidScoringModes[cfg.Scoring.Mode]; !ok {
 		return fmt.Errorf("invalid mode '%s'. Must be one of: hot (activity), risk (knowledge distribution), complexity (technical debt), stale (maintenance debt)", input.Mode)
 	}
 
@@ -360,11 +496,11 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	if input.Precision < 1 || input.Precision > 2 {
 		return fmt.Errorf("--precision (%d) must be 1 or 2 (controls decimal places in output)", input.Precision)
 	}
-	cfg.Precision = input.Precision
+	cfg.Output.Precision = input.Precision
 
-	cfg.Output = schema.OutputMode(strings.ToLower(input.Output))
-	if _, ok := schema.ValidOutputModes[cfg.Output]; !ok {
-		return fmt.Errorf("invalid output format '%s'. Must be one of: text (pretty table), csv (comma-separated), json (structured), parquet (analytics)", cfg.Output)
+	cfg.Output.Format = schema.OutputMode(strings.ToLower(input.Output))
+	if _, ok := schema.ValidOutputModes[cfg.Output.Format]; !ok {
+		return fmt.Errorf("invalid output format '%s'. Must be one of: text (pretty table), csv (comma-separated), json (structured), parquet (analytics)", cfg.Output.Format)
 	}
 
 	// --- 5. Backend Validation ---
@@ -382,14 +518,14 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 		".DS_Store", ".gitignore",
 		"dist/", "build/", "out/", "target/", "bin/",
 	}
-	cfg.Excludes = defaults // Set defaults first
+	cfg.Git.Excludes = defaults // Set defaults first
 
 	if input.Exclude != "" {
 		parts := strings.SplitSeq(input.Exclude, ",") // Use simple Split
 		for p := range parts {
 			trimmedP := strings.TrimSpace(p)
 			if trimmedP != "" {
-				cfg.Excludes = append(cfg.Excludes, trimmedP)
+				cfg.Git.Excludes = append(cfg.Git.Excludes, trimmedP)
 			}
 		}
 	}
@@ -400,8 +536,8 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 // processTimeRange handles the complex date parsing and time range validation.
 func processTimeRange(cfg *Config, input *ConfigRawInput) error {
 	now := time.Now()
-	cfg.EndTime = now
-	cfg.StartTime = cfg.EndTime.Add(-DefaultLookbackDays * 24 * time.Hour)
+	cfg.Git.EndTime = now
+	cfg.Git.StartTime = cfg.Git.EndTime.Add(-DefaultLookbackDays * 24 * time.Hour)
 
 	parseAbsolute := func(s string) (time.Time, error) {
 		return time.Parse(DateTimeFormat, s)
@@ -411,13 +547,13 @@ func processTimeRange(cfg *Config, input *ConfigRawInput) error {
 	if input.Start != "" {
 		t, err := parseAbsolute(input.Start)
 		if err == nil {
-			cfg.StartTime = t
+			cfg.Git.StartTime = t
 		} else {
 			t, relErr := ParseRelativeTime(input.Start, now)
 			if relErr != nil {
 				return fmt.Errorf("invalid start date format for '%s'. Expected absolute ISO8601 or 'N [units] ago': %v", input.Start, err)
 			}
-			cfg.StartTime = t
+			cfg.Git.StartTime = t
 		}
 	}
 
@@ -425,19 +561,19 @@ func processTimeRange(cfg *Config, input *ConfigRawInput) error {
 	if input.End != "" {
 		t, err := parseAbsolute(input.End)
 		if err == nil {
-			cfg.EndTime = t
+			cfg.Git.EndTime = t
 		} else {
 			t, relErr := ParseRelativeTime(input.End, now)
 			if relErr != nil {
 				return fmt.Errorf("invalid end date format for '%s'. Expected absolute ISO8601 or 'N [units] ago': %v", input.End, err)
 			}
-			cfg.EndTime = t
+			cfg.Git.EndTime = t
 		}
 	}
 
 	// --- Final Validation ---
-	if !cfg.StartTime.IsZero() && !cfg.EndTime.IsZero() && cfg.StartTime.After(cfg.EndTime) {
-		return fmt.Errorf("start time (%s) cannot be after end time (%s)", cfg.StartTime.Format(DateTimeFormat), cfg.EndTime.Format(DateTimeFormat))
+	if !cfg.Git.StartTime.IsZero() && !cfg.Git.EndTime.IsZero() && cfg.Git.StartTime.After(cfg.Git.EndTime) {
+		return fmt.Errorf("start time (%s) cannot be after end time (%s)", cfg.Git.StartTime.Format(DateTimeFormat), cfg.Git.EndTime.Format(DateTimeFormat))
 	}
 
 	return nil
@@ -450,9 +586,9 @@ func RevalidateCompare(cfg *Config, lookbackStr string) error {
 		if err != nil {
 			return err
 		}
-		cfg.Lookback = lookback
+		cfg.Compare.Lookback = lookback
 	}
-	if cfg.BaseRef == "" {
+	if cfg.Compare.BaseRef == "" {
 		return fmt.Errorf("--base-ref is required for compare")
 	}
 	return nil
@@ -465,9 +601,9 @@ func RevalidateTimeseries(cfg *Config, intervalStr string) error {
 		if err != nil {
 			return fmt.Errorf("invalid interval: %w", err)
 		}
-		cfg.TimeseriesInterval = interval
+		cfg.Timeseries.Interval = interval
 	}
-	if cfg.TimeseriesPoints < 1 && cfg.TimeseriesPoints != 0 {
+	if cfg.Timeseries.Points < 1 && cfg.Timeseries.Points != 0 {
 		return fmt.Errorf("--points must be at least 1")
 	}
 	return nil
@@ -475,46 +611,46 @@ func RevalidateTimeseries(cfg *Config, intervalStr string) error {
 
 // processCompareMode handles the comparison references and lookback.
 func processCompareMode(cfg *Config, input *ConfigRawInput) error {
-	cfg.BaseRef = strings.TrimSpace(input.BaseRef)
-	cfg.TargetRef = strings.TrimSpace(input.TargetRef)
+	cfg.Compare.BaseRef = strings.TrimSpace(input.BaseRef)
+	cfg.Compare.TargetRef = strings.TrimSpace(input.TargetRef)
 
-	if cfg.BaseRef == "" && cfg.TargetRef == "" {
-		cfg.CompareMode = false
+	if cfg.Compare.BaseRef == "" && cfg.Compare.TargetRef == "" {
+		cfg.Compare.Enabled = false
 		return nil
 	}
-	cfg.CompareMode = true
+	cfg.Compare.Enabled = true
 
-	if cfg.BaseRef == "" {
+	if cfg.Compare.BaseRef == "" {
 		return fmt.Errorf("--base-ref is required for compare command. Example: hotspot compare files --base-ref main --target-ref feature")
 	}
-	if cfg.TargetRef == "" {
-		cfg.TargetRef = "HEAD"
+	if cfg.Compare.TargetRef == "" {
+		cfg.Compare.TargetRef = "HEAD"
 	}
 
 	lookback, err := ParseLookbackDuration(input.Lookback)
 	if err != nil {
 		return err
 	}
-	cfg.Lookback = lookback
+	cfg.Compare.Lookback = lookback
 
 	return nil
 }
 
 // processTimeseriesMode handles the timeseries parameters.
 func processTimeseriesMode(cfg *Config, input *ConfigRawInput) error {
-	cfg.TimeseriesPath = strings.TrimSpace(input.Path)
-	cfg.TimeseriesPoints = input.Points
+	cfg.Timeseries.Path = strings.TrimSpace(input.Path)
+	cfg.Timeseries.Points = input.Points
 
 	if input.Interval != "" {
 		interval, err := ParseLookbackDuration(input.Interval)
 		if err != nil {
 			return fmt.Errorf("invalid interval: %w", err)
 		}
-		cfg.TimeseriesInterval = interval
+		cfg.Timeseries.Interval = interval
 	}
 
 	// Basic validation
-	if cfg.TimeseriesPoints < 1 && cfg.TimeseriesPoints != 0 {
+	if cfg.Timeseries.Points < 1 && cfg.Timeseries.Points != 0 {
 		return fmt.Errorf("--points must be at least 1")
 	}
 
@@ -598,7 +734,7 @@ func ProcessWeightsRawInput(weights WeightsRawInput, validateSum bool) (map[sche
 	return result, nil
 }
 
-// processCustomWeights converts the raw input into the final cfg.CustomWeights map
+// processCustomWeights converts the raw input into the final cfg.Scoring.CustomWeights map
 // and validates that the provided weights for any mode sum up to 1.0.
 // Also computes the final ComputedWeights for each mode.
 func processCustomWeights(cfg *Config, input *ConfigRawInput) error {
@@ -606,10 +742,10 @@ func processCustomWeights(cfg *Config, input *ConfigRawInput) error {
 	if err != nil {
 		return err
 	}
-	cfg.CustomWeights = weights
+	cfg.Scoring.CustomWeights = weights
 
 	// Compute final weights for each mode
-	cfg.ComputedWeights = make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
+	cfg.Scoring.ComputedWeights = make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
 	for _, mode := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode} {
 		// Start with default weights
 		defaultWeights := schema.GetDefaultWeights(mode)
@@ -618,19 +754,19 @@ func processCustomWeights(cfg *Config, input *ConfigRawInput) error {
 		modeWeights := make(map[schema.BreakdownKey]float64)
 		maps.Copy(modeWeights, defaultWeights)
 
-		if cfg.CustomWeights != nil {
-			if customModeWeights, ok := cfg.CustomWeights[mode]; ok {
+		if cfg.Scoring.CustomWeights != nil {
+			if customModeWeights, ok := cfg.Scoring.CustomWeights[mode]; ok {
 				maps.Copy(modeWeights, customModeWeights)
 			}
 		}
 
-		cfg.ComputedWeights[mode] = modeWeights
+		cfg.Scoring.ComputedWeights[mode] = modeWeights
 	}
 
 	return nil
 }
 
-// processRiskThresholds converts the raw threshold input into the final cfg.RiskThresholds map.
+// processRiskThresholds converts the raw threshold input into the final cfg.Scoring.RiskThresholds map.
 // If no thresholds are provided in the config, it initializes with default values (50.0 for all modes).
 // Command-line --thresholds-override flag takes precedence over config file settings.
 func processRiskThresholds(cfg *Config, input *ConfigRawInput) error {
@@ -673,7 +809,7 @@ func processRiskThresholds(cfg *Config, input *ConfigRawInput) error {
 		}
 	}
 
-	cfg.RiskThresholds = thresholds
+	cfg.Scoring.RiskThresholds = thresholds
 	return nil
 }
 
@@ -707,9 +843,9 @@ func ResolveGitPathAndFilter(ctx context.Context, cfg *Config, client GitClient,
 		return err
 	}
 
-	cfg.RepoPath = gitRoot
+	cfg.Git.RepoPath = gitRoot
 
-	if cfg.PathFilter != "" { // User-provided --filter flag takes precedence
+	if cfg.Git.PathFilter != "" { // User-provided --filter flag takes precedence
 		return nil
 	}
 
@@ -724,7 +860,7 @@ func ResolveGitPathAndFilter(ctx context.Context, cfg *Config, client GitClient,
 			if statErr == nil && info.IsDir() {
 				filter += "/"
 			}
-			cfg.PathFilter = strings.ReplaceAll(filter, string(os.PathSeparator), "/")
+			cfg.Git.PathFilter = strings.ReplaceAll(filter, string(os.PathSeparator), "/")
 		}
 	}
 
@@ -778,4 +914,40 @@ func parseRiskThresholdsString(s string) (map[schema.ScoringMode]float64, error)
 	}
 
 	return thresholds, nil
+}
+
+// ProfileConfig holds profiling settings.
+type ProfileConfig struct {
+	Enabled bool
+	Prefix  string
+}
+
+// WeightsRawInput holds the raw weight inputs from the config file.
+type WeightsRawInput struct {
+	Hot        *ModeWeightsRaw `mapstructure:"hot"`
+	Risk       *ModeWeightsRaw `mapstructure:"risk"`
+	Complexity *ModeWeightsRaw `mapstructure:"complexity"`
+	Stale      *ModeWeightsRaw `mapstructure:"stale"`
+}
+
+// ModeWeightsRaw holds the raw factor weights for a single mode.
+type ModeWeightsRaw struct {
+	InvRecent       *float64 `mapstructure:"inv_recent"`
+	Size            *float64 `mapstructure:"size"`
+	Age             *float64 `mapstructure:"age"`
+	Commits         *float64 `mapstructure:"commits"`
+	Contributors    *float64 `mapstructure:"contributors"`
+	InvContributors *float64 `mapstructure:"inv_contributors"`
+	Churn           *float64 `mapstructure:"churn"`
+	Gini            *float64 `mapstructure:"gini"`
+	LOC             *float64 `mapstructure:"loc"`
+	LowRecent       *float64 `mapstructure:"low_recent"`
+}
+
+// ThresholdsRawInput holds the raw risk thresholds from the config file.
+type ThresholdsRawInput struct {
+	Hot        *float64 `mapstructure:"hot"`
+	Risk       *float64 `mapstructure:"risk"`
+	Complexity *float64 `mapstructure:"complexity"`
+	Stale      *float64 `mapstructure:"stale"`
 }

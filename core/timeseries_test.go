@@ -45,10 +45,18 @@ func TestRunTimeseriesAnalysis_Success(t *testing.T) {
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil).Maybe()
 
 	cfg := &contract.Config{
-		RepoPath:    "/test/repo",
-		Mode:        schema.HotMode,
-		Workers:     1,
-		ResultLimit: 10,
+		Git: contract.GitConfig{
+			RepoPath: "/test/repo",
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 1,
+		},
+		Output: contract.OutputConfig{
+			ResultLimit: 10,
+		},
 	}
 
 	result := runTimeseriesAnalysis(ctx, cfg, mockClient, path, false, now, interval, numPoints, mockMgr)
@@ -92,10 +100,18 @@ func TestRunTimeseriesAnalysis_GetOldestCommitError(t *testing.T) {
 		Return([]byte(""), nil).Maybe() // Empty log for fallback case
 
 	cfg := &contract.Config{
-		RepoPath:    "/test/repo",
-		Mode:        schema.HotMode,
-		Workers:     1,
-		ResultLimit: 10,
+		Git: contract.GitConfig{
+			RepoPath: "/test/repo",
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 1,
+		},
+		Output: contract.OutputConfig{
+			ResultLimit: 10,
+		},
 	}
 
 	result := runTimeseriesAnalysis(ctx, cfg, mockClient, path, false, now, interval, numPoints, mockMgr)
@@ -127,12 +143,20 @@ func TestAnalyzeTimeseriesPoint_File(t *testing.T) {
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
 
 	cfg := &contract.Config{
-		RepoPath:    "/test/repo",
-		StartTime:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndTime:     time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
-		Mode:        schema.HotMode,
-		Workers:     1,
-		ResultLimit: 10,
+		Git: contract.GitConfig{
+			RepoPath:  "/test/repo",
+			StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 1,
+		},
+		Output: contract.OutputConfig{
+			ResultLimit: 10,
+		},
 	}
 
 	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, false, mockMgr)
@@ -159,13 +183,21 @@ func TestAnalyzeTimeseriesPoint_Folder(t *testing.T) {
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tsrc/main.go\n2\t1\tsrc/utils.go\n"), nil)
 
 	cfg := &contract.Config{
-		RepoPath:    "/test/repo",
-		StartTime:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndTime:     time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
-		Mode:        schema.HotMode,
-		Workers:     1,
-		ResultLimit: 10,
-		PathFilter:  "src/", // Only analyze files in src/
+		Git: contract.GitConfig{
+			RepoPath:   "/test/repo",
+			StartTime:  time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:    time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
+			PathFilter: "src/", // Only analyze files in src/
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 1,
+		},
+		Output: contract.OutputConfig{
+			ResultLimit: 10,
+		},
 	}
 
 	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, true, mockMgr)
@@ -192,11 +224,17 @@ func TestAnalyzeTimeseriesPoint_NoData(t *testing.T) {
 		Return([]byte(""), nil)
 
 	cfg := &contract.Config{
-		RepoPath:  "/test/repo",
-		StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
-		Mode:      schema.HotMode,
-		Workers:   1,
+		Git: contract.GitConfig{
+			RepoPath:  "/test/repo",
+			StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 1,
+		},
 	}
 
 	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, false, mockMgr)
@@ -223,11 +261,17 @@ func TestAnalyzeTimeseriesPoint_PathNotFound(t *testing.T) {
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tother.go\n"), nil)
 
 	cfg := &contract.Config{
-		RepoPath:  "/test/repo",
-		StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
-		Mode:      schema.HotMode,
-		Workers:   1,
+		Git: contract.GitConfig{
+			RepoPath:  "/test/repo",
+			StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 1,
+		},
 	}
 
 	score, owners := analyzeTimeseriesPoint(ctx, cfg, mockClient, path, false, mockMgr)

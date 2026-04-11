@@ -53,12 +53,14 @@ func TestWriteComparisonResultsTable(t *testing.T) {
 	}
 
 	cfg := &contract.Config{
-		Output:    schema.TextOut,
-		Precision: 2,
-		Detail:    true,
-		Owner:     true,
-		UseColors: false,
-		Width:     120,
+		Output: contract.OutputConfig{
+			Format:    schema.TextOut,
+			Precision: 2,
+			Detail:    true,
+			Owner:     true,
+			UseColors: false,
+			Width:     120,
+		},
 	}
 
 	var buf bytes.Buffer
@@ -116,8 +118,10 @@ func TestWriteComparisonResultsJSON(t *testing.T) {
 	}
 
 	cfg := &contract.Config{
-		Output:    schema.JSONOut,
-		Precision: 2,
+		Output: contract.OutputConfig{
+			Format:    schema.JSONOut,
+			Precision: 2,
+		},
 	}
 
 	var buf bytes.Buffer
@@ -183,8 +187,10 @@ func TestWriteComparisonResultsCSV(t *testing.T) {
 	}
 
 	cfg := &contract.Config{
-		Output:    schema.CSVOut,
-		Precision: 2,
+		Output: contract.OutputConfig{
+			Format:    schema.CSVOut,
+			Precision: 2,
+		},
 	}
 
 	var buf bytes.Buffer

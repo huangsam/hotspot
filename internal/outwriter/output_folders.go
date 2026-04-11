@@ -17,10 +17,10 @@ import (
 // WriteFolderResults outputs the analysis results, dispatching based on the output format configured.
 func WriteFolderResults(w io.Writer, results []schema.FolderResult, cfg *contract.Config, duration time.Duration) error {
 	// Create formatters using helper
-	fmtFloat, intFmt := createFormatters(cfg.Precision)
+	fmtFloat, intFmt := createFormatters(cfg.Output.Precision)
 
 	// Dispatcher: Handle different output formats
-	switch cfg.Output {
+	switch cfg.Output.Format {
 	case schema.JSONOut:
 		if err := writeJSONResultsForFolders(w, results); err != nil {
 			return fmt.Errorf("error writing JSON output: %w", err)
@@ -46,10 +46,10 @@ func writeFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFl
 
 	// 1. Define Headers (Folder Mode - Custom)
 	headers := []string{"Rank", "Path", "Score", "Label"}
-	if cfg.Detail {
+	if cfg.Output.Detail {
 		headers = append(headers, "Commits", "Churn", "LOC")
 	}
-	if cfg.Owner {
+	if cfg.Output.Owner {
 		headers = append(headers, "Owner")
 	}
 	table.Header(headers)
@@ -64,7 +64,7 @@ func writeFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFl
 	for i, r := range results {
 		// Prepare the row data as a slice of strings
 		label := contract.GetPlainLabel(r.Score)
-		if cfg.UseColors {
+		if cfg.Output.UseColors {
 			label = contract.GetColorLabel(r.Score)
 		}
 		row := []string{
@@ -73,14 +73,14 @@ func writeFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFl
 			fmtFloat(r.Score), // Score
 			label,             // Label
 		}
-		if cfg.Detail {
+		if cfg.Output.Detail {
 			row = append(row,
 				fmt.Sprintf(intFmt, r.Commits),  // Total Commits
 				fmt.Sprintf(intFmt, r.Churn),    // Total Churn
 				fmt.Sprintf(intFmt, r.TotalLOC), // Total LOC
 			)
 		}
-		if cfg.Owner {
+		if cfg.Output.Owner {
 			row = append(row, schema.FormatOwners(r.Owners)) // Top 2 owners
 		}
 		data = append(data, row)
@@ -106,7 +106,7 @@ func writeFolderTable(results []schema.FolderResult, cfg *contract.Config, fmtFl
 	if _, err := fmt.Fprintf(writer, "Showing top %d folders (total commits: %d, total churn: %d, total LOC: %d)\n", numFolders, totalCommits, totalChurn, totalLOC); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(writer, "Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Workers, cfg.CacheBackend); err != nil {
+	if _, err := fmt.Fprintf(writer, "Analysis completed in %v with %d workers. Cache backend: %s\n", duration, cfg.Runtime.Workers, cfg.Runtime.CacheBackend); err != nil {
 		return err
 	}
 	return nil

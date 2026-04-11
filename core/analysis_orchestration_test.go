@@ -24,12 +24,20 @@ func TestRunSingleAnalysisCore_Success(t *testing.T) {
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
 
 	cfg := &contract.Config{
-		RepoPath:    "/test/repo",
-		StartTime:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndTime:     time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
-		Mode:        schema.HotMode,
-		Workers:     1,
-		ResultLimit: 10,
+		Git: contract.GitConfig{
+			RepoPath:  "/test/repo",
+			StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 1,
+		},
+		Output: contract.OutputConfig{
+			ResultLimit: 10,
+		},
 	}
 
 	result, err := runSingleAnalysisCore(ctx, cfg, mockClient, mockMgr)
@@ -56,11 +64,17 @@ func TestRunSingleAnalysisCore_NoFilesFound(t *testing.T) {
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte(""), nil)
 
 	cfg := &contract.Config{
-		RepoPath:  "/test/repo",
-		StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
-		Mode:      schema.HotMode,
-		Workers:   1,
+		Git: contract.GitConfig{
+			RepoPath:  "/test/repo",
+			StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 1,
+		},
 	}
 
 	result, err := runSingleAnalysisCore(ctx, cfg, mockClient, mockMgr)
@@ -85,11 +99,17 @@ func TestRunSingleAnalysisCore_AggregationError(t *testing.T) {
 	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(nil, assert.AnError)
 
 	cfg := &contract.Config{
-		RepoPath:  "/test/repo",
-		StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
-		Mode:      schema.HotMode,
-		Workers:   1,
+		Git: contract.GitConfig{
+			RepoPath:  "/test/repo",
+			StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 1,
+		},
 	}
 
 	result, err := runSingleAnalysisCore(ctx, cfg, mockClient, mockMgr)
@@ -118,11 +138,21 @@ func TestRunCompareAnalysisForRef(t *testing.T) {
 	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-06-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
 
 	cfg := &contract.Config{
-		RepoPath:    "/test/repo",
-		Mode:        schema.HotMode,
-		Workers:     1,
-		ResultLimit: 10,
-		Lookback:    lookback,
+		Git: contract.GitConfig{
+			RepoPath: "/test/repo",
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 1,
+		},
+		Output: contract.OutputConfig{
+			ResultLimit: 10,
+		},
+		Compare: contract.CompareConfig{
+			Lookback: lookback,
+		},
 	}
 
 	result, err := runCompareAnalysisForRef(ctx, cfg, mockClient, ref, mockMgr)
@@ -147,8 +177,12 @@ func TestRunCompareAnalysisForRef_CommitTimeError(t *testing.T) {
 	mockClient.On("GetCommitTime", ctx, "/test/repo", ref).Return(time.Time{}, assert.AnError)
 
 	cfg := &contract.Config{
-		RepoPath: "/test/repo",
-		Lookback: 30 * 24 * time.Hour,
+		Git: contract.GitConfig{
+			RepoPath: "/test/repo",
+		},
+		Compare: contract.CompareConfig{
+			Lookback: 30 * 24 * time.Hour,
+		},
 	}
 
 	result, err := runCompareAnalysisForRef(ctx, cfg, mockClient, ref, mockMgr)
@@ -174,12 +208,18 @@ func TestAnalyzeAllFilesAtRef(t *testing.T) {
 	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
 
 	cfg := &contract.Config{
-		RepoPath:  "/test/repo",
-		StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
-		Mode:      schema.HotMode,
-		Workers:   1,
-		Excludes:  []string{"test_*"}, // Should exclude test_main.go
+		Git: contract.GitConfig{
+			RepoPath:  "/test/repo",
+			StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
+			Excludes:  []string{"test_*"}, // Should exclude test_main.go
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 1,
+		},
 	}
 
 	result, err := analyzeAllFilesAtRef(ctx, cfg, mockClient, ref, mockMgr)
@@ -209,12 +249,18 @@ func TestAnalyzeAllFilesAtRef_EmptyAfterFiltering(t *testing.T) {
 	// No GetActivityLog mock needed since all files are filtered out before aggregation
 
 	cfg := &contract.Config{
-		RepoPath:  "/test/repo",
-		StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
-		Mode:      schema.HotMode,
-		Workers:   1,
-		Excludes:  []string{"test_*"}, // Excludes all files
+		Git: contract.GitConfig{
+			RepoPath:  "/test/repo",
+			StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
+			Excludes:  []string{"test_*"}, // Excludes all files
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 1,
+		},
 	}
 
 	result, err := analyzeAllFilesAtRef(ctx, cfg, mockClient, ref, mockMgr)
@@ -249,12 +295,20 @@ func TestRunFollowPass(t *testing.T) {
 	}
 
 	cfg := &contract.Config{
-		RepoPath:    "/test/repo",
-		StartTime:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndTime:     time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
-		Mode:        schema.HotMode,
-		Workers:     1,
-		ResultLimit: 2,
+		Git: contract.GitConfig{
+			RepoPath:  "/test/repo",
+			StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:   time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 1,
+		},
+		Output: contract.OutputConfig{
+			ResultLimit: 2,
+		},
 	}
 
 	// Mock the GetFileActivityLog call that will be made with --follow
@@ -281,7 +335,9 @@ func TestRunFollowPass_EmptyInput(t *testing.T) {
 	output := &schema.AggregateOutput{}
 
 	cfg := &contract.Config{
-		ResultLimit: 10,
+		Output: contract.OutputConfig{
+			ResultLimit: 10,
+		},
 	}
 
 	result := runFollowPass(ctx, cfg, mockClient, ranked, output)

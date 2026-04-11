@@ -22,11 +22,17 @@ func TestExecuteHotspotFiles(t *testing.T) {
 
 	// Create config - this will fail because we're not in a real git repo
 	cfg := &contract.Config{
-		RepoPath:  "/nonexistent/repo",
-		StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
-		Mode:      schema.HotMode,
-		Workers:   1,
+		Git: contract.GitConfig{
+			RepoPath:  "/nonexistent/repo",
+			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 1,
+		},
 	}
 
 	// Execute - should fail due to non-existent repo
@@ -50,11 +56,17 @@ func TestExecuteHotspotFolders(t *testing.T) {
 
 	// Create config - this will fail because we're not in a real git repo
 	cfg := &contract.Config{
-		RepoPath:  "/nonexistent/repo",
-		StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
-		Mode:      schema.HotMode,
-		Workers:   1,
+		Git: contract.GitConfig{
+			RepoPath:  "/nonexistent/repo",
+			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 1,
+		},
 	}
 
 	// Execute - should fail due to non-existent repo
@@ -76,14 +88,22 @@ func TestExecuteHotspotCompare(t *testing.T) {
 
 	// Create config with compare mode enabled
 	cfg := &contract.Config{
-		RepoPath:    "/nonexistent/repo",
-		StartTime:   time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndTime:     time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
-		Mode:        schema.HotMode,
-		Workers:     1,
-		CompareMode: true,
-		BaseRef:     "main",
-		TargetRef:   "feature",
+		Git: contract.GitConfig{
+			RepoPath:  "/nonexistent/repo",
+			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 1,
+		},
+		Compare: contract.CompareConfig{
+			Enabled:   true,
+			BaseRef:   "main",
+			TargetRef: "feature",
+		},
 	}
 
 	// Execute - should fail due to non-existent repo
@@ -102,14 +122,22 @@ func TestExecuteHotspotCompareFolders(t *testing.T) {
 
 	// Create config with compare mode enabled
 	cfg := &contract.Config{
-		RepoPath:    "/nonexistent/repo",
-		StartTime:   time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndTime:     time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
-		Mode:        schema.HotMode,
-		Workers:     1,
-		CompareMode: true,
-		BaseRef:     "main",
-		TargetRef:   "feature",
+		Git: contract.GitConfig{
+			RepoPath:  "/nonexistent/repo",
+			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 1,
+		},
+		Compare: contract.CompareConfig{
+			Enabled:   true,
+			BaseRef:   "main",
+			TargetRef: "feature",
+		},
 	}
 
 	// Execute - should fail due to non-existent repo
@@ -128,14 +156,22 @@ func TestExecuteHotspotTimeseries(t *testing.T) {
 
 	// Create config with timeseries parameters
 	cfg := &contract.Config{
-		RepoPath:           "/nonexistent/repo",
-		StartTime:          time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-		EndTime:            time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
-		Mode:               schema.HotMode,
-		Workers:            1,
-		TimeseriesPath:     "main.go",
-		TimeseriesInterval: time.Hour * 24 * 30, // 30 days
-		TimeseriesPoints:   3,
+		Git: contract.GitConfig{
+			RepoPath:  "/nonexistent/repo",
+			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
+		Runtime: contract.RuntimeConfig{
+			Workers: 1,
+		},
+		Timeseries: contract.TimeseriesConfig{
+			Path:     "main.go",
+			Interval: time.Hour * 24 * 30, // 30 days
+			Points:   3,
+		},
 	}
 
 	// Execute - should fail due to non-existent repo
@@ -154,7 +190,9 @@ func TestExecuteHotspotMetrics(t *testing.T) {
 
 	// Create config
 	cfg := &contract.Config{
-		Output: schema.TextOut,
+		Output: contract.OutputConfig{
+			Format: schema.TextOut,
+		},
 	}
 
 	// Execute - should succeed (metrics is static)
@@ -173,8 +211,12 @@ func TestExecuteHotspotCheck(t *testing.T) {
 
 	// Test without compare mode (should fail)
 	cfg := &contract.Config{
-		RepoPath:    "/nonexistent/repo",
-		CompareMode: false,
+		Git: contract.GitConfig{
+			RepoPath: "/nonexistent/repo",
+		},
+		Compare: contract.CompareConfig{
+			Enabled: false,
+		},
 	}
 	err := ExecuteHotspotCheck(ctx, cfg, mockCacheMgr)
 	assert.Error(t, err)
@@ -182,16 +224,22 @@ func TestExecuteHotspotCheck(t *testing.T) {
 
 	// Test with compare mode but non-existent repo (should fail)
 	cfg = &contract.Config{
-		RepoPath:    "/nonexistent/repo",
-		CompareMode: true,
-		BaseRef:     "main",
-		TargetRef:   "feature",
-		Lookback:    time.Hour * 24 * 30,
-		RiskThresholds: map[schema.ScoringMode]float64{
-			schema.HotMode:        50.0,
-			schema.RiskMode:       50.0,
-			schema.ComplexityMode: 50.0,
-			schema.StaleMode:      50.0,
+		Git: contract.GitConfig{
+			RepoPath: "/nonexistent/repo",
+		},
+		Compare: contract.CompareConfig{
+			Enabled:   true,
+			BaseRef:   "main",
+			TargetRef: "feature",
+			Lookback:  time.Hour * 24 * 30,
+		},
+		Scoring: contract.ScoringConfig{
+			RiskThresholds: map[schema.ScoringMode]float64{
+				schema.HotMode:        50.0,
+				schema.RiskMode:       50.0,
+				schema.ComplexityMode: 50.0,
+				schema.StaleMode:      50.0,
+			},
 		},
 	}
 	err = ExecuteHotspotCheck(ctx, cfg, mockCacheMgr)
@@ -203,8 +251,12 @@ func TestExecuteHotspotCheck_MissingCompareMode(t *testing.T) {
 
 	// Create config without compare mode
 	cfg := &contract.Config{
-		RepoPath:    "/test/repo",
-		CompareMode: false,
+		Git: contract.GitConfig{
+			RepoPath: "/test/repo",
+		},
+		Compare: contract.CompareConfig{
+			Enabled: false,
+		},
 	}
 
 	// Create mock cache manager

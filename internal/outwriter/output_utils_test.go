@@ -175,7 +175,7 @@ func TestWriteCSVWithHeaderError(t *testing.T) {
 
 func TestWriteWithOutputFileStdout(t *testing.T) {
 	// Test writing to stdout (empty string means stdout)
-	cfg := &contract.Config{OutputFile: ""}
+	cfg := &contract.Config{Output: contract.OutputConfig{OutputFile: ""}}
 	called := false
 	err := WriteWithOutputFile(cfg, func(w io.Writer) error {
 		called = true
@@ -194,7 +194,7 @@ func TestWriteWithOutputFileActualFile(t *testing.T) {
 
 	// Test writing to an actual file
 	testContent := "test content"
-	cfg := &contract.Config{OutputFile: tmpFile}
+	cfg := &contract.Config{Output: contract.OutputConfig{OutputFile: tmpFile}}
 	err := WriteWithOutputFile(cfg, func(w io.Writer) error {
 		_, err := w.Write([]byte(testContent))
 		return err
@@ -213,7 +213,7 @@ func TestWriteWithOutputFileError(t *testing.T) {
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test.txt")
 
-	cfg := &contract.Config{OutputFile: tmpFile}
+	cfg := &contract.Config{Output: contract.OutputConfig{OutputFile: tmpFile}}
 	err := WriteWithOutputFile(cfg, func(io.Writer) error {
 		return assert.AnError
 	}, "Test message")
@@ -224,7 +224,7 @@ func TestWriteWithOutputFileError(t *testing.T) {
 
 func TestWriteWithOutputFileInvalidPath(t *testing.T) {
 	// Test with an invalid file path (should fail on file open)
-	cfg := &contract.Config{OutputFile: "/nonexistent/path/file.txt"}
+	cfg := &contract.Config{Output: contract.OutputConfig{OutputFile: "/nonexistent/path/file.txt"}}
 	err := WriteWithOutputFile(cfg, func(io.Writer) error {
 		return nil
 	}, "Test message")
@@ -242,7 +242,7 @@ func TestWriteJSONIntegration(t *testing.T) {
 		"count": 123,
 	}
 
-	cfg := &contract.Config{OutputFile: tmpFile}
+	cfg := &contract.Config{Output: contract.OutputConfig{OutputFile: tmpFile}}
 	err := WriteWithOutputFile(cfg, func(w io.Writer) error {
 		return writeJSON(w, testData)
 	}, "Wrote JSON")
@@ -272,7 +272,7 @@ func TestWriteCSVIntegration(t *testing.T) {
 		{"Bob", "87"},
 	}
 
-	cfg := &contract.Config{OutputFile: tmpFile}
+	cfg := &contract.Config{Output: contract.OutputConfig{OutputFile: tmpFile}}
 	err := WriteWithOutputFile(cfg, func(w io.Writer) error {
 		return writeCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {
 			for _, row := range rows {
@@ -301,7 +301,9 @@ func TestWriteFoldersResultsEmpty(t *testing.T) {
 	var folders []schema.FolderResult
 
 	cfg := &contract.Config{
-		Output: schema.TextOut,
+		Output: contract.OutputConfig{
+			Format: schema.TextOut,
+		},
 	}
 
 	var buf bytes.Buffer
@@ -320,7 +322,9 @@ func TestWriteComparisonResultsEmpty(t *testing.T) {
 	}
 
 	cfg := &contract.Config{
-		Output: schema.TextOut,
+		Output: contract.OutputConfig{
+			Format: schema.TextOut,
+		},
 	}
 
 	var buf bytes.Buffer
@@ -338,7 +342,9 @@ func TestWriteTimeseriesResultsEmpty(t *testing.T) {
 	}
 
 	cfg := &contract.Config{
-		Output: schema.TextOut,
+		Output: contract.OutputConfig{
+			Format: schema.TextOut,
+		},
 	}
 
 	var buf bytes.Buffer

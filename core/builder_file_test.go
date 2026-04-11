@@ -13,8 +13,12 @@ import (
 func TestFileResultBuilder_BasicChaining(t *testing.T) {
 	ctx := context.Background()
 	cfg := &contract.Config{
-		RepoPath: "/test/repo",
-		Mode:     schema.HotMode,
+		Git: contract.GitConfig{
+			RepoPath: "/test/repo",
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
 	}
 
 	// Create a mock output with some basic data
@@ -74,8 +78,12 @@ func TestFileResultBuilder_BasicChaining(t *testing.T) {
 func TestFileResultBuilder_EmptyContribMap(t *testing.T) {
 	ctx := context.Background()
 	cfg := &contract.Config{
-		RepoPath: "/test/repo",
-		Mode:     schema.HotMode,
+		Git: contract.GitConfig{
+			RepoPath: "/test/repo",
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
 	}
 
 	output := &schema.AggregateOutput{
@@ -94,8 +102,12 @@ func TestFileResultBuilder_EmptyContribMap(t *testing.T) {
 func TestFileResultBuilder_ZeroFirstCommit(t *testing.T) {
 	ctx := context.Background()
 	cfg := &contract.Config{
-		RepoPath: "/test/repo",
-		Mode:     schema.HotMode,
+		Git: contract.GitConfig{
+			RepoPath: "/test/repo",
+		},
+		Scoring: contract.ScoringConfig{
+			Mode: schema.HotMode,
+		},
 	}
 
 	output := &schema.AggregateOutput{

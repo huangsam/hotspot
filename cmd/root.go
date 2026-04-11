@@ -170,7 +170,7 @@ func sharedSetup(ctx context.Context, cmd *cobra.Command, args []string) error {
 	}
 
 	// 5. Initialize persistence layer with validated config
-	if err := iocache.InitStores(cfg.CacheBackend, cfg.CacheDBConnect, cfg.AnalysisBackend, cfg.AnalysisDBConnect); err != nil {
+	if err := iocache.InitStores(cfg.Runtime.CacheBackend, cfg.Runtime.CacheDBConnect, cfg.Runtime.AnalysisBackend, cfg.Runtime.AnalysisDBConnect); err != nil {
 		return fmt.Errorf("failed to initialize persistence: %w", err)
 	}
 

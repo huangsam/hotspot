@@ -16,7 +16,7 @@ func WriteMetricsDefinitions(w io.Writer, activeWeights map[schema.ScoringMode]m
 	// Build the complete render model with all processed data
 	renderModel := buildMetricsRenderModel(activeWeights)
 
-	switch cfg.Output {
+	switch cfg.Output.Format {
 	case schema.JSONOut:
 		return writeJSONMetrics(w, renderModel)
 	case schema.CSVOut:
