@@ -6,13 +6,13 @@ import (
 	"io"
 	"strings"
 
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/schema"
 )
 
 // WriteMetricsDefinitions displays the formal definitions of all scoring modes.
 // This is a static display that does not require Git analysis.
-func WriteMetricsDefinitions(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, output contract.OutputSettings) error {
+func WriteMetricsDefinitions(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, output config.OutputSettings) error {
 	// Build the complete render model with all processed data
 	renderModel := buildMetricsRenderModel(activeWeights)
 
@@ -29,7 +29,7 @@ func WriteMetricsDefinitions(w io.Writer, activeWeights map[schema.ScoringMode]m
 }
 
 // writeMetricsText displays metrics in human-readable text format.
-func writeMetricsText(w io.Writer, renderModel *schema.MetricsRenderModel, _ contract.OutputSettings) error {
+func writeMetricsText(w io.Writer, renderModel *schema.MetricsRenderModel, _ config.OutputSettings) error {
 	if _, err := fmt.Fprintf(w, "Hotspot Scoring Modes\n"); err != nil {
 		return err
 	}

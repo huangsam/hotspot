@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/olekukonko/tablewriter"
@@ -16,7 +17,7 @@ import (
 )
 
 // WriteComparisonResults outputs the analysis results, dispatching based on the output format configured.
-func WriteComparisonResults(w io.Writer, comparisonResult schema.ComparisonResult, output contract.OutputSettings, runtime contract.RuntimeSettings, duration time.Duration) error {
+func WriteComparisonResults(w io.Writer, comparisonResult schema.ComparisonResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
 	// Create formatters using helper
 	fmtFloat, intFmt := createFormatters(output.GetPrecision())
 
@@ -40,7 +41,7 @@ func WriteComparisonResults(w io.Writer, comparisonResult schema.ComparisonResul
 }
 
 // writeComparisonTable writes the metrics in a custom comparison format.
-func writeComparisonTable(comparisonResult schema.ComparisonResult, output contract.OutputSettings, runtime contract.RuntimeSettings, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
+func writeComparisonTable(comparisonResult schema.ComparisonResult, output config.OutputSettings, runtime config.RuntimeSettings, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
 	table := tablewriter.NewWriter(writer)
 	defer func() { _ = table.Close() }()
 

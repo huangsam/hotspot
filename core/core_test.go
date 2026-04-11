@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
@@ -21,16 +21,16 @@ func TestExecuteHotspotFiles(t *testing.T) {
 	mockCacheMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
 
 	// Create config - this will fail because we're not in a real git repo
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath:  "/nonexistent/repo",
 			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
 		},
-		Scoring: contract.ScoringConfig{
+		Scoring: config.ScoringConfig{
 			Mode: schema.HotMode,
 		},
-		Runtime: contract.RuntimeConfig{
+		Runtime: config.RuntimeConfig{
 			Workers: 1,
 		},
 	}
@@ -55,16 +55,16 @@ func TestExecuteHotspotFolders(t *testing.T) {
 	mockCacheMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
 
 	// Create config - this will fail because we're not in a real git repo
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath:  "/nonexistent/repo",
 			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
 		},
-		Scoring: contract.ScoringConfig{
+		Scoring: config.ScoringConfig{
 			Mode: schema.HotMode,
 		},
-		Runtime: contract.RuntimeConfig{
+		Runtime: config.RuntimeConfig{
 			Workers: 1,
 		},
 	}
@@ -87,19 +87,19 @@ func TestExecuteHotspotCompare(t *testing.T) {
 	mockCacheMgr := &iocache.MockCacheManager{}
 
 	// Create config with compare mode enabled
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath:  "/nonexistent/repo",
 			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
 		},
-		Scoring: contract.ScoringConfig{
+		Scoring: config.ScoringConfig{
 			Mode: schema.HotMode,
 		},
-		Runtime: contract.RuntimeConfig{
+		Runtime: config.RuntimeConfig{
 			Workers: 1,
 		},
-		Compare: contract.CompareConfig{
+		Compare: config.CompareConfig{
 			Enabled:   true,
 			BaseRef:   "main",
 			TargetRef: "feature",
@@ -121,19 +121,19 @@ func TestExecuteHotspotCompareFolders(t *testing.T) {
 	mockCacheMgr := &iocache.MockCacheManager{}
 
 	// Create config with compare mode enabled
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath:  "/nonexistent/repo",
 			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
 		},
-		Scoring: contract.ScoringConfig{
+		Scoring: config.ScoringConfig{
 			Mode: schema.HotMode,
 		},
-		Runtime: contract.RuntimeConfig{
+		Runtime: config.RuntimeConfig{
 			Workers: 1,
 		},
-		Compare: contract.CompareConfig{
+		Compare: config.CompareConfig{
 			Enabled:   true,
 			BaseRef:   "main",
 			TargetRef: "feature",
@@ -155,19 +155,19 @@ func TestExecuteHotspotTimeseries(t *testing.T) {
 	mockCacheMgr := &iocache.MockCacheManager{}
 
 	// Create config with timeseries parameters
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath:  "/nonexistent/repo",
 			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
 		},
-		Scoring: contract.ScoringConfig{
+		Scoring: config.ScoringConfig{
 			Mode: schema.HotMode,
 		},
-		Runtime: contract.RuntimeConfig{
+		Runtime: config.RuntimeConfig{
 			Workers: 1,
 		},
-		Timeseries: contract.TimeseriesConfig{
+		Timeseries: config.TimeseriesConfig{
 			Path:     "main.go",
 			Interval: time.Hour * 24 * 30, // 30 days
 			Points:   3,
@@ -189,8 +189,8 @@ func TestExecuteHotspotMetrics(t *testing.T) {
 	mockCacheMgr := &iocache.MockCacheManager{}
 
 	// Create config
-	cfg := &contract.Config{
-		Output: contract.OutputConfig{
+	cfg := &config.Config{
+		Output: config.OutputConfig{
 			Format: schema.TextOut,
 		},
 	}
@@ -210,11 +210,11 @@ func TestExecuteHotspotCheck(t *testing.T) {
 	mockCacheMgr := &iocache.MockCacheManager{}
 
 	// Test without compare mode (should fail)
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath: "/nonexistent/repo",
 		},
-		Compare: contract.CompareConfig{
+		Compare: config.CompareConfig{
 			Enabled: false,
 		},
 	}
@@ -223,17 +223,17 @@ func TestExecuteHotspotCheck(t *testing.T) {
 	assert.Contains(t, err.Error(), "check command requires --base-ref and --target-ref flags")
 
 	// Test with compare mode but non-existent repo (should fail)
-	cfg = &contract.Config{
-		Git: contract.GitConfig{
+	cfg = &config.Config{
+		Git: config.GitConfig{
 			RepoPath: "/nonexistent/repo",
 		},
-		Compare: contract.CompareConfig{
+		Compare: config.CompareConfig{
 			Enabled:   true,
 			BaseRef:   "main",
 			TargetRef: "feature",
 			Lookback:  time.Hour * 24 * 30,
 		},
-		Scoring: contract.ScoringConfig{
+		Scoring: config.ScoringConfig{
 			RiskThresholds: map[schema.ScoringMode]float64{
 				schema.HotMode:        50.0,
 				schema.RiskMode:       50.0,
@@ -250,11 +250,11 @@ func TestExecuteHotspotCheck_MissingCompareMode(t *testing.T) {
 	ctx := context.Background()
 
 	// Create config without compare mode
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath: "/test/repo",
 		},
-		Compare: contract.CompareConfig{
+		Compare: config.CompareConfig{
 			Enabled: false,
 		},
 	}

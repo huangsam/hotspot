@@ -1,4 +1,5 @@
-package contract
+// Package config provides configuration management for the hotspot application.
+package config
 
 import (
 	"context"
@@ -11,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -86,9 +88,6 @@ const CacheGranularity = time.Hour
 
 // DefaultWorkers is the default number of concurrent workers to use.
 var DefaultWorkers = runtime.GOMAXPROCS(0)
-
-// DateTimeFormat is the default date time representation.
-var DateTimeFormat = time.RFC3339
 
 // GitConfig holds repository and filtering settings.
 type GitConfig struct {
@@ -255,9 +254,9 @@ type Config struct {
 	Timeseries TimeseriesConfig
 }
 
-// ConfigRawInput holds the raw inputs from all sources (flags, env, config file).
+// RawInput holds the raw inputs from all sources (flags, env, config file).
 // Viper unmarshals into this struct.
-type ConfigRawInput struct {
+type RawInput struct {
 	// This is set manually from positional args, so no tag
 	RepoPathStr string
 
@@ -355,7 +354,7 @@ func (c *Config) GetAnalysisEndTime() time.Time {
 
 // ProcessAndValidate performs all complex parsing and validation on the raw inputs
 // and updates the final Config struct.
-func ProcessAndValidate(ctx context.Context, cfg *Config, client GitClient, input *ConfigRawInput) error {
+func ProcessAndValidate(ctx context.Context, cfg *Config, client contract.GitClient, input *RawInput) error {
 	// All validation functions now read from 'input' and populate 'cfg'.
 	if err := validateSimpleInputs(cfg, input); err != nil {
 		return err
@@ -412,7 +411,7 @@ func ValidateDatabaseConnectionString(backend schema.DatabaseBackend, connStr st
 }
 
 // validateBackendConfigs validates cache and analysis backend configurations.
-func validateBackendConfigs(cfg *Config, input *ConfigRawInput) error {
+func validateBackendConfigs(cfg *Config, input *RawInput) error {
 	// --- Cache Backend Validation ---
 	cfg.Runtime.CacheBackend = schema.DatabaseBackend(strings.ToLower(input.CacheBackend))
 	if _, ok := schema.ValidDatabaseBackends[cfg.Runtime.CacheBackend]; !ok {
@@ -440,11 +439,11 @@ func validateBackendConfigs(cfg *Config, input *ConfigRawInput) error {
 			if cfg.Runtime.CacheBackend == schema.SQLiteBackend {
 				cacheDBPath := cfg.Runtime.CacheDBConnect
 				if cacheDBPath == "" {
-					cacheDBPath = GetCacheDBFilePath()
+					cacheDBPath = contract.GetCacheDBFilePath()
 				}
 				analysisDBPath := cfg.Runtime.AnalysisDBConnect
 				if analysisDBPath == "" {
-					analysisDBPath = GetAnalysisDBFilePath()
+					analysisDBPath = contract.GetAnalysisDBFilePath()
 				}
 				if cacheDBPath == analysisDBPath {
 					return fmt.Errorf("cache and analysis storage must use different SQLite database files. Both resolve to %q", cacheDBPath)
@@ -457,7 +456,7 @@ func validateBackendConfigs(cfg *Config, input *ConfigRawInput) error {
 }
 
 // validateSimpleInputs processes and validates all non-path related fields.
-func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
+func validateSimpleInputs(cfg *Config, input *RawInput) error {
 	// --- 0. Transfer simple non-validated fields from input -> cfg ---
 	cfg.Git.PathFilter = input.Filter
 	cfg.Output.OutputFile = input.OutputFile
@@ -468,7 +467,7 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 	cfg.Output.Width = input.Width
 
 	// Parse color flag
-	colors, err := ParseBoolString(input.Color)
+	colors, err := contract.ParseBoolString(input.Color)
 	if err != nil {
 		return fmt.Errorf("invalid --color value: %w", err)
 	}
@@ -534,13 +533,13 @@ func validateSimpleInputs(cfg *Config, input *ConfigRawInput) error {
 }
 
 // processTimeRange handles the complex date parsing and time range validation.
-func processTimeRange(cfg *Config, input *ConfigRawInput) error {
+func processTimeRange(cfg *Config, input *RawInput) error {
 	now := time.Now()
 	cfg.Git.EndTime = now
 	cfg.Git.StartTime = cfg.Git.EndTime.Add(-DefaultLookbackDays * 24 * time.Hour)
 
 	parseAbsolute := func(s string) (time.Time, error) {
-		return time.Parse(DateTimeFormat, s)
+		return time.Parse(contract.DateTimeFormat, s)
 	}
 
 	// --- Process Start Time ---
@@ -549,7 +548,7 @@ func processTimeRange(cfg *Config, input *ConfigRawInput) error {
 		if err == nil {
 			cfg.Git.StartTime = t
 		} else {
-			t, relErr := ParseRelativeTime(input.Start, now)
+			t, relErr := contract.ParseRelativeTime(input.Start, now)
 			if relErr != nil {
 				return fmt.Errorf("invalid start date format for '%s'. Expected absolute ISO8601 or 'N [units] ago': %v", input.Start, err)
 			}
@@ -563,7 +562,7 @@ func processTimeRange(cfg *Config, input *ConfigRawInput) error {
 		if err == nil {
 			cfg.Git.EndTime = t
 		} else {
-			t, relErr := ParseRelativeTime(input.End, now)
+			t, relErr := contract.ParseRelativeTime(input.End, now)
 			if relErr != nil {
 				return fmt.Errorf("invalid end date format for '%s'. Expected absolute ISO8601 or 'N [units] ago': %v", input.End, err)
 			}
@@ -573,7 +572,7 @@ func processTimeRange(cfg *Config, input *ConfigRawInput) error {
 
 	// --- Final Validation ---
 	if !cfg.Git.StartTime.IsZero() && !cfg.Git.EndTime.IsZero() && cfg.Git.StartTime.After(cfg.Git.EndTime) {
-		return fmt.Errorf("start time (%s) cannot be after end time (%s)", cfg.Git.StartTime.Format(DateTimeFormat), cfg.Git.EndTime.Format(DateTimeFormat))
+		return fmt.Errorf("start time (%s) cannot be after end time (%s)", cfg.Git.StartTime.Format(contract.DateTimeFormat), cfg.Git.EndTime.Format(contract.DateTimeFormat))
 	}
 
 	return nil
@@ -582,7 +581,7 @@ func processTimeRange(cfg *Config, input *ConfigRawInput) error {
 // RevalidateCompare re-parses and validates comparison parameters.
 func RevalidateCompare(cfg *Config, lookbackStr string) error {
 	if lookbackStr != "" {
-		lookback, err := ParseLookbackDuration(lookbackStr)
+		lookback, err := contract.ParseLookbackDuration(lookbackStr)
 		if err != nil {
 			return err
 		}
@@ -597,7 +596,7 @@ func RevalidateCompare(cfg *Config, lookbackStr string) error {
 // RevalidateTimeseries re-parses and validates timeseries parameters.
 func RevalidateTimeseries(cfg *Config, intervalStr string) error {
 	if intervalStr != "" {
-		interval, err := ParseLookbackDuration(intervalStr)
+		interval, err := contract.ParseLookbackDuration(intervalStr)
 		if err != nil {
 			return fmt.Errorf("invalid interval: %w", err)
 		}
@@ -610,7 +609,7 @@ func RevalidateTimeseries(cfg *Config, intervalStr string) error {
 }
 
 // processCompareMode handles the comparison references and lookback.
-func processCompareMode(cfg *Config, input *ConfigRawInput) error {
+func processCompareMode(cfg *Config, input *RawInput) error {
 	cfg.Compare.BaseRef = strings.TrimSpace(input.BaseRef)
 	cfg.Compare.TargetRef = strings.TrimSpace(input.TargetRef)
 
@@ -627,7 +626,7 @@ func processCompareMode(cfg *Config, input *ConfigRawInput) error {
 		cfg.Compare.TargetRef = "HEAD"
 	}
 
-	lookback, err := ParseLookbackDuration(input.Lookback)
+	lookback, err := contract.ParseLookbackDuration(input.Lookback)
 	if err != nil {
 		return err
 	}
@@ -637,12 +636,12 @@ func processCompareMode(cfg *Config, input *ConfigRawInput) error {
 }
 
 // processTimeseriesMode handles the timeseries parameters.
-func processTimeseriesMode(cfg *Config, input *ConfigRawInput) error {
+func processTimeseriesMode(cfg *Config, input *RawInput) error {
 	cfg.Timeseries.Path = strings.TrimSpace(input.Path)
 	cfg.Timeseries.Points = input.Points
 
 	if input.Interval != "" {
-		interval, err := ParseLookbackDuration(input.Interval)
+		interval, err := contract.ParseLookbackDuration(input.Interval)
 		if err != nil {
 			return fmt.Errorf("invalid interval: %w", err)
 		}
@@ -737,7 +736,7 @@ func ProcessWeightsRawInput(weights WeightsRawInput, validateSum bool) (map[sche
 // processCustomWeights converts the raw input into the final cfg.Scoring.CustomWeights map
 // and validates that the provided weights for any mode sum up to 1.0.
 // Also computes the final ComputedWeights for each mode.
-func processCustomWeights(cfg *Config, input *ConfigRawInput) error {
+func processCustomWeights(cfg *Config, input *RawInput) error {
 	weights, err := ProcessWeightsRawInput(input.Weights, true)
 	if err != nil {
 		return err
@@ -769,7 +768,7 @@ func processCustomWeights(cfg *Config, input *ConfigRawInput) error {
 // processRiskThresholds converts the raw threshold input into the final cfg.Scoring.RiskThresholds map.
 // If no thresholds are provided in the config, it initializes with default values (50.0 for all modes).
 // Command-line --thresholds-override flag takes precedence over config file settings.
-func processRiskThresholds(cfg *Config, input *ConfigRawInput) error {
+func processRiskThresholds(cfg *Config, input *RawInput) error {
 	thresholds := make(map[schema.ScoringMode]float64)
 
 	// Set defaults first (50.0 for all modes)
@@ -823,7 +822,7 @@ func ProcessProfilingConfig(profile *ProfileConfig, profilePrefix string) error 
 }
 
 // ResolveGitPathAndFilter resolves the Git repository path and set the implicit path filter.
-func ResolveGitPathAndFilter(ctx context.Context, cfg *Config, client GitClient, input *ConfigRawInput) error {
+func ResolveGitPathAndFilter(ctx context.Context, cfg *Config, client contract.GitClient, input *RawInput) error {
 	// (Implementation unchanged, as it already reads from input.RepoPathStr)
 	searchPath := input.RepoPathStr
 	absSearchPath, err := filepath.Abs(searchPath)

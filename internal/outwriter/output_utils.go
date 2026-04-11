@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"golang.org/x/term"
@@ -17,7 +18,7 @@ import (
 
 // WriteWithOutputFile handles the common pattern of opening a file, writing to it, and cleaning up.
 // It accepts a writer function that takes an io.Writer and returns an error.
-func WriteWithOutputFile(output contract.OutputSettings, writer func(io.Writer) error, successMsg string) error {
+func WriteWithOutputFile(output config.OutputSettings, writer func(io.Writer) error, successMsg string) error {
 	file, err := contract.SelectOutputFile(output.GetOutputFile())
 	if err != nil {
 		return err
@@ -234,7 +235,7 @@ func buildMetricsRenderModel(activeWeights map[schema.ScoringMode]map[schema.Bre
 
 // getMaxTablePathWidth calculates the maximum width for file paths in table output
 // based on terminal width and table configuration.
-func getMaxTablePathWidth(output contract.OutputSettings) int {
+func getMaxTablePathWidth(output config.OutputSettings) int {
 	var termWidth int
 
 	// Check for absolute width override from flag/env

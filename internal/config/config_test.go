@@ -1,4 +1,4 @@
-package contract
+package config
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,13 +19,13 @@ import (
 func TestProcessAndValidate(t *testing.T) {
 	tests := []struct {
 		name        string
-		input       *ConfigRawInput
+		input       *RawInput
 		expectError bool
-		setupMock   func(*MockGitClient, string) // Pass the expected working directory
+		setupMock   func(*contract.MockGitClient, string) // Pass the expected working directory
 	}{
 		{
 			name: "valid minimal config",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:       10,
 				Workers:     4,
 				Mode:        string(schema.HotMode),
@@ -35,14 +36,14 @@ func TestProcessAndValidate(t *testing.T) {
 				Color:       "yes",
 			},
 			expectError: false,
-			setupMock: func(mock *MockGitClient, workDir string) {
+			setupMock: func(mock *contract.MockGitClient, workDir string) {
 				ctx := context.Background()
 				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
 			},
 		},
 		{
 			name: "invalid mode",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:       10,
 				Workers:     4,
 				Mode:        "invalid_mode",
@@ -57,7 +58,7 @@ func TestProcessAndValidate(t *testing.T) {
 		},
 		{
 			name: "compare mode with both refs",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:       10,
 				Workers:     4,
 				Mode:        string(schema.HotMode),
@@ -71,14 +72,14 @@ func TestProcessAndValidate(t *testing.T) {
 				Color:       "yes",
 			},
 			expectError: false,
-			setupMock: func(mock *MockGitClient, workDir string) {
+			setupMock: func(mock *contract.MockGitClient, workDir string) {
 				ctx := context.Background()
 				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
 			},
 		},
 		{
 			name: "compare mode missing base ref",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:       10,
 				Workers:     4,
 				Mode:        string(schema.HotMode),
@@ -95,7 +96,7 @@ func TestProcessAndValidate(t *testing.T) {
 		},
 		{
 			name: "timeseries mode",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:       10,
 				Workers:     4,
 				Mode:        string(schema.HotMode),
@@ -109,14 +110,14 @@ func TestProcessAndValidate(t *testing.T) {
 				Color:       "yes",
 			},
 			expectError: false,
-			setupMock: func(mock *MockGitClient, workDir string) {
+			setupMock: func(mock *contract.MockGitClient, workDir string) {
 				ctx := context.Background()
 				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
 			},
 		},
 		{
 			name: "invalid limit (zero)",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:       0,
 				Workers:     4,
 				Mode:        string(schema.HotMode),
@@ -131,7 +132,7 @@ func TestProcessAndValidate(t *testing.T) {
 		},
 		{
 			name: "invalid limit (negative)",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:       -1,
 				Workers:     4,
 				Mode:        string(schema.HotMode),
@@ -146,7 +147,7 @@ func TestProcessAndValidate(t *testing.T) {
 		},
 		{
 			name: "invalid limit (too large)",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:       1001,
 				Workers:     4,
 				Mode:        string(schema.HotMode),
@@ -161,7 +162,7 @@ func TestProcessAndValidate(t *testing.T) {
 		},
 		{
 			name: "invalid workers (zero)",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:       10,
 				Workers:     0,
 				Mode:        string(schema.HotMode),
@@ -176,7 +177,7 @@ func TestProcessAndValidate(t *testing.T) {
 		},
 		{
 			name: "invalid workers (negative)",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:       10,
 				Workers:     -1,
 				Mode:        string(schema.HotMode),
@@ -191,7 +192,7 @@ func TestProcessAndValidate(t *testing.T) {
 		},
 		{
 			name: "invalid precision (zero)",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:       10,
 				Workers:     4,
 				Mode:        string(schema.HotMode),
@@ -206,7 +207,7 @@ func TestProcessAndValidate(t *testing.T) {
 		},
 		{
 			name: "invalid precision (too high)",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:       10,
 				Workers:     4,
 				Mode:        string(schema.HotMode),
@@ -221,7 +222,7 @@ func TestProcessAndValidate(t *testing.T) {
 		},
 		{
 			name: "invalid output format",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:       10,
 				Workers:     4,
 				Mode:        string(schema.HotMode),
@@ -236,7 +237,7 @@ func TestProcessAndValidate(t *testing.T) {
 		},
 		{
 			name: "invalid cache backend",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:        10,
 				Workers:      4,
 				Mode:         string(schema.HotMode),
@@ -252,7 +253,7 @@ func TestProcessAndValidate(t *testing.T) {
 		},
 		{
 			name: "mysql backend without connection string",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:        10,
 				Workers:      4,
 				Mode:         string(schema.HotMode),
@@ -268,7 +269,7 @@ func TestProcessAndValidate(t *testing.T) {
 		},
 		{
 			name: "postgresql backend without connection string",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:        10,
 				Workers:      4,
 				Mode:         string(schema.HotMode),
@@ -284,7 +285,7 @@ func TestProcessAndValidate(t *testing.T) {
 		},
 		{
 			name: "mysql backend with connection string",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:          10,
 				Workers:        4,
 				Mode:           string(schema.HotMode),
@@ -297,14 +298,14 @@ func TestProcessAndValidate(t *testing.T) {
 				Color:          "yes",
 			},
 			expectError: false,
-			setupMock: func(mock *MockGitClient, workDir string) {
+			setupMock: func(mock *contract.MockGitClient, workDir string) {
 				ctx := context.Background()
 				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
 			},
 		},
 		{
 			name: "none backend",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:        10,
 				Workers:      4,
 				Mode:         string(schema.HotMode),
@@ -316,14 +317,14 @@ func TestProcessAndValidate(t *testing.T) {
 				Color:        "yes",
 			},
 			expectError: false,
-			setupMock: func(mock *MockGitClient, workDir string) {
+			setupMock: func(mock *contract.MockGitClient, workDir string) {
 				ctx := context.Background()
 				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
 			},
 		},
 		{
 			name: "analysis backend sqlite",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:             10,
 				Workers:           4,
 				Mode:              string(schema.HotMode),
@@ -337,14 +338,14 @@ func TestProcessAndValidate(t *testing.T) {
 				Color:             "yes",
 			},
 			expectError: false,
-			setupMock: func(mock *MockGitClient, workDir string) {
+			setupMock: func(mock *contract.MockGitClient, workDir string) {
 				ctx := context.Background()
 				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
 			},
 		},
 		{
 			name: "analysis backend mysql with connection string",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:             10,
 				Workers:           4,
 				Mode:              string(schema.HotMode),
@@ -359,14 +360,14 @@ func TestProcessAndValidate(t *testing.T) {
 				Color:             "yes",
 			},
 			expectError: false,
-			setupMock: func(mock *MockGitClient, workDir string) {
+			setupMock: func(mock *contract.MockGitClient, workDir string) {
 				ctx := context.Background()
 				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
 			},
 		},
 		{
 			name: "analysis backend same as cache backend with different db",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:             10,
 				Workers:           4,
 				Mode:              string(schema.HotMode),
@@ -381,14 +382,14 @@ func TestProcessAndValidate(t *testing.T) {
 				Color:             "yes",
 			},
 			expectError: false,
-			setupMock: func(mock *MockGitClient, workDir string) {
+			setupMock: func(mock *contract.MockGitClient, workDir string) {
 				ctx := context.Background()
 				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
 			},
 		},
 		{
 			name: "analysis backend same as cache backend with same db should not fail for mysql",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:             10,
 				Workers:           4,
 				Mode:              string(schema.HotMode),
@@ -403,14 +404,14 @@ func TestProcessAndValidate(t *testing.T) {
 				Color:             "yes",
 			},
 			expectError: false,
-			setupMock: func(mock *MockGitClient, workDir string) {
+			setupMock: func(mock *contract.MockGitClient, workDir string) {
 				ctx := context.Background()
 				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
 			},
 		},
 		{
 			name: "invalid analysis backend",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:           10,
 				Workers:         4,
 				Mode:            string(schema.HotMode),
@@ -427,7 +428,7 @@ func TestProcessAndValidate(t *testing.T) {
 		},
 		{
 			name: "both sqlite with same explicit database path should fail",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Limit:             10,
 				Workers:           4,
 				Mode:              string(schema.HotMode),
@@ -448,7 +449,7 @@ func TestProcessAndValidate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockClient := new(MockGitClient)
+			mockClient := new(contract.MockGitClient)
 
 			// Dynamically determine the expected working directory
 			workDir, err := filepath.Abs(".")
@@ -486,13 +487,13 @@ func TestProcessAndValidate(t *testing.T) {
 func TestProcessTimeRange(t *testing.T) {
 	tests := []struct {
 		name        string
-		input       *ConfigRawInput
+		input       *RawInput
 		expectError bool
 	}{
 		// --- Absolute Time Range Tests ---
 		{
 			name: "valid explicit range",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Start: "2024-01-01T00:00:00Z", // Changed from StartTimeStr
 				End:   "2024-02-01T00:00:00Z", // Changed from EndTimeStr
 			},
@@ -500,7 +501,7 @@ func TestProcessTimeRange(t *testing.T) {
 		},
 		{
 			name: "invalid start time format (absolute)",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Start: "01/01/2024", // Changed from StartTimeStr
 				End:   "",           // Changed from EndTimeStr
 			},
@@ -508,7 +509,7 @@ func TestProcessTimeRange(t *testing.T) {
 		},
 		{
 			name: "start time after end time (absolute)",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Start: "2024-02-01T00:00:00Z", // Changed from StartTimeStr
 				End:   "2024-01-01T00:00:00Z", // Changed from EndTimeStr
 			},
@@ -517,7 +518,7 @@ func TestProcessTimeRange(t *testing.T) {
 		// --- Relative Time Usage/Validation Tests (Focusing on flow, not grammar) ---
 		{
 			name: "valid relative start time (plural)",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Start: "3 months ago", // Changed from StartTimeStr
 				End:   "",             // Changed from EndTimeStr
 			},
@@ -525,7 +526,7 @@ func TestProcessTimeRange(t *testing.T) {
 		},
 		{
 			name: "valid relative end time (explicit start)",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Start: "2024-01-01T00:00:00Z", // Changed from StartTimeStr
 				End:   "10 days ago",          // Changed from EndTimeStr
 			},
@@ -533,7 +534,7 @@ func TestProcessTimeRange(t *testing.T) {
 		},
 		{
 			name: "invalid relative end time format (bad unit)",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Start: "2024-01-01T00:00:00Z", // Changed from StartTimeStr
 				End:   "2 badunit ago",        // Changed from EndTimeStr
 			},
@@ -544,7 +545,7 @@ func TestProcessTimeRange(t *testing.T) {
 		// --- Critical Cross-Validation Tests ---
 		{
 			name: "relative start time after relative end time",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Start: "1 minute ago", // Changed from StartTimeStr
 				End:   "1 day ago",    // Changed from EndTimeStr
 			},
@@ -552,7 +553,7 @@ func TestProcessTimeRange(t *testing.T) {
 		},
 		{
 			name: "relative start time after explicit end time",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Start: "1 minute ago", // Changed from StartTimeStr
 				End:   "1990-01-01T00:00:00Z",
 			},
@@ -578,13 +579,13 @@ func TestProcessTimeRange(t *testing.T) {
 func TestProcessCustomWeights(t *testing.T) {
 	tests := []struct {
 		name        string
-		input       *ConfigRawInput
+		input       *RawInput
 		expectError bool
 		expected    map[schema.ScoringMode]map[schema.BreakdownKey]float64
 	}{
 		{
 			name: "valid custom weights for hot mode",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Weights: WeightsRawInput{
 					Hot: &ModeWeightsRaw{
 						Commits: &[]float64{0.5}[0],
@@ -604,7 +605,7 @@ func TestProcessCustomWeights(t *testing.T) {
 		},
 		{
 			name: "valid custom weights for all modes",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Weights: WeightsRawInput{
 					Hot: &ModeWeightsRaw{
 						Commits:      &[]float64{0.4}[0],
@@ -676,7 +677,7 @@ func TestProcessCustomWeights(t *testing.T) {
 		},
 		{
 			name: "partial custom weights",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Weights: WeightsRawInput{
 					Hot: &ModeWeightsRaw{
 						Commits: &[]float64{0.7}[0],
@@ -694,7 +695,7 @@ func TestProcessCustomWeights(t *testing.T) {
 		},
 		{
 			name: "empty weights should not set anything",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Weights: WeightsRawInput{},
 			},
 			expectError: false,
@@ -702,7 +703,7 @@ func TestProcessCustomWeights(t *testing.T) {
 		},
 		{
 			name: "weights that don't sum to 1.0 should fail",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Weights: WeightsRawInput{
 					Hot: &ModeWeightsRaw{
 						Commits: &[]float64{0.5}[0],
@@ -716,7 +717,7 @@ func TestProcessCustomWeights(t *testing.T) {
 		},
 		{
 			name: "weights that sum to less than 1.0 should fail",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Weights: WeightsRawInput{
 					Hot: &ModeWeightsRaw{
 						Commits: &[]float64{0.3}[0],
@@ -729,7 +730,7 @@ func TestProcessCustomWeights(t *testing.T) {
 		},
 		{
 			name: "negative weights should still be validated for sum",
-			input: &ConfigRawInput{
+			input: &RawInput{
 				Weights: WeightsRawInput{
 					Hot: &ModeWeightsRaw{
 						Commits: &[]float64{0.5}[0],

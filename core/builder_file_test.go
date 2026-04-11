@@ -5,18 +5,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFileResultBuilder_BasicChaining(t *testing.T) {
 	ctx := context.Background()
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath: "/test/repo",
 		},
-		Scoring: contract.ScoringConfig{
+		Scoring: config.ScoringConfig{
 			Mode: schema.HotMode,
 		},
 	}
@@ -77,11 +77,11 @@ func TestFileResultBuilder_BasicChaining(t *testing.T) {
 
 func TestFileResultBuilder_EmptyContribMap(t *testing.T) {
 	ctx := context.Background()
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath: "/test/repo",
 		},
-		Scoring: contract.ScoringConfig{
+		Scoring: config.ScoringConfig{
 			Mode: schema.HotMode,
 		},
 	}
@@ -101,11 +101,11 @@ func TestFileResultBuilder_EmptyContribMap(t *testing.T) {
 
 func TestFileResultBuilder_ZeroFirstCommit(t *testing.T) {
 	ctx := context.Background()
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath: "/test/repo",
 		},
-		Scoring: contract.ScoringConfig{
+		Scoring: config.ScoringConfig{
 			Mode: schema.HotMode,
 		},
 	}

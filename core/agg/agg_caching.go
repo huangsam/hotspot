@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 )
@@ -17,8 +18,8 @@ const currentCacheVersion = 1
 // CachedAggregateActivity - Simplified and validated using DB columns.
 func CachedAggregateActivity(
 	ctx context.Context,
-	gitSettings contract.GitSettings,
-	compareSettings contract.ComparisonSettings,
+	gitSettings config.GitSettings,
+	compareSettings config.ComparisonSettings,
 	client contract.GitClient,
 	mgr contract.CacheManager,
 ) (*schema.AggregateOutput, error) {
@@ -61,7 +62,7 @@ func checkCacheHit(activity contract.CacheStore, key string) *schema.AggregateOu
 }
 
 // computeAndStore computes the result and stores it in cache.
-func computeAndStore(ctx context.Context, gitSettings contract.GitSettings, client contract.GitClient, activity contract.CacheStore, key string) (*schema.AggregateOutput, error) {
+func computeAndStore(ctx context.Context, gitSettings config.GitSettings, client contract.GitClient, activity contract.CacheStore, key string) (*schema.AggregateOutput, error) {
 	result, err := aggregateActivity(ctx, gitSettings, client)
 	if err != nil {
 		return nil, err
@@ -76,10 +77,10 @@ func computeAndStore(ctx context.Context, gitSettings contract.GitSettings, clie
 }
 
 // generateCacheKey creates a unique key based on analysis parameters.
-func generateCacheKey(ctx context.Context, gitSettings contract.GitSettings, compareSettings contract.ComparisonSettings, client contract.GitClient) string {
+func generateCacheKey(ctx context.Context, gitSettings config.GitSettings, compareSettings config.ComparisonSettings, client contract.GitClient) string {
 	// Truncate to the caching granularity
-	startHour := gitSettings.GetStartTime().Truncate(contract.CacheGranularity)
-	endHour := gitSettings.GetEndTime().Truncate(contract.CacheGranularity)
+	startHour := gitSettings.GetStartTime().Truncate(config.CacheGranularity)
+	endHour := gitSettings.GetEndTime().Truncate(config.CacheGranularity)
 
 	// Include repo hash to invalidate cache when repository state changes
 	repoHash, err := client.GetRepoHash(ctx, gitSettings.GetRepoPath())

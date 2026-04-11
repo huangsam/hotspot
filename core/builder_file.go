@@ -11,14 +11,15 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/core/algo"
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 )
 
 // FileResultBuilder builds the file metric from Git output.
 type FileResultBuilder struct {
-	gitSettings     contract.GitSettings
-	scoringSettings contract.ScoringSettings
+	gitSettings     config.GitSettings
+	scoringSettings config.ScoringSettings
 	git             contract.GitClient
 	result          *schema.FileResult
 	output          *schema.AggregateOutput
@@ -33,8 +34,8 @@ type FileResultBuilder struct {
 // NewFileMetricsBuilder is the starting point for building file metrics.
 func NewFileMetricsBuilder(
 	ctx context.Context,
-	gitSettings contract.GitSettings,
-	scoringSettings contract.ScoringSettings,
+	gitSettings config.GitSettings,
+	scoringSettings config.ScoringSettings,
 	client contract.GitClient,
 	path string,
 	output *schema.AggregateOutput,

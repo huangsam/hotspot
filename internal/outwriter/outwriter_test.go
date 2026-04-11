@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,8 +21,8 @@ func TestOutWriter_WriteFiles(t *testing.T) {
 		},
 	}
 
-	cfg := &contract.Config{
-		Output: contract.OutputConfig{
+	cfg := &config.Config{
+		Output: config.OutputConfig{
 			Format:    schema.TextOut,
 			Precision: 2,
 		},
@@ -52,8 +52,8 @@ func TestOutWriter_WriteFolders(t *testing.T) {
 		},
 	}
 
-	cfg := &contract.Config{
-		Output: contract.OutputConfig{
+	cfg := &config.Config{
+		Output: config.OutputConfig{
 			Format:    schema.TextOut,
 			Precision: 2,
 			Detail:    true,
@@ -100,8 +100,8 @@ func TestOutWriter_WriteComparison(t *testing.T) {
 		},
 	}
 
-	cfg := &contract.Config{
-		Output: contract.OutputConfig{
+	cfg := &config.Config{
+		Output: config.OutputConfig{
 			Format:    schema.TextOut,
 			Precision: 2,
 			Detail:    true,
@@ -138,8 +138,8 @@ func TestOutWriter_WriteTimeseries(t *testing.T) {
 		},
 	}
 
-	cfg := &contract.Config{
-		Output: contract.OutputConfig{
+	cfg := &config.Config{
+		Output: config.OutputConfig{
 			Format:    schema.TextOut,
 			Precision: 2,
 		},
@@ -166,8 +166,8 @@ func TestOutWriter_WriteMetrics(t *testing.T) {
 		},
 	}
 
-	cfg := &contract.Config{
-		Output: contract.OutputConfig{
+	cfg := &config.Config{
+		Output: config.OutputConfig{
 			Format: schema.TextOut,
 		},
 	}

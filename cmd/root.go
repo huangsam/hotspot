@@ -7,6 +7,7 @@ import (
 	"runtime/pprof"
 	"strings"
 
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
@@ -25,14 +26,14 @@ var (
 var rootCtx = context.Background()
 
 // cfg will hold the validated, final configuration.
-var cfg = &contract.Config{}
+var cfg = &config.Config{}
 
 // input holds the raw, unvalidated configuration from all sources (file, env, flags).
 // Viper will unmarshal into this struct.
-var input = &contract.ConfigRawInput{}
+var input = &config.RawInput{}
 
 // profile holds profiling configuration.
-var profile = &contract.ProfileConfig{}
+var profile = &config.ProfileConfig{}
 
 // cacheManager is the global persistence manager instance.
 var cacheManager contract.CacheManager
@@ -113,10 +114,10 @@ func initConfig() {
 	viper.AutomaticEnv() // Read in environment variables that match
 
 	// Set defaults in Viper
-	viper.SetDefault("limit", contract.DefaultResultLimit)
-	viper.SetDefault("workers", contract.DefaultWorkers)
+	viper.SetDefault("limit", config.DefaultResultLimit)
+	viper.SetDefault("workers", config.DefaultWorkers)
 	viper.SetDefault("mode", schema.HotMode)
-	viper.SetDefault("precision", contract.DefaultPrecision)
+	viper.SetDefault("precision", config.DefaultPrecision)
 	viper.SetDefault("output", schema.TextOut)
 	viper.SetDefault("lookback", "6 months")
 	viper.SetDefault("cache-backend", schema.SQLiteBackend)
@@ -130,7 +131,7 @@ func initConfig() {
 func sharedSetup(ctx context.Context, cmd *cobra.Command, args []string) error {
 	// Handle profiling flag
 	profilePrefix := viper.GetString("profile")
-	if err := contract.ProcessProfilingConfig(profile, profilePrefix); err != nil {
+	if err := config.ProcessProfilingConfig(profile, profilePrefix); err != nil {
 		return fmt.Errorf("failed to process profiling config: %w", err)
 	}
 	if profile.Enabled {
@@ -163,7 +164,7 @@ func sharedSetup(ctx context.Context, cmd *cobra.Command, args []string) error {
 	// 4. Run all validation and complex parsing.
 	// This function now populates the global 'cfg' from 'input'.
 	client := contract.NewLocalGitClient()
-	if err := contract.ProcessAndValidate(ctx, cfg, client, input); err != nil {
+	if err := config.ProcessAndValidate(ctx, cfg, client, input); err != nil {
 		if cmd == nil || cmd.Name() != "mcp" {
 			return err
 		}

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
@@ -105,16 +106,16 @@ func TestCheckCacheHit_CacheMiss_UnmarshalError(t *testing.T) {
 
 func TestGenerateCacheKey(t *testing.T) {
 	mockClient := &contract.MockGitClient{}
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath:  "/test/repo",
 			StartTime: time.Unix(1000000, 0),
 			EndTime:   time.Unix(2000000, 0),
 		},
-		Scoring: contract.ScoringConfig{
+		Scoring: config.ScoringConfig{
 			Mode: schema.HotMode,
 		},
-		Compare: contract.CompareConfig{
+		Compare: config.CompareConfig{
 			Lookback: 30 * 24 * time.Hour,
 		},
 	}
@@ -139,16 +140,16 @@ func TestGenerateCacheKey(t *testing.T) {
 
 func TestGenerateCacheKey_RepoHashError(t *testing.T) {
 	mockClient := &contract.MockGitClient{}
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath:  "/test/repo",
 			StartTime: time.Unix(1000000, 0),
 			EndTime:   time.Unix(2000000, 0),
 		},
-		Scoring: contract.ScoringConfig{
+		Scoring: config.ScoringConfig{
 			Mode: schema.HotMode,
 		},
-		Compare: contract.CompareConfig{
+		Compare: config.CompareConfig{
 			Lookback: 30 * 24 * time.Hour,
 		},
 	}
@@ -183,8 +184,8 @@ func TestCachedAggregateActivity_CacheHit(t *testing.T) {
 	mockStore.On("Get", mock.AnythingOfType("string")).Return(data, currentCacheVersion, time.Now().Unix(), nil)
 	mockClient.On("GetRepoHash", ctx, "/test/repo").Return("abcd1234", nil)
 
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath:  "/test/repo",
 			StartTime: time.Unix(1000000, 0),
 			EndTime:   time.Unix(2000000, 0),
@@ -218,8 +219,8 @@ func TestCachedAggregateActivity_CacheMiss(t *testing.T) {
 	mockStore.On("Get", mock.AnythingOfType("string")).Return([]byte{}, 0, int64(0), assert.AnError)
 	mockStore.On("Set", mock.AnythingOfType("string"), mock.AnythingOfType("[]uint8"), currentCacheVersion, mock.AnythingOfType("int64")).Return(nil)
 
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath:  "/test/repo",
 			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
@@ -249,8 +250,8 @@ func TestCachedAggregateActivity_NoCacheManager(t *testing.T) {
 	// No cache manager
 	mockMgr.On("GetActivityStore").Return(nil)
 
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath:  "/test/repo",
 			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
@@ -281,8 +282,8 @@ func TestCachedAggregateActivity_AggregateError(t *testing.T) {
 	mockMgr.On("GetActivityStore").Return(mockStore)
 	mockStore.On("Get", mock.AnythingOfType("string")).Return([]byte{}, 0, int64(0), assert.AnError)
 
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath:  "/test/repo",
 			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),

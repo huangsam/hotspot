@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/olekukonko/tablewriter"
@@ -15,7 +16,7 @@ import (
 )
 
 // WriteFolderResults outputs the analysis results, dispatching based on the output format configured.
-func WriteFolderResults(w io.Writer, results []schema.FolderResult, output contract.OutputSettings, runtime contract.RuntimeSettings, duration time.Duration) error {
+func WriteFolderResults(w io.Writer, results []schema.FolderResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
 	// Create formatters using helper
 	fmtFloat, intFmt := createFormatters(output.GetPrecision())
 
@@ -40,7 +41,7 @@ func WriteFolderResults(w io.Writer, results []schema.FolderResult, output contr
 
 // writeFolderTable writes the results in the custom folder-centric format,
 // using the tablewriter API.
-func writeFolderTable(results []schema.FolderResult, output contract.OutputSettings, runtime contract.RuntimeSettings, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
+func writeFolderTable(results []schema.FolderResult, output config.OutputSettings, runtime config.RuntimeSettings, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
 	table := tablewriter.NewWriter(writer)
 	defer func() { _ = table.Close() }()
 

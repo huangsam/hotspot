@@ -9,6 +9,9 @@ import (
 	"time"
 )
 
+// DateTimeFormat is the default date time representation.
+var DateTimeFormat = time.RFC3339
+
 // Define the regular expression to capture "N [units] ago"
 // e.g., "2 years ago", "3 months ago", "1 week ago".
 var relativeTimeRe = regexp.MustCompile(`^(\d+)\s+(year|month|week|day|hour|minute)s?\s+ago$`)

@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
@@ -22,7 +23,7 @@ func cacheSetup() error {
 	connStr := viper.GetString("cache-db-connect")
 
 	// Basic validation for database backends
-	if err := contract.ValidateDatabaseConnectionString(backend, connStr); err != nil {
+	if err := config.ValidateDatabaseConnectionString(backend, connStr); err != nil {
 		return err
 	}
 

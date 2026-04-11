@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -52,8 +52,8 @@ func TestWriteComparisonResultsTable(t *testing.T) {
 		},
 	}
 
-	cfg := &contract.Config{
-		Output: contract.OutputConfig{
+	cfg := &config.Config{
+		Output: config.OutputConfig{
 			Format:    schema.TextOut,
 			Precision: 2,
 			Detail:    true,
@@ -117,8 +117,8 @@ func TestWriteComparisonResultsJSON(t *testing.T) {
 		},
 	}
 
-	cfg := &contract.Config{
-		Output: contract.OutputConfig{
+	cfg := &config.Config{
+		Output: config.OutputConfig{
 			Format:    schema.JSONOut,
 			Precision: 2,
 		},
@@ -186,8 +186,8 @@ func TestWriteComparisonResultsCSV(t *testing.T) {
 		},
 	}
 
-	cfg := &contract.Config{
-		Output: contract.OutputConfig{
+	cfg := &config.Config{
+		Output: config.OutputConfig{
 			Format:    schema.CSVOut,
 			Precision: 2,
 		},

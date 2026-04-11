@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
@@ -21,16 +22,16 @@ func TestAnalyzeFileCommon(t *testing.T) {
 	// No git calls needed - all data comes from aggregation phase
 
 	// Create config
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath:  "/test/repo",
 			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
 		},
-		Scoring: contract.ScoringConfig{
+		Scoring: config.ScoringConfig{
 			Mode: schema.HotMode,
 		},
-		Runtime: contract.RuntimeConfig{
+		Runtime: config.RuntimeConfig{
 			Workers: 2,
 		},
 	}
@@ -69,16 +70,16 @@ func TestAnalyzeRepo(t *testing.T) {
 	// No git calls needed - all data comes from aggregation phase
 
 	// Create config
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath:  "/test/repo",
 			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
 		},
-		Scoring: contract.ScoringConfig{
+		Scoring: config.ScoringConfig{
 			Mode: schema.HotMode,
 		},
-		Runtime: contract.RuntimeConfig{
+		Runtime: config.RuntimeConfig{
 			Workers: 2,
 		},
 	}
@@ -136,16 +137,16 @@ func TestAnalyzeRepo_ConcurrentWorkers(t *testing.T) {
 	mockClient := &contract.MockGitClient{}
 
 	// Create config with multiple workers
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath:  "/test/repo",
 			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
 		},
-		Scoring: contract.ScoringConfig{
+		Scoring: config.ScoringConfig{
 			Mode: schema.HotMode,
 		},
-		Runtime: contract.RuntimeConfig{
+		Runtime: config.RuntimeConfig{
 			Workers: 4,
 		},
 	}
@@ -234,8 +235,8 @@ func TestRecordFileAnalysis(t *testing.T) {
 	mockCacheMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
 
 	// Create config
-	cfg := &contract.Config{
-		Scoring: contract.ScoringConfig{
+	cfg := &config.Config{
+		Scoring: config.ScoringConfig{
 			Mode: schema.HotMode,
 		},
 	}

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
@@ -13,12 +14,12 @@ import (
 
 func TestCheckResultBuilder_ValidatePrerequisites_NoFilesChanged(t *testing.T) {
 	ctx := context.Background()
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath: "/test/repo",
 			Excludes: []string{},
 		},
-		Compare: contract.CompareConfig{
+		Compare: config.CompareConfig{
 			Enabled:   true,
 			BaseRef:   "main",
 			TargetRef: "feature",
@@ -39,12 +40,12 @@ func TestCheckResultBuilder_ValidatePrerequisites_NoFilesChanged(t *testing.T) {
 
 func TestCheckResultBuilder_ValidatePrerequisites_AllFilesExcluded(t *testing.T) {
 	ctx := context.Background()
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath: "/test/repo",
 			Excludes: []string{"*.go"},
 		},
-		Compare: contract.CompareConfig{
+		Compare: config.CompareConfig{
 			Enabled:   true,
 			BaseRef:   "main",
 			TargetRef: "feature",
@@ -66,12 +67,12 @@ func TestCheckResultBuilder_ValidatePrerequisites_AllFilesExcluded(t *testing.T)
 
 func TestCheckResultBuilder_ValidatePrerequisites_WithValidFiles(t *testing.T) {
 	ctx := context.Background()
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath: "/test/repo",
 			Excludes: []string{"*.md"},
 		},
-		Compare: contract.CompareConfig{
+		Compare: config.CompareConfig{
 			Enabled:   true,
 			BaseRef:   "main",
 			TargetRef: "feature",
@@ -92,11 +93,11 @@ func TestCheckResultBuilder_ValidatePrerequisites_WithValidFiles(t *testing.T) {
 
 func TestCheckResultBuilder_ValidatePrerequisites_MissingCompareMode(t *testing.T) {
 	ctx := context.Background()
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath: "/test/repo",
 		},
-		Compare: contract.CompareConfig{
+		Compare: config.CompareConfig{
 			Enabled: false,
 		},
 	}
@@ -110,11 +111,11 @@ func TestCheckResultBuilder_ValidatePrerequisites_MissingCompareMode(t *testing.
 
 func TestCheckResultBuilder_PrepareAnalysisConfig(t *testing.T) {
 	ctx := context.Background()
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath: "/test/repo",
 		},
-		Compare: contract.CompareConfig{
+		Compare: config.CompareConfig{
 			Enabled:   true,
 			BaseRef:   "main",
 			TargetRef: "feature",
@@ -163,8 +164,8 @@ func TestCheckResultBuilder_ComputeMetrics(t *testing.T) {
 		},
 	}
 
-	cfg := &contract.Config{
-		Scoring: contract.ScoringConfig{
+	cfg := &config.Config{
+		Scoring: config.ScoringConfig{
 			RiskThresholds: map[schema.ScoringMode]float64{
 				schema.HotMode:        55.0,
 				schema.RiskMode:       45.0,
@@ -218,13 +219,13 @@ func TestCheckResultBuilder_ComputeMetrics(t *testing.T) {
 }
 
 func TestCheckResultBuilder_BuildResult_Success(t *testing.T) {
-	cfg := &contract.Config{
-		Compare: contract.CompareConfig{
+	cfg := &config.Config{
+		Compare: config.CompareConfig{
 			BaseRef:   "main",
 			TargetRef: "feature",
 			Lookback:  30 * 24 * time.Hour,
 		},
-		Scoring: contract.ScoringConfig{
+		Scoring: config.ScoringConfig{
 			RiskThresholds: map[schema.ScoringMode]float64{
 				schema.HotMode:        50.0,
 				schema.RiskMode:       50.0,
@@ -269,13 +270,13 @@ func TestCheckResultBuilder_BuildResult_Success(t *testing.T) {
 }
 
 func TestCheckResultBuilder_BuildResult_Failure(t *testing.T) {
-	cfg := &contract.Config{
-		Compare: contract.CompareConfig{
+	cfg := &config.Config{
+		Compare: config.CompareConfig{
 			BaseRef:   "main",
 			TargetRef: "feature",
 			Lookback:  30 * 24 * time.Hour,
 		},
-		Scoring: contract.ScoringConfig{
+		Scoring: config.ScoringConfig{
 			RiskThresholds: map[schema.ScoringMode]float64{
 				schema.HotMode: 50.0,
 			},

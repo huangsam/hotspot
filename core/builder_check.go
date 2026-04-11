@@ -5,20 +5,21 @@ import (
 	"fmt"
 
 	"github.com/huangsam/hotspot/core/agg"
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 )
 
 // CheckResultBuilder builds the check result using a builder pattern.
 type CheckResultBuilder struct {
-	gitSettings     contract.GitSettings
-	scoringSettings contract.ScoringSettings
-	compareSettings contract.ComparisonSettings
+	gitSettings     config.GitSettings
+	scoringSettings config.ScoringSettings
+	compareSettings config.ComparisonSettings
 	client          contract.GitClient
 	mgr             contract.CacheManager
 	ctx             context.Context
 	filesToAnalyze  []string
-	cfgTarget       *contract.Config
+	cfgTarget       *config.Config
 	fileResults     []schema.FileResult
 	maxScores       map[schema.ScoringMode]float64
 	failedFiles     []schema.CheckFailedFile
@@ -30,9 +31,9 @@ type CheckResultBuilder struct {
 // NewCheckResultBuilder creates a new builder for check results.
 func NewCheckResultBuilder(
 	ctx context.Context,
-	gitSettings contract.GitSettings,
-	scoringSettings contract.ScoringSettings,
-	compareSettings contract.ComparisonSettings,
+	gitSettings config.GitSettings,
+	scoringSettings config.ScoringSettings,
+	compareSettings config.ComparisonSettings,
 	mgr contract.CacheManager,
 ) *CheckResultBuilder {
 	return &CheckResultBuilder{
@@ -87,8 +88,8 @@ func (b *CheckResultBuilder) PrepareAnalysisConfig() (*CheckResultBuilder, error
 	targetStartTime := targetEndTime.Add(-b.compareSettings.GetLookback())
 
 	// Create dynamic time window settings
-	b.cfgTarget = &contract.Config{
-		Git: contract.GitConfig{
+	b.cfgTarget = &config.Config{
+		Git: config.GitConfig{
 			RepoPath:   b.gitSettings.GetRepoPath(),
 			StartTime:  targetStartTime,
 			EndTime:    targetEndTime,
@@ -96,9 +97,9 @@ func (b *CheckResultBuilder) PrepareAnalysisConfig() (*CheckResultBuilder, error
 			Excludes:   b.gitSettings.GetExcludes(),
 			Follow:     b.gitSettings.IsFollow(),
 		},
-		Scoring: b.scoringSettings.(contract.ScoringConfig), // Safe cast since we know the implementation
-		Runtime: contract.RuntimeConfig{Workers: 1},         // Sequential for check
-		Compare: b.compareSettings.(contract.CompareConfig),
+		Scoring: b.scoringSettings.(config.ScoringConfig), // Safe cast since we know the implementation
+		Runtime: config.RuntimeConfig{Workers: 1},         // Sequential for check
+		Compare: b.compareSettings.(config.CompareConfig),
 	}
 
 	return b, nil

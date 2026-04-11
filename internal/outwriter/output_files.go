@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 
@@ -16,7 +17,7 @@ import (
 )
 
 // WriteFileResults outputs the analysis results, dispatching based on the output format configured.
-func WriteFileResults(w io.Writer, files []schema.FileResult, output contract.OutputSettings, runtime contract.RuntimeSettings, duration time.Duration) error {
+func WriteFileResults(w io.Writer, files []schema.FileResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
 	// Create formatters using helper
 	fmtFloat, intFmt := createFormatters(output.GetPrecision())
 
@@ -40,7 +41,7 @@ func WriteFileResults(w io.Writer, files []schema.FileResult, output contract.Ou
 }
 
 // writeFileTable generates and writes the human-readable table.
-func writeFileTable(files []schema.FileResult, output contract.OutputSettings, runtime contract.RuntimeSettings, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
+func writeFileTable(files []schema.FileResult, output config.OutputSettings, runtime config.RuntimeSettings, fmtFloat func(float64) string, intFmt string, duration time.Duration, writer io.Writer) error {
 	table := tablewriter.NewWriter(writer)
 	defer func() { _ = table.Close() }()
 

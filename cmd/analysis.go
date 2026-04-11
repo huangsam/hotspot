@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
@@ -30,7 +31,7 @@ func analysisSetup() error {
 	}
 
 	// Basic validation for database backends
-	if err := contract.ValidateDatabaseConnectionString(backend, connStr); err != nil {
+	if err := config.ValidateDatabaseConnectionString(backend, connStr); err != nil {
 		return err
 	}
 
@@ -75,7 +76,7 @@ func analysisMigrateSetup() error {
 	}
 
 	// Basic validation for database backends
-	if err := contract.ValidateDatabaseConnectionString(backend, connStr); err != nil {
+	if err := config.ValidateDatabaseConnectionString(backend, connStr); err != nil {
 		return err
 	}
 

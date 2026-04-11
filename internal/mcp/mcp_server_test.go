@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	mcp_internal "github.com/huangsam/hotspot/internal/mcp"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -12,11 +13,11 @@ import (
 )
 
 func TestMCPServerHandlers_ValidationErrors(t *testing.T) {
-	baseCfg := &contract.Config{
-		Git: contract.GitConfig{
+	baseCfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath: ".",
 		},
-		Scoring: contract.ScoringConfig{
+		Scoring: config.ScoringConfig{
 			Mode: "hot",
 		},
 	}

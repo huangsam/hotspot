@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/huangsam/hotspot/core"
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -13,7 +14,7 @@ import (
 
 // toolHandler holds common dependencies for MCP tool handlers.
 type toolHandler struct {
-	baseCfg *contract.Config
+	baseCfg *config.Config
 	mgr     contract.CacheManager
 	client  contract.GitClient
 }
@@ -26,7 +27,7 @@ func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.Ca
 		repoPath = "."
 	}
 	if repoPath != "" {
-		if err := contract.ResolveGitPathAndFilter(ctx, cfg, h.client, &contract.ConfigRawInput{RepoPathStr: repoPath}); err != nil {
+		if err := config.ResolveGitPathAndFilter(ctx, cfg, h.client, &config.RawInput{RepoPathStr: repoPath}); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("invalid repo path: %v", err)), nil
 		}
 	}
@@ -56,7 +57,7 @@ func (h *toolHandler) handleGetFoldersHotspots(ctx context.Context, request mcp.
 		repoPath = "."
 	}
 	if repoPath != "" {
-		if err := contract.ResolveGitPathAndFilter(ctx, cfg, h.client, &contract.ConfigRawInput{RepoPathStr: repoPath}); err != nil {
+		if err := config.ResolveGitPathAndFilter(ctx, cfg, h.client, &config.RawInput{RepoPathStr: repoPath}); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("invalid repo path: %v", err)), nil
 		}
 	}
@@ -89,7 +90,7 @@ func (h *toolHandler) handleCompareHotspots(ctx context.Context, request mcp.Cal
 		repoPath = "."
 	}
 	if repoPath != "" {
-		if err := contract.ResolveGitPathAndFilter(ctx, cfg, h.client, &contract.ConfigRawInput{RepoPathStr: repoPath}); err != nil {
+		if err := config.ResolveGitPathAndFilter(ctx, cfg, h.client, &config.RawInput{RepoPathStr: repoPath}); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("invalid repo path: %v", err)), nil
 		}
 	}
@@ -97,7 +98,7 @@ func (h *toolHandler) handleCompareHotspots(ctx context.Context, request mcp.Cal
 		cfg.Scoring.Mode = schema.ScoringMode(m)
 	}
 
-	if err := contract.RevalidateCompare(cfg, lookbackStr); err != nil {
+	if err := config.RevalidateCompare(cfg, lookbackStr); err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("invalid comparison parameters: %v", err)), nil
 	}
 
@@ -122,7 +123,7 @@ func (h *toolHandler) handleGetTimeseries(ctx context.Context, request mcp.CallT
 		repoPath = "."
 	}
 	if repoPath != "" {
-		if err := contract.ResolveGitPathAndFilter(ctx, cfg, h.client, &contract.ConfigRawInput{RepoPathStr: repoPath}); err != nil {
+		if err := config.ResolveGitPathAndFilter(ctx, cfg, h.client, &config.RawInput{RepoPathStr: repoPath}); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("invalid repo path: %v", err)), nil
 		}
 	}
@@ -131,7 +132,7 @@ func (h *toolHandler) handleGetTimeseries(ctx context.Context, request mcp.CallT
 	}
 
 	// Re-validate specifically for timeseries interval parsing
-	if err := contract.RevalidateTimeseries(cfg, intervalStr); err != nil {
+	if err := config.RevalidateTimeseries(cfg, intervalStr); err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("invalid timeseries parameters: %v", err)), nil
 	}
 

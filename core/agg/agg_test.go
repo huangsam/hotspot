@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
@@ -30,8 +31,8 @@ func TestAggregateActivity(t *testing.T) {
 	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(gitLogBasicFixture, nil)
 
 	// Create config
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			RepoPath:  "/test/repo",
 			StartTime: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 			EndTime:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
@@ -113,8 +114,8 @@ func TestBuildFilteredFileList(t *testing.T) {
 		},
 	}
 
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			PathFilter: "",
 			Excludes:   []string{"test_*", "*.md"},
 		},
@@ -155,8 +156,8 @@ func TestBuildFilteredFileList_WithPathFilter(t *testing.T) {
 		},
 	}
 
-	cfg := &contract.Config{
-		Git: contract.GitConfig{
+	cfg := &config.Config{
+		Git: config.GitConfig{
 			PathFilter: "core/",
 			Excludes:   []string{},
 		},
@@ -224,11 +225,11 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			},
 		}
 
-		cfg := &contract.Config{
-			Git: contract.GitConfig{
+		cfg := &config.Config{
+			Git: config.GitConfig{
 				PathFilter: "",
 			},
-			Scoring: contract.ScoringConfig{
+			Scoring: config.ScoringConfig{
 				Mode: schema.HotMode,
 			},
 		}
@@ -276,11 +277,11 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			},
 		}
 
-		cfg := &contract.Config{
-			Git: contract.GitConfig{
+		cfg := &config.Config{
+			Git: config.GitConfig{
 				PathFilter: "",
 			},
-			Scoring: contract.ScoringConfig{
+			Scoring: config.ScoringConfig{
 				Mode: schema.HotMode,
 			},
 		}
@@ -303,11 +304,11 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 	t.Run("empty input", func(t *testing.T) {
 		fileResults := []schema.FileResult{}
 
-		cfg := &contract.Config{
-			Git: contract.GitConfig{
+		cfg := &config.Config{
+			Git: config.GitConfig{
 				PathFilter: "",
 			},
-			Scoring: contract.ScoringConfig{
+			Scoring: config.ScoringConfig{
 				Mode: schema.HotMode,
 			},
 		}
@@ -329,11 +330,11 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			},
 		}
 
-		cfg := &contract.Config{
-			Git: contract.GitConfig{
+		cfg := &config.Config{
+			Git: config.GitConfig{
 				PathFilter: "",
 			},
-			Scoring: contract.ScoringConfig{
+			Scoring: config.ScoringConfig{
 				Mode: schema.HotMode,
 			},
 		}
@@ -371,11 +372,11 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			},
 		}
 
-		cfg := &contract.Config{
-			Git: contract.GitConfig{
+		cfg := &config.Config{
+			Git: config.GitConfig{
 				PathFilter: "src/", // Non-empty enables root folder inclusion
 			},
-			Scoring: contract.ScoringConfig{
+			Scoring: config.ScoringConfig{
 				Mode: schema.HotMode,
 			},
 		}
@@ -414,11 +415,11 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			},
 		}
 
-		cfg := &contract.Config{
-			Git: contract.GitConfig{
+		cfg := &config.Config{
+			Git: config.GitConfig{
 				PathFilter: ".", // Non-empty enables root folder inclusion
 			},
-			Scoring: contract.ScoringConfig{
+			Scoring: config.ScoringConfig{
 				Mode: schema.HotMode,
 			},
 		}
@@ -457,11 +458,11 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			},
 		}
 
-		cfg := &contract.Config{
-			Git: contract.GitConfig{
+		cfg := &config.Config{
+			Git: config.GitConfig{
 				PathFilter: "",
 			},
-			Scoring: contract.ScoringConfig{
+			Scoring: config.ScoringConfig{
 				Mode: schema.HotMode,
 			},
 		}
@@ -501,11 +502,11 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			},
 		}
 
-		cfg := &contract.Config{
-			Git: contract.GitConfig{
+		cfg := &config.Config{
+			Git: config.GitConfig{
 				PathFilter: "",
 			},
-			Scoring: contract.ScoringConfig{
+			Scoring: config.ScoringConfig{
 				Mode: schema.HotMode,
 			},
 		}
@@ -563,11 +564,11 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 			},
 		}
 
-		cfg := &contract.Config{
-			Git: contract.GitConfig{
+		cfg := &config.Config{
+			Git: config.GitConfig{
 				PathFilter: "",
 			},
-			Scoring: contract.ScoringConfig{
+			Scoring: config.ScoringConfig{
 				Mode: schema.HotMode,
 			},
 		}

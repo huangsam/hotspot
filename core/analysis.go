@@ -10,6 +10,7 @@ import (
 	"github.com/huangsam/hotspot/core/agg"
 	"github.com/huangsam/hotspot/core/algo"
 	"github.com/huangsam/hotspot/internal"
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 )
@@ -24,11 +25,11 @@ const (
 // runSingleAnalysisCore performs the common Aggregation, Filtering, and Analysis steps.
 func runSingleAnalysisCore(
 	ctx context.Context,
-	gitSettings contract.GitSettings,
-	scoringSettings contract.ScoringSettings,
-	runtimeSettings contract.RuntimeSettings,
-	outputSettings contract.OutputSettings,
-	compareSettings contract.ComparisonSettings,
+	gitSettings config.GitSettings,
+	scoringSettings config.ScoringSettings,
+	runtimeSettings config.RuntimeSettings,
+	outputSettings config.OutputSettings,
+	compareSettings config.ComparisonSettings,
 	client contract.GitClient,
 	mgr contract.CacheManager,
 ) (*schema.SingleAnalysisOutput, error) {
@@ -101,7 +102,7 @@ func runSingleAnalysisCore(
 
 // runCompareAnalysisForRef runs the file analysis for a specific Git reference in compare mode.
 // Headers are always suppressed in compare mode.
-func runCompareAnalysisForRef(ctx context.Context, cfg *contract.Config, client contract.GitClient, ref string, mgr contract.CacheManager) (*schema.CompareAnalysisOutput, error) {
+func runCompareAnalysisForRef(ctx context.Context, cfg *config.Config, client contract.GitClient, ref string, mgr contract.CacheManager) (*schema.CompareAnalysisOutput, error) {
 	// 1. Resolve the time window for the reference
 	baseStartTime, baseEndTime, err := getAnalysisWindowForRef(ctx, client, cfg.Git.RepoPath, ref, cfg.Compare.Lookback)
 	if err != nil {
@@ -130,9 +131,9 @@ func runCompareAnalysisForRef(ctx context.Context, cfg *contract.Config, client 
 // Headers are always suppressed in compare mode.
 func analyzeAllFilesAtRef(
 	ctx context.Context,
-	gitSettings contract.GitSettings,
-	scoringSettings contract.ScoringSettings,
-	runtimeSettings contract.RuntimeSettings,
+	gitSettings config.GitSettings,
+	scoringSettings config.ScoringSettings,
+	runtimeSettings config.RuntimeSettings,
 	client contract.GitClient,
 	ref string,
 	mgr contract.CacheManager,
@@ -166,7 +167,7 @@ func analyzeAllFilesAtRef(
 
 	// --- 2. Aggregation Phase (with caching) ---
 	// Create dummy comparison settings for the internal aggregation call
-	comp := contract.CompareConfig{Enabled: false}
+	comp := config.CompareConfig{Enabled: false}
 	output, err := agg.CachedAggregateActivity(ctx, gitSettings, comp, client, mgr)
 	if err != nil {
 		return nil, err
@@ -183,9 +184,9 @@ func analyzeAllFilesAtRef(
 // to account for renames, and then returns a new, re-ranked list.
 func runFollowPass(
 	ctx context.Context,
-	gitSettings contract.GitSettings,
-	scoringSettings contract.ScoringSettings,
-	outputSettings contract.OutputSettings,
+	gitSettings config.GitSettings,
+	scoringSettings config.ScoringSettings,
+	outputSettings config.OutputSettings,
 	client contract.GitClient,
 	ranked []schema.FileResult,
 	output *schema.AggregateOutput,
@@ -223,9 +224,9 @@ func runFollowPass(
 // and aggregates their results into a single slice of schema.FileMetrics.
 func analyzeRepo(
 	ctx context.Context,
-	gitSettings contract.GitSettings,
-	scoringSettings contract.ScoringSettings,
-	runtimeSettings contract.RuntimeSettings,
+	gitSettings config.GitSettings,
+	scoringSettings config.ScoringSettings,
+	runtimeSettings config.RuntimeSettings,
 	client contract.GitClient,
 	output *schema.AggregateOutput,
 	files []string,
@@ -273,8 +274,8 @@ func analyzeRepo(
 // Git follow behavior is controlled by the context.
 func analyzeFileCommon(
 	ctx context.Context,
-	gitSettings contract.GitSettings,
-	scoringSettings contract.ScoringSettings,
+	gitSettings config.GitSettings,
+	scoringSettings config.ScoringSettings,
 	client contract.GitClient,
 	path string,
 	output *schema.AggregateOutput,
@@ -304,7 +305,7 @@ func analyzeFileCommon(
 }
 
 // recordFileAnalysis records file metrics and scores to the database.
-func recordFileAnalysis(ctx context.Context, scoringSettings contract.ScoringSettings, analysisID int64, path string, result *schema.FileResult) {
+func recordFileAnalysis(ctx context.Context, scoringSettings config.ScoringSettings, analysisID int64, path string, result *schema.FileResult) {
 	// Get the cache manager from context
 	mgr := cacheManagerFromContext(ctx)
 	if mgr == nil {
@@ -381,8 +382,8 @@ func getAnalysisWindowForRef(ctx context.Context, client contract.GitClient, rep
 // runTimeseriesAnalysis performs the core timeseries analysis logic.
 func runTimeseriesAnalysis(
 	ctx context.Context,
-	gitSettings contract.GitSettings,
-	scoringSettings contract.ScoringSettings,
+	gitSettings config.GitSettings,
+	scoringSettings config.ScoringSettings,
 	client contract.GitClient,
 	normalizedPath string,
 	isFolder bool,
@@ -426,7 +427,7 @@ func runTimeseriesAnalysis(
 		startTime := currentEnd.Add(-lookbackDuration)
 
 		// Create dynamic time window settings
-		gitWin := contract.GitConfig{
+		gitWin := config.GitConfig{
 			RepoPath:  gitSettings.GetRepoPath(),
 			StartTime: startTime,
 			EndTime:   currentEnd,
@@ -465,8 +466,8 @@ func runTimeseriesAnalysis(
 // analyzeTimeseriesPoint performs the analysis for a single timeseries point.
 func analyzeTimeseriesPoint(
 	ctx context.Context,
-	gitSettings contract.GitSettings,
-	scoringSettings contract.ScoringSettings,
+	gitSettings config.GitSettings,
+	scoringSettings config.ScoringSettings,
 	client contract.GitClient,
 	path string,
 	isFolder bool,
@@ -475,9 +476,9 @@ func analyzeTimeseriesPoint(
 	suppressCtx := WithSuppressHeader(ctx)
 	// OutputSettings and RuntimeSettings/ComparisonSettings are needed for runSingleAnalysisCore.
 	// We'll create defaults for those that aren't critical for a single point scoring.
-	runtime := contract.RuntimeConfig{Workers: 1}
-	outputCfg := contract.OutputConfig{ResultLimit: 10}
-	compare := contract.CompareConfig{Enabled: false}
+	runtime := config.RuntimeConfig{Workers: 1}
+	outputCfg := config.OutputConfig{ResultLimit: 10}
+	compare := config.CompareConfig{Enabled: false}
 
 	output, err := runSingleAnalysisCore(suppressCtx, gitSettings, scoringSettings, runtime, outputCfg, compare, client, mgr)
 	if err != nil {

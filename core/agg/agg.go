@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 )
@@ -17,7 +18,7 @@ import (
 // commits, churn and contributors. It runs over the entire history if
 // gitSettings.GetStartTime() is zero, or runs since gitSettings.GetStartTime() otherwise.
 // It filters out files that no longer exist in a single pass.
-func aggregateActivity(ctx context.Context, gitSettings contract.GitSettings, client contract.GitClient) (*schema.AggregateOutput, error) {
+func aggregateActivity(ctx context.Context, gitSettings config.GitSettings, client contract.GitClient) (*schema.AggregateOutput, error) {
 	// 1. Get the list of currently existing files
 	currentFiles, err := client.ListFilesAtRef(ctx, gitSettings.GetRepoPath(), "HEAD")
 	if err != nil {
@@ -218,7 +219,7 @@ func aggregateForPath(path string, churn int, author string, date time.Time, com
 
 // BuildFilteredFileList creates a unified list of files from activity maps
 // and filters them based on the configuration.
-func BuildFilteredFileList(gitSettings contract.GitSettings, output *schema.AggregateOutput) []string {
+func BuildFilteredFileList(gitSettings config.GitSettings, output *schema.AggregateOutput) []string {
 	// 1. Estimate capacity for 'seen'. Use a good guess based on the largest map.
 	capacity := max(
 		len(output.ContribMap), max(
@@ -269,7 +270,7 @@ func BuildFilteredFileList(gitSettings contract.GitSettings, output *schema.Aggr
 }
 
 // AggregateAndScoreFolders correctly aggregates file results into folders.
-func AggregateAndScoreFolders(gitSettings contract.GitSettings, scoringSettings contract.ScoringSettings, fileResults []schema.FileResult) []schema.FolderResult {
+func AggregateAndScoreFolders(gitSettings config.GitSettings, scoringSettings config.ScoringSettings, fileResults []schema.FileResult) []schema.FolderResult {
 	folderResults := make(map[string]*schema.FolderResult)
 
 	// Map to track the aggregate commit count per author per folder:

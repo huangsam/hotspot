@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 )
 
 // LogAnalysisHeader prints a concise, 2-line header for each analysis phase.
-func LogAnalysisHeader(git contract.GitSettings, scoring contract.ScoringSettings, _ contract.RuntimeSettings, _ contract.OutputSettings) {
+func LogAnalysisHeader(git config.GitSettings, scoring config.ScoringSettings, _ config.RuntimeSettings, _ config.OutputSettings) {
 	repoName := filepath.Base(git.GetRepoPath())
 	if repoName == "" || repoName == "." {
 		repoName = "current"
@@ -23,7 +24,7 @@ func LogAnalysisHeader(git contract.GitSettings, scoring contract.ScoringSetting
 }
 
 // LogTimeseriesHeader prints a header for timeseries analysis.
-func LogTimeseriesHeader(git contract.GitSettings, scoring contract.ScoringSettings, timeseries contract.TimeseriesSettings) {
+func LogTimeseriesHeader(git config.GitSettings, scoring config.ScoringSettings, timeseries config.TimeseriesSettings) {
 	repoName := filepath.Base(git.GetRepoPath())
 	if repoName == "" || repoName == "." {
 		repoName = "current"
@@ -33,7 +34,7 @@ func LogTimeseriesHeader(git contract.GitSettings, scoring contract.ScoringSetti
 }
 
 // LogCompareHeader prints a header for comparison analysis.
-func LogCompareHeader(git contract.GitSettings, scoring contract.ScoringSettings, compare contract.ComparisonSettings) {
+func LogCompareHeader(git config.GitSettings, scoring config.ScoringSettings, compare config.ComparisonSettings) {
 	repoName := filepath.Base(git.GetRepoPath())
 	if repoName == "" || repoName == "." {
 		repoName = "current"

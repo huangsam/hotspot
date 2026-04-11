@@ -14,17 +14,18 @@ import (
 	"github.com/huangsam/hotspot/core/algo"
 
 	"github.com/huangsam/hotspot/internal"
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/outwriter"
 	"github.com/huangsam/hotspot/schema"
 )
 
 // ExecutorFunc defines the function signature for executing different analysis modes.
-type ExecutorFunc func(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) error
+type ExecutorFunc func(ctx context.Context, cfg *config.Config, mgr contract.CacheManager) error
 
 // ExecuteHotspotFiles runs the file-level analysis and prints results to stdout.
 // It serves as the main entry point for the 'files' mode.
-func ExecuteHotspotFiles(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) error {
+func ExecuteHotspotFiles(ctx context.Context, cfg *config.Config, mgr contract.CacheManager) error {
 	ranked, duration, err := GetHotspotFilesResults(ctx, cfg, mgr)
 	if err != nil {
 		return err
@@ -36,7 +37,7 @@ func ExecuteHotspotFiles(ctx context.Context, cfg *contract.Config, mgr contract
 }
 
 // GetHotspotFilesResults runs the file-level analysis and returns the ranked results.
-func GetHotspotFilesResults(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) ([]schema.FileResult, time.Duration, error) {
+func GetHotspotFilesResults(ctx context.Context, cfg *config.Config, mgr contract.CacheManager) ([]schema.FileResult, time.Duration, error) {
 	start := time.Now()
 	client := contract.NewLocalGitClient()
 	output, err := runSingleAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, client, mgr)
@@ -54,7 +55,7 @@ func GetHotspotFilesResults(ctx context.Context, cfg *contract.Config, mgr contr
 
 // ExecuteHotspotFolders runs the folder-level analysis and prints results to stdout.
 // It serves as the main entry point for the 'folders' mode.
-func ExecuteHotspotFolders(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) error {
+func ExecuteHotspotFolders(ctx context.Context, cfg *config.Config, mgr contract.CacheManager) error {
 	ranked, duration, err := GetHotspotFoldersResults(ctx, cfg, mgr)
 	if err != nil {
 		return err
@@ -66,7 +67,7 @@ func ExecuteHotspotFolders(ctx context.Context, cfg *contract.Config, mgr contra
 }
 
 // GetHotspotFoldersResults runs the folder-level analysis and returns the ranked results.
-func GetHotspotFoldersResults(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) ([]schema.FolderResult, time.Duration, error) {
+func GetHotspotFoldersResults(ctx context.Context, cfg *config.Config, mgr contract.CacheManager) ([]schema.FolderResult, time.Duration, error) {
 	start := time.Now()
 	client := contract.NewLocalGitClient()
 	output, err := runSingleAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, client, mgr)
@@ -80,7 +81,7 @@ func GetHotspotFoldersResults(ctx context.Context, cfg *contract.Config, mgr con
 
 // ExecuteHotspotCompare runs two file-level analyses (Base and Target)
 // based on Git references and computes the delta results.
-func ExecuteHotspotCompare(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) error {
+func ExecuteHotspotCompare(ctx context.Context, cfg *config.Config, mgr contract.CacheManager) error {
 	// Print single header for the comparison
 	internal.LogCompareHeader(cfg.Git, cfg.Scoring, cfg.Compare)
 
@@ -95,7 +96,7 @@ func ExecuteHotspotCompare(ctx context.Context, cfg *contract.Config, mgr contra
 }
 
 // GetHotspotCompareResults runs the file-level comparison analysis and returns the results.
-func GetHotspotCompareResults(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) (schema.ComparisonResult, time.Duration, error) {
+func GetHotspotCompareResults(ctx context.Context, cfg *config.Config, mgr contract.CacheManager) (schema.ComparisonResult, time.Duration, error) {
 	start := time.Now()
 	client := contract.NewLocalGitClient()
 
@@ -115,7 +116,7 @@ func GetHotspotCompareResults(ctx context.Context, cfg *contract.Config, mgr con
 // based on Git references and computes the delta results.
 // It follows the same pattern as ExecuteHotspotCompare but aggregates to folders
 // before performing the comparison.
-func ExecuteHotspotCompareFolders(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) error {
+func ExecuteHotspotCompareFolders(ctx context.Context, cfg *config.Config, mgr contract.CacheManager) error {
 	start := time.Now()
 	client := contract.NewLocalGitClient()
 
@@ -139,7 +140,7 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *contract.Config, mgr
 }
 
 // ExecuteHotspotTimeseries runs multiple analyses over overlapping, dynamic-lookback time windows.
-func ExecuteHotspotTimeseries(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) error {
+func ExecuteHotspotTimeseries(ctx context.Context, cfg *config.Config, mgr contract.CacheManager) error {
 	result, duration, err := GetHotspotTimeseriesResults(ctx, cfg, mgr)
 	if err != nil {
 		return err
@@ -155,7 +156,7 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *contract.Config, mgr con
 }
 
 // GetHotspotTimeseriesResults runs the timeseries analysis and returns the results.
-func GetHotspotTimeseriesResults(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) (schema.TimeseriesResult, time.Duration, error) {
+func GetHotspotTimeseriesResults(ctx context.Context, cfg *config.Config, mgr contract.CacheManager) (schema.TimeseriesResult, time.Duration, error) {
 	start := time.Now()
 
 	// Get timeseries-specific parameters from config
@@ -199,7 +200,7 @@ func GetHotspotTimeseriesResults(ctx context.Context, cfg *contract.Config, mgr 
 
 // ExecuteHotspotMetrics displays the formal definitions of all scoring modes.
 // This is a static display that does not require Git analysis.
-func ExecuteHotspotMetrics(_ context.Context, cfg *contract.Config, _ contract.CacheManager) error {
+func ExecuteHotspotMetrics(_ context.Context, cfg *config.Config, _ contract.CacheManager) error {
 	writer := outwriter.NewOutWriter()
 	return outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
 		return writer.WriteMetrics(w, cfg.Scoring.CustomWeights, cfg.Output)
@@ -209,7 +210,7 @@ func ExecuteHotspotMetrics(_ context.Context, cfg *contract.Config, _ contract.C
 // ExecuteHotspotCheck runs the check command for CI/CD gating.
 // It analyzes only files changed between base and target refs, checks them against thresholds,
 // and returns a non-zero exit code if any files exceed the thresholds.
-func ExecuteHotspotCheck(ctx context.Context, cfg *contract.Config, mgr contract.CacheManager) error {
+func ExecuteHotspotCheck(ctx context.Context, cfg *config.Config, mgr contract.CacheManager) error {
 	start := time.Now()
 
 	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, mgr)

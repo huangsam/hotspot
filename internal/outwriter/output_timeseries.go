@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/olekukonko/tablewriter"
@@ -14,7 +15,7 @@ import (
 )
 
 // WriteTimeseriesResults outputs the timeseries results, dispatching based on the output format configured.
-func WriteTimeseriesResults(w io.Writer, result schema.TimeseriesResult, output contract.OutputSettings, runtime contract.RuntimeSettings, duration time.Duration) error {
+func WriteTimeseriesResults(w io.Writer, result schema.TimeseriesResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
 	// Create formatters using helper
 	fmtFloat, _ := createFormatters(output.GetPrecision())
 
@@ -38,7 +39,7 @@ func WriteTimeseriesResults(w io.Writer, result schema.TimeseriesResult, output 
 }
 
 // writeTimeseriesTable writes the timeseries in a four-column table.
-func writeTimeseriesTable(result schema.TimeseriesResult, output contract.OutputSettings, runtime contract.RuntimeSettings, fmtFloat func(float64) string, duration time.Duration, writer io.Writer) error {
+func writeTimeseriesTable(result schema.TimeseriesResult, output config.OutputSettings, runtime config.RuntimeSettings, fmtFloat func(float64) string, duration time.Duration, writer io.Writer) error {
 	table := tablewriter.NewWriter(writer)
 	defer func() { _ = table.Close() }()
 

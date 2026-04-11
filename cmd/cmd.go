@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
@@ -42,15 +43,15 @@ func init() {
 	rootCmd.PersistentFlags().String("end", "", "End date in ISO8601 or time ago")
 	rootCmd.PersistentFlags().String("exclude", "", "Comma-separated list of path prefixes or patterns to ignore")
 	rootCmd.PersistentFlags().StringP("filter", "f", "", "Filter targets by path prefix")
-	rootCmd.PersistentFlags().IntP("limit", "l", contract.DefaultResultLimit, "Number of results to display")
+	rootCmd.PersistentFlags().IntP("limit", "l", config.DefaultResultLimit, "Number of results to display")
 	rootCmd.PersistentFlags().String("mode", string(schema.HotMode), "Scoring mode: hot or risk or complexity or stale")
 	rootCmd.PersistentFlags().String("output", string(schema.TextOut), "Output format: text or csv or json or parquet")
 	rootCmd.PersistentFlags().String("output-file", "", "Optional path to write output to")
 	rootCmd.PersistentFlags().Bool("owner", false, "Print per-target owner")
-	rootCmd.PersistentFlags().Int("precision", contract.DefaultPrecision, "Decimal precision for numeric columns")
+	rootCmd.PersistentFlags().Int("precision", config.DefaultPrecision, "Decimal precision for numeric columns")
 	rootCmd.PersistentFlags().String("profile", "", "Enable profiling and write profiles to files with this prefix")
 	rootCmd.PersistentFlags().String("start", "", "Start date in ISO8601 or time ago")
-	rootCmd.PersistentFlags().Int("workers", contract.DefaultWorkers, "Number of concurrent workers")
+	rootCmd.PersistentFlags().Int("workers", config.DefaultWorkers, "Number of concurrent workers")
 	rootCmd.PersistentFlags().Int("width", 0, "Terminal width override (0 = auto-detect)")
 	rootCmd.PersistentFlags().String("cache-backend", string(schema.SQLiteBackend), "Cache backend: sqlite or mysql or postgresql or none")
 	rootCmd.PersistentFlags().String("cache-db-connect", "", "Database connection string for mysql/postgresql (e.g., user:pass@tcp(host:port)/dbname)")
