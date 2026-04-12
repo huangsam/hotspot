@@ -15,6 +15,7 @@ import (
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/outwriter"
 	"github.com/huangsam/hotspot/schema"
 )
@@ -38,7 +39,7 @@ func ExecuteHotspotFiles(ctx context.Context, cfg *config.Config, mgr contract.C
 // GetHotspotFilesResults runs the file-level analysis and returns the ranked results.
 func GetHotspotFilesResults(ctx context.Context, cfg *config.Config, mgr contract.CacheManager) ([]schema.FileResult, time.Duration, error) {
 	start := time.Now()
-	client := contract.NewLocalGitClient()
+	client := git.NewLocalGitClient()
 	output, err := runSingleAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, client, mgr)
 	if err != nil {
 		return nil, 0, err
@@ -68,7 +69,7 @@ func ExecuteHotspotFolders(ctx context.Context, cfg *config.Config, mgr contract
 // GetHotspotFoldersResults runs the folder-level analysis and returns the ranked results.
 func GetHotspotFoldersResults(ctx context.Context, cfg *config.Config, mgr contract.CacheManager) ([]schema.FolderResult, time.Duration, error) {
 	start := time.Now()
-	client := contract.NewLocalGitClient()
+	client := git.NewLocalGitClient()
 	output, err := runFolderAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, client, mgr)
 	if err != nil {
 		return nil, 0, err
@@ -98,7 +99,7 @@ func ExecuteHotspotCompare(ctx context.Context, cfg *config.Config, mgr contract
 // GetHotspotCompareResults runs the file-level comparison analysis and returns the results.
 func GetHotspotCompareResults(ctx context.Context, cfg *config.Config, mgr contract.CacheManager) (schema.ComparisonResult, time.Duration, error) {
 	start := time.Now()
-	client := contract.NewLocalGitClient()
+	client := git.NewLocalGitClient()
 
 	baseOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.Compare.BaseRef, mgr)
 	if err != nil {
@@ -118,7 +119,7 @@ func GetHotspotCompareResults(ctx context.Context, cfg *config.Config, mgr contr
 // before performing the comparison.
 func ExecuteHotspotCompareFolders(ctx context.Context, cfg *config.Config, mgr contract.CacheManager) error {
 	start := time.Now()
-	client := contract.NewLocalGitClient()
+	client := git.NewLocalGitClient()
 
 	// Print single header for the comparison only if output is text
 	if cfg.Output.Format == schema.TextOut {
@@ -178,7 +179,7 @@ func GetHotspotTimeseriesResults(ctx context.Context, cfg *config.Config, mgr co
 		return schema.TimeseriesResult{}, 0, fmt.Errorf("--points must be at least 1 (received %d). Use --points 3 to --points 10 for meaningful trends", numPoints)
 	}
 
-	client := contract.NewLocalGitClient()
+	client := git.NewLocalGitClient()
 
 	// Normalize and validate the path relative to repo root
 	normalizedPath, err := contract.NormalizeTimeseriesPath(cfg.Git.RepoPath, path)

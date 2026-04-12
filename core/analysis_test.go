@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +17,7 @@ func TestAnalyzeFileCommon(t *testing.T) {
 	ctx := context.Background()
 
 	// Create mock client
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 
 	// No git calls needed - all data comes from aggregation phase
 
@@ -65,7 +65,7 @@ func TestAnalyzeRepo(t *testing.T) {
 	ctx := context.Background()
 
 	// Create mock client
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 
 	// No git calls needed - all data comes from aggregation phase
 
@@ -134,7 +134,7 @@ func TestAnalyzeRepo_ConcurrentWorkers(t *testing.T) {
 	ctx := context.Background()
 
 	// Create mock client
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 
 	// Create config with multiple workers
 	cfg := &config.Config{

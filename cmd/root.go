@@ -9,6 +9,7 @@ import (
 
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
@@ -163,7 +164,7 @@ func sharedSetup(ctx context.Context, cmd *cobra.Command, args []string) error {
 
 	// 4. Run all validation and complex parsing.
 	// This function now populates the global 'cfg' from 'input'.
-	client := contract.NewLocalGitClient()
+	client := git.NewLocalGitClient()
 	if err := config.ProcessAndValidate(ctx, cfg, client, input); err != nil {
 		if cmd == nil || cmd.Name() != "mcp" {
 			return err

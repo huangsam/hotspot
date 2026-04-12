@@ -9,6 +9,7 @@ import (
 
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
@@ -105,7 +106,7 @@ func TestCheckCacheHit_CacheMiss_UnmarshalError(t *testing.T) {
 }
 
 func TestGenerateCacheKey(t *testing.T) {
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 	cfg := &config.Config{
 		Git: config.GitConfig{
 			RepoPath:  "/test/repo",
@@ -139,7 +140,7 @@ func TestGenerateCacheKey(t *testing.T) {
 }
 
 func TestGenerateCacheKey_RepoHashError(t *testing.T) {
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 	cfg := &config.Config{
 		Git: config.GitConfig{
 			RepoPath:  "/test/repo",
@@ -168,7 +169,7 @@ func TestGenerateCacheKey_RepoHashError(t *testing.T) {
 
 func TestCachedAggregateActivity_CacheHit(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 	mockMgr := &MockCacheManager{}
 	mockStore := &MockCacheStore{}
 
@@ -205,7 +206,7 @@ func TestCachedAggregateActivity_CacheHit(t *testing.T) {
 
 func TestCachedAggregateActivity_CacheMiss(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 	mockMgr := &MockCacheManager{}
 	mockStore := &MockCacheStore{}
 
@@ -240,7 +241,7 @@ func TestCachedAggregateActivity_CacheMiss(t *testing.T) {
 
 func TestCachedAggregateActivity_NoCacheManager(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 	mockMgr := &MockCacheManager{}
 
 	// Setup for aggregateActivity
@@ -270,7 +271,7 @@ func TestCachedAggregateActivity_NoCacheManager(t *testing.T) {
 
 func TestCachedAggregateActivity_AggregateError(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 	mockMgr := &MockCacheManager{}
 	mockStore := &MockCacheStore{}
 

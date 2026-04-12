@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +15,7 @@ import (
 
 func TestRunTimeseriesAnalysis_Success(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 	mockMgr := &iocache.MockCacheManager{}
 
 	now := time.Date(2024, 6, 15, 10, 30, 0, 0, time.UTC)
@@ -85,7 +85,7 @@ func TestRunTimeseriesAnalysis_Success(t *testing.T) {
 
 func TestRunTimeseriesAnalysis_GetOldestCommitError(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 	mockMgr := &iocache.MockCacheManager{}
 
 	now := time.Date(2024, 6, 15, 10, 30, 0, 0, time.UTC)
@@ -134,7 +134,7 @@ func TestRunTimeseriesAnalysis_GetOldestCommitError(t *testing.T) {
 
 func TestAnalyzeTimeseriesPoint_File(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 	mockMgr := &iocache.MockCacheManager{}
 
 	path := "main.go"
@@ -175,7 +175,7 @@ func TestAnalyzeTimeseriesPoint_File(t *testing.T) {
 
 func TestAnalyzeTimeseriesPoint_Folder(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 	mockMgr := &iocache.MockCacheManager{}
 
 	path := "src/"
@@ -217,7 +217,7 @@ func TestAnalyzeTimeseriesPoint_Folder(t *testing.T) {
 
 func TestAnalyzeTimeseriesPoint_NoData(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 	mockMgr := &iocache.MockCacheManager{}
 
 	path := "nonexistent.go"
@@ -255,7 +255,7 @@ func TestAnalyzeTimeseriesPoint_NoData(t *testing.T) {
 
 func TestAnalyzeTimeseriesPoint_PathNotFound(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 	mockMgr := &iocache.MockCacheManager{}
 
 	path := "missing.go"

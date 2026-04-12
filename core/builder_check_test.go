@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
@@ -26,7 +26,7 @@ func TestCheckResultBuilder_ValidatePrerequisites_NoFilesChanged(t *testing.T) {
 		},
 	}
 
-	mockGitClient := &contract.MockGitClient{}
+	mockGitClient := &git.MockGitClient{}
 	mockGitClient.On("GetChangedFilesBetweenRefs", ctx, "/test/repo", "main", "feature").Return([]string{}, nil)
 
 	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, &iocache.MockCacheManager{})
@@ -52,7 +52,7 @@ func TestCheckResultBuilder_ValidatePrerequisites_AllFilesExcluded(t *testing.T)
 		},
 	}
 
-	mockGitClient := &contract.MockGitClient{}
+	mockGitClient := &git.MockGitClient{}
 	mockGitClient.On("GetChangedFilesBetweenRefs", ctx, "/test/repo", "main", "feature").Return([]string{"main.go", "test.go"}, nil)
 
 	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, &iocache.MockCacheManager{})
@@ -79,7 +79,7 @@ func TestCheckResultBuilder_ValidatePrerequisites_WithValidFiles(t *testing.T) {
 		},
 	}
 
-	mockGitClient := &contract.MockGitClient{}
+	mockGitClient := &git.MockGitClient{}
 	mockGitClient.On("GetChangedFilesBetweenRefs", ctx, "/test/repo", "main", "feature").Return([]string{"main.go", "README.md"}, nil)
 
 	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, &iocache.MockCacheManager{})
@@ -124,7 +124,7 @@ func TestCheckResultBuilder_PrepareAnalysisConfig(t *testing.T) {
 	}
 
 	targetTime := time.Now()
-	mockGitClient := &contract.MockGitClient{}
+	mockGitClient := &git.MockGitClient{}
 	mockGitClient.On("GetCommitTime", ctx, "/test/repo", "feature").Return(targetTime, nil)
 
 	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, &iocache.MockCacheManager{})

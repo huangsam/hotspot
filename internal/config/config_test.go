@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,7 +21,7 @@ func TestProcessAndValidate(t *testing.T) {
 		name        string
 		input       *RawInput
 		expectError bool
-		setupMock   func(*contract.MockGitClient, string) // Pass the expected working directory
+		setupMock   func(*git.MockGitClient, string) // Pass the expected working directory
 	}{
 		{
 			name: "valid minimal config",
@@ -36,7 +36,7 @@ func TestProcessAndValidate(t *testing.T) {
 				Color:       "yes",
 			},
 			expectError: false,
-			setupMock: func(mock *contract.MockGitClient, workDir string) {
+			setupMock: func(mock *git.MockGitClient, workDir string) {
 				ctx := context.Background()
 				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
 			},
@@ -72,7 +72,7 @@ func TestProcessAndValidate(t *testing.T) {
 				Color:       "yes",
 			},
 			expectError: false,
-			setupMock: func(mock *contract.MockGitClient, workDir string) {
+			setupMock: func(mock *git.MockGitClient, workDir string) {
 				ctx := context.Background()
 				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
 			},
@@ -110,7 +110,7 @@ func TestProcessAndValidate(t *testing.T) {
 				Color:       "yes",
 			},
 			expectError: false,
-			setupMock: func(mock *contract.MockGitClient, workDir string) {
+			setupMock: func(mock *git.MockGitClient, workDir string) {
 				ctx := context.Background()
 				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
 			},
@@ -298,7 +298,7 @@ func TestProcessAndValidate(t *testing.T) {
 				Color:          "yes",
 			},
 			expectError: false,
-			setupMock: func(mock *contract.MockGitClient, workDir string) {
+			setupMock: func(mock *git.MockGitClient, workDir string) {
 				ctx := context.Background()
 				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
 			},
@@ -317,7 +317,7 @@ func TestProcessAndValidate(t *testing.T) {
 				Color:        "yes",
 			},
 			expectError: false,
-			setupMock: func(mock *contract.MockGitClient, workDir string) {
+			setupMock: func(mock *git.MockGitClient, workDir string) {
 				ctx := context.Background()
 				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
 			},
@@ -338,7 +338,7 @@ func TestProcessAndValidate(t *testing.T) {
 				Color:             "yes",
 			},
 			expectError: false,
-			setupMock: func(mock *contract.MockGitClient, workDir string) {
+			setupMock: func(mock *git.MockGitClient, workDir string) {
 				ctx := context.Background()
 				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
 			},
@@ -360,7 +360,7 @@ func TestProcessAndValidate(t *testing.T) {
 				Color:             "yes",
 			},
 			expectError: false,
-			setupMock: func(mock *contract.MockGitClient, workDir string) {
+			setupMock: func(mock *git.MockGitClient, workDir string) {
 				ctx := context.Background()
 				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
 			},
@@ -382,7 +382,7 @@ func TestProcessAndValidate(t *testing.T) {
 				Color:             "yes",
 			},
 			expectError: false,
-			setupMock: func(mock *contract.MockGitClient, workDir string) {
+			setupMock: func(mock *git.MockGitClient, workDir string) {
 				ctx := context.Background()
 				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
 			},
@@ -404,7 +404,7 @@ func TestProcessAndValidate(t *testing.T) {
 				Color:             "yes",
 			},
 			expectError: false,
-			setupMock: func(mock *contract.MockGitClient, workDir string) {
+			setupMock: func(mock *git.MockGitClient, workDir string) {
 				ctx := context.Background()
 				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
 			},
@@ -449,7 +449,7 @@ func TestProcessAndValidate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockClient := new(contract.MockGitClient)
+			mockClient := new(git.MockGitClient)
 
 			// Dynamically determine the expected working directory
 			workDir, err := filepath.Abs(".")

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +15,7 @@ import (
 
 func TestRunSingleAnalysisCore_Success(t *testing.T) {
 	ctx := WithSuppressHeader(context.Background())
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 	mockMgr := &iocache.MockCacheManager{}
 
 	// Setup mock expectations
@@ -56,7 +56,7 @@ func TestRunSingleAnalysisCore_Success(t *testing.T) {
 
 func TestRunSingleAnalysisCore_NoFilesFound(t *testing.T) {
 	ctx := WithSuppressHeader(context.Background())
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 	mockMgr := &iocache.MockCacheManager{}
 
 	// Setup mock expectations - return empty file list
@@ -92,7 +92,7 @@ func TestRunSingleAnalysisCore_NoFilesFound(t *testing.T) {
 
 func TestRunSingleAnalysisCore_AggregationError(t *testing.T) {
 	ctx := WithSuppressHeader(context.Background())
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 	mockMgr := &iocache.MockCacheManager{}
 
 	// Setup mock expectations - aggregation fails
@@ -127,7 +127,7 @@ func TestRunSingleAnalysisCore_AggregationError(t *testing.T) {
 
 func TestRunCompareAnalysisForRef(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 	mockMgr := &iocache.MockCacheManager{}
 
 	ref := "main"
@@ -173,7 +173,7 @@ func TestRunCompareAnalysisForRef(t *testing.T) {
 
 func TestRunCompareAnalysisForRef_CommitTimeError(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 	mockMgr := &iocache.MockCacheManager{}
 
 	ref := "main"
@@ -201,7 +201,7 @@ func TestRunCompareAnalysisForRef_CommitTimeError(t *testing.T) {
 
 func TestAnalyzeAllFilesAtRef(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 	mockMgr := &iocache.MockCacheManager{}
 
 	ref := "feature-branch"
@@ -245,7 +245,7 @@ func TestAnalyzeAllFilesAtRef(t *testing.T) {
 
 func TestAnalyzeAllFilesAtRef_EmptyAfterFiltering(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 	mockMgr := &iocache.MockCacheManager{}
 
 	ref := "feature-branch"
@@ -283,7 +283,7 @@ func TestAnalyzeAllFilesAtRef_EmptyAfterFiltering(t *testing.T) {
 
 func TestRunFollowPass(t *testing.T) {
 	ctx := WithSuppressHeader(context.Background())
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 
 	// Create test data
 	ranked := []schema.FileResult{
@@ -339,7 +339,7 @@ func TestRunFollowPass(t *testing.T) {
 
 func TestRunFollowPass_EmptyInput(t *testing.T) {
 	ctx := WithSuppressHeader(context.Background())
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 
 	var ranked []schema.FileResult
 	output := &schema.AggregateOutput{}
@@ -359,7 +359,7 @@ func TestRunFollowPass_EmptyInput(t *testing.T) {
 
 func TestGetAnalysisWindowForRef(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 
 	ref := "v1.0.0"
 	lookback := 90 * 24 * time.Hour // 90 days
@@ -380,7 +380,7 @@ func TestGetAnalysisWindowForRef(t *testing.T) {
 
 func TestGetAnalysisWindowForRef_Error(t *testing.T) {
 	ctx := context.Background()
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 
 	ref := "nonexistent-ref"
 

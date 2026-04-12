@@ -7,6 +7,7 @@ import (
 	"github.com/huangsam/hotspot/core/agg"
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -40,7 +41,7 @@ func NewCheckResultBuilder(
 		gitSettings:     gitSettings,
 		scoringSettings: scoringSettings,
 		compareSettings: compareSettings,
-		client:          contract.NewLocalGitClient(),
+		client:          git.NewLocalGitClient(),
 		mgr:             mgr,
 		ctx:             ctx,
 	}

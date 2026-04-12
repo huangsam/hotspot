@@ -6,6 +6,7 @@ import (
 
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/git"
 	mcp_internal "github.com/huangsam/hotspot/internal/mcp"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/assert"
@@ -24,7 +25,7 @@ func TestMCPServerHandlers_ValidationErrors(t *testing.T) {
 
 	// Create a dummy manager and mock client
 	var mgr contract.CacheManager
-	client := &contract.MockGitClient{}
+	client := &git.MockGitClient{}
 	s := mcp_internal.NewMCPServer(baseCfg, mgr, client)
 
 	ctx := context.Background()

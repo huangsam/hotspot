@@ -1,9 +1,10 @@
-package contract
+package git
 
 import (
 	"context"
 	"time"
 
+	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -12,7 +13,7 @@ type MockGitClient struct {
 	mock.Mock
 }
 
-var _ GitClient = &MockGitClient{} // Compile-time check
+var _ contract.GitClient = &MockGitClient{} // Compile-time check
 
 // Run implements the GitClient interface.
 func (m *MockGitClient) Run(ctx context.Context, repoPath string, args ...string) ([]byte, error) {

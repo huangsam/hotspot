@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -24,7 +24,7 @@ func TestAggregateActivity(t *testing.T) {
 	ctx := context.Background()
 
 	// Create mock client
-	mockClient := &contract.MockGitClient{}
+	mockClient := &git.MockGitClient{}
 
 	// Setup expectations
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return(strings.Split(strings.TrimSpace(fileListFixture), "\n"), nil)
