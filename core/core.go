@@ -178,7 +178,6 @@ func GetHotspotTimeseriesResults(ctx context.Context, cfg *config.Config, mgr co
 		return schema.TimeseriesResult{}, 0, fmt.Errorf("--points must be at least 1 (received %d). Use --points 3 to --points 10 for meaningful trends", numPoints)
 	}
 
-	now := time.Now()
 	client := contract.NewLocalGitClient()
 
 	// Normalize and validate the path relative to repo root
@@ -196,7 +195,8 @@ func GetHotspotTimeseriesResults(ctx context.Context, cfg *config.Config, mgr co
 	isFolder := info.IsDir()
 
 	// Execute the timeseries analysis
-	timeseriesPoints := runTimeseriesAnalysis(ctx, cfg.Git, cfg.Scoring, client, normalizedPath, isFolder, now, interval, numPoints, mgr)
+	anchor := cfg.Git.GetEndTime()
+	timeseriesPoints := runTimeseriesAnalysis(ctx, cfg.Git, cfg.Scoring, client, normalizedPath, isFolder, anchor, interval, numPoints, mgr)
 
 	result := schema.TimeseriesResult{Points: timeseriesPoints}
 	return result, time.Since(start), nil
