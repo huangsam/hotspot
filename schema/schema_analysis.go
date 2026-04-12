@@ -2,7 +2,8 @@ package schema
 
 // SingleAnalysisOutput is for one of the core algorithms.
 type SingleAnalysisOutput struct {
-	FileResults []FileResult
+	FileResults   []FileResult
+	FolderResults []FolderResult
 	*AggregateOutput
 }
 

@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/huangsam/hotspot/core/agg"
 	"github.com/huangsam/hotspot/core/algo"
 
 	"github.com/huangsam/hotspot/internal"
@@ -70,12 +69,11 @@ func ExecuteHotspotFolders(ctx context.Context, cfg *config.Config, mgr contract
 func GetHotspotFoldersResults(ctx context.Context, cfg *config.Config, mgr contract.CacheManager) ([]schema.FolderResult, time.Duration, error) {
 	start := time.Now()
 	client := contract.NewLocalGitClient()
-	output, err := runSingleAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, client, mgr)
+	output, err := runFolderAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, client, mgr)
 	if err != nil {
 		return nil, 0, err
 	}
-	folderResults := agg.AggregateAndScoreFolders(cfg.Git, cfg.Scoring, output.FileResults)
-	ranked := algo.RankFolders(folderResults, cfg.Output.ResultLimit)
+	ranked := algo.RankFolders(output.FolderResults, cfg.Output.ResultLimit)
 	return ranked, time.Since(start), nil
 }
 

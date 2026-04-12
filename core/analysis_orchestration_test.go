@@ -21,8 +21,8 @@ func TestRunSingleAnalysisCore_Success(t *testing.T) {
 	// Setup mock expectations
 	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
 	mockMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
-	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{"main.go", "core/agg.go"}, nil)
-	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
+	mockClient.On("ListFilesAtRef", mock.Anything, "/test/repo", "HEAD").Return([]string{"main.go", "core/agg.go"}, nil)
+	mockClient.On("GetActivityLog", mock.Anything, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
 
 	cfg := &config.Config{
 		Git: config.GitConfig{
@@ -61,8 +61,8 @@ func TestRunSingleAnalysisCore_NoFilesFound(t *testing.T) {
 	// Setup mock expectations - return empty file list
 	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
 	mockMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
-	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{}, nil)
-	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte(""), nil)
+	mockClient.On("ListFilesAtRef", mock.Anything, "/test/repo", "HEAD").Return([]string{}, nil)
+	mockClient.On("GetActivityLog", mock.Anything, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte(""), nil)
 
 	cfg := &config.Config{
 		Git: config.GitConfig{
@@ -96,8 +96,8 @@ func TestRunSingleAnalysisCore_AggregationError(t *testing.T) {
 	// Setup mock expectations - aggregation fails
 	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
 	mockMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
-	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{"main.go"}, nil)
-	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(nil, assert.AnError)
+	mockClient.On("ListFilesAtRef", mock.Anything, "/test/repo", "HEAD").Return([]string{"main.go"}, nil)
+	mockClient.On("GetActivityLog", mock.Anything, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(nil, assert.AnError)
 
 	cfg := &config.Config{
 		Git: config.GitConfig{
@@ -133,10 +133,10 @@ func TestRunCompareAnalysisForRef(t *testing.T) {
 
 	// Setup mock expectations
 	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
-	mockClient.On("GetCommitTime", ctx, "/test/repo", ref).Return(commitTime, nil)
-	mockClient.On("ListFilesAtRef", ctx, "/test/repo", ref).Return([]string{"main.go", "core/agg.go"}, nil)
-	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return([]string{"main.go", "core/agg.go"}, nil) // For aggregateActivity
-	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-06-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
+	mockClient.On("GetCommitTime", mock.Anything, "/test/repo", ref).Return(commitTime, nil)
+	mockClient.On("ListFilesAtRef", mock.Anything, "/test/repo", ref).Return([]string{"main.go", "core/agg.go"}, nil)
+	mockClient.On("ListFilesAtRef", mock.Anything, "/test/repo", "HEAD").Return([]string{"main.go", "core/agg.go"}, nil) // For aggregateActivity
+	mockClient.On("GetActivityLog", mock.Anything, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-06-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
 
 	cfg := &config.Config{
 		Git: config.GitConfig{
@@ -175,7 +175,7 @@ func TestRunCompareAnalysisForRef_CommitTimeError(t *testing.T) {
 	ref := "main"
 
 	// Setup mock expectations - commit time lookup fails
-	mockClient.On("GetCommitTime", ctx, "/test/repo", ref).Return(time.Time{}, assert.AnError)
+	mockClient.On("GetCommitTime", mock.Anything, "/test/repo", ref).Return(time.Time{}, assert.AnError)
 
 	cfg := &config.Config{
 		Git: config.GitConfig{
@@ -204,9 +204,9 @@ func TestAnalyzeAllFilesAtRef(t *testing.T) {
 
 	// Setup mock expectations
 	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
-	mockClient.On("ListFilesAtRef", ctx, "/test/repo", ref).Return([]string{"main.go", "core/agg.go", "test_main.go"}, nil)
-	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return([]string{"main.go", "core/agg.go", "test_main.go"}, nil) // For aggregateActivity
-	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
+	mockClient.On("ListFilesAtRef", mock.Anything, "/test/repo", ref).Return([]string{"main.go", "core/agg.go", "test_main.go"}, nil)
+	mockClient.On("ListFilesAtRef", mock.Anything, "/test/repo", "HEAD").Return([]string{"main.go", "core/agg.go", "test_main.go"}, nil) // For aggregateActivity
+	mockClient.On("GetActivityLog", mock.Anything, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
 
 	cfg := &config.Config{
 		Git: config.GitConfig{
@@ -246,8 +246,10 @@ func TestAnalyzeAllFilesAtRef_EmptyAfterFiltering(t *testing.T) {
 	ref := "feature-branch"
 
 	// Setup mock expectations - all files get filtered out
-	mockClient.On("ListFilesAtRef", ctx, "/test/repo", ref).Return([]string{"test_main.go", "test_utils.go"}, nil)
-	// No GetActivityLog mock needed since all files are filtered out before aggregation
+	mockMgr.On("GetActivityStore").Return(nil) // No caching for test
+	mockClient.On("ListFilesAtRef", mock.Anything, "/test/repo", ref).Return([]string{"test_main.go", "test_utils.go"}, nil)
+	mockClient.On("ListFilesAtRef", mock.Anything, "/test/repo", "HEAD").Return([]string{"test_main.go", "test_utils.go"}, nil)
+	mockClient.On("GetActivityLog", mock.Anything, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte(""), nil)
 
 	cfg := &config.Config{
 		Git: config.GitConfig{
@@ -270,6 +272,7 @@ func TestAnalyzeAllFilesAtRef_EmptyAfterFiltering(t *testing.T) {
 	assert.Equal(t, 0, len(result)) // Should return empty slice, not error
 
 	mockClient.AssertExpectations(t)
+	mockMgr.AssertExpectations(t)
 }
 
 func TestRunFollowPass(t *testing.T) {
@@ -313,9 +316,9 @@ func TestRunFollowPass(t *testing.T) {
 	}
 
 	// Mock the GetFileActivityLog call that will be made with --follow
-	mockClient.On("GetFileActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "main.go", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time"), true).
+	mockClient.On("GetFileActivityLog", mock.Anything, "/test/repo", "main.go", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time"), true).
 		Return([]byte("--follow123|Alice|2024-01-01T00:00:00Z\nDELIMITER_COMMIT_STARTAlice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
-	mockClient.On("GetFileActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "core/agg.go", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time"), true).
+	mockClient.On("GetFileActivityLog", mock.Anything, "/test/repo", "core/agg.go", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time"), true).
 		Return([]byte("--follow456|Bob|2024-01-01T00:00:00Z\nDELIMITER_COMMIT_STARTBob|2024-01-01T00:00:00Z\n1\t0\tcore/agg.go\n"), nil)
 
 	result := runFollowPass(ctx, cfg.Git, cfg.Scoring, cfg.Output, mockClient, ranked, output)
@@ -358,7 +361,7 @@ func TestGetAnalysisWindowForRef(t *testing.T) {
 	expectedStart := commitTime.Add(-lookback)
 
 	// Setup mock expectations
-	mockClient.On("GetCommitTime", ctx, "/test/repo", ref).Return(commitTime, nil)
+	mockClient.On("GetCommitTime", mock.Anything, "/test/repo", ref).Return(commitTime, nil)
 
 	startTime, endTime, err := getAnalysisWindowForRef(ctx, mockClient, "/test/repo", ref, lookback)
 
@@ -376,7 +379,7 @@ func TestGetAnalysisWindowForRef_Error(t *testing.T) {
 	ref := "nonexistent-ref"
 
 	// Setup mock expectations - commit time lookup fails
-	mockClient.On("GetCommitTime", ctx, "/test/repo", ref).Return(time.Time{}, assert.AnError)
+	mockClient.On("GetCommitTime", mock.Anything, "/test/repo", ref).Return(time.Time{}, assert.AnError)
 
 	startTime, endTime, err := getAnalysisWindowForRef(ctx, mockClient, "/test/repo", ref, 30*24*time.Hour)
 
