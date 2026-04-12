@@ -9,7 +9,7 @@ import (
 
 // BackfillAnalysisURNs scans existing analysis runs and populates the 'urn' column.
 // It uses the 'repo_path' from the config_params and establishes a 'local:' URN for legacy runs.
-func BackfillAnalysisURNs(store contract.AnalysisStore) error {
+func BackfillAnalysisURNs(store *AnalysisStoreImpl) error {
 	runs, err := store.GetAllAnalysisRuns()
 	if err != nil {
 		return fmt.Errorf("failed to fetch analysis runs for backfill: %w", err)
@@ -37,11 +37,8 @@ func BackfillAnalysisURNs(store contract.AnalysisStore) error {
 		// For backfill of legacy runs, we use the local path URN.
 		urn := "local:" + repoPath
 
-		if impl, ok := store.(*AnalysisStoreImpl); ok {
-			err = impl.UpdateAnalysisRunURN(run.AnalysisID, urn)
-			if err != nil {
-				contract.LogWarn(fmt.Sprintf("Failed to backfill URN for run %d", run.AnalysisID), err)
-			}
+		if err = store.UpdateAnalysisRunURN(run.AnalysisID, urn); err != nil {
+			contract.LogWarn(fmt.Sprintf("Failed to backfill URN for run %d", run.AnalysisID), err)
 		}
 	}
 
