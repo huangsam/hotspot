@@ -37,6 +37,42 @@ func TestParseRelativeTimeUnit(t *testing.T) {
 			expected:    fixedNow.Add(time.Duration(-10) * 24 * time.Hour), // 10 days before fixedNow
 			expectError: false,
 		},
+		{
+			name:        "valid short format (days)",
+			input:       "30d ago",
+			expected:    fixedNow.Add(time.Duration(-30) * 24 * time.Hour),
+			expectError: false,
+		},
+		{
+			name:        "valid short format with space",
+			input:       "1 w ago",
+			expected:    fixedNow.Add(time.Duration(-1) * 7 * 24 * time.Hour),
+			expectError: false,
+		},
+		{
+			name:        "valid short format month",
+			input:       "6mo ago",
+			expected:    fixedNow.AddDate(0, -6, 0),
+			expectError: false,
+		},
+		{
+			name:        "valid short format year",
+			input:       "1y ago",
+			expected:    fixedNow.AddDate(-1, 0, 0),
+			expectError: false,
+		},
+		{
+			name:        "valid short format hour",
+			input:       "12h ago",
+			expected:    fixedNow.Add(time.Duration(-12) * time.Hour),
+			expectError: false,
+		},
+		{
+			name:        "valid short format minute",
+			input:       "15m ago",
+			expected:    fixedNow.Add(time.Duration(-15) * time.Minute),
+			expectError: false,
+		},
 		// Invalid tests: Ensure only supported formats/units are accepted
 		{
 			name:        "invalid missing ago",
@@ -102,6 +138,15 @@ func TestParseLookbackDuration(t *testing.T) {
 		// --- Case/Spacing Tolerance Tests ---
 		{"mixed case", "3 MoNtHs", 3 * 30 * day, false},
 		{"extra space", " 1  day ", day, false},
+
+		// --- Short format Tests ---
+		{"short format days", "30d", 30 * day, false},
+		{"short format weeks", "2w", 2 * 7 * day, false},
+		{"short format months", "3mo", 3 * 30 * day, false},
+		{"short format years", "1y", 365 * day, false},
+		{"short format hours", "48h", 48 * time.Hour, false},
+		{"short format minutes", "48m", 48 * time.Minute, false},
+		{"short format with space", "7 d", 7 * day, false},
 
 		// --- Error/Invalid Tests ---
 		{"invalid format (missing value)", "months", 0, true},
@@ -200,6 +245,10 @@ func FuzzParseRelativeTime(f *testing.F) {
 		"6 minutes ago",
 		"10 years ago",
 		"0 years ago", // edge case
+		"30d ago",
+		"1w ago",
+		"6mo ago",
+		"15m ago",
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
@@ -224,6 +273,10 @@ func FuzzParseLookbackDuration(f *testing.F) {
 		"6 minutes",
 		"10 years",
 		"0 years", // edge case
+		"30d",
+		"2w",
+		"3mo",
+		"15m",
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
