@@ -34,6 +34,7 @@ dist/
 bin/
 brainstorm/
 fuzz/
+scratch/
 test-repos/
 hotspot-integration-*/
 *.cast
@@ -47,3 +48,4 @@ hotspot-integration-*/
 /*.back
 /*.backup
 /*.parquet
+/*.log

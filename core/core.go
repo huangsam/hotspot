@@ -82,8 +82,10 @@ func GetHotspotFoldersResults(ctx context.Context, cfg *config.Config, mgr contr
 // ExecuteHotspotCompare runs two file-level analyses (Base and Target)
 // based on Git references and computes the delta results.
 func ExecuteHotspotCompare(ctx context.Context, cfg *config.Config, mgr contract.CacheManager) error {
-	// Print single header for the comparison
-	internal.LogCompareHeader(cfg.Git, cfg.Scoring, cfg.Compare)
+	// Print single header for the comparison only if output is text
+	if cfg.Output.Format == schema.TextOut {
+		internal.LogCompareHeader(cfg.Git, cfg.Scoring, cfg.Compare)
+	}
 
 	comparisonResult, duration, err := GetHotspotCompareResults(ctx, cfg, mgr)
 	if err != nil {
@@ -120,8 +122,10 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *config.Config, mgr c
 	start := time.Now()
 	client := contract.NewLocalGitClient()
 
-	// Print single header for the comparison
-	internal.LogCompareHeader(cfg.Git, cfg.Scoring, cfg.Compare)
+	// Print single header for the comparison only if output is text
+	if cfg.Output.Format == schema.TextOut {
+		internal.LogCompareHeader(cfg.Git, cfg.Scoring, cfg.Compare)
+	}
 
 	baseOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.Compare.BaseRef, mgr)
 	if err != nil {
@@ -146,8 +150,10 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *config.Config, mgr contr
 		return err
 	}
 
-	// Print single header for the entire timeseries analysis
-	internal.LogTimeseriesHeader(cfg.Git, cfg.Scoring, cfg.Timeseries)
+	// Print single header for the entire timeseries analysis only if output is text
+	if cfg.Output.Format == schema.TextOut {
+		internal.LogTimeseriesHeader(cfg.Git, cfg.Scoring, cfg.Timeseries)
+	}
 
 	writer := outwriter.NewOutWriter()
 	return outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
