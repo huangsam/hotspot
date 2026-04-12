@@ -28,6 +28,7 @@ Hotspot was born to provide a transparent, auditable tool for teams to diagnose 
 - ⚡ **Fast results** - analyze thousands of files in seconds
 - 🧮 **Rich insights** - contributors, churn, size, age, and risk metrics
 - 🎯 **Actionable filters** - narrow down by path, exclude noise, or track trends over time
+- 🕓 **Robust time windows** - support for human-readable time (e.g., `30d`, `6 months ago`)
 - 📊 **Export results** - save to CSV/JSON/Parquet to track trends and progress
 - 🔄 **CI/CD integration** - enforce risk thresholds in pipelines
 
@@ -69,12 +70,14 @@ hotspot files /path/to/repo/pkg
 
 ### AI Agent Integration (MCP)
 
-Hotspot includes a built-in [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server. This allows AI agents (like Claude Desktop or Cursor) to analyze your repositories directly!
+Hotspot includes a built-in [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server. This allows AI agents (like Claude Desktop or Cursor) to analyze your repositories directly with full support for filtering and time-anchored trends!
 
 ```bash
 # Start the MCP server (stdio)
 hotspot mcp
 ```
+
+The MCP tools (`get_files_hotspots`, `compare_hotspots`, etc.) support the same parameters as the CLI, including `repo_path`, `mode`, `limit`, `start`, and `end`.
 
 ### Full Documentation
 
@@ -123,9 +126,9 @@ Comprehensive performance benchmarks using [this script](./benchmark/main.go). T
 
 | Repository | Files (Cold/Warm) | Compare Files (Cold/Warm) | Timeseries (Cold/Warm) |
 |------------|-------------------|---------------------------|------------------------|
-| [csv-parser] | 0.033s / 0.013s | 0.127s / 0.035s | 0.117s / 0.044s |
-| [fd] | 0.041s / 0.014s | 0.073s / 0.034s | 0.119s / 0.052s |
-| [git] | 0.611s / 0.032s | 1.318s / 0.138s | 2.260s / 0.215s |
-| [kubernetes] | 3.002s / 0.104s | 7.207s / 1.525s | 10.868s / 0.595s |
+| [csv-parser] | 0.090s / 0.031s | 0.198s / 0.078s | 0.257s / 0.095s |
+| [fd] | 0.061s / 0.031s | 0.137s / 0.083s | 0.210s / 0.099s |
+| [git] | 0.687s / 0.048s | 1.687s / 0.193s | 2.692s / 0.322s |
+| [kubernetes] | 4.071s / 0.113s | 9.053s / 1.431s | 15.429s / 1.113s |
 
 The data shows that Hotspot caches Git analysis results to speed up repeated runs.
