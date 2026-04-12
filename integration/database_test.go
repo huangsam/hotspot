@@ -22,7 +22,7 @@ func TestHotspotWithMySQL(t *testing.T) {
 	// Start MySQL container
 	req := testcontainers.ContainerRequest{
 		Image:        "mysql:8",
-		ExposedPorts: []string{"3306:3306/tcp"},
+		ExposedPorts: []string{"3306/tcp"},
 		Env: map[string]string{
 			"MYSQL_ROOT_PASSWORD": "secret123",
 			"MYSQL_DATABASE":      "hotspot",
@@ -82,7 +82,7 @@ func TestHotspotWithPostgres(t *testing.T) {
 	// Start Postgres container
 	req := testcontainers.ContainerRequest{
 		Image:        "postgres:18-alpine",
-		ExposedPorts: []string{"5432:5432/tcp"},
+		ExposedPorts: []string{"5432/tcp"},
 		Env: map[string]string{
 			"POSTGRES_HOST_AUTH_METHOD": "trust",
 		},
