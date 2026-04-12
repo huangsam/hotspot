@@ -104,6 +104,10 @@ func (h *toolHandler) handleCompareHotspots(ctx context.Context, request mcp.Cal
 		cfg.Scoring.Mode = schema.ScoringMode(m)
 	}
 
+	if err := config.RevalidateTimeRange(cfg, request.GetString("start", ""), request.GetString("end", "")); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid time range: %v", err)), nil
+	}
+
 	if err := config.RevalidateCompare(cfg, lookbackStr); err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("invalid comparison parameters: %v", err)), nil
 	}
@@ -135,6 +139,10 @@ func (h *toolHandler) handleGetTimeseries(ctx context.Context, request mcp.CallT
 	}
 	if m := request.GetString("mode", ""); m != "" {
 		cfg.Scoring.Mode = schema.ScoringMode(m)
+	}
+
+	if err := config.RevalidateTimeRange(cfg, request.GetString("start", ""), request.GetString("end", "")); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid time range: %v", err)), nil
 	}
 
 	// Re-validate specifically for timeseries interval parsing
