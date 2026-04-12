@@ -283,9 +283,13 @@ func analyzeAllFilesAtRef(
 		Context: ctx, Git: gitSettings, Scoring: scoringSettings,
 		Runtime: runtimeSettings, Client: client, Mgr: mgr,
 		TargetRef: ref,
-		// Compare is disabled: we use a fixed time window derived from the ref's commit time.
+		// Compare must be a concrete zero-value (not nil interface) so downstream
+		// cache key generation can safely call GetLookback(). Compare features are
+		// intentionally disabled here since analyzeAllFilesAtRef uses a fixed time
+		// window derived from the ref's commit time.
 		// Preparation and finalization are intentionally omitted: compare-mode sub-analyses
 		// are internal helpers and should not be tracked independently.
+		Compare: config.CompareConfig{},
 	}
 
 	// This pipeline discovers files at TargetRef, aggregates activity,
