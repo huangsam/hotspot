@@ -82,8 +82,14 @@ type AnalysisStore interface {
 	// GetAllAnalysisRuns retrieves all analysis runs from the store
 	GetAllAnalysisRuns() ([]schema.AnalysisRunRecord, error)
 
+	// GetAnalysisRuns retrieves analysis runs with optional filtering and pagination
+	GetAnalysisRuns(filter schema.AnalysisQueryFilter) ([]schema.AnalysisRunRecord, error)
+
 	// GetAllFileScoresMetrics retrieves all file scores and metrics from the store
 	GetAllFileScoresMetrics() ([]schema.FileScoresMetricsRecord, error)
+
+	// GetFileScoresMetrics retrieves file scores and metrics with optional filtering and pagination
+	GetFileScoresMetrics(filter schema.AnalysisQueryFilter) ([]schema.FileScoresMetricsRecord, error)
 
 	// GetStatus returns status information about the analysis store
 	GetStatus() (schema.AnalysisStatus, error)

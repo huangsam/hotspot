@@ -231,6 +231,23 @@ func (as *AnalysisStoreImpl) Close() error {
 	return nil
 }
 
+// placeholder returns a SQL clause fragment with a backend-appropriate placeholder.
+// For PostgreSQL it uses $N; for others it uses ?.
+func (as *AnalysisStoreImpl) placeholder(prefix string, argIdx *int) string {
+	return prefix + as.placeholderStr(argIdx)
+}
+
+// placeholderStr returns a single placeholder token and increments the index.
+func (as *AnalysisStoreImpl) placeholderStr(argIdx *int) string {
+	if as.dialect.DriverName() == "pgx" {
+		p := fmt.Sprintf("$%d", *argIdx)
+		*argIdx++
+		return p
+	}
+	*argIdx++
+	return "?"
+}
+
 // GetStatus returns status information about the analysis store.
 func (as *AnalysisStoreImpl) GetStatus() (schema.AnalysisStatus, error) {
 	status := schema.AnalysisStatus{
@@ -296,15 +313,39 @@ func (as *AnalysisStoreImpl) GetStatus() (schema.AnalysisStatus, error) {
 
 // GetAllAnalysisRuns retrieves all analysis runs from the store.
 func (as *AnalysisStoreImpl) GetAllAnalysisRuns() ([]schema.AnalysisRunRecord, error) {
+	return as.GetAnalysisRuns(schema.AnalysisQueryFilter{})
+}
+
+// GetAnalysisRuns retrieves analysis runs with optional filtering and pagination.
+func (as *AnalysisStoreImpl) GetAnalysisRuns(filter schema.AnalysisQueryFilter) ([]schema.AnalysisRunRecord, error) {
 	// Skip for NoneBackend
 	if as.db == nil || as.dialect == nil {
 		return nil, nil
 	}
 
 	quotedTableName := as.dialect.QuoteIdentifier(analysisRunsTable)
-	query := fmt.Sprintf("SELECT analysis_id, start_time, end_time, run_duration_ms, total_files_analyzed, config_params, urn FROM %s ORDER BY analysis_id", quotedTableName)
+	query := fmt.Sprintf("SELECT analysis_id, start_time, end_time, run_duration_ms, total_files_analyzed, config_params, urn FROM %s", quotedTableName)
 
-	rows, err := as.db.Query(query)
+	var args []any
+	argIdx := 1 // For PostgreSQL $N placeholders
+
+	if filter.URN != "" {
+		query += as.placeholder(" WHERE urn = ", &argIdx)
+		args = append(args, filter.URN)
+	}
+
+	query += " ORDER BY analysis_id"
+
+	if filter.Limit > 0 {
+		query += as.placeholder(" LIMIT ", &argIdx)
+		args = append(args, filter.Limit)
+	}
+	if filter.Offset > 0 {
+		query += as.placeholder(" OFFSET ", &argIdx)
+		args = append(args, filter.Offset)
+	}
+
+	rows, err := as.db.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query analysis runs: %w", err)
 	}
@@ -329,6 +370,11 @@ func (as *AnalysisStoreImpl) GetAllAnalysisRuns() ([]schema.AnalysisRunRecord, e
 
 // GetAllFileScoresMetrics retrieves all file scores and metrics from the store.
 func (as *AnalysisStoreImpl) GetAllFileScoresMetrics() ([]schema.FileScoresMetricsRecord, error) {
+	return as.GetFileScoresMetrics(schema.AnalysisQueryFilter{})
+}
+
+// GetFileScoresMetrics retrieves file scores and metrics with optional filtering and pagination.
+func (as *AnalysisStoreImpl) GetFileScoresMetrics(filter schema.AnalysisQueryFilter) ([]schema.FileScoresMetricsRecord, error) {
 	// Skip for NoneBackend
 	if as.db == nil || as.dialect == nil {
 		return nil, nil
@@ -338,9 +384,29 @@ func (as *AnalysisStoreImpl) GetAllFileScoresMetrics() ([]schema.FileScoresMetri
 	query := fmt.Sprintf(`SELECT analysis_id, file_path, analysis_time, total_commits, total_churn,
     contributor_count, age_days, gini_coefficient, file_owner,
     score_hot, score_risk, score_complexity, score_stale, score_label
-    FROM %s ORDER BY analysis_id, file_path`, quotedTableName)
+    FROM %s`, quotedTableName)
 
-	rows, err := as.db.Query(query)
+	var args []any
+	argIdx := 1
+
+	if filter.URN != "" {
+		runsTable := as.dialect.QuoteIdentifier(analysisRunsTable)
+		query += fmt.Sprintf(" WHERE analysis_id IN (SELECT analysis_id FROM %s WHERE urn = %s)", runsTable, as.placeholderStr(&argIdx))
+		args = append(args, filter.URN)
+	}
+
+	query += " ORDER BY analysis_id, file_path"
+
+	if filter.Limit > 0 {
+		query += as.placeholder(" LIMIT ", &argIdx)
+		args = append(args, filter.Limit)
+	}
+	if filter.Offset > 0 {
+		query += as.placeholder(" OFFSET ", &argIdx)
+		args = append(args, filter.Offset)
+	}
+
+	rows, err := as.db.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query file scores metrics: %w", err)
 	}

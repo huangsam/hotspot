@@ -510,3 +510,107 @@ func TestAnalysisStoreConcurrentOperations(t *testing.T) {
 		assert.Equal(t, int32(filesPerGoroutine), run.TotalFilesAnalyzed)
 	}
 }
+
+func TestAnalysisStore_GetAnalysisRuns_FilterByURN(t *testing.T) {
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	require.NoError(t, err)
+	require.NotNil(t, store)
+	defer func() { _ = store.Close() }()
+
+	// Create runs for two different URNs
+	for i := range 3 {
+		id, err := store.BeginAnalysis("git:github.com/org/repo-a", time.Now(), map[string]any{"run": i})
+		require.NoError(t, err)
+		require.NoError(t, store.EndAnalysis(id, time.Now(), 1))
+	}
+	for i := range 2 {
+		id, err := store.BeginAnalysis("git:github.com/org/repo-b", time.Now(), map[string]any{"run": i})
+		require.NoError(t, err)
+		require.NoError(t, store.EndAnalysis(id, time.Now(), 1))
+	}
+
+	// Filter by URN
+	runsA, err := store.GetAnalysisRuns(schema.AnalysisQueryFilter{URN: "git:github.com/org/repo-a"})
+	assert.NoError(t, err)
+	assert.Len(t, runsA, 3)
+
+	runsB, err := store.GetAnalysisRuns(schema.AnalysisQueryFilter{URN: "git:github.com/org/repo-b"})
+	assert.NoError(t, err)
+	assert.Len(t, runsB, 2)
+
+	// No filter returns all
+	allRuns, err := store.GetAnalysisRuns(schema.AnalysisQueryFilter{})
+	assert.NoError(t, err)
+	assert.Len(t, allRuns, 5)
+}
+
+func TestAnalysisStore_GetAnalysisRuns_Pagination(t *testing.T) {
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	require.NoError(t, err)
+	require.NotNil(t, store)
+	defer func() { _ = store.Close() }()
+
+	// Create 5 runs
+	for i := range 5 {
+		id, err := store.BeginAnalysis(fmt.Sprintf("git:github.com/org/repo-%d", i), time.Now(), map[string]any{"run": i})
+		require.NoError(t, err)
+		require.NoError(t, store.EndAnalysis(id, time.Now(), 1))
+	}
+
+	// Limit
+	runs, err := store.GetAnalysisRuns(schema.AnalysisQueryFilter{Limit: 2})
+	assert.NoError(t, err)
+	assert.Len(t, runs, 2)
+
+	// Limit + Offset
+	runs2, err := store.GetAnalysisRuns(schema.AnalysisQueryFilter{Limit: 2, Offset: 2})
+	assert.NoError(t, err)
+	assert.Len(t, runs2, 2)
+	assert.NotEqual(t, runs[0].AnalysisID, runs2[0].AnalysisID)
+
+	// Offset beyond data
+	runs3, err := store.GetAnalysisRuns(schema.AnalysisQueryFilter{Limit: 10, Offset: 100})
+	assert.NoError(t, err)
+	assert.Empty(t, runs3)
+}
+
+func TestAnalysisStore_GetFileScoresMetrics_FilterByURN(t *testing.T) {
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	require.NoError(t, err)
+	require.NotNil(t, store)
+	defer func() { _ = store.Close() }()
+
+	// Create runs for two URNs and record metrics
+	idA, err := store.BeginAnalysis("git:github.com/org/repo-a", time.Now(), map[string]any{"test": "a"})
+	require.NoError(t, err)
+	err = store.RecordFileMetricsAndScores(idA, "main.go", schema.FileMetrics{
+		AnalysisTime: time.Now(), TotalCommits: 10, TotalChurn: 100,
+		ContributorCount: 3, AgeDays: 30, GiniCoefficient: 0.5, FileOwner: "alice",
+	}, schema.FileScores{HotScore: 80, RiskScore: 60, ComplexityScore: 50, StaleScore: 20, ScoreLabel: "hot"})
+	require.NoError(t, err)
+
+	idB, err := store.BeginAnalysis("git:github.com/org/repo-b", time.Now(), map[string]any{"test": "b"})
+	require.NoError(t, err)
+	err = store.RecordFileMetricsAndScores(idB, "lib.go", schema.FileMetrics{
+		AnalysisTime: time.Now(), TotalCommits: 5, TotalChurn: 50,
+		ContributorCount: 1, AgeDays: 60, GiniCoefficient: 0.8, FileOwner: "bob",
+	}, schema.FileScores{HotScore: 40, RiskScore: 70, ComplexityScore: 30, StaleScore: 50, ScoreLabel: "risk"})
+	require.NoError(t, err)
+
+	// Filter by URN for repo-a
+	metricsA, err := store.GetFileScoresMetrics(schema.AnalysisQueryFilter{URN: "git:github.com/org/repo-a"})
+	assert.NoError(t, err)
+	assert.Len(t, metricsA, 1)
+	assert.Equal(t, "main.go", metricsA[0].FilePath)
+
+	// Filter by URN for repo-b
+	metricsB, err := store.GetFileScoresMetrics(schema.AnalysisQueryFilter{URN: "git:github.com/org/repo-b"})
+	assert.NoError(t, err)
+	assert.Len(t, metricsB, 1)
+	assert.Equal(t, "lib.go", metricsB[0].FilePath)
+
+	// No filter returns all
+	allMetrics, err := store.GetFileScoresMetrics(schema.AnalysisQueryFilter{})
+	assert.NoError(t, err)
+	assert.Len(t, allMetrics, 2)
+}

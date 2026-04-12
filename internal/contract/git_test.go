@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
@@ -258,4 +259,55 @@ func TestLocalGitClient_GetOldestCommitDateForPath(t *testing.T) {
 	// Test with non-existent file (should error)
 	_, err = client.GetOldestCommitDateForPath(ctx, repoRoot, "definitely-nonexistent-file-12345.txt", before, 1, maxSearchDuration)
 	assert.Error(t, err, "GetOldestCommitDateForPath should return an error for non-existent file")
+}
+
+// TestNormalizeRemoteURL tests URL normalization across SSH, HTTPS, and git:// protocols.
+func TestNormalizeRemoteURL(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"HTTPS with .git", "https://github.com/org/repo.git", "github.com/org/repo"},
+		{"HTTPS without .git", "https://github.com/org/repo", "github.com/org/repo"},
+		{"SSH SCP-style with .git", "git@github.com:org/repo.git", "github.com/org/repo"},
+		{"SSH SCP-style without .git", "git@github.com:org/repo", "github.com/org/repo"},
+		{"SSH protocol URL", "ssh://git@github.com/org/repo.git", "github.com/org/repo"},
+		{"SSH protocol URL without .git", "ssh://git@github.com/org/repo", "github.com/org/repo"},
+		{"git:// protocol", "git://github.com/org/repo.git", "github.com/org/repo"},
+		{"HTTP protocol", "http://github.com/org/repo.git", "github.com/org/repo"},
+		{"trailing slash", "https://github.com/org/repo/", "github.com/org/repo"},
+		{"GitLab SSH", "git@gitlab.com:group/subgroup/repo.git", "gitlab.com/group/subgroup/repo"},
+		{"empty string", "", ""},
+		{"whitespace only", "   ", ""},
+		{"self-hosted HTTPS", "https://git.internal.co/team/project.git", "git.internal.co/team/project"},
+		{"self-hosted SSH", "git@git.internal.co:team/project.git", "git.internal.co/team/project"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := NormalizeRemoteURL(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// TestLocalGitClient_GetRemoteURL tests the GetRemoteURL method.
+func TestLocalGitClient_GetRemoteURL(t *testing.T) {
+	skipIfGitNotAvailable(t)
+
+	client := NewLocalGitClient()
+	ctx := context.Background()
+
+	repoRoot, err := client.GetRepoRoot(ctx, ".")
+	assert.NoError(t, err)
+
+	// This repo should have an origin remote
+	url, err := client.GetRemoteURL(ctx, repoRoot)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, url)
+	// The result should be normalized (no protocol prefix, no .git suffix)
+	assert.NotContains(t, url, "https://")
+	assert.NotContains(t, url, "git@")
+	assert.False(t, strings.HasSuffix(url, ".git"), "URL should not end with .git")
 }

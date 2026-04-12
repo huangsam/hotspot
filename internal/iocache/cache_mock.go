@@ -103,8 +103,20 @@ func (m *MockAnalysisStore) GetAllAnalysisRuns() ([]schema.AnalysisRunRecord, er
 	return args.Get(0).([]schema.AnalysisRunRecord), args.Error(1)
 }
 
+// GetAnalysisRuns implements the AnalysisStore interface.
+func (m *MockAnalysisStore) GetAnalysisRuns(filter schema.AnalysisQueryFilter) ([]schema.AnalysisRunRecord, error) {
+	args := m.Called(filter)
+	return args.Get(0).([]schema.AnalysisRunRecord), args.Error(1)
+}
+
 // GetAllFileScoresMetrics implements the AnalysisStore interface.
 func (m *MockAnalysisStore) GetAllFileScoresMetrics() ([]schema.FileScoresMetricsRecord, error) {
 	args := m.Called()
+	return args.Get(0).([]schema.FileScoresMetricsRecord), args.Error(1)
+}
+
+// GetFileScoresMetrics implements the AnalysisStore interface.
+func (m *MockAnalysisStore) GetFileScoresMetrics(filter schema.AnalysisQueryFilter) ([]schema.FileScoresMetricsRecord, error) {
+	args := m.Called(filter)
 	return args.Get(0).([]schema.FileScoresMetricsRecord), args.Error(1)
 }

@@ -181,8 +181,59 @@ func (c *LocalGitClient) GetRemoteURL(ctx context.Context, repoPath string) (str
 	if err != nil {
 		return "", err // Origin might not exist
 	}
-	url := strings.TrimSpace(string(out))
-	// Normalize: remove trailing .git
+	raw := strings.TrimSpace(string(out))
+	return NormalizeRemoteURL(raw), nil
+}
+
+// NormalizeRemoteURL canonicalizes a Git remote URL into a consistent
+// "host/owner/repo" form regardless of protocol (SSH, HTTPS, git://).
+// This ensures the same repository always produces the same URN.
+//
+// Examples:
+//
+//	git@github.com:org/repo.git      -> github.com/org/repo
+//	https://github.com/org/repo.git  -> github.com/org/repo
+//	ssh://git@github.com/org/repo    -> github.com/org/repo
+//	git://github.com/org/repo.git    -> github.com/org/repo
+func NormalizeRemoteURL(raw string) string {
+	url := strings.TrimSpace(raw)
+	if url == "" {
+		return ""
+	}
+
+	// Remove trailing .git
 	url = strings.TrimSuffix(url, ".git")
-	return url, nil
+
+	// Handle SCP-style: git@host:owner/repo
+	if idx := strings.Index(url, "@"); idx >= 0 {
+		after := url[idx+1:]
+		if before, after0, ok := strings.Cut(after, ":"); ok {
+			// Distinguish SCP-style (colon after host, no slash before it)
+			// from ssh://user@host/path
+			host := before
+			path := after0
+			if !strings.Contains(host, "/") {
+				return host + "/" + strings.TrimPrefix(path, "/")
+			}
+		}
+	}
+
+	// Handle protocol-based URLs: https://, ssh://, git://
+	for _, prefix := range []string{"https://", "http://", "ssh://", "git://"} {
+		if after, ok := strings.CutPrefix(url, prefix); ok {
+			url = after
+			break
+		}
+	}
+
+	// Strip user@ prefix (e.g., git@host/path from ssh://git@host/path)
+	if atIdx := strings.Index(url, "@"); atIdx >= 0 {
+		url = url[atIdx+1:]
+	}
+
+	// Clean up leading/trailing slashes
+	url = strings.TrimPrefix(url, "/")
+	url = strings.TrimSuffix(url, "/")
+
+	return url
 }

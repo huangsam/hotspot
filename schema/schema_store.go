@@ -41,3 +41,10 @@ type AnalysisRunRecord struct {
 	TotalFilesAnalyzed int32
 	ConfigParams       *string
 }
+
+// AnalysisQueryFilter provides filtering and pagination for analysis queries.
+type AnalysisQueryFilter struct {
+	URN    string // Filter by repository URN (empty = all)
+	Limit  int    // Maximum number of results (0 = no limit)
+	Offset int    // Number of results to skip
+}
