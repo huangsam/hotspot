@@ -1,0 +1,2 @@
+-- Version 2: Placeholder for future schema evolution
+-- Reserved for backward compatibility during migration rollout.

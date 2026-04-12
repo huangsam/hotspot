@@ -123,7 +123,7 @@ func TestGenerateCacheKey(t *testing.T) {
 	// Mock GetRepoHash for any repo path
 	mockClient.On("GetRepoHash", mock.Anything, mock.AnythingOfType("string")).Return("abcd1234", nil)
 
-	key1 := generateCacheKey(context.Background(), cfg.Git, cfg.Compare, mockClient)
+	key1 := generateCacheKey(context.Background(), cfg.Git, cfg.Compare, mockClient, "")
 
 	// Key should be a non-empty SHA256 hash
 	assert.NotEmpty(t, key1)
@@ -132,7 +132,7 @@ func TestGenerateCacheKey(t *testing.T) {
 	// Different config should produce different key
 	cfg2 := *cfg
 	cfg2.Git.RepoPath = "/different/repo"
-	key2 := generateCacheKey(context.Background(), cfg2.Git, cfg2.Compare, mockClient)
+	key2 := generateCacheKey(context.Background(), cfg2.Git, cfg2.Compare, mockClient, "")
 	assert.NotEqual(t, key1, key2)
 
 	mockClient.AssertExpectations(t)
@@ -157,7 +157,7 @@ func TestGenerateCacheKey_RepoHashError(t *testing.T) {
 	// Mock GetRepoHash to return error
 	mockClient.On("GetRepoHash", mock.Anything, mock.AnythingOfType("string")).Return("", assert.AnError)
 
-	key := generateCacheKey(context.Background(), cfg.Git, cfg.Compare, mockClient)
+	key := generateCacheKey(context.Background(), cfg.Git, cfg.Compare, mockClient, "")
 
 	// Key should still be generated (with empty repoHash)
 	assert.NotEmpty(t, key)
@@ -192,7 +192,7 @@ func TestCachedAggregateActivity_CacheHit(t *testing.T) {
 		},
 	}
 
-	result, err := CachedAggregateActivity(ctx, cfg.Git, cfg.Compare, mockClient, mockMgr)
+	result, err := CachedAggregateActivity(ctx, cfg.Git, cfg.Compare, mockClient, mockMgr, "")
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
@@ -227,7 +227,7 @@ func TestCachedAggregateActivity_CacheMiss(t *testing.T) {
 		},
 	}
 
-	result, err := CachedAggregateActivity(ctx, cfg.Git, cfg.Compare, mockClient, mockMgr)
+	result, err := CachedAggregateActivity(ctx, cfg.Git, cfg.Compare, mockClient, mockMgr, "")
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
@@ -258,7 +258,7 @@ func TestCachedAggregateActivity_NoCacheManager(t *testing.T) {
 		},
 	}
 
-	result, err := CachedAggregateActivity(ctx, cfg.Git, cfg.Compare, mockClient, mockMgr)
+	result, err := CachedAggregateActivity(ctx, cfg.Git, cfg.Compare, mockClient, mockMgr, "")
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
@@ -290,7 +290,7 @@ func TestCachedAggregateActivity_AggregateError(t *testing.T) {
 		},
 	}
 
-	result, err := CachedAggregateActivity(ctx, cfg.Git, cfg.Compare, mockClient, mockMgr)
+	result, err := CachedAggregateActivity(ctx, cfg.Git, cfg.Compare, mockClient, mockMgr, "")
 
 	assert.Error(t, err)
 	assert.Nil(t, result)

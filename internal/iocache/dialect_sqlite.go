@@ -30,7 +30,8 @@ func (d *SQLiteDialect) GetCreateAnalysisRunsQuery(tableName string) string {
 			end_time TEXT,
 			run_duration_ms INTEGER,
 			total_files_analyzed INTEGER,
-			config_params TEXT
+			config_params TEXT,
+			urn TEXT
 		);
 	`, d.QuoteIdentifier(tableName))
 }
@@ -59,9 +60,9 @@ func (d *SQLiteDialect) GetCreateFileScoresMetricsQuery(tableName string) string
 }
 
 // BeginAnalysis inserts a new analysis run into SQLite and returns the generated ID.
-func (d *SQLiteDialect) BeginAnalysis(db *sql.DB, tableName string, startTime time.Time, configJSON string) (int64, error) {
-	query := fmt.Sprintf(`INSERT INTO %s (start_time, config_params) VALUES (?, ?)`, d.QuoteIdentifier(tableName))
-	result, err := db.Exec(query, d.FormatTime(startTime), configJSON)
+func (d *SQLiteDialect) BeginAnalysis(db *sql.DB, tableName string, urn string, startTime time.Time, configJSON string) (int64, error) {
+	query := fmt.Sprintf(`INSERT INTO %s (start_time, config_params, urn) VALUES (?, ?, ?)`, d.QuoteIdentifier(tableName))
+	result, err := db.Exec(query, d.FormatTime(startTime), configJSON, urn)
 	if err != nil {
 		return 0, err
 	}
@@ -123,7 +124,7 @@ func (d *SQLiteDialect) ScanOldestRunTime(row *sql.Row) (time.Time, error) {
 func (d *SQLiteDialect) ScanAnalysisRunRecord(rows *sql.Rows, record *schema.AnalysisRunRecord) error {
 	var startTimeStr string
 	var endTimeStr *string
-	if err := rows.Scan(&record.AnalysisID, &startTimeStr, &endTimeStr, &record.RunDurationMs, &record.TotalFilesAnalyzed, &record.ConfigParams); err != nil {
+	if err := rows.Scan(&record.AnalysisID, &startTimeStr, &endTimeStr, &record.RunDurationMs, &record.TotalFilesAnalyzed, &record.ConfigParams, &record.URN); err != nil {
 		return err
 	}
 	// Parse start time

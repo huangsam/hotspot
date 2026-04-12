@@ -34,15 +34,31 @@ func (s *preparationStage) Execute(ac *AnalysisContext) error {
 
 	ac.Context = contextWithCacheManager(ac.Context, ac.Mgr)
 	ac.AnalysisStore = ac.Mgr.GetAnalysisStore()
+
+	// Resolve Repository URN
+	repoPath := ac.Git.GetRepoPath()
+	var urn string
+	if url, err := ac.Client.GetRemoteURL(ac.Context, repoPath); err == nil && url != "" {
+		urn = "git:" + url
+	} else {
+		// Fallback to local path if no remote origin
+		absPath, _ := ac.Client.GetRepoRoot(ac.Context, repoPath)
+		if absPath == "" {
+			absPath = repoPath
+		}
+		urn = "local:" + absPath
+	}
+	ac.RepoURN = urn
+
 	if ac.AnalysisStore != nil {
 		configParams := map[string]any{
 			"mode":         string(ac.Scoring.GetMode()),
 			"lookback":     ac.Compare.GetLookback().String(),
-			"repo_path":    ac.Git.GetRepoPath(),
+			"repo_path":    repoPath,
 			"workers":      ac.Runtime.GetWorkers(),
 			"result_limit": ac.Output.GetResultLimit(),
 		}
-		id, err := ac.AnalysisStore.BeginAnalysis(time.Now(), configParams)
+		id, err := ac.AnalysisStore.BeginAnalysis(urn, time.Now(), configParams)
 		if err != nil {
 			contract.LogWarn("Analysis tracking initialization failed", err)
 		} else if id > 0 {
@@ -74,7 +90,7 @@ type aggregationStage struct{}
 
 func (s *aggregationStage) Execute(ac *AnalysisContext) error {
 	var err error
-	ac.AggregateOutput, err = agg.CachedAggregateActivity(ac.Context, ac.Git, ac.Compare, ac.Client, ac.Mgr)
+	ac.AggregateOutput, err = agg.CachedAggregateActivity(ac.Context, ac.Git, ac.Compare, ac.Client, ac.Mgr, ac.RepoURN)
 	return err
 }
 

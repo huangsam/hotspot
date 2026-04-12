@@ -81,3 +81,10 @@ func (m *MockGitClient) GetOldestCommitDateForPath(ctx context.Context, repoPath
 	t, _ := ret.Get(0).(time.Time)
 	return t, ret.Error(1)
 }
+
+// GetRemoteURL implements the GitClient interface.
+func (m *MockGitClient) GetRemoteURL(ctx context.Context, repoPath string) (string, error) {
+	ret := m.Called(ctx, repoPath)
+	url, _ := ret.Get(0).(string)
+	return url, ret.Error(1)
+}

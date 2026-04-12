@@ -16,7 +16,7 @@ func TestAnalysisStore_NoneBackend(t *testing.T) {
 	require.NotNil(t, store)
 
 	// BeginAnalysis should return 0 for NoneBackend
-	analysisID, err := store.BeginAnalysis(time.Now(), map[string]any{"test": "value"})
+	analysisID, err := store.BeginAnalysis("test-urn", time.Now(), map[string]any{"test": "value"})
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), analysisID)
 
@@ -45,7 +45,7 @@ func TestAnalysisStore_SQLite(t *testing.T) {
 		"lookback":  "30d",
 		"repo_path": "/test/repo",
 	}
-	analysisID, err := store.BeginAnalysis(startTime, configParams)
+	analysisID, err := store.BeginAnalysis("test-sqlite-urn", startTime, configParams)
 	require.NoError(t, err)
 	assert.Greater(t, analysisID, int64(0))
 
@@ -83,7 +83,7 @@ func TestAnalysisStore_MultipleFiles(t *testing.T) {
 	defer func() { _ = store.Close() }()
 
 	// Begin analysis
-	analysisID, err := store.BeginAnalysis(time.Now(), map[string]any{"test": "multi-file"})
+	analysisID, err := store.BeginAnalysis("test-multi-urn", time.Now(), map[string]any{"test": "multi-file"})
 	require.NoError(t, err)
 
 	// Record multiple files
@@ -124,7 +124,7 @@ func TestAnalysisStore_MultipleRuns(t *testing.T) {
 	// Create multiple analysis runs
 	var analysisIDs []int64
 	for i := range 3 {
-		id, err := store.BeginAnalysis(time.Now(), map[string]any{"run": i})
+		id, err := store.BeginAnalysis(fmt.Sprintf("test-run-%d", i), time.Now(), map[string]any{"run": i})
 		require.NoError(t, err)
 		analysisIDs = append(analysisIDs, id)
 
@@ -168,7 +168,7 @@ func TestAnalysisStore_RuntimeCapture(t *testing.T) {
 	t.Run("runtime calculation", func(t *testing.T) {
 		// Start analysis at a known time
 		startTime := time.Now().Add(-100 * time.Millisecond) // Start 100ms ago
-		analysisID, err := store.BeginAnalysis(startTime, map[string]any{"test": "runtime"})
+		analysisID, err := store.BeginAnalysis("test-runtime-urn", startTime, map[string]any{"test": "runtime"})
 		require.NoError(t, err)
 
 		// Wait a bit to ensure measurable duration
@@ -206,7 +206,7 @@ func TestAnalysisStore_RuntimeCapture(t *testing.T) {
 	t.Run("zero duration edge case", func(t *testing.T) {
 		// Test with same start and end time
 		startTime := time.Now()
-		analysisID, err := store.BeginAnalysis(startTime, map[string]any{"test": "zero_duration"})
+		analysisID, err := store.BeginAnalysis("test-zero-urn", startTime, map[string]any{"test": "zero_duration"})
 		require.NoError(t, err)
 
 		// End immediately with same time
@@ -225,7 +225,7 @@ func TestAnalysisStore_RuntimeCapture(t *testing.T) {
 	t.Run("large duration", func(t *testing.T) {
 		// Test with a longer duration
 		startTime := time.Now().Add(-5 * time.Second)
-		analysisID, err := store.BeginAnalysis(startTime, map[string]any{"test": "large_duration"})
+		analysisID, err := store.BeginAnalysis("test-large-urn", startTime, map[string]any{"test": "large_duration"})
 		require.NoError(t, err)
 
 		endTime := time.Now()
@@ -264,8 +264,8 @@ func TestAnalysisStore_GetAllAnalysisRuns(t *testing.T) {
 	}
 
 	var analysisIDs []int64
-	for _, config := range configs {
-		id, err := store.BeginAnalysis(startTime, config)
+	for i, config := range configs {
+		id, err := store.BeginAnalysis(fmt.Sprintf("test-urn-%d", i), startTime, config)
 		require.NoError(t, err)
 		analysisIDs = append(analysisIDs, id)
 
@@ -300,7 +300,7 @@ func TestAnalysisStore_GetAllFileScoresMetrics(t *testing.T) {
 	assert.Empty(t, metrics)
 
 	// Add analysis run and file metrics
-	analysisID, err := store.BeginAnalysis(time.Now(), map[string]any{"test": "metrics"})
+	analysisID, err := store.BeginAnalysis("test-metrics-urn", time.Now(), map[string]any{"test": "metrics"})
 	require.NoError(t, err)
 
 	fileMetrics := schema.FileMetrics{
@@ -354,7 +354,7 @@ func TestAnalysisStore_BeginEndAnalysis(t *testing.T) {
 	// Test BeginAnalysis
 	startTime := time.Now()
 	configParams := map[string]any{"mode": "hot", "workers": 4}
-	analysisID, err := store.BeginAnalysis(startTime, configParams)
+	analysisID, err := store.BeginAnalysis("test-begin-urn", startTime, configParams)
 	assert.NoError(t, err)
 	assert.Greater(t, analysisID, int64(0))
 
@@ -382,7 +382,7 @@ func TestAnalysisStore_RecordFileMetricsAndScores(t *testing.T) {
 	defer func() { _ = store.Close() }()
 
 	// Create analysis run
-	analysisID, err := store.BeginAnalysis(time.Now(), map[string]any{"test": "record"})
+	analysisID, err := store.BeginAnalysis("test-record-urn", time.Now(), map[string]any{"test": "record"})
 	require.NoError(t, err)
 
 	// Test recording metrics and scores
@@ -443,7 +443,7 @@ func TestAnalysisStoreConcurrentOperations(t *testing.T) {
 				"worker": workerID,
 				"mode":   "hot",
 			}
-			analysisID, err := store.BeginAnalysis(startTime, configParams)
+			analysisID, err := store.BeginAnalysis(fmt.Sprintf("test-worker-urn-%d", workerID), startTime, configParams)
 			if err != nil {
 				t.Errorf("Worker %d: BeginAnalysis failed: %v", workerID, err)
 				return

@@ -30,7 +30,8 @@ func (d *PostgresDialect) GetCreateAnalysisRunsQuery(tableName string) string {
 			end_time TIMESTAMPTZ,
 			run_duration_ms INT,
 			total_files_analyzed INT,
-			config_params TEXT
+			config_params TEXT,
+			urn TEXT
 		);
 	`, d.QuoteIdentifier(tableName))
 }
@@ -59,10 +60,10 @@ func (d *PostgresDialect) GetCreateFileScoresMetricsQuery(tableName string) stri
 }
 
 // BeginAnalysis inserts a new analysis run into PostgreSQL and returns the generated ID using RETURNING.
-func (d *PostgresDialect) BeginAnalysis(db *sql.DB, tableName string, startTime time.Time, configJSON string) (int64, error) {
-	query := fmt.Sprintf(`INSERT INTO %s (start_time, config_params) VALUES ($1, $2) RETURNING analysis_id`, d.QuoteIdentifier(tableName))
+func (d *PostgresDialect) BeginAnalysis(db *sql.DB, tableName string, urn string, startTime time.Time, configJSON string) (int64, error) {
+	query := fmt.Sprintf(`INSERT INTO %s (start_time, config_params, urn) VALUES ($1, $2, $3) RETURNING analysis_id`, d.QuoteIdentifier(tableName))
 	var analysisID int64
-	err := db.QueryRow(query, startTime, configJSON).Scan(&analysisID)
+	err := db.QueryRow(query, startTime, configJSON, urn).Scan(&analysisID)
 	return analysisID, err
 }
 
@@ -118,7 +119,7 @@ func (d *PostgresDialect) ScanOldestRunTime(row *sql.Row) (time.Time, error) {
 
 // ScanAnalysisRunRecord parses a full analysis run record from PostgreSQL rows.
 func (d *PostgresDialect) ScanAnalysisRunRecord(rows *sql.Rows, record *schema.AnalysisRunRecord) error {
-	return rows.Scan(&record.AnalysisID, &record.StartTime, &record.EndTime, &record.RunDurationMs, &record.TotalFilesAnalyzed, &record.ConfigParams)
+	return rows.Scan(&record.AnalysisID, &record.StartTime, &record.EndTime, &record.RunDurationMs, &record.TotalFilesAnalyzed, &record.ConfigParams, &record.URN)
 }
 
 // ScanFileScoresMetricsRecord parses a full file metrics and scores record from PostgreSQL rows.

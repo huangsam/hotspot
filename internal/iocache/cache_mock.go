@@ -68,8 +68,8 @@ type MockAnalysisStore struct {
 var _ contract.AnalysisStore = &MockAnalysisStore{} // Compile-time check
 
 // BeginAnalysis implements the AnalysisStore interface.
-func (m *MockAnalysisStore) BeginAnalysis(startTime time.Time, configParams map[string]any) (int64, error) {
-	args := m.Called(startTime, configParams)
+func (m *MockAnalysisStore) BeginAnalysis(urn string, startTime time.Time, configParams map[string]any) (int64, error) {
+	args := m.Called(urn, startTime, configParams)
 	return args.Get(0).(int64), args.Error(1)
 }
 

@@ -174,3 +174,15 @@ func (c *LocalGitClient) GetOldestCommitDateForPath(ctx context.Context, repoPat
 	oldestDateStr := lines[len(lines)-1]
 	return time.Parse(time.RFC3339, oldestDateStr)
 }
+
+// GetRemoteURL implements the GitClient interface.
+func (c *LocalGitClient) GetRemoteURL(ctx context.Context, repoPath string) (string, error) {
+	out, err := c.Run(ctx, repoPath, "remote", "get-url", "origin")
+	if err != nil {
+		return "", err // Origin might not exist
+	}
+	url := strings.TrimSpace(string(out))
+	// Normalize: remove trailing .git
+	url = strings.TrimSuffix(url, ".git")
+	return url, nil
+}

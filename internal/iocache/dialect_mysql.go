@@ -30,7 +30,8 @@ func (d *MySQLDialect) GetCreateAnalysisRunsQuery(tableName string) string {
 			end_time DATETIME(6),
 			run_duration_ms INT,
 			total_files_analyzed INT,
-			config_params TEXT
+			config_params TEXT,
+			urn VARCHAR(255)
 		);
 	`, d.QuoteIdentifier(tableName))
 }
@@ -59,9 +60,9 @@ func (d *MySQLDialect) GetCreateFileScoresMetricsQuery(tableName string) string 
 }
 
 // BeginAnalysis inserts a new analysis run into MySQL and returns the generated ID.
-func (d *MySQLDialect) BeginAnalysis(db *sql.DB, tableName string, startTime time.Time, configJSON string) (int64, error) {
-	query := fmt.Sprintf(`INSERT INTO %s (start_time, config_params) VALUES (?, ?)`, d.QuoteIdentifier(tableName))
-	result, err := db.Exec(query, d.FormatTime(startTime), configJSON)
+func (d *MySQLDialect) BeginAnalysis(db *sql.DB, tableName string, urn string, startTime time.Time, configJSON string) (int64, error) {
+	query := fmt.Sprintf(`INSERT INTO %s (start_time, config_params, urn) VALUES (?, ?, ?)`, d.QuoteIdentifier(tableName))
+	result, err := db.Exec(query, d.FormatTime(startTime), configJSON, urn)
 	if err != nil {
 		return 0, err
 	}
@@ -120,7 +121,7 @@ func (d *MySQLDialect) ScanOldestRunTime(row *sql.Row) (time.Time, error) {
 
 // ScanAnalysisRunRecord parses a full analysis run record from MySQL rows.
 func (d *MySQLDialect) ScanAnalysisRunRecord(rows *sql.Rows, record *schema.AnalysisRunRecord) error {
-	return rows.Scan(&record.AnalysisID, &record.StartTime, &record.EndTime, &record.RunDurationMs, &record.TotalFilesAnalyzed, &record.ConfigParams)
+	return rows.Scan(&record.AnalysisID, &record.StartTime, &record.EndTime, &record.RunDurationMs, &record.TotalFilesAnalyzed, &record.ConfigParams, &record.URN)
 }
 
 // ScanFileScoresMetricsRecord parses a full file metrics and scores record from MySQL rows.

@@ -22,7 +22,7 @@ type SQLDialect interface {
 	GetCreateFileScoresMetricsQuery(tableName string) string
 
 	// BeginAnalysis inserts a new analysis run and returns its ID.
-	BeginAnalysis(db *sql.DB, tableName string, startTime time.Time, configJSON string) (int64, error)
+	BeginAnalysis(db *sql.DB, tableName string, urn string, startTime time.Time, configJSON string) (int64, error)
 
 	// ScanStartTime parses the start_time from a database row.
 	ScanStartTime(row *sql.Row) (time.Time, error)

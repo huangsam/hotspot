@@ -25,6 +25,7 @@ type AnalysisContext struct {
 
 	// Intermediate state
 	AnalysisID      int64
+	RepoURN         string
 	AnalysisStore   contract.AnalysisStore
 	Files           []string
 	AggregateOutput *schema.AggregateOutput

@@ -21,7 +21,7 @@ func TestMigrateAnalysis_SQLite(t *testing.T) {
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "test_migration.db")
 
-	// Run migration to latest version (should go to version 1)
+	// Run migration to latest version
 	err := MigrateAnalysis(schema.SQLiteBackend, dbPath, targetLatestVersion)
 	require.NoError(t, err)
 

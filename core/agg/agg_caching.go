@@ -22,6 +22,7 @@ func CachedAggregateActivity(
 	compareSettings config.ComparisonSettings,
 	client contract.GitClient,
 	mgr contract.CacheManager,
+	urn string, // Added URN
 ) (*schema.AggregateOutput, error) {
 	activity := mgr.GetActivityStore()
 	if activity == nil {
@@ -29,7 +30,7 @@ func CachedAggregateActivity(
 		return aggregateActivity(ctx, gitSettings, client)
 	}
 
-	key := generateCacheKey(ctx, gitSettings, compareSettings, client)
+	key := generateCacheKey(ctx, gitSettings, compareSettings, client, urn)
 
 	// Check for cache hit
 	if result := checkCacheHit(activity, key); result != nil {
@@ -77,7 +78,7 @@ func computeAndStore(ctx context.Context, gitSettings config.GitSettings, client
 }
 
 // generateCacheKey creates a unique key based on analysis parameters.
-func generateCacheKey(ctx context.Context, gitSettings config.GitSettings, compareSettings config.ComparisonSettings, client contract.GitClient) string {
+func generateCacheKey(ctx context.Context, gitSettings config.GitSettings, compareSettings config.ComparisonSettings, client contract.GitClient, urn string) string {
 	// Truncate to the caching granularity
 	startHour := gitSettings.GetStartTime().Truncate(config.CacheGranularity)
 	endHour := gitSettings.GetEndTime().Truncate(config.CacheGranularity)
@@ -88,8 +89,14 @@ func generateCacheKey(ctx context.Context, gitSettings config.GitSettings, compa
 		repoHash = ""
 	}
 
+	// Use RepoURN if available for path-independent caching
+	repoID := urn
+	if repoID == "" {
+		repoID = gitSettings.GetRepoPath()
+	}
+
 	key := fmt.Sprintf("%s:%d:%d:%d:%s",
-		gitSettings.GetRepoPath(),
+		repoID,
 		int64(compareSettings.GetLookback()),
 		startHour.Unix(),
 		endHour.Unix(),

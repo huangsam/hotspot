@@ -34,6 +34,7 @@ type FileScores struct {
 // AnalysisRunRecord represents a row from the hotspot_analysis_runs table.
 type AnalysisRunRecord struct {
 	AnalysisID         int64
+	URN                string
 	StartTime          time.Time
 	EndTime            *time.Time
 	RunDurationMs      *int32

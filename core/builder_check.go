@@ -108,7 +108,7 @@ func (b *CheckResultBuilder) PrepareAnalysisConfig() (*CheckResultBuilder, error
 // RunAnalysis performs the aggregation and file analysis.
 func (b *CheckResultBuilder) RunAnalysis() (*CheckResultBuilder, error) {
 	// Run aggregation once (shared for all modes)
-	output, err := agg.CachedAggregateActivity(b.ctx, b.cfgTarget.Git, b.cfgTarget.Compare, b.client, b.mgr)
+	output, err := agg.CachedAggregateActivity(b.ctx, b.cfgTarget.Git, b.cfgTarget.Compare, b.client, b.mgr, b.cfgTarget.Git.GetRepoPath())
 	if err != nil {
 		return nil, fmt.Errorf("failed to analyze repository activity: %w. Verify the repository has Git history and is readable", err)
 	}

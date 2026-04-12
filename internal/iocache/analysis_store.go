@@ -92,11 +92,19 @@ func NewAnalysisStore(backend schema.DatabaseBackend, connStr string) (contract.
 		return nil, fmt.Errorf("failed to create analysis tables: %w", err)
 	}
 
-	return &AnalysisStoreImpl{
+	store := &AnalysisStoreImpl{
 		db:      db,
 		backend: backend,
 		dialect: dialect,
-	}, nil
+	}
+
+	// Backfill URNs for legacy runs synchronously to ensure store consistency
+	if err := BackfillAnalysisURNs(store); err != nil {
+		contract.LogWarn("Analysis URN backfill encountered errors", err)
+		// Don't fail store creation, but log the issue for debugging
+	}
+
+	return store, nil
 }
 
 // createAnalysisTables creates the analysis tracking tables.
@@ -119,7 +127,7 @@ func createAnalysisTables(db *sql.DB, dialect SQLDialect) error {
 }
 
 // BeginAnalysis creates a new analysis run and returns its unique ID.
-func (as *AnalysisStoreImpl) BeginAnalysis(startTime time.Time, configParams map[string]any) (int64, error) {
+func (as *AnalysisStoreImpl) BeginAnalysis(urn string, startTime time.Time, configParams map[string]any) (int64, error) {
 	// Skip for NoneBackend
 	if as.db == nil || as.dialect == nil {
 		return 0, nil
@@ -131,7 +139,7 @@ func (as *AnalysisStoreImpl) BeginAnalysis(startTime time.Time, configParams map
 		return 0, fmt.Errorf("failed to marshal config params: %w", err)
 	}
 
-	analysisID, err := as.dialect.BeginAnalysis(as.db, analysisRunsTable, startTime, string(configJSON))
+	analysisID, err := as.dialect.BeginAnalysis(as.db, analysisRunsTable, urn, startTime, string(configJSON))
 	if err != nil {
 		return 0, fmt.Errorf("failed to insert analysis run: %w", err)
 	}
@@ -183,6 +191,26 @@ func (as *AnalysisStoreImpl) EndAnalysis(analysisID int64, endTime time.Time, to
 	}
 
 	return nil
+}
+
+// UpdateAnalysisRunURN updates the urn for an existing analysis run record.
+func (as *AnalysisStoreImpl) UpdateAnalysisRunURN(analysisID int64, urn string) error {
+	// Skip for NoneBackend
+	if as.db == nil || as.dialect == nil {
+		return nil
+	}
+
+	quotedTableName := as.dialect.QuoteIdentifier(analysisRunsTable)
+	var query string
+	switch as.dialect.DriverName() {
+	case "pgx":
+		query = fmt.Sprintf("UPDATE %s SET urn = $1 WHERE analysis_id = $2", quotedTableName)
+	default:
+		query = fmt.Sprintf("UPDATE %s SET urn = ? WHERE analysis_id = ?", quotedTableName)
+	}
+
+	_, err := as.db.Exec(query, urn, analysisID)
+	return err
 }
 
 // RecordFileMetricsAndScores stores both raw git metrics and final scores for a file in one operation.
@@ -274,7 +302,7 @@ func (as *AnalysisStoreImpl) GetAllAnalysisRuns() ([]schema.AnalysisRunRecord, e
 	}
 
 	quotedTableName := as.dialect.QuoteIdentifier(analysisRunsTable)
-	query := fmt.Sprintf("SELECT analysis_id, start_time, end_time, run_duration_ms, total_files_analyzed, config_params FROM %s ORDER BY analysis_id", quotedTableName)
+	query := fmt.Sprintf("SELECT analysis_id, start_time, end_time, run_duration_ms, total_files_analyzed, config_params, urn FROM %s ORDER BY analysis_id", quotedTableName)
 
 	rows, err := as.db.Query(query)
 	if err != nil {
