@@ -258,7 +258,7 @@ func runCompareAnalysisForRef(ctx context.Context, cfg *config.Config, client co
 
 	fileResults, err := analyzeAllFilesAtRef(ctx, cfgRef.Git, cfgRef.Scoring, cfgRef.Runtime, client, ref, mgr)
 	if err != nil {
-		return nil, fmt.Errorf("analysis failed for ref %s", ref)
+		return nil, fmt.Errorf("analysis failed for ref %s: %w", ref, err)
 	}
 
 	folderResults := agg.AggregateAndScoreFolders(cfgRef.Git, cfgRef.Scoring, fileResults)
@@ -331,14 +331,13 @@ func runFollowPass(
 
 	var wg sync.WaitGroup
 	for i := range n {
-		idx := i // Capture loop variable for goroutine
 		wg.Go(func() {
 			// Note: This modifies the 'ranked' slice concurrently,
-			// but each goroutine writes to a *unique* index (ranked[idx]), which is safe.
-			rankedFile := ranked[idx]
+			// but each goroutine writes to a *unique* index (ranked[i]), which is safe.
+			rankedFile := ranked[i]
 			followCtx := withUseFollow(ctx, true)
 			rean := analyzeFileCommon(followCtx, gitSettings, scoringSettings, client, rankedFile.Path, output)
-			ranked[idx] = rean
+			ranked[i] = rean
 		})
 	}
 	wg.Wait()
@@ -606,7 +605,7 @@ func analyzeTimeseriesPoint(
 	// We'll create defaults for those that aren't critical for a single point scoring.
 	runtime := config.RuntimeConfig{Workers: 1}
 	outputCfg := config.OutputConfig{ResultLimit: 10}
-	compare := config.CompareConfig{Enabled: false}
+	compare := config.CompareConfig{}
 
 	var output *schema.SingleAnalysisOutput
 	var err error
