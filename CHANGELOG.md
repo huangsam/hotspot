@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] - 2026-04-12
+
+### Added
+- **Robust Time Parsing**: Full support for human-readable relative time expressions (e.g., "30d", "6 months ago") across CLI and MCP.
+- **Enhanced MCP Tools**: Dynamic `repo_path` resolution and full parameter support (`mode`, `limit`, `start`, `end`) for all analysis tools.
+- **Unified Pipeline**: Robust orchestration of analysis stages (preparation, discovery, aggregation, filtering, scoring) to ensure consistent behavior.
+
+### Changed
+- **Architectural Refactor**: Completed migration to interface-bound settings (Strangler Fig pattern) for better modularity and testability.
+- **Deduplicated Time Logic**: Unified internal logic for relative time and lookback duration parsing to eliminate redundancy.
+- **Improved Orchestration**: Centralized pipeline execution helper to reduce duplication in core analysis entry points.
+
+### Fixed
+- **Testing Stability**: Restored analysis tracking in timeseries analysis to resolve mock expectation failures in unit tests.
+
 ## [1.12.1] - 2026-02-22
 
 ### Changed
