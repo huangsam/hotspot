@@ -107,8 +107,21 @@ func (b *CheckResultBuilder) PrepareAnalysisConfig() (*CheckResultBuilder, error
 
 // RunAnalysis performs the aggregation and file analysis.
 func (b *CheckResultBuilder) RunAnalysis() (*CheckResultBuilder, error) {
+	// Resolve URN for cache key consistency
+	repoPath := b.cfgTarget.Git.GetRepoPath()
+	var urn string
+	if url, err := b.client.GetRemoteURL(b.ctx, repoPath); err == nil && url != "" {
+		urn = "git:" + url
+	} else {
+		absPath, _ := b.client.GetRepoRoot(b.ctx, repoPath)
+		if absPath == "" {
+			absPath = repoPath
+		}
+		urn = "local:" + absPath
+	}
+
 	// Run aggregation once (shared for all modes)
-	output, err := agg.CachedAggregateActivity(b.ctx, b.cfgTarget.Git, b.cfgTarget.Compare, b.client, b.mgr, b.cfgTarget.Git.GetRepoPath())
+	output, err := agg.CachedAggregateActivity(b.ctx, b.cfgTarget.Git, b.cfgTarget.Compare, b.client, b.mgr, urn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to analyze repository activity: %w. Verify the repository has Git history and is readable", err)
 	}

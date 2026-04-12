@@ -124,6 +124,13 @@ func TestWriteAnalysisRunsParquet(t *testing.T) {
 			require.NotNil(t, readData[i].ConfigParams, "ConfigParams should not be nil")
 			assert.Equal(t, *data[i].ConfigParams, *readData[i].ConfigParams, "ConfigParams should match")
 		}
+
+		if data[i].URN == nil {
+			assert.Nil(t, readData[i].URN, "URN should be nil")
+		} else {
+			require.NotNil(t, readData[i].URN, "URN should not be nil")
+			assert.Equal(t, *data[i].URN, *readData[i].URN, "URN should match")
+		}
 	}
 }
 

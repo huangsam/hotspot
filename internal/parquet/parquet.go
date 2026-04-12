@@ -17,6 +17,9 @@ type AnalysisRun struct {
 	// AnalysisID is the unique identifier for this analysis run
 	AnalysisID int64 `parquet:"analysis_id,snappy"`
 
+	// URN is the repository universal resource name (e.g., git:github.com/org/repo)
+	URN *string `parquet:"urn,optional,snappy"`
+
 	// StartTime is when the analysis began (stored as TIMESTAMP with nanosecond precision)
 	StartTime time.Time `parquet:"start_time,snappy"`
 
@@ -141,9 +144,13 @@ func MockFetchAnalysisRuns() []AnalysisRun {
 	startTime3 := now.Add(-10 * time.Minute)
 	// Note: endTime3, durationMs3, configParams3 are nil to demonstrate nullable fields
 
+	urn1 := "git:github.com/example/hotspot"
+	urn2 := "git:github.com/example/analytics"
+
 	return []AnalysisRun{
 		{
 			AnalysisID:         1,
+			URN:                &urn1,
 			StartTime:          startTime1,
 			EndTime:            &endTime1,
 			RunDurationMs:      &durationMs1,
@@ -152,6 +159,7 @@ func MockFetchAnalysisRuns() []AnalysisRun {
 		},
 		{
 			AnalysisID:         2,
+			URN:                &urn2,
 			StartTime:          startTime2,
 			EndTime:            &endTime2,
 			RunDurationMs:      &durationMs2,
@@ -160,6 +168,7 @@ func MockFetchAnalysisRuns() []AnalysisRun {
 		},
 		{
 			AnalysisID:         3,
+			URN:                nil, // No URN for in-progress run
 			StartTime:          startTime3,
 			EndTime:            nil, // Still running - nullable field
 			RunDurationMs:      nil, // Not yet calculated - nullable field
@@ -231,8 +240,13 @@ func MockFetchFileScoresMetrics() []FileScoresMetrics {
 func ConvertAnalysisRunRecords(records []schema.AnalysisRunRecord) []AnalysisRun {
 	result := make([]AnalysisRun, len(records))
 	for i, record := range records {
+		var urn *string
+		if record.URN != "" {
+			urn = &record.URN
+		}
 		result[i] = AnalysisRun{
 			AnalysisID:         record.AnalysisID,
+			URN:                urn,
 			StartTime:          record.StartTime,
 			EndTime:            record.EndTime,
 			RunDurationMs:      record.RunDurationMs,
