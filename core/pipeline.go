@@ -25,6 +25,7 @@ type AnalysisContext struct {
 
 	// Intermediate state
 	AnalysisID      int64
+	AnalysisStore   contract.AnalysisStore
 	Files           []string
 	AggregateOutput *schema.AggregateOutput
 
@@ -40,7 +41,8 @@ type Stage interface {
 
 // Pipeline orchestrates a series of Stages.
 type Pipeline struct {
-	stages []Stage
+	stages     []Stage
+	deferStage Stage // Always runs after stages, even on error.
 }
 
 // NewPipeline creates a new pipeline with the given stages.
@@ -48,12 +50,27 @@ func NewPipeline(stages ...Stage) *Pipeline {
 	return &Pipeline{stages: stages}
 }
 
+// WithDefer registers a stage that always executes after the pipeline,
+// even if an earlier stage returns an error.
+func (p *Pipeline) WithDefer(stage Stage) *Pipeline {
+	p.deferStage = stage
+	return p
+}
+
 // Execute runs the pipeline stages sequentially.
+// The deferred stage (if set) always runs, regardless of errors.
 func (p *Pipeline) Execute(ac *AnalysisContext) error {
+	var pipelineErr error
 	for _, stage := range p.stages {
 		if err := stage.Execute(ac); err != nil {
-			return err
+			pipelineErr = err
+			break
 		}
 	}
-	return nil
+	if p.deferStage != nil {
+		if deferErr := p.deferStage.Execute(ac); deferErr != nil {
+			contract.LogWarn("Deferred pipeline stage failed", deferErr)
+		}
+	}
+	return pipelineErr
 }

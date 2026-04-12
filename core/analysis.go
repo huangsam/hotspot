@@ -33,8 +33,8 @@ func (s *preparationStage) Execute(ac *AnalysisContext) error {
 	}
 
 	ac.Context = contextWithCacheManager(ac.Context, ac.Mgr)
-	analysisStore := ac.Mgr.GetAnalysisStore()
-	if analysisStore != nil {
+	ac.AnalysisStore = ac.Mgr.GetAnalysisStore()
+	if ac.AnalysisStore != nil {
 		configParams := map[string]any{
 			"mode":         string(ac.Scoring.GetMode()),
 			"lookback":     ac.Compare.GetLookback().String(),
@@ -42,7 +42,7 @@ func (s *preparationStage) Execute(ac *AnalysisContext) error {
 			"workers":      ac.Runtime.GetWorkers(),
 			"result_limit": ac.Output.GetResultLimit(),
 		}
-		id, err := analysisStore.BeginAnalysis(time.Now(), configParams)
+		id, err := ac.AnalysisStore.BeginAnalysis(time.Now(), configParams)
 		if err != nil {
 			contract.LogWarn("Analysis tracking initialization failed", err)
 		} else if id > 0 {
@@ -138,13 +138,31 @@ func (s *folderAggregationStage) Execute(ac *AnalysisContext) error {
 type finalizationStage struct{}
 
 func (s *finalizationStage) Execute(ac *AnalysisContext) error {
-	analysisStore := ac.Mgr.GetAnalysisStore()
-	if analysisStore != nil && ac.AnalysisID > 0 {
-		if err := analysisStore.EndAnalysis(ac.AnalysisID, time.Now(), len(ac.FileResults)); err != nil {
+	if ac.AnalysisStore != nil && ac.AnalysisID > 0 {
+		if err := ac.AnalysisStore.EndAnalysis(ac.AnalysisID, time.Now(), len(ac.FileResults)); err != nil {
 			contract.LogWarn("Failed to finalize analysis tracking", err)
 		}
 	}
 	return nil
+}
+
+// --- Orchestration helpers ---
+
+// noFilesFoundError returns a descriptive error if no files remain after pipeline execution.
+func noFilesFoundError(ac *AnalysisContext) error {
+	if len(ac.Files) > 0 {
+		return nil
+	}
+	var suggestion string
+	switch {
+	case ac.Git.GetPathFilter() != "":
+		suggestion = fmt.Sprintf(" (try removing --filter '%s' or using --exclude differently)", ac.Git.GetPathFilter())
+	case len(ac.Git.GetExcludes()) > 0:
+		suggestion = fmt.Sprintf(" (try adjusting excludes: %v)", ac.Git.GetExcludes())
+	default:
+		suggestion = " (ensure your repository has tracked files in the analysis time range)"
+	}
+	return fmt.Errorf("no files found for analysis at %s%s", ac.Git.GetRepoPath(), suggestion)
 }
 
 // --- Orchestration entry points ---
@@ -172,24 +190,14 @@ func runSingleAnalysisCore(
 		&aggregationStage{},
 		&filteringStage{},
 		&scoringStage{},
-		&finalizationStage{},
-	)
+	).WithDefer(&finalizationStage{})
 
 	if err := pipeline.Execute(ac); err != nil {
 		return nil, err
 	}
 
-	if len(ac.Files) == 0 {
-		var suggestion string
-		switch {
-		case gitSettings.GetPathFilter() != "":
-			suggestion = fmt.Sprintf(" (try removing --filter '%s' or using --exclude differently)", gitSettings.GetPathFilter())
-		case len(gitSettings.GetExcludes()) > 0:
-			suggestion = fmt.Sprintf(" (try adjusting excludes: %v)", gitSettings.GetExcludes())
-		default:
-			suggestion = " (ensure your repository has tracked files in the analysis time range)"
-		}
-		return nil, fmt.Errorf("no files found for analysis at %s%s", gitSettings.GetRepoPath(), suggestion)
+	if err := noFilesFoundError(ac); err != nil {
+		return nil, err
 	}
 
 	return &schema.SingleAnalysisOutput{
@@ -222,24 +230,14 @@ func runFolderAnalysisCore(
 		&filteringStage{},
 		&scoringStage{},
 		&folderAggregationStage{},
-		&finalizationStage{},
-	)
+	).WithDefer(&finalizationStage{})
 
 	if err := pipeline.Execute(ac); err != nil {
 		return nil, err
 	}
 
-	if len(ac.Files) == 0 {
-		var suggestion string
-		switch {
-		case gitSettings.GetPathFilter() != "":
-			suggestion = fmt.Sprintf(" (try removing --filter '%s' or using --exclude differently)", gitSettings.GetPathFilter())
-		case len(gitSettings.GetExcludes()) > 0:
-			suggestion = fmt.Sprintf(" (try adjusting excludes: %v)", gitSettings.GetExcludes())
-		default:
-			suggestion = " (ensure your repository has tracked files in the analysis time range)"
-		}
-		return nil, fmt.Errorf("no files found for analysis at %s%s", gitSettings.GetRepoPath(), suggestion)
+	if err := noFilesFoundError(ac); err != nil {
+		return nil, err
 	}
 
 	return &schema.SingleAnalysisOutput{
