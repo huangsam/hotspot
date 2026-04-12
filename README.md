@@ -27,8 +27,8 @@ Hotspot was born to provide a transparent, auditable tool for teams to diagnose 
 - 🔍 **See what matters** - rank files and folders by activity, complexity, etc.
 - ⚡ **Fast results** - analyze thousands of files in seconds
 - 🧮 **Rich insights** - contributors, churn, size, age, and risk metrics
-- 🎯 **Actionable filters** - narrow down by path, exclude noise, or track trends over time
-- 🕓 **Robust time windows** - support for human-readable time (e.g., `30d`, `6 months ago`)
+- 🎯 **Actionable filters** - narrow down by path or track trends over time
+- 🕓 **Robust time windows** - support for human-readable time
 - 📊 **Export results** - save to CSV/JSON/Parquet to track trends and progress
 - 🔄 **CI/CD integration** - enforce risk thresholds in pipelines
 

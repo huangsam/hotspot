@@ -14,7 +14,7 @@ CLI Args/Config (Viper) → Validation → Git Analysis (Concurrent) → Scoring
 
 **MCP (Model Context Protocol) Flow:**
 
-Hotspot can run as an MCP server (`hotspot mcp`) to expose its analysis capabilities as JSON-RPC tools (`get_files_hotspots`, `compare_hotspots`, etc.) directly to LLMs.
+Hotspot can run as an MCP server (`hotspot mcp`) to expose its analysis capabilities as JSON-RPC tools (`get_files_hotspots`, `compare_hotspots`, etc.) directly to LLMs. All tools support full parameter parity with the CLI, including `repo_path`, `mode`, `limit`, `start`, and `end`.
 
 ```
 MCP Request → Tool Handler → Git Analysis → Schema Enrichment → JSON Response
