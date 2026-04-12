@@ -71,7 +71,7 @@ We encourage contributions of code, documentation, and tests!
 
 - Fork the repository and create your branch from main
 - **Make Changes:** Write your code, following the existing Go style and ensuring good test coverage
-- **Run Tests:** Use `make test` for unit tests and `make test-integration` for integration tests
+- **Run Tests:** Use `make test` for unit tests and `make test-all` for integration tests
 - **Ensure Consistency:** Run `make check` before submitting to ensure formatting, linting, and tests pass
 - **Submit a Pull Request (PR):** Target the main branch. Provide a clear title and description explaining the purpose of your change and referencing any related issues
 
