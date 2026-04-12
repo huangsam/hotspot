@@ -49,3 +49,9 @@ The `core` package implements four distinct scoring algorithms based on differen
 ## Key Design Patterns
 
 - **I/O Caching**: Results and analysis are cached using pluggable backends (SQLite, MySQL, PostgreSQL) to dramatically speed up repeated analyses. See `internal/iocache/`.
+
+- **Repository URN**: Every analysis run is tagged with a canonical repository identifier (`RepoURN`) of the form `git:host/owner/repo` (resolved via `GetRemoteURL` + `NormalizeRemoteURL`) or `local:/abs/path` as a fallback. This ensures cache keys and DB records are path-independent and stable across checkout locations. Both `analysis.go` and `builder_check.go` resolve URN identically before calling `CachedAggregateActivity`.
+
+- **Per-Dialect Migrations**: `internal/iocache/migrations/` contains three subdirectories (`sqlite/`, `mysql/`, `postgres/`) with backend-specific SQL files. `MigrateAnalysis` selects the correct subdirectory via `buildSource()`. DDL differs meaningfully across backends (e.g. `AUTOINCREMENT` vs `AUTO_INCREMENT` vs `BIGSERIAL`, `TEXT` vs `DATETIME(6)` vs `TIMESTAMPTZ`). Do not write dialect-agnostic SQL for schema changes — add a file per dialect.
+
+- **Analysis Store Filtering**: `AnalysisStore` exposes `GetAnalysisRuns(filter)` and `GetFileScoresMetrics(filter)` accepting `schema.AnalysisQueryFilter{URN, Limit, Offset}` for pagination and per-repo filtering. PostgreSQL requires `$N`-style placeholders (handled by `placeholderStr()`); SQLite and MySQL use `?`.
