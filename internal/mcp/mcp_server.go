@@ -31,6 +31,8 @@ func NewMCPServer(baseCfg *config.Config, mgr contract.CacheManager, client cont
 		mcp.WithString("repo_path", mcp.Description("Path to the Git repository (defaults to current directory if not specified).")),
 		mcp.WithString("mode", mcp.Description("Scoring mode (hot, risk, complexity, stale). Defaults to 'hot'."), mcp.Enum("hot", "risk", "complexity", "stale")),
 		mcp.WithNumber("limit", mcp.Description("Limit the number of results returned.")),
+		mcp.WithString("start", mcp.Description("Start date for analysis window (ISO8601 e.g. '2024-01-01T00:00:00Z', or relative e.g. '30d ago', '6 months ago').")),
+		mcp.WithString("end", mcp.Description("End date for analysis window (ISO8601 or relative). Defaults to now.")),
 	), h.handleGetFilesHotspots)
 
 	// --- 2. Tool: get_folders_hotspots ---
@@ -39,6 +41,8 @@ func NewMCPServer(baseCfg *config.Config, mgr contract.CacheManager, client cont
 		mcp.WithString("repo_path", mcp.Description("Path to the Git repository.")),
 		mcp.WithString("mode", mcp.Description("Scoring mode (hot, risk, complexity, stale)."), mcp.Enum("hot", "risk", "complexity", "stale")),
 		mcp.WithNumber("limit", mcp.Description("Limit the number of results.")),
+		mcp.WithString("start", mcp.Description("Start date for analysis window (ISO8601 e.g. '2024-01-01T00:00:00Z', or relative e.g. '30d ago', '6 months ago').")),
+		mcp.WithString("end", mcp.Description("End date for analysis window (ISO8601 or relative). Defaults to now.")),
 	), h.handleGetFoldersHotspots)
 
 	// --- 3. Tool: compare_hotspots ---

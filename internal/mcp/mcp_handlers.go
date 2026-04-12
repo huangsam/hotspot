@@ -37,6 +37,9 @@ func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.Ca
 	if l := request.GetInt("limit", 0); l > 0 {
 		cfg.Output.ResultLimit = l
 	}
+	if err := config.RevalidateTimeRange(cfg, request.GetString("start", ""), request.GetString("end", "")); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid time range: %v", err)), nil
+	}
 
 	ranked, _, err := core.GetHotspotFilesResults(core.WithSuppressHeader(ctx), cfg, h.mgr)
 	if err != nil {
@@ -66,6 +69,9 @@ func (h *toolHandler) handleGetFoldersHotspots(ctx context.Context, request mcp.
 	}
 	if l := request.GetInt("limit", 0); l > 0 {
 		cfg.Output.ResultLimit = l
+	}
+	if err := config.RevalidateTimeRange(cfg, request.GetString("start", ""), request.GetString("end", "")); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid time range: %v", err)), nil
 	}
 
 	ranked, _, err := core.GetHotspotFoldersResults(core.WithSuppressHeader(ctx), cfg, h.mgr)

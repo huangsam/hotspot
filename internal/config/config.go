@@ -608,6 +608,46 @@ func RevalidateTimeseries(cfg *Config, intervalStr string) error {
 	return nil
 }
 
+// RevalidateTimeRange re-parses and validates start/end time range parameters.
+// Both startStr and endStr accept ISO8601 absolute dates or relative expressions
+// like "30d ago" or "6 months ago". Empty strings leave the existing cfg values
+// unchanged, so callers can safely pass an empty string for either field.
+func RevalidateTimeRange(cfg *Config, startStr, endStr string) error {
+	now := time.Now()
+
+	parseTime := func(s string) (time.Time, error) {
+		t, err := time.Parse(contract.DateTimeFormat, s)
+		if err == nil {
+			return t, nil
+		}
+		return contract.ParseRelativeTime(s, now)
+	}
+
+	if startStr != "" {
+		t, err := parseTime(startStr)
+		if err != nil {
+			return fmt.Errorf("invalid start time %q: expected ISO8601 or relative expression like '30d ago': %w", startStr, err)
+		}
+		cfg.Git.StartTime = t
+	}
+
+	if endStr != "" {
+		t, err := parseTime(endStr)
+		if err != nil {
+			return fmt.Errorf("invalid end time %q: expected ISO8601 or relative expression like '7d ago': %w", endStr, err)
+		}
+		cfg.Git.EndTime = t
+	}
+
+	if !cfg.Git.StartTime.IsZero() && !cfg.Git.EndTime.IsZero() && cfg.Git.StartTime.After(cfg.Git.EndTime) {
+		return fmt.Errorf("start time (%s) cannot be after end time (%s)",
+			cfg.Git.StartTime.Format(contract.DateTimeFormat),
+			cfg.Git.EndTime.Format(contract.DateTimeFormat))
+	}
+
+	return nil
+}
+
 // processCompareMode handles the comparison references and lookback.
 func processCompareMode(cfg *Config, input *RawInput) error {
 	cfg.Compare.BaseRef = strings.TrimSpace(input.BaseRef)
