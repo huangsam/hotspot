@@ -148,6 +148,16 @@ func (s *finalizationStage) Execute(ac *AnalysisContext) error {
 
 // --- Orchestration helpers ---
 
+// newAnalysisContext constructs an AnalysisContext for a standard HEAD analysis.
+func newAnalysisContext(ctx context.Context, gitSettings config.GitSettings, scoringSettings config.ScoringSettings, runtimeSettings config.RuntimeSettings, outputSettings config.OutputSettings, compareSettings config.ComparisonSettings, client contract.GitClient, mgr contract.CacheManager) *AnalysisContext {
+	return &AnalysisContext{
+		Context: ctx, Git: gitSettings, Scoring: scoringSettings,
+		Runtime: runtimeSettings, Output: outputSettings,
+		Compare: compareSettings, Client: client, Mgr: mgr,
+		TargetRef: "HEAD",
+	}
+}
+
 // noFilesFoundError returns a descriptive error if no files remain after pipeline execution.
 func noFilesFoundError(ac *AnalysisContext) error {
 	if len(ac.Files) > 0 {
@@ -178,12 +188,7 @@ func runSingleAnalysisCore(
 	client contract.GitClient,
 	mgr contract.CacheManager,
 ) (*schema.SingleAnalysisOutput, error) {
-	ac := &AnalysisContext{
-		Context: ctx, Git: gitSettings, Scoring: scoringSettings,
-		Runtime: runtimeSettings, Output: outputSettings,
-		Compare: compareSettings, Client: client, Mgr: mgr,
-		TargetRef: "HEAD",
-	}
+	ac := newAnalysisContext(ctx, gitSettings, scoringSettings, runtimeSettings, outputSettings, compareSettings, client, mgr)
 
 	pipeline := NewPipeline(
 		&preparationStage{},
@@ -217,12 +222,7 @@ func runFolderAnalysisCore(
 	client contract.GitClient,
 	mgr contract.CacheManager,
 ) (*schema.SingleAnalysisOutput, error) {
-	ac := &AnalysisContext{
-		Context: ctx, Git: gitSettings, Scoring: scoringSettings,
-		Runtime: runtimeSettings, Output: outputSettings,
-		Compare: compareSettings, Client: client, Mgr: mgr,
-		TargetRef: "HEAD",
-	}
+	ac := newAnalysisContext(ctx, gitSettings, scoringSettings, runtimeSettings, outputSettings, compareSettings, client, mgr)
 
 	pipeline := NewPipeline(
 		&preparationStage{},
@@ -283,11 +283,13 @@ func analyzeAllFilesAtRef(
 		Context: ctx, Git: gitSettings, Scoring: scoringSettings,
 		Runtime: runtimeSettings, Client: client, Mgr: mgr,
 		TargetRef: ref,
-		Compare:   config.CompareConfig{Enabled: false},
+		// Compare is disabled: we use a fixed time window derived from the ref's commit time.
+		// Preparation and finalization are intentionally omitted: compare-mode sub-analyses
+		// are internal helpers and should not be tracked independently.
 	}
 
-	// This pipeline is optimized for Compare: It discovers files at TargetRef,
-	// Aggregates activity, filters the discovered files, and scores them.
+	// This pipeline discovers files at TargetRef, aggregates activity,
+	// filters the discovered files, and scores them.
 	pipeline := NewPipeline(
 		&fileDiscoveryStage{},
 		&aggregationStage{},
