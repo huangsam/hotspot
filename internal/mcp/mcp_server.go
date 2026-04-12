@@ -53,6 +53,8 @@ func NewMCPServer(baseCfg *config.Config, mgr contract.CacheManager, client cont
 		mcp.WithString("lookback", mcp.Description("Time window for analysis (e.g., '6 months', '30d').")),
 		mcp.WithString("repo_path", mcp.Description("Path to the Git repository.")),
 		mcp.WithString("mode", mcp.Description("Scoring mode.")),
+		mcp.WithString("start", mcp.Description("Start date for the analysis window.")),
+		mcp.WithString("end", mcp.Description("End date for the analysis window.")),
 	), h.handleCompareHotspots)
 
 	// --- 4. Tool: get_timeseries ---
@@ -63,6 +65,8 @@ func NewMCPServer(baseCfg *config.Config, mgr contract.CacheManager, client cont
 		mcp.WithNumber("points", mcp.Description("Number of data points to generate (trends)."), mcp.Required()),
 		mcp.WithString("repo_path", mcp.Description("Path to the Git repository.")),
 		mcp.WithString("mode", mcp.Description("Scoring mode.")),
+		mcp.WithString("start", mcp.Description("Start date for the entire timeseries window.")),
+		mcp.WithString("end", mcp.Description("End date for the entire timeseries window (anchors the first point).")),
 	), h.handleGetTimeseries)
 
 	return s
