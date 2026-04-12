@@ -148,6 +148,35 @@ func (s *finalizationStage) Execute(ac *AnalysisContext) error {
 
 // --- Orchestration helpers ---
 
+// pipelineConfig captures operational options for the analysis pipeline.
+type pipelineConfig struct {
+	withFolderAggregation bool
+	withTrackedAnalysis   bool
+	discovery             Stage
+}
+
+// executePipeline constructs and runs a pipeline based on the provided configuration.
+func executePipeline(ac *AnalysisContext, pCfg pipelineConfig) error {
+	var stages []Stage
+	if pCfg.withTrackedAnalysis {
+		stages = append(stages, &preparationStage{})
+	}
+	if pCfg.discovery != nil {
+		stages = append(stages, pCfg.discovery)
+	}
+	stages = append(stages, &aggregationStage{}, &filteringStage{}, &scoringStage{})
+	if pCfg.withFolderAggregation {
+		stages = append(stages, &folderAggregationStage{})
+	}
+
+	pipeline := NewPipeline(stages...)
+	if pCfg.withTrackedAnalysis {
+		pipeline = pipeline.WithDefer(&finalizationStage{})
+	}
+
+	return pipeline.Execute(ac)
+}
+
 // newAnalysisContext constructs an AnalysisContext for a standard HEAD analysis.
 func newAnalysisContext(ctx context.Context, gitSettings config.GitSettings, scoringSettings config.ScoringSettings, runtimeSettings config.RuntimeSettings, outputSettings config.OutputSettings, compareSettings config.ComparisonSettings, client contract.GitClient, mgr contract.CacheManager) *AnalysisContext {
 	return &AnalysisContext{
@@ -190,14 +219,8 @@ func runSingleAnalysisCore(
 ) (*schema.SingleAnalysisOutput, error) {
 	ac := newAnalysisContext(ctx, gitSettings, scoringSettings, runtimeSettings, outputSettings, compareSettings, client, mgr)
 
-	pipeline := NewPipeline(
-		&preparationStage{},
-		&aggregationStage{},
-		&filteringStage{},
-		&scoringStage{},
-	).WithDefer(&finalizationStage{})
-
-	if err := pipeline.Execute(ac); err != nil {
+	pCfg := pipelineConfig{withTrackedAnalysis: true}
+	if err := executePipeline(ac, pCfg); err != nil {
 		return nil, err
 	}
 
@@ -224,15 +247,11 @@ func runFolderAnalysisCore(
 ) (*schema.SingleAnalysisOutput, error) {
 	ac := newAnalysisContext(ctx, gitSettings, scoringSettings, runtimeSettings, outputSettings, compareSettings, client, mgr)
 
-	pipeline := NewPipeline(
-		&preparationStage{},
-		&aggregationStage{},
-		&filteringStage{},
-		&scoringStage{},
-		&folderAggregationStage{},
-	).WithDefer(&finalizationStage{})
-
-	if err := pipeline.Execute(ac); err != nil {
+	pCfg := pipelineConfig{
+		withTrackedAnalysis:   true,
+		withFolderAggregation: true,
+	}
+	if err := executePipeline(ac, pCfg); err != nil {
 		return nil, err
 	}
 
@@ -292,16 +311,8 @@ func analyzeAllFilesAtRef(
 		Compare: config.CompareConfig{},
 	}
 
-	// This pipeline discovers files at TargetRef, aggregates activity,
-	// filters the discovered files, and scores them.
-	pipeline := NewPipeline(
-		&fileDiscoveryStage{},
-		&aggregationStage{},
-		&filteringStage{},
-		&scoringStage{},
-	)
-
-	if err := pipeline.Execute(ac); err != nil {
+	pCfg := pipelineConfig{discovery: &fileDiscoveryStage{}}
+	if err := executePipeline(ac, pCfg); err != nil {
 		return nil, err
 	}
 
@@ -600,41 +611,32 @@ func analyzeTimeseriesPoint(
 	isFolder bool,
 	mgr contract.CacheManager,
 ) (float64, []string) {
-	suppressCtx := WithSuppressHeader(ctx)
-	// OutputSettings and RuntimeSettings/ComparisonSettings are needed for runSingleAnalysisCore.
-	// We'll create defaults for those that aren't critical for a single point scoring.
-	runtime := config.RuntimeConfig{Workers: 1}
-	outputCfg := config.OutputConfig{ResultLimit: 10}
-	compare := config.CompareConfig{}
-
-	var output *schema.SingleAnalysisOutput
-	var err error
-
-	if isFolder {
-		output, err = runFolderAnalysisCore(suppressCtx, gitSettings, scoringSettings, runtime, outputCfg, compare, client, mgr)
-	} else {
-		output, err = runSingleAnalysisCore(suppressCtx, gitSettings, scoringSettings, runtime, outputCfg, compare, client, mgr)
+	ac := &AnalysisContext{
+		Context: WithSuppressHeader(ctx), Git: gitSettings, Scoring: scoringSettings,
+		Runtime: config.RuntimeConfig{Workers: 1}, Output: config.OutputConfig{ResultLimit: 10},
+		Compare: config.CompareConfig{}, Client: client, Mgr: mgr,
+		TargetRef: "HEAD",
 	}
 
-	if err != nil {
+	pCfg := pipelineConfig{withTrackedAnalysis: true, withFolderAggregation: isFolder}
+	if err := executePipeline(ac, pCfg); err != nil {
 		// If no data in this window (e.g. no commits), score is 0
 		return 0, []string{}
 	}
 
-	// Extract score and owners from analysis output
+	// Extract result
 	if isFolder {
-		for _, fr := range output.FolderResults {
+		for _, fr := range ac.FolderResults {
 			if fr.Path == path {
 				return fr.Score, fr.Owners
 			}
 		}
-		return 0, []string{}
-	}
-	for _, fr := range output.FileResults {
-		if fr.Path == path {
-			return fr.ModeScore, fr.Owners
+	} else {
+		for _, fr := range ac.FileResults {
+			if fr.Path == path {
+				return fr.ModeScore, fr.Owners
+			}
 		}
 	}
-
 	return 0, []string{}
 }
