@@ -73,6 +73,24 @@ func TestParseRelativeTimeUnit(t *testing.T) {
 			expected:    fixedNow.Add(time.Duration(-15) * time.Minute),
 			expectError: false,
 		},
+		{
+			name:        "valid singular hour",
+			input:       "1 hour ago",
+			expected:    fixedNow.Add(time.Duration(-1) * time.Hour),
+			expectError: false,
+		},
+		{
+			name:        "valid plural minutes",
+			input:       "30 minutes ago",
+			expected:    fixedNow.Add(time.Duration(-30) * time.Minute),
+			expectError: false,
+		},
+		{
+			name:        "boundary 0 days",
+			input:       "0 days ago",
+			expected:    fixedNow,
+			expectError: false,
+		},
 		// Invalid tests: Ensure only supported formats/units are accepted
 		{
 			name:        "invalid missing ago",
@@ -147,6 +165,9 @@ func TestParseLookbackDuration(t *testing.T) {
 		{"short format hours", "48h", 48 * time.Hour, false},
 		{"short format minutes", "48m", 48 * time.Minute, false},
 		{"short format with space", "7 d", 7 * day, false},
+		{"short format month", "6mo", 6 * 30 * day, false},
+		{"short format year", "1y", 365 * day, false},
+		{"zero duration shorthand", "0h", 0, true},
 
 		// --- Error/Invalid Tests ---
 		{"invalid format (missing value)", "months", 0, true},

@@ -12,9 +12,24 @@ import (
 // DateTimeFormat is the default date time representation.
 var DateTimeFormat = time.RFC3339
 
-// Define the regular expression to capture "N [units] ago"
-// e.g., "2 years ago", "3 months ago", "1 week ago", "30d ago".
-var relativeTimeRe = regexp.MustCompile(`^(\d+)\s*(year|month|week|day|hour|minute|y|mo|w|d|h|m)\s*s?\s+ago$`)
+const (
+	unitsPattern = `(year|month|week|day|hour|minute|y|mo|w|d|h|m)`
+)
+
+// Define the regular expressions to capture time values and units.
+var (
+	relativeTimeRe     = regexp.MustCompile(`^(\d+)\s*` + unitsPattern + `\s*s?\s+ago$`)
+	lookbackDurationRe = regexp.MustCompile(`^(\d+)\s*` + unitsPattern + `\s*s?$`)
+)
+
+// parseRawUnit captures the value and normalized unit from a string match.
+func parseRawUnit(matches []string) (int, string) {
+	if len(matches) < 3 {
+		return 0, ""
+	}
+	value, _ := strconv.Atoi(matches[1])
+	return value, matches[2]
+}
 
 // ParseRelativeTime converts strings like "2 years ago" or "30d ago" into a time.Time in the past.
 func ParseRelativeTime(s string, now time.Time) (time.Time, error) {
@@ -25,10 +40,7 @@ func ParseRelativeTime(s string, now time.Time) (time.Time, error) {
 		return time.Time{}, fmt.Errorf("invalid relative time format: %s", s)
 	}
 
-	// 1: Value (e.g., "2")
-	// 2: Unit (e.g., "year" or "month" or "d")
-	value, _ := strconv.Atoi(matches[1])
-	unit := matches[2]
+	value, unit := parseRawUnit(matches)
 
 	switch unit {
 	case "year", "y":
@@ -50,9 +62,6 @@ func ParseRelativeTime(s string, now time.Time) (time.Time, error) {
 	}
 }
 
-// Define the regular expression to capture "N [units]".
-var lookbackDurationRe = regexp.MustCompile(`^(\d+)\s*(year|month|week|day|hour|minute|y|mo|w|d|h|m)\s*s?$`)
-
 // ParseLookbackDuration converts strings like "3 months" or "720h" into a single time.Duration.
 // It first tries custom parsing for human-readable formats (e.g., "30 days", "2 weeks", "30d"),
 // then falls back to Go's built-in time.ParseDuration for standard formats.
@@ -63,10 +72,7 @@ func ParseLookbackDuration(s string) (time.Duration, error) {
 	// Try custom parsing for human-readable formats first
 	matches := lookbackDurationRe.FindStringSubmatch(sLower)
 	if len(matches) > 0 {
-		// 1: Value (e.g., "2")
-		// 2: Unit (e.g., "year" or "month" or "d")
-		value, _ := strconv.Atoi(matches[1])
-		unit := matches[2]
+		value, unit := parseRawUnit(matches)
 
 		var totalDuration time.Duration
 
