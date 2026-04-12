@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/schema"
 )
 
 // LocalGitClient implements the GitClient interface by executing the
@@ -46,10 +46,10 @@ func (c *LocalGitClient) GetActivityLog(ctx context.Context, repoPath string, st
 		"--date=iso-strict",
 	}
 	if !startTime.IsZero() {
-		args = append(args, fmt.Sprintf("--since=%s", startTime.Format(contract.DateTimeFormat)))
+		args = append(args, fmt.Sprintf("--since=%s", startTime.Format(schema.DateTimeFormat)))
 	}
 	if !endTime.IsZero() {
-		args = append(args, fmt.Sprintf("--until=%s", endTime.Format(contract.DateTimeFormat)))
+		args = append(args, fmt.Sprintf("--until=%s", endTime.Format(schema.DateTimeFormat)))
 	}
 	return c.Run(ctx, repoPath, args...)
 }
@@ -93,10 +93,10 @@ func (c *LocalGitClient) GetFileActivityLog(ctx context.Context, repoPath string
 	} else {
 		// Only apply time filters when not using --follow
 		if !startTime.IsZero() {
-			args = append(args, "--since="+startTime.Format(contract.DateTimeFormat))
+			args = append(args, "--since="+startTime.Format(schema.DateTimeFormat))
 		}
 		if !endTime.IsZero() {
-			args = append(args, "--until="+endTime.Format(contract.DateTimeFormat))
+			args = append(args, "--until="+endTime.Format(schema.DateTimeFormat))
 		}
 	}
 	args = append(args, "--", path)

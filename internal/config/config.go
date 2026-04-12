@@ -540,7 +540,7 @@ func processTimeRange(cfg *Config, input *RawInput) error {
 	cfg.Git.StartTime = cfg.Git.EndTime.Add(-DefaultLookbackDays * 24 * time.Hour)
 
 	parseAbsolute := func(s string) (time.Time, error) {
-		return time.Parse(contract.DateTimeFormat, s)
+		return time.Parse(schema.DateTimeFormat, s)
 	}
 
 	// --- Process Start Time ---
@@ -549,7 +549,7 @@ func processTimeRange(cfg *Config, input *RawInput) error {
 		if err == nil {
 			cfg.Git.StartTime = t
 		} else {
-			t, relErr := contract.ParseRelativeTime(input.Start, now)
+			t, relErr := schema.ParseRelativeTime(input.Start, now)
 			if relErr != nil {
 				return fmt.Errorf("invalid start date format for '%s'. Expected absolute ISO8601 or 'N [units] ago': %v", input.Start, err)
 			}
@@ -563,7 +563,7 @@ func processTimeRange(cfg *Config, input *RawInput) error {
 		if err == nil {
 			cfg.Git.EndTime = t
 		} else {
-			t, relErr := contract.ParseRelativeTime(input.End, now)
+			t, relErr := schema.ParseRelativeTime(input.End, now)
 			if relErr != nil {
 				return fmt.Errorf("invalid end date format for '%s'. Expected absolute ISO8601 or 'N [units] ago': %v", input.End, err)
 			}
@@ -573,7 +573,7 @@ func processTimeRange(cfg *Config, input *RawInput) error {
 
 	// --- Final Validation ---
 	if !cfg.Git.StartTime.IsZero() && !cfg.Git.EndTime.IsZero() && cfg.Git.StartTime.After(cfg.Git.EndTime) {
-		return fmt.Errorf("start time (%s) cannot be after end time (%s)", cfg.Git.StartTime.Format(contract.DateTimeFormat), cfg.Git.EndTime.Format(contract.DateTimeFormat))
+		return fmt.Errorf("start time (%s) cannot be after end time (%s)", cfg.Git.StartTime.Format(schema.DateTimeFormat), cfg.Git.EndTime.Format(schema.DateTimeFormat))
 	}
 
 	return nil
@@ -582,7 +582,7 @@ func processTimeRange(cfg *Config, input *RawInput) error {
 // RevalidateCompare re-parses and validates comparison parameters.
 func RevalidateCompare(cfg *Config, lookbackStr string) error {
 	if lookbackStr != "" {
-		lookback, err := contract.ParseLookbackDuration(lookbackStr)
+		lookback, err := schema.ParseLookbackDuration(lookbackStr)
 		if err != nil {
 			return err
 		}
@@ -597,7 +597,7 @@ func RevalidateCompare(cfg *Config, lookbackStr string) error {
 // RevalidateTimeseries re-parses and validates timeseries parameters.
 func RevalidateTimeseries(cfg *Config, intervalStr string) error {
 	if intervalStr != "" {
-		interval, err := contract.ParseLookbackDuration(intervalStr)
+		interval, err := schema.ParseLookbackDuration(intervalStr)
 		if err != nil {
 			return fmt.Errorf("invalid interval: %w", err)
 		}
@@ -617,11 +617,11 @@ func RevalidateTimeRange(cfg *Config, startStr, endStr string) error {
 	now := time.Now()
 
 	parseTime := func(s string) (time.Time, error) {
-		t, err := time.Parse(contract.DateTimeFormat, s)
+		t, err := time.Parse(schema.DateTimeFormat, s)
 		if err == nil {
 			return t, nil
 		}
-		return contract.ParseRelativeTime(s, now)
+		return schema.ParseRelativeTime(s, now)
 	}
 
 	if startStr != "" {
@@ -642,8 +642,8 @@ func RevalidateTimeRange(cfg *Config, startStr, endStr string) error {
 
 	if !cfg.Git.StartTime.IsZero() && !cfg.Git.EndTime.IsZero() && cfg.Git.StartTime.After(cfg.Git.EndTime) {
 		return fmt.Errorf("start time (%s) cannot be after end time (%s)",
-			cfg.Git.StartTime.Format(contract.DateTimeFormat),
-			cfg.Git.EndTime.Format(contract.DateTimeFormat))
+			cfg.Git.StartTime.Format(schema.DateTimeFormat),
+			cfg.Git.EndTime.Format(schema.DateTimeFormat))
 	}
 
 	return nil
@@ -667,7 +667,7 @@ func processCompareMode(cfg *Config, input *RawInput) error {
 		cfg.Compare.TargetRef = "HEAD"
 	}
 
-	lookback, err := contract.ParseLookbackDuration(input.Lookback)
+	lookback, err := schema.ParseLookbackDuration(input.Lookback)
 	if err != nil {
 		return err
 	}
@@ -682,7 +682,7 @@ func processTimeseriesMode(cfg *Config, input *RawInput) error {
 	cfg.Timeseries.Points = input.Points
 
 	if input.Interval != "" {
-		interval, err := contract.ParseLookbackDuration(input.Interval)
+		interval, err := schema.ParseLookbackDuration(input.Interval)
 		if err != nil {
 			return fmt.Errorf("invalid interval: %w", err)
 		}

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/schema"
 )
 
 // LogAnalysisHeader prints a concise, 2-line header for each analysis phase.
@@ -20,7 +20,7 @@ func LogAnalysisHeader(git config.GitSettings, scoring config.ScoringSettings, _
 	fmt.Printf("Repo: %s (Mode: %s)\n", repoName, scoring.GetMode())
 
 	// Line 2: The actual date range being analyzed
-	fmt.Printf("Range: %s → %s\n", git.GetStartTime().Format(contract.DateTimeFormat), git.GetEndTime().Format(contract.DateTimeFormat))
+	fmt.Printf("Range: %s → %s\n", git.GetStartTime().Format(schema.DateTimeFormat), git.GetEndTime().Format(schema.DateTimeFormat))
 }
 
 // LogTimeseriesHeader prints a header for timeseries analysis.

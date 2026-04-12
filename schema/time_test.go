@@ -1,9 +1,10 @@
-package contract
+package schema_test
 
 import (
 	"testing"
 	"time"
 
+	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -111,7 +112,7 @@ func TestParseRelativeTimeUnit(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tResult, err := ParseRelativeTime(tt.input, fixedNow)
+			tResult, err := schema.ParseRelativeTime(tt.input, fixedNow)
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -181,7 +182,7 @@ func TestParseLookbackDuration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseLookbackDuration(tt.input)
+			got, err := schema.ParseLookbackDuration(tt.input)
 
 			if tt.expectErr {
 				// Assert that an error occurred
@@ -247,7 +248,7 @@ func TestCalculateDaysBetween(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			start := fixedEnd.Add(-tt.duration) // Calculate start time based on fixed end time and duration
-			result := CalculateDaysBetween(start, fixedEnd)
+			result := schema.CalculateDaysBetween(start, fixedEnd)
 			assert.Equal(t, tt.expectedDays, result, "Mismatch: %s | Start: %s, End: %s, Duration: %s",
 				tt.description, start.Format(time.RFC3339), fixedEnd.Format(time.RFC3339), fixedEnd.Sub(start))
 		})
@@ -277,7 +278,7 @@ func FuzzParseRelativeTime(f *testing.F) {
 
 	f.Fuzz(func(_ *testing.T, input string) {
 		now := time.Now()
-		_, err := ParseRelativeTime(input, now)
+		_, err := schema.ParseRelativeTime(input, now)
 		// We don't assert on the result, just that it doesn't panic
 		_ = err // ignore error, we're testing for crashes
 	})
@@ -304,7 +305,7 @@ func FuzzParseLookbackDuration(f *testing.F) {
 	}
 
 	f.Fuzz(func(_ *testing.T, input string) {
-		_, err := ParseLookbackDuration(input)
+		_, err := schema.ParseLookbackDuration(input)
 		_ = err
 	})
 }

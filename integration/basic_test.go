@@ -20,7 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -45,8 +44,8 @@ func TestFilesVerification(t *testing.T) {
 	hotspotPath := getHotspotBinary()
 
 	// Use a fixed time range for consistent testing (last 365 days)
-	startTime := time.Now().AddDate(0, 0, -365).Format(contract.DateTimeFormat)
-	endTime := time.Now().Format(contract.DateTimeFormat)
+	startTime := time.Now().AddDate(0, 0, -365).Format(schema.DateTimeFormat)
+	endTime := time.Now().Format(schema.DateTimeFormat)
 
 	// Run hotspot files --output json --detail --start <start> --end <end> --limit 50
 	// Limit to top 50 files to keep runtime reasonable while still testing core functionality
@@ -115,7 +114,7 @@ func TestFilesVerification(t *testing.T) {
 					firstCommitTime, err := time.Parse(time.RFC3339, firstCommitTimestampStr)
 					require.NoError(t, err, "failed to parse git timestamp for %s", file)
 
-					expectedAgeDays := contract.CalculateDaysBetween(firstCommitTime, time.Now())
+					expectedAgeDays := schema.CalculateDaysBetween(firstCommitTime, time.Now())
 
 					// Age should match exactly since we're using the same time range
 					assert.Equal(t, expectedAgeDays, details.AgeDays,
@@ -167,8 +166,8 @@ func TestFoldersVerification(t *testing.T) {
 	hotspotPath := getHotspotBinary()
 
 	// Use a fixed time range for consistent testing (last 365 days)
-	startTime := time.Now().AddDate(0, 0, -365).Format(contract.DateTimeFormat)
-	endTime := time.Now().Format(contract.DateTimeFormat)
+	startTime := time.Now().AddDate(0, 0, -365).Format(schema.DateTimeFormat)
+	endTime := time.Now().Format(schema.DateTimeFormat)
 
 	// Run hotspot folders --output json --detail --start <start> --end <end> --limit 1000
 	cmd := exec.Command(hotspotPath, "folders", "--output", "json", "--detail", "--start", startTime, "--end", endTime, "--limit", "1000")

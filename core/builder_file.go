@@ -12,7 +12,6 @@ import (
 
 	"github.com/huangsam/hotspot/core/algo"
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/schema"
 )
@@ -160,7 +159,7 @@ func (b *FileResultBuilder) CalculateDerivedMetrics() *FileResultBuilder {
 	if b.result.FirstCommit.IsZero() {
 		b.result.AgeDays = 0
 	} else {
-		b.result.AgeDays = contract.CalculateDaysBetween(b.result.FirstCommit, time.Now())
+		b.result.AgeDays = schema.CalculateDaysBetween(b.result.FirstCommit, time.Now())
 	}
 
 	// Gini coefficient for author diversity
