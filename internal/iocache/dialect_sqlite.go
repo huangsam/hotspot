@@ -124,8 +124,12 @@ func (d *SQLiteDialect) ScanOldestRunTime(row *sql.Row) (time.Time, error) {
 func (d *SQLiteDialect) ScanAnalysisRunRecord(rows *sql.Rows, record *schema.AnalysisRunRecord) error {
 	var startTimeStr string
 	var endTimeStr *string
-	if err := rows.Scan(&record.AnalysisID, &startTimeStr, &endTimeStr, &record.RunDurationMs, &record.TotalFilesAnalyzed, &record.ConfigParams, &record.URN); err != nil {
+	var urn *string
+	if err := rows.Scan(&record.AnalysisID, &startTimeStr, &endTimeStr, &record.RunDurationMs, &record.TotalFilesAnalyzed, &record.ConfigParams, &urn); err != nil {
 		return err
+	}
+	if urn != nil {
+		record.URN = *urn
 	}
 	// Parse start time
 	startTime, err := time.Parse(time.RFC3339Nano, startTimeStr)

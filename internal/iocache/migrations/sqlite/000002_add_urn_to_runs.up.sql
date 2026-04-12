@@ -1,0 +1,1 @@
+-- Version 2: Placeholder for backward compatibility during migration rollout.

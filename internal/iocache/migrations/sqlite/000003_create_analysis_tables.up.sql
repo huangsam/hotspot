@@ -1,5 +1,4 @@
--- Version 3: Create analysis tables with URN support
--- Establishes the core tables for analysis tracking and history with repository URN identifier.
+-- Version 3: Create analysis tables with URN support (SQLite)
 
 CREATE TABLE IF NOT EXISTS hotspot_analysis_runs (
     analysis_id INTEGER PRIMARY KEY AUTOINCREMENT,

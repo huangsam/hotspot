@@ -22,7 +22,7 @@ const (
 	targetInitialVersion = 0
 )
 
-//go:embed migrations/*.sql
+//go:embed migrations/sqlite/*.sql migrations/mysql/*.sql migrations/postgres/*.sql
 var migrationsFS embed.FS
 
 // MigrationBuilder handles the construction of migration components.
@@ -114,11 +114,23 @@ func (b *MigrationBuilder) buildDriver() error {
 	return nil
 }
 
-// buildSource sets up the migration source from embedded FS.
+// buildSource sets up the migration source from the dialect-specific embedded FS.
 func (b *MigrationBuilder) buildSource() error {
-	migrationFS, err := fs.Sub(migrationsFS, "migrations")
+	var subdir string
+	switch b.backend {
+	case schema.SQLiteBackend:
+		subdir = "migrations/sqlite"
+	case schema.MySQLBackend:
+		subdir = "migrations/mysql"
+	case schema.PostgreSQLBackend:
+		subdir = "migrations/postgres"
+	default:
+		return fmt.Errorf("unsupported backend for migrations: %s", b.backend)
+	}
+
+	migrationFS, err := fs.Sub(migrationsFS, subdir)
 	if err != nil {
-		return fmt.Errorf("failed to access migrations directory: %w", err)
+		return fmt.Errorf("failed to access %s migrations directory: %w", subdir, err)
 	}
 
 	b.source, err = iofs.New(migrationFS, ".")

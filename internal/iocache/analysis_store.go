@@ -123,7 +123,39 @@ func createAnalysisTables(db *sql.DB, dialect SQLDialect) error {
 		}
 	}
 
+	// Create index on URN column for filtered queries
+	if err := createURNIndex(db, dialect); err != nil {
+		return fmt.Errorf("failed to create URN index: %w", err)
+	}
+
 	return nil
+}
+
+// createURNIndex creates the idx_runs_urn index, handling dialect differences.
+// MySQL does not support CREATE INDEX IF NOT EXISTS, so we check existence first.
+func createURNIndex(db *sql.DB, dialect SQLDialect) error {
+	tableName := dialect.QuoteIdentifier(analysisRunsTable)
+
+	if dialect.DriverName() == "mysql" {
+		// MySQL: check if index exists before creating
+		var count int
+		err := db.QueryRow(
+			"SELECT COUNT(*) FROM information_schema.statistics WHERE table_name = ? AND index_name = ?",
+			analysisRunsTable, "idx_runs_urn",
+		).Scan(&count)
+		if err != nil {
+			return err
+		}
+		if count == 0 {
+			_, err = db.Exec(fmt.Sprintf("CREATE INDEX idx_runs_urn ON %s(urn)", tableName))
+			return err
+		}
+		return nil
+	}
+
+	// SQLite and PostgreSQL support IF NOT EXISTS
+	_, err := db.Exec(fmt.Sprintf("CREATE INDEX IF NOT EXISTS idx_runs_urn ON %s(urn)", tableName))
+	return err
 }
 
 // BeginAnalysis creates a new analysis run and returns its unique ID.

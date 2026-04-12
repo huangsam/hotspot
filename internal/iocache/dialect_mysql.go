@@ -121,7 +121,14 @@ func (d *MySQLDialect) ScanOldestRunTime(row *sql.Row) (time.Time, error) {
 
 // ScanAnalysisRunRecord parses a full analysis run record from MySQL rows.
 func (d *MySQLDialect) ScanAnalysisRunRecord(rows *sql.Rows, record *schema.AnalysisRunRecord) error {
-	return rows.Scan(&record.AnalysisID, &record.StartTime, &record.EndTime, &record.RunDurationMs, &record.TotalFilesAnalyzed, &record.ConfigParams, &record.URN)
+	var urn *string
+	if err := rows.Scan(&record.AnalysisID, &record.StartTime, &record.EndTime, &record.RunDurationMs, &record.TotalFilesAnalyzed, &record.ConfigParams, &urn); err != nil {
+		return err
+	}
+	if urn != nil {
+		record.URN = *urn
+	}
+	return nil
 }
 
 // ScanFileScoresMetricsRecord parses a full file metrics and scores record from MySQL rows.

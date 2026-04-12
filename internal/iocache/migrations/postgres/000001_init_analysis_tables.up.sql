@@ -1,0 +1,3 @@
+-- Version 1: Initial schema baseline
+-- Tables are created by application code on first use.
+-- This migration establishes a version marker for existing databases.
