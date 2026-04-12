@@ -5,6 +5,8 @@ import (
 
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/git"
+	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -20,13 +22,13 @@ type AnalysisContext struct {
 	TargetRef string // Defaults to "HEAD". Can be set for compare mode or timeseries.
 
 	// Injected dependencies
-	Client contract.GitClient
-	Mgr    contract.CacheManager
+	Client git.Client
+	Mgr    iocache.CacheManager
 
 	// Intermediate state
 	AnalysisID      int64
 	RepoURN         string
-	AnalysisStore   contract.AnalysisStore
+	AnalysisStore   iocache.AnalysisStore
 	Files           []string
 	AggregateOutput *schema.AggregateOutput
 

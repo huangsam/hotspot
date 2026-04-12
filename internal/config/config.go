@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -354,7 +355,7 @@ func (c *Config) GetAnalysisEndTime() time.Time {
 
 // ProcessAndValidate performs all complex parsing and validation on the raw inputs
 // and updates the final Config struct.
-func ProcessAndValidate(ctx context.Context, cfg *Config, client contract.GitClient, input *RawInput) error {
+func ProcessAndValidate(ctx context.Context, cfg *Config, client git.Client, input *RawInput) error {
 	// All validation functions now read from 'input' and populate 'cfg'.
 	if err := validateSimpleInputs(cfg, input); err != nil {
 		return err
@@ -862,7 +863,7 @@ func ProcessProfilingConfig(profile *ProfileConfig, profilePrefix string) error 
 }
 
 // ResolveGitPathAndFilter resolves the Git repository path and set the implicit path filter.
-func ResolveGitPathAndFilter(ctx context.Context, cfg *Config, client contract.GitClient, input *RawInput) error {
+func ResolveGitPathAndFilter(ctx context.Context, cfg *Config, client git.Client, input *RawInput) error {
 	// (Implementation unchanged, as it already reads from input.RepoPathStr)
 	searchPath := input.RepoPathStr
 	absSearchPath, err := filepath.Abs(searchPath)

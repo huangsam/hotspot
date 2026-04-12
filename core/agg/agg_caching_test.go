@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
@@ -24,22 +23,22 @@ type MockCacheManager struct {
 	mock.Mock
 }
 
-func (m *MockCacheManager) GetActivityStore() contract.CacheStore {
+func (m *MockCacheManager) GetActivityStore() iocache.CacheStore {
 	ret := m.Called()
 	val := ret.Get(0)
 	if val == nil {
 		return nil
 	}
-	return val.(contract.CacheStore)
+	return val.(iocache.CacheStore)
 }
 
-func (m *MockCacheManager) GetAnalysisStore() contract.AnalysisStore {
+func (m *MockCacheManager) GetAnalysisStore() iocache.AnalysisStore {
 	ret := m.Called()
 	val := ret.Get(0)
 	if val == nil {
 		return nil
 	}
-	return val.(contract.AnalysisStore)
+	return val.(iocache.AnalysisStore)
 }
 
 func TestCheckCacheHit_CacheHit(t *testing.T) {

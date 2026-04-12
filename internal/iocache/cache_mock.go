@@ -3,7 +3,6 @@ package iocache
 import (
 	"time"
 
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/mock"
 )
@@ -13,19 +12,19 @@ type MockCacheManager struct {
 	mock.Mock
 }
 
-var _ contract.CacheManager = &MockCacheManager{} // Compile-time check
+var _ CacheManager = &MockCacheManager{} // Compile-time check
 
 // GetActivityStore implements the CacheManager interface.
-func (m *MockCacheManager) GetActivityStore() contract.CacheStore {
+func (m *MockCacheManager) GetActivityStore() CacheStore {
 	ret := m.Called()
-	store, _ := ret.Get(0).(contract.CacheStore)
+	store, _ := ret.Get(0).(CacheStore)
 	return store
 }
 
 // GetAnalysisStore implements the CacheManager interface.
-func (m *MockCacheManager) GetAnalysisStore() contract.AnalysisStore {
+func (m *MockCacheManager) GetAnalysisStore() AnalysisStore {
 	ret := m.Called()
-	store, _ := ret.Get(0).(contract.AnalysisStore)
+	store, _ := ret.Get(0).(AnalysisStore)
 	return store
 }
 
@@ -34,7 +33,7 @@ type MockCacheStore struct {
 	mock.Mock
 }
 
-var _ contract.CacheStore = &MockCacheStore{} // Compile-time check
+var _ CacheStore = &MockCacheStore{} // Compile-time check
 
 // Get implements the CacheStore interface.
 func (m *MockCacheStore) Get(key string) ([]byte, int, int64, error) {
@@ -65,7 +64,7 @@ type MockAnalysisStore struct {
 	mock.Mock
 }
 
-var _ contract.AnalysisStore = &MockAnalysisStore{} // Compile-time check
+var _ AnalysisStore = &MockAnalysisStore{} // Compile-time check
 
 // BeginAnalysis implements the AnalysisStore interface.
 func (m *MockAnalysisStore) BeginAnalysis(urn string, startTime time.Time, configParams map[string]any) (int64, error) {

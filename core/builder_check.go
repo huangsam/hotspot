@@ -8,6 +8,7 @@ import (
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/git"
+	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -16,8 +17,8 @@ type CheckResultBuilder struct {
 	gitSettings     config.GitSettings
 	scoringSettings config.ScoringSettings
 	compareSettings config.ComparisonSettings
-	client          contract.GitClient
-	mgr             contract.CacheManager
+	client          git.Client
+	mgr             iocache.CacheManager
 	ctx             context.Context
 	filesToAnalyze  []string
 	cfgTarget       *config.Config
@@ -35,7 +36,7 @@ func NewCheckResultBuilder(
 	gitSettings config.GitSettings,
 	scoringSettings config.ScoringSettings,
 	compareSettings config.ComparisonSettings,
-	mgr contract.CacheManager,
+	mgr iocache.CacheManager,
 ) *CheckResultBuilder {
 	return &CheckResultBuilder{
 		gitSettings:     gitSettings,

@@ -41,7 +41,7 @@ func InitStores(cacheBackend schema.DatabaseBackend, cacheConnStr string, analys
 		var err error
 
 		// Initialize Activity Cache Store only if backend is configured
-		var activityCacheStore contract.CacheStore
+		var activityCacheStore CacheStore
 		if cacheBackend != "" {
 			activityCacheStore, err = NewCacheStore(activityTable, cacheBackend, cacheConnStr)
 			if err != nil {
@@ -51,7 +51,7 @@ func InitStores(cacheBackend schema.DatabaseBackend, cacheConnStr string, analys
 		}
 
 		// Initialize Analysis Store only if backend is configured
-		var analysisStore contract.AnalysisStore
+		var analysisStore AnalysisStore
 		if analysisBackend != "" {
 			analysisStore, err = NewAnalysisStore(analysisBackend, analysisConnStr)
 			if err != nil {

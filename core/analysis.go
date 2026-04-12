@@ -12,6 +12,8 @@ import (
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/git"
+	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -194,7 +196,7 @@ func executePipeline(ac *AnalysisContext, pCfg pipelineConfig) error {
 }
 
 // newAnalysisContext constructs an AnalysisContext for a standard HEAD analysis.
-func newAnalysisContext(ctx context.Context, gitSettings config.GitSettings, scoringSettings config.ScoringSettings, runtimeSettings config.RuntimeSettings, outputSettings config.OutputSettings, compareSettings config.ComparisonSettings, client contract.GitClient, mgr contract.CacheManager) *AnalysisContext {
+func newAnalysisContext(ctx context.Context, gitSettings config.GitSettings, scoringSettings config.ScoringSettings, runtimeSettings config.RuntimeSettings, outputSettings config.OutputSettings, compareSettings config.ComparisonSettings, client git.Client, mgr iocache.CacheManager) *AnalysisContext {
 	return &AnalysisContext{
 		Context: ctx, Git: gitSettings, Scoring: scoringSettings,
 		Runtime: runtimeSettings, Output: outputSettings,
@@ -230,8 +232,8 @@ func runSingleAnalysisCore(
 	runtimeSettings config.RuntimeSettings,
 	outputSettings config.OutputSettings,
 	compareSettings config.ComparisonSettings,
-	client contract.GitClient,
-	mgr contract.CacheManager,
+	client git.Client,
+	mgr iocache.CacheManager,
 ) (*schema.SingleAnalysisOutput, error) {
 	ac := newAnalysisContext(ctx, gitSettings, scoringSettings, runtimeSettings, outputSettings, compareSettings, client, mgr)
 
@@ -258,8 +260,8 @@ func runFolderAnalysisCore(
 	runtimeSettings config.RuntimeSettings,
 	outputSettings config.OutputSettings,
 	compareSettings config.ComparisonSettings,
-	client contract.GitClient,
-	mgr contract.CacheManager,
+	client git.Client,
+	mgr iocache.CacheManager,
 ) (*schema.SingleAnalysisOutput, error) {
 	ac := newAnalysisContext(ctx, gitSettings, scoringSettings, runtimeSettings, outputSettings, compareSettings, client, mgr)
 
@@ -283,7 +285,7 @@ func runFolderAnalysisCore(
 }
 
 // runCompareAnalysisForRef runs the file analysis for a specific Git reference in compare mode.
-func runCompareAnalysisForRef(ctx context.Context, cfg *config.Config, client contract.GitClient, ref string, mgr contract.CacheManager) (*schema.CompareAnalysisOutput, error) {
+func runCompareAnalysisForRef(ctx context.Context, cfg *config.Config, client git.Client, ref string, mgr iocache.CacheManager) (*schema.CompareAnalysisOutput, error) {
 	baseStartTime, baseEndTime, err := getAnalysisWindowForRef(ctx, client, cfg.Git.RepoPath, ref, cfg.Compare.Lookback)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve time window for Ref '%s': %w", ref, err)
@@ -310,9 +312,9 @@ func analyzeAllFilesAtRef(
 	gitSettings config.GitSettings,
 	scoringSettings config.ScoringSettings,
 	runtimeSettings config.RuntimeSettings,
-	client contract.GitClient,
+	client git.Client,
 	ref string,
-	mgr contract.CacheManager,
+	mgr iocache.CacheManager,
 ) ([]schema.FileResult, error) {
 	ac := &AnalysisContext{
 		Context: ctx, Git: gitSettings, Scoring: scoringSettings,
@@ -342,7 +344,7 @@ func runFollowPass(
 	gitSettings config.GitSettings,
 	scoringSettings config.ScoringSettings,
 	outputSettings config.OutputSettings,
-	client contract.GitClient,
+	client git.Client,
 	ranked []schema.FileResult,
 	output *schema.AggregateOutput,
 ) []schema.FileResult {
@@ -381,7 +383,7 @@ func analyzeRepo(
 	gitSettings config.GitSettings,
 	scoringSettings config.ScoringSettings,
 	runtimeSettings config.RuntimeSettings,
-	client contract.GitClient,
+	client git.Client,
 	output *schema.AggregateOutput,
 	files []string,
 ) []schema.FileResult {
@@ -430,7 +432,7 @@ func analyzeFileCommon(
 	ctx context.Context,
 	gitSettings config.GitSettings,
 	scoringSettings config.ScoringSettings,
-	client contract.GitClient,
+	client git.Client,
 	path string,
 	output *schema.AggregateOutput,
 ) schema.FileResult {
@@ -518,7 +520,7 @@ func logTrackingError(operation, path string, err error) {
 
 // getAnalysisWindowForRef queries Git for the exact commit time of the given reference
 // and sets the StartTime by looking back a fixed duration from that commit time.
-func getAnalysisWindowForRef(ctx context.Context, client contract.GitClient, repoPath, ref string, lookback time.Duration) (startTime time.Time, endTime time.Time, err error) {
+func getAnalysisWindowForRef(ctx context.Context, client git.Client, repoPath, ref string, lookback time.Duration) (startTime time.Time, endTime time.Time, err error) {
 	// 1. Find the exact timestamp of the reference (which will be the EndTime)
 	// The GitClient implementation now handles running the command and parsing the output.
 	endTime, err = client.GetCommitTime(ctx, repoPath, ref)
@@ -538,13 +540,13 @@ func runTimeseriesAnalysis(
 	ctx context.Context,
 	gitSettings config.GitSettings,
 	scoringSettings config.ScoringSettings,
-	client contract.GitClient,
+	client git.Client,
 	normalizedPath string,
 	isFolder bool,
 	now time.Time,
 	interval time.Duration,
 	numPoints int,
-	mgr contract.CacheManager,
+	mgr iocache.CacheManager,
 ) []schema.TimeseriesPoint {
 	var timeseriesPoints []schema.TimeseriesPoint
 	currentEnd := now
@@ -622,10 +624,10 @@ func analyzeTimeseriesPoint(
 	ctx context.Context,
 	gitSettings config.GitSettings,
 	scoringSettings config.ScoringSettings,
-	client contract.GitClient,
+	client git.Client,
 	path string,
 	isFolder bool,
-	mgr contract.CacheManager,
+	mgr iocache.CacheManager,
 ) (float64, []string) {
 	ac := &AnalysisContext{
 		Context: WithSuppressHeader(ctx), Git: gitSettings, Scoring: scoringSettings,

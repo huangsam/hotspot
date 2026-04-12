@@ -13,6 +13,7 @@ import (
 	"github.com/huangsam/hotspot/core/algo"
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -20,7 +21,7 @@ import (
 type FileResultBuilder struct {
 	gitSettings     config.GitSettings
 	scoringSettings config.ScoringSettings
-	git             contract.GitClient
+	git             git.Client
 	result          *schema.FileResult
 	output          *schema.AggregateOutput
 	path            string
@@ -36,7 +37,7 @@ func NewFileMetricsBuilder(
 	ctx context.Context,
 	gitSettings config.GitSettings,
 	scoringSettings config.ScoringSettings,
-	client contract.GitClient,
+	client git.Client,
 	path string,
 	output *schema.AggregateOutput,
 ) *FileResultBuilder {

@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/git"
+	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -20,8 +21,8 @@ func CachedAggregateActivity(
 	ctx context.Context,
 	gitSettings config.GitSettings,
 	compareSettings config.ComparisonSettings,
-	client contract.GitClient,
-	mgr contract.CacheManager,
+	client git.Client,
+	mgr iocache.CacheManager,
 	urn string, // Added URN
 ) (*schema.AggregateOutput, error) {
 	activity := mgr.GetActivityStore()
@@ -42,7 +43,7 @@ func CachedAggregateActivity(
 }
 
 // checkCacheHit attempts to retrieve and validate a cached result.
-func checkCacheHit(activity contract.CacheStore, key string) *schema.AggregateOutput {
+func checkCacheHit(activity iocache.CacheStore, key string) *schema.AggregateOutput {
 	data, version, ts, err := activity.Get(key)
 	if err != nil {
 		return nil // Cache miss
@@ -63,7 +64,7 @@ func checkCacheHit(activity contract.CacheStore, key string) *schema.AggregateOu
 }
 
 // computeAndStore computes the result and stores it in cache.
-func computeAndStore(ctx context.Context, gitSettings config.GitSettings, client contract.GitClient, activity contract.CacheStore, key string) (*schema.AggregateOutput, error) {
+func computeAndStore(ctx context.Context, gitSettings config.GitSettings, client git.Client, activity iocache.CacheStore, key string) (*schema.AggregateOutput, error) {
 	result, err := aggregateActivity(ctx, gitSettings, client)
 	if err != nil {
 		return nil, err
@@ -78,7 +79,7 @@ func computeAndStore(ctx context.Context, gitSettings config.GitSettings, client
 }
 
 // generateCacheKey creates a unique key based on analysis parameters.
-func generateCacheKey(ctx context.Context, gitSettings config.GitSettings, compareSettings config.ComparisonSettings, client contract.GitClient, urn string) string {
+func generateCacheKey(ctx context.Context, gitSettings config.GitSettings, compareSettings config.ComparisonSettings, client git.Client, urn string) string {
 	// Truncate to the caching granularity
 	startHour := gitSettings.GetStartTime().Truncate(config.CacheGranularity)
 	endHour := gitSettings.GetEndTime().Truncate(config.CacheGranularity)

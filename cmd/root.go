@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
@@ -37,7 +36,7 @@ var input = &config.RawInput{}
 var profile = &config.ProfileConfig{}
 
 // cacheManager is the global persistence manager instance.
-var cacheManager contract.CacheManager
+var cacheManager iocache.CacheManager
 
 // startProfiling starts CPU and memory profiling if enabled.
 func startProfiling() error {
@@ -212,7 +211,7 @@ func Execute() error {
 }
 
 // SetCacheManager sets the global cache manager.
-func SetCacheManager(mgr contract.CacheManager) {
+func SetCacheManager(mgr iocache.CacheManager) {
 	cacheManager = mgr
 }
 

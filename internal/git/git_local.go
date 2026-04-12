@@ -15,7 +15,7 @@ import (
 // local 'git' binary installed on the machine.
 type LocalGitClient struct{}
 
-var _ contract.GitClient = &LocalGitClient{} // Compile-time check
+var _ Client = &LocalGitClient{} // Compile-time check
 
 // NewLocalGitClient creates a new instance of the local Git client.
 func NewLocalGitClient() *LocalGitClient {

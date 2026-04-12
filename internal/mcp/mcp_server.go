@@ -5,14 +5,15 @@ import (
 	"context"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/git"
+	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
 
 // NewMCPServer initializes and configures the Hotspot MCP server without starting it.
 // This is exposed for unit testing.
-func NewMCPServer(baseCfg *config.Config, mgr contract.CacheManager, client contract.GitClient) *server.MCPServer {
+func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.Client) *server.MCPServer {
 	s := server.NewMCPServer(
 		"Hotspot Analysis Server",
 		"1.0.0",
@@ -73,7 +74,7 @@ func NewMCPServer(baseCfg *config.Config, mgr contract.CacheManager, client cont
 }
 
 // StartMCPServer starts the Hotspot MCP server.
-func StartMCPServer(_ context.Context, baseCfg *config.Config, mgr contract.CacheManager, client contract.GitClient) error {
+func StartMCPServer(_ context.Context, baseCfg *config.Config, mgr iocache.CacheManager, client git.Client) error {
 	s := NewMCPServer(baseCfg, mgr, client)
 	return server.ServeStdio(s)
 }

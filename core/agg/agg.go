@@ -11,6 +11,7 @@ import (
 
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -18,7 +19,7 @@ import (
 // commits, churn and contributors. It runs over the entire history if
 // gitSettings.GetStartTime() is zero, or runs since gitSettings.GetStartTime() otherwise.
 // It filters out files that no longer exist in a single pass.
-func aggregateActivity(ctx context.Context, gitSettings config.GitSettings, client contract.GitClient) (*schema.AggregateOutput, error) {
+func aggregateActivity(ctx context.Context, gitSettings config.GitSettings, client git.Client) (*schema.AggregateOutput, error) {
 	// 1. Get the list of currently existing files
 	currentFiles, err := client.ListFilesAtRef(ctx, gitSettings.GetRepoPath(), "HEAD")
 	if err != nil {

@@ -7,7 +7,8 @@ import (
 
 	"github.com/huangsam/hotspot/core"
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/git"
+	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/mark3labs/mcp-go/mcp"
 )
@@ -15,8 +16,8 @@ import (
 // toolHandler holds common dependencies for MCP tool handlers.
 type toolHandler struct {
 	baseCfg *config.Config
-	mgr     contract.CacheManager
-	client  contract.GitClient
+	mgr     iocache.CacheManager
+	client  git.Client
 }
 
 // handleGetFilesHotspots handles the get_files_hotspots tool.

@@ -3,7 +3,7 @@ package core
 import (
 	"context"
 
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/iocache"
 )
 
 // Context keys for analysis options.
@@ -64,14 +64,14 @@ func getAnalysisID(ctx context.Context) (int64, bool) {
 type cacheManagerKeyType struct{}
 
 // contextWithCacheManager returns a new context with the given CacheManager.
-func contextWithCacheManager(ctx context.Context, mgr contract.CacheManager) context.Context {
+func contextWithCacheManager(ctx context.Context, mgr iocache.CacheManager) context.Context {
 	return context.WithValue(ctx, cacheManagerKeyType{}, mgr)
 }
 
 // cacheManagerFromContext retrieves the CacheManager from the context.
-func cacheManagerFromContext(ctx context.Context) contract.CacheManager {
+func cacheManagerFromContext(ctx context.Context) iocache.CacheManager {
 	val := ctx.Value(cacheManagerKeyType{})
-	if mgr, ok := val.(contract.CacheManager); ok {
+	if mgr, ok := val.(iocache.CacheManager); ok {
 		return mgr
 	}
 	return nil

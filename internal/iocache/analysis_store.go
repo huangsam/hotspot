@@ -23,10 +23,10 @@ type AnalysisStoreImpl struct {
 	dialect SQLDialect
 }
 
-var _ contract.AnalysisStore = &AnalysisStoreImpl{} // Compile-time check
+var _ AnalysisStore = &AnalysisStoreImpl{} // Compile-time check
 
 // NewAnalysisStore creates a new AnalysisStore with the specified backend.
-func NewAnalysisStore(backend schema.DatabaseBackend, connStr string) (contract.AnalysisStore, error) {
+func NewAnalysisStore(backend schema.DatabaseBackend, connStr string) (AnalysisStore, error) {
 	var db *sql.DB
 	var err error
 	var dialect SQLDialect

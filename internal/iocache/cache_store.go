@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql" // MySQL driver
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	_ "github.com/jackc/pgx/v5/stdlib" // PostgreSQL driver
 	_ "modernc.org/sqlite"             // Pure-Go SQLite driver
@@ -23,10 +22,10 @@ type CacheStoreImpl struct {
 	connStr    string
 }
 
-var _ contract.CacheStore = &CacheStoreImpl{} // Compile-time check
+var _ CacheStore = &CacheStoreImpl{} // Compile-time check
 
 // NewCacheStore initializes and returns a new CacheStore based on the backend type.
-func NewCacheStore(tableName string, backend schema.DatabaseBackend, connStr string) (contract.CacheStore, error) {
+func NewCacheStore(tableName string, backend schema.DatabaseBackend, connStr string) (CacheStore, error) {
 	// Validate table name to prevent SQL injection
 	if err := validateTableName(tableName); err != nil {
 		return nil, err
