@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 	"unicode"
@@ -116,4 +118,89 @@ func OwnersEqual(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+// ShouldIgnore returns true if the given path matches any of the exclude patterns.
+// It supports simple glob patterns (using filepath.Match) when the pattern
+// contains wildcard characters (*, ?, [ ]). Patterns ending with '/' are treated
+// as prefixes. Patterns starting with '.' are treated as suffix (extension) matches.
+// A user can provide patterns like "vendor/", "node_modules/", "*.min.js".
+func ShouldIgnore(path string, excludes []string) bool {
+	for _, ex := range excludes {
+		ex = strings.TrimSpace(ex)
+		if ex == "" {
+			continue
+		}
+
+		// If the pattern contains glob characters, try filepath.Match.
+		if strings.ContainsAny(ex, "*?[") || strings.Contains(ex, "**") {
+			pat := strings.ReplaceAll(ex, "**", "*")
+			if ok, err := filepath.Match(pat, path); err == nil && ok {
+				return true
+			}
+			// Also try matching against the base filename (e.g. *.min.js)
+			if ok, err := filepath.Match(pat, filepath.Base(path)); err == nil && ok {
+				return true
+			}
+			continue
+		}
+
+		// Handle prefix, suffix, or substring matches
+		switch {
+		case strings.HasSuffix(ex, "/"):
+			if strings.HasPrefix(path, ex) {
+				return true
+			}
+		case strings.HasPrefix(ex, "."):
+			if strings.HasSuffix(path, ex) {
+				return true
+			}
+		case strings.Contains(path, ex):
+			return true
+		}
+	}
+	return false
+}
+
+// ParseBoolString parses a string value into a boolean.
+// Accepts "yes", "no", "true", "false", "1", "0" (case-insensitive).
+// Returns an error for invalid values.
+func ParseBoolString(s string) (bool, error) {
+	switch strings.ToLower(s) {
+	case "yes", "true", "1":
+		return true, nil
+	case "no", "false", "0":
+		return false, nil
+	default:
+		return false, fmt.Errorf("invalid boolean string: %s (expected yes/no/true/false/1/0)", s)
+	}
+}
+
+// NormalizeTimeseriesPath normalizes a user-provided path relative to the repo root
+// and ensures it's within the repository boundaries.
+func NormalizeTimeseriesPath(repoPath, userPath string) (string, error) {
+	// Handle absolute paths by making them relative to repo
+	if filepath.IsAbs(userPath) {
+		relPath, err := filepath.Rel(repoPath, userPath)
+		if err != nil {
+			return "", fmt.Errorf("path is outside repository: %s", userPath)
+		}
+		userPath = relPath
+	}
+
+	// Clean the path to resolve any .. or . components
+	cleanPath := filepath.Clean(userPath)
+
+	// Ensure the path doesn't go outside the repo (no leading .. after cleaning)
+	if strings.HasPrefix(cleanPath, "..") {
+		return "", fmt.Errorf("path is outside repository: %s", userPath)
+	}
+
+	// Convert to forward slashes for consistency with Git paths
+	normalized := strings.ReplaceAll(cleanPath, string(filepath.Separator), "/")
+
+	// Remove leading ./ if present
+	normalized = strings.TrimPrefix(normalized, "./")
+
+	return normalized, nil
 }

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
@@ -64,13 +63,13 @@ func writeFolderTable(results []schema.FolderResult, output config.OutputSetting
 	var data [][]string
 	for i, r := range results {
 		// Prepare the row data as a slice of strings
-		label := contract.GetPlainLabel(r.Score)
+		label := schema.GetPlainLabel(r.Score)
 		if output.IsUseColors() {
-			label = contract.GetColorLabel(r.Score)
+			label = getColorLabel(r.Score)
 		}
 		row := []string{
 			strconv.Itoa(i + 1), // Rank
-			contract.TruncatePath(r.Path, getMaxTablePathWidth(output)), // Folder Path
+			truncatePath(r.Path, getMaxTablePathWidth(output)), // Folder Path
 			fmtFloat(r.Score), // Score
 			label,             // Label
 		}
@@ -143,7 +142,7 @@ func writeCSVResultsForFolders(w *csv.Writer, results []schema.FolderResult, fmt
 			strconv.Itoa(i + 1),             // Rank
 			r.Path,                          // Folder Path
 			fmtFloat(r.Score),               // Score
-			contract.GetPlainLabel(r.Score), // Label
+			schema.GetPlainLabel(r.Score),   // Label
 			fmt.Sprintf(intFmt, r.Commits),  // Total Commits
 			fmt.Sprintf(intFmt, r.Churn),    // Total Churn
 			fmt.Sprintf(intFmt, r.TotalLOC), // Total LOC

@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -22,12 +22,20 @@ var (
 
 // GetDBFilePath returns the path to the SQLite DB file for cache storage.
 func GetDBFilePath() string {
-	return contract.GetCacheDBFilePath()
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return ".hotspot_cache.db"
+	}
+	return filepath.Join(homeDir, ".hotspot_cache.db")
 }
 
 // GetAnalysisDBFilePath returns the path to the SQLite DB file for analysis storage.
 func GetAnalysisDBFilePath() string {
-	return contract.GetAnalysisDBFilePath()
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return ".hotspot_analysis.db"
+	}
+	return filepath.Join(homeDir, ".hotspot_analysis.db")
 }
 
 // InitStores initializes the global cache manager with separate cache and analysis stores.

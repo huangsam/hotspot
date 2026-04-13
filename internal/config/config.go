@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/git"
+	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -440,11 +440,11 @@ func validateBackendConfigs(cfg *Config, input *RawInput) error {
 			if cfg.Runtime.CacheBackend == schema.SQLiteBackend {
 				cacheDBPath := cfg.Runtime.CacheDBConnect
 				if cacheDBPath == "" {
-					cacheDBPath = contract.GetCacheDBFilePath()
+					cacheDBPath = iocache.GetDBFilePath()
 				}
 				analysisDBPath := cfg.Runtime.AnalysisDBConnect
 				if analysisDBPath == "" {
-					analysisDBPath = contract.GetAnalysisDBFilePath()
+					analysisDBPath = iocache.GetAnalysisDBFilePath()
 				}
 				if cacheDBPath == analysisDBPath {
 					return fmt.Errorf("cache and analysis storage must use different SQLite database files. Both resolve to %q", cacheDBPath)
@@ -468,7 +468,7 @@ func validateSimpleInputs(cfg *Config, input *RawInput) error {
 	cfg.Output.Width = input.Width
 
 	// Parse color flag
-	colors, err := contract.ParseBoolString(input.Color)
+	colors, err := schema.ParseBoolString(input.Color)
 	if err != nil {
 		return fmt.Errorf("invalid --color value: %w", err)
 	}

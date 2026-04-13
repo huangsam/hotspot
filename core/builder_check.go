@@ -6,7 +6,6 @@ import (
 
 	"github.com/huangsam/hotspot/core/agg"
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
@@ -220,7 +219,7 @@ func (b *CheckResultBuilder) GetResult() *schema.CheckResult {
 func filterChangedFiles(files []string, excludes []string) []string {
 	filtered := make([]string, 0, len(files))
 	for _, f := range files {
-		if !contract.ShouldIgnore(f, excludes) {
+		if !schema.ShouldIgnore(f, excludes) {
 			filtered = append(filtered, f)
 		}
 	}

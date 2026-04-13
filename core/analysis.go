@@ -107,7 +107,7 @@ func filterFiles(gitSettings config.GitSettings, allFiles []string) []string {
 		if pathFilterSet && !strings.HasPrefix(f, gitSettings.GetPathFilter()) {
 			continue
 		}
-		if contract.ShouldIgnore(f, gitSettings.GetExcludes()) {
+		if schema.ShouldIgnore(f, gitSettings.GetExcludes()) {
 			continue
 		}
 		filtered = append(filtered, f)

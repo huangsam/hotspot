@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/schema"
 )
@@ -260,7 +259,7 @@ func BuildFilteredFileList(gitSettings config.GitSettings, output *schema.Aggreg
 		}
 
 		// Apply excludes filter
-		if contract.ShouldIgnore(f, gitSettings.GetExcludes()) {
+		if schema.ShouldIgnore(f, gitSettings.GetExcludes()) {
 			continue
 		}
 

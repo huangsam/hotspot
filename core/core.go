@@ -14,7 +14,6 @@ import (
 
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/internal/outwriter"
@@ -183,7 +182,7 @@ func GetHotspotTimeseriesResults(ctx context.Context, cfg *config.Config, mgr io
 	client := git.NewLocalGitClient()
 
 	// Normalize and validate the path relative to repo root
-	normalizedPath, err := contract.NormalizeTimeseriesPath(cfg.Git.RepoPath, path)
+	normalizedPath, err := schema.NormalizeTimeseriesPath(cfg.Git.RepoPath, path)
 	if err != nil {
 		return schema.TimeseriesResult{}, 0, fmt.Errorf("invalid path %q: %w. Path must be relative to the repository root (%s)", path, err, cfg.Git.RepoPath)
 	}

@@ -19,13 +19,13 @@ type EnrichedFolderResult struct {
 func GetPlainLabel(score float64) string {
 	switch {
 	case score >= 80:
-		return "Critical"
+		return CriticalValue
 	case score >= 60:
-		return "High"
+		return HighValue
 	case score >= 40:
-		return "Moderate"
+		return ModerateValue
 	default:
-		return "Low"
+		return LowValue
 	}
 }
 

@@ -10,16 +10,60 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"golang.org/x/term"
 )
 
+// color variables for console output.
+var (
+	criticalColor = color.New(color.FgRed, color.Bold)     // criticalColor represents standard danger.
+	highColor     = color.New(color.FgMagenta, color.Bold) // highColor represents strong, distinct warning.
+	moderateColor = color.New(color.FgYellow)              // moderateColor represents standard caution, not bold.
+	lowColor      = color.New(color.FgCyan)                // lowColor represents informational / low-priority signal.
+)
+
+// getColorLabel returns a colored text label for console output (table).
+// It uses schema.GetPlainLabel to determine the string, and then applies the appropriate color.
+func getColorLabel(score float64) string {
+	text := schema.GetPlainLabel(score)
+
+	switch text {
+	case schema.CriticalValue:
+		return criticalColor.Sprint(text)
+	case schema.HighValue:
+		return highColor.Sprint(text)
+	case schema.ModerateValue:
+		return moderateColor.Sprint(text)
+	default: // "Low"
+		return lowColor.Sprint(text)
+	}
+}
+
+// selectOutputFile returns the appropriate file handle for output, based on the provided
+// file path and format type. It falls back to os.Stdout on error.
+func selectOutputFile(filePath string) (*os.File, error) {
+	if filePath == "" {
+		return os.Stdout, nil
+	}
+	return os.Create(filePath)
+}
+
+// truncatePath truncates a file path to a maximum width with ellipsis prefix.
+// Requires maxWidth > 3 to ensure there's space for both the "..." prefix and at least one character of content.
+func truncatePath(path string, maxWidth int) string {
+	runes := []rune(path)
+	if len(runes) > maxWidth && maxWidth > 3 {
+		return "..." + string(runes[len(runes)-maxWidth+3:])
+	}
+	return path
+}
+
 // WriteWithOutputFile handles the common pattern of opening a file, writing to it, and cleaning up.
 // It accepts a writer function that takes an io.Writer and returns an error.
 func WriteWithOutputFile(output config.OutputSettings, writer func(io.Writer) error, successMsg string) error {
-	file, err := contract.SelectOutputFile(output.GetOutputFile())
+	file, err := selectOutputFile(output.GetOutputFile())
 	if err != nil {
 		return err
 	}

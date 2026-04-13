@@ -82,7 +82,7 @@ func analysisMigrateSetup() error {
 
 	// For SQLite backend with empty connection string, use default path
 	if backend == schema.SQLiteBackend && connStr == "" {
-		connStr = contract.GetAnalysisDBFilePath()
+		connStr = iocache.GetAnalysisDBFilePath()
 	}
 
 	cfg.Runtime.AnalysisBackend = backend
@@ -157,7 +157,7 @@ Examples:
   hotspot analysis clear`,
 	PreRunE: analysisSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := iocache.ClearAnalysis(cfg.Runtime.AnalysisBackend, contract.GetAnalysisDBFilePath(), cfg.Runtime.AnalysisDBConnect); err != nil {
+		if err := iocache.ClearAnalysis(cfg.Runtime.AnalysisBackend, iocache.GetAnalysisDBFilePath(), cfg.Runtime.AnalysisDBConnect); err != nil {
 			contract.LogFatal("Failed to clear analysis data", err)
 		}
 		fmt.Println("Analysis data cleared successfully.")

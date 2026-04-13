@@ -93,7 +93,7 @@ Examples:
   HOTSPOT_CACHE_BACKEND=mysql HOTSPOT_CACHE_DB_CONNECT="..." hotspot cache clear`,
 	PreRunE: cacheSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := iocache.ClearCache(cfg.Runtime.CacheBackend, contract.GetCacheDBFilePath(), cfg.Runtime.CacheDBConnect); err != nil {
+		if err := iocache.ClearCache(cfg.Runtime.CacheBackend, iocache.GetDBFilePath(), cfg.Runtime.CacheDBConnect); err != nil {
 			contract.LogFatal("Failed to clear cache", err)
 		}
 		fmt.Println("Cache cleared successfully.")

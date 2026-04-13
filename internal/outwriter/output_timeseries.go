@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
@@ -62,7 +61,7 @@ func writeTimeseriesTable(result schema.TimeseriesResult, output config.OutputSe
 			ownersStr = "No owners"
 		}
 		row := []string{
-			contract.TruncatePath(p.Path, getMaxTablePathWidth(output)),
+			truncatePath(p.Path, getMaxTablePathWidth(output)),
 			p.Period,
 			fmtFloat(p.Score),
 			string(p.Mode),

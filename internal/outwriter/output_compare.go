@@ -10,7 +10,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
@@ -98,11 +97,11 @@ func writeComparisonTable(comparisonResult schema.ComparisonResult, output confi
 		// Prepare the row data as a slice of strings
 		row := []string{
 			strconv.Itoa(i + 1), // Rank
-			contract.TruncatePath(r.Path, getMaxTablePathWidth(output)), // File Path
-			fmtFloat(r.BeforeScore), // Base Score
-			fmtFloat(r.AfterScore),  // Comparison Score
-			deltaStr,                // Delta Score
-			string(r.Status),        // Status
+			truncatePath(r.Path, getMaxTablePathWidth(output)), // File Path
+			fmtFloat(r.BeforeScore),                            // Base Score
+			fmtFloat(r.AfterScore),                             // Comparison Score
+			deltaStr,                                           // Delta Score
+			string(r.Status),                                   // Status
 		}
 		if output.IsDetail() {
 			row = append(row, fmt.Sprintf(intFmt, r.DeltaChurn))

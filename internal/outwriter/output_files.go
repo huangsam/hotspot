@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/schema"
 
 	"github.com/olekukonko/tablewriter"
@@ -67,15 +66,15 @@ func writeFileTable(files []schema.FileResult, output config.OutputSettings, run
 	var data [][]string
 	for i, f := range files {
 		// Prepare the row data as a slice of strings
-		label := contract.GetPlainLabel(f.ModeScore)
+		label := schema.GetPlainLabel(f.ModeScore)
 		if output.IsUseColors() {
-			label = contract.GetColorLabel(f.ModeScore)
+			label = getColorLabel(f.ModeScore)
 		}
 		row := []string{
 			strconv.Itoa(i + 1), // Rank
-			contract.TruncatePath(f.Path, getMaxTablePathWidth(output)), // File
-			fmtFloat(f.ModeScore), // Score
-			label,                 // Label
+			truncatePath(f.Path, getMaxTablePathWidth(output)), // File
+			fmtFloat(f.ModeScore),                              // Score
+			label,                                              // Label
 		}
 		if output.IsDetail() {
 			row = append(
@@ -148,7 +147,7 @@ func writeCSVResultsForFiles(w *csv.Writer, files []schema.FileResult, fmtFloat 
 			strconv.Itoa(i + 1),                         // Rank
 			f.Path,                                      // File Path
 			fmtFloat(f.ModeScore),                       // Score
-			contract.GetPlainLabel(f.ModeScore),         // Label
+			schema.GetPlainLabel(f.ModeScore),           // Label
 			fmt.Sprintf(intFmt, f.UniqueContributors),   // Contributors
 			fmt.Sprintf(intFmt, f.Commits),              // Commits
 			fmtFloat(float64(f.SizeBytes) / 1024.0),     // Size in KB

@@ -57,6 +57,14 @@ const (
 	StaleMode      ScoringMode = "stale"
 )
 
+// Scoring label constants for criticality levels.
+const (
+	CriticalValue = "Critical" // Critical value
+	HighValue     = "High"     // High value
+	ModerateValue = "Moderate" // Moderate value
+	LowValue      = "Low"      // Low value
+)
+
 // All cache backends supported.
 const (
 	SQLiteBackend     DatabaseBackend = "sqlite" // default

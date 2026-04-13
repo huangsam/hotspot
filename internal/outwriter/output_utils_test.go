@@ -355,3 +355,90 @@ func TestWriteTimeseriesResultsEmpty(t *testing.T) {
 	output := buf.String()
 	assert.Contains(t, output, "Timeseries analysis completed in 20ms")
 }
+
+func TestGetColorLabel(t *testing.T) {
+	tests := []struct {
+		name  string
+		score float64
+		label string
+	}{
+		{"low", 30, schema.LowValue},
+		{"moderate", 50, schema.ModerateValue},
+		{"high", 70, schema.HighValue},
+		{"critical", 90, schema.CriticalValue},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := getColorLabel(tt.score)
+			// Should contain the plain label
+			assert.Contains(t, result, tt.label)
+		})
+	}
+}
+
+func TestSelectOutputFile(t *testing.T) {
+	t.Run("empty path returns stdout", func(t *testing.T) {
+		file, err := selectOutputFile("")
+		require.NoError(t, err)
+		assert.Equal(t, os.Stdout, file)
+	})
+
+	t.Run("valid path creates file", func(t *testing.T) {
+		tempFile := filepath.Join(t.TempDir(), "test_output.txt")
+		file, err := selectOutputFile(tempFile)
+		require.NoError(t, err)
+		assert.NotNil(t, file)
+		_ = file.Close()
+
+		// Verify file was created
+		_, err = os.Stat(tempFile)
+		assert.NoError(t, err)
+	})
+}
+
+func TestTruncatePath(t *testing.T) {
+	tests := []struct {
+		name     string
+		path     string
+		maxLen   int
+		expected string
+	}{
+		{
+			name:     "short path no truncation",
+			path:     "src/main.go",
+			maxLen:   20,
+			expected: "src/main.go",
+		},
+		{
+			name:     "exactly max length no truncation",
+			path:     "pkg/utils/helper.go",
+			maxLen:   19,
+			expected: "pkg/utils/helper.go",
+		},
+		{
+			name:     "truncate from start",
+			path:     "cmd/hotspot/commands/analysis/export.go",
+			maxLen:   20,
+			expected: "...nalysis/export.go",
+		},
+		{
+			name:     "very long path with minimal maxLen",
+			path:     "some/very/long/path/to/a/file/deep/in/the/repo/structure.go",
+			maxLen:   15,
+			expected: "...structure.go",
+		},
+		{
+			name:     "maxLen too short for ellipses",
+			path:     "long/path/to/file.go",
+			maxLen:   5,
+			expected: "...go",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, truncatePath(tt.path, tt.maxLen))
+		})
+	}
+}

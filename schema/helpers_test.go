@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -179,4 +180,221 @@ func TestFolderResultGetters(t *testing.T) {
 	// Test GetOwners with nil owners
 	folderNil := FolderResult{Owners: nil}
 	assert.Equal(t, []string{}, folderNil.GetOwners(), "GetOwners should return empty slice for nil owners")
+}
+
+func TestGetPlainLabel(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    float64
+		expected string
+	}{
+		{"smallest value possible", 0.0, LowValue},
+		{"just before moderate", 39.9, LowValue},
+		{"exactly moderate", 40.0, ModerateValue},
+		{"just before high", 59.9, ModerateValue},
+		{"exactly high", 60.0, HighValue},
+		{"just before critical", 79.9, HighValue},
+		{"exactly critical", 80.0, CriticalValue},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, GetPlainLabel(tt.input))
+		})
+	}
+}
+
+func TestShouldIgnore(t *testing.T) {
+	tests := []struct {
+		name       string
+		path       string
+		excludes   []string
+		wantIgnore bool
+	}{
+		{
+			name:       "empty excludes",
+			path:       "src/main.go",
+			excludes:   []string{},
+			wantIgnore: false,
+		},
+		{
+			name:       "prefix match",
+			path:       "vendor/github.com/lib/file.go",
+			excludes:   []string{"vendor/"},
+			wantIgnore: true,
+		},
+		{
+			name:       "suffix match",
+			path:       "dist/bundle.min.js",
+			excludes:   []string{".min.js"},
+			wantIgnore: true,
+		},
+		{
+			name:       "glob match basename",
+			path:       "src/file.min.js",
+			excludes:   []string{"*.min.js"},
+			wantIgnore: true,
+		},
+		{
+			name:       "glob match with test suffix",
+			path:       "test/unit_test.go",
+			excludes:   []string{"*_test.go"},
+			wantIgnore: true,
+		},
+		{
+			name:       "substring match",
+			path:       "src/generated/code.go",
+			excludes:   []string{"generated"},
+			wantIgnore: true,
+		},
+		{
+			name:       "no match",
+			path:       "src/core/engine.go",
+			excludes:   []string{"vendor/", "node_modules/", ".min.js"},
+			wantIgnore: false,
+		},
+		{
+			name:       "multiple excludes with match",
+			path:       "node_modules/react/index.js",
+			excludes:   []string{"vendor/", "node_modules/", "third_party/"},
+			wantIgnore: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ShouldIgnore(tt.path, tt.excludes)
+			assert.Equal(t, tt.wantIgnore, got)
+		})
+	}
+}
+
+func TestNormalizeTimeseriesPath(t *testing.T) {
+	repoPath := "/home/user/project"
+
+	tests := []struct {
+		name        string
+		userPath    string
+		expected    string
+		expectError bool
+	}{
+		{
+			name:     "relative path",
+			userPath: "src/main.go",
+			expected: "src/main.go",
+		},
+		{
+			name:     "relative path with dot",
+			userPath: "./src/main.go",
+			expected: "src/main.go",
+		},
+		{
+			name:     "absolute path within repo",
+			userPath: "/home/user/project/src/main.go",
+			expected: "src/main.go",
+		},
+		{
+			name:     "path with parent directory",
+			userPath: "src/../lib/utils.go",
+			expected: "lib/utils.go",
+		},
+		{
+			name:     "directory path",
+			userPath: "src/",
+			expected: "src",
+		},
+		{
+			name:        "absolute path outside repo",
+			userPath:    "/tmp/file.go",
+			expectError: true,
+		},
+		{
+			name:        "path going outside repo",
+			userPath:    "../../../outside.go",
+			expectError: true,
+		},
+		{
+			name:     "empty path",
+			userPath: "",
+			expected: ".",
+		},
+		{
+			name:     "root path",
+			userPath: ".",
+			expected: ".",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := NormalizeTimeseriesPath(repoPath, tt.userPath)
+
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestParseBoolString(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected bool
+		hasError bool
+	}{
+		{"yes", "yes", true, false},
+		{"YES", "YES", true, false},
+		{"no", "no", false, false},
+		{"NO", "NO", false, false},
+		{"true", "true", true, false},
+		{"TRUE", "TRUE", true, false},
+		{"false", "false", false, false},
+		{"FALSE", "FALSE", false, false},
+		{"1", "1", true, false},
+		{"0", "0", false, false},
+		{"empty", "", false, true},
+		{"invalid", "maybe", false, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := ParseBoolString(tt.input)
+			if tt.hasError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, result)
+			}
+		})
+	}
+}
+
+func FuzzShouldIgnore(f *testing.F) {
+	seeds := []struct {
+		path     string
+		excludes string
+	}{
+		{"main.go", "*.log"},
+		{"vendor/package/file.go", "vendor/"},
+		{"test_file.min.js", "*.min.js"},
+	}
+	for _, seed := range seeds {
+		f.Add(seed.path, seed.excludes)
+	}
+
+	f.Fuzz(func(_ *testing.T, path string, excludesStr string) {
+		var excludes []string
+		if excludesStr != "" {
+			for ex := range strings.SplitSeq(excludesStr, ",") {
+				if trimmed := strings.TrimSpace(ex); trimmed != "" {
+					excludes = append(excludes, trimmed)
+				}
+			}
+		}
+		_ = ShouldIgnore(path, excludes)
+	})
 }
