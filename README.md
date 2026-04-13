@@ -14,7 +14,7 @@ This tool operates as a **data-driven development intelligence.** While traditio
 [DORA]: https://en.wikipedia.org/wiki/DevOps_Research_and_Assessment
 [SCA]: https://en.wikipedia.org/wiki/Static_program_analysis
 
-## Key features
+## Features
 
 - 🔍 **See what matters** - rank files and folders by activity, complexity, etc.
 - ⚡ **Fast results** - analyze thousands of files in seconds
@@ -23,12 +23,6 @@ This tool operates as a **data-driven development intelligence.** While traditio
 - 🕓 **Robust time windows** - support for human-readable time
 - 📊 **Export results** - save to CSV/JSON/Parquet to track trends and progress
 - 🔄 **CI/CD integration** - enforce risk thresholds in pipelines
-
-## Target audience
-
-- 🧑‍💻 **Developers** tracking sprint or release activity
-- 🧹 **Tech leads** prioritizing refactors and risk across projects
-- 🧾 **Managers** monitoring bus factor and maintenance debt
 
 ## Installation
 
