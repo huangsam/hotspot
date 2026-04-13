@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/huangsam/hotspot/core"
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -31,10 +31,10 @@ Each comparison shows before/after scores, deltas, and ranking changes.`,
 // checkCompareAndExecute validates compare mode and executes the given function.
 func checkCompareAndExecute(executeFunc core.ExecutorFunc) {
 	if !cfg.Compare.Enabled {
-		contract.LogFatal("Cannot run compare analysis", errors.New("base and target refs must be provided"))
+		logger.Fatal("Cannot run compare analysis", errors.New("base and target refs must be provided"))
 	}
 	if err := executeFunc(rootCtx, cfg, cacheManager); err != nil {
-		contract.LogFatal("Cannot run compare analysis", err)
+		logger.Fatal("Cannot run compare analysis", err)
 	}
 }
 

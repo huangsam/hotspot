@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
+	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -72,7 +72,7 @@ func (p *Pipeline) Execute(ac *AnalysisContext) error {
 	}
 	if p.deferStage != nil {
 		if deferErr := p.deferStage.Execute(ac); deferErr != nil {
-			contract.LogWarn("Deferred pipeline stage failed", deferErr)
+			logger.Warn("Deferred pipeline stage failed", deferErr)
 		}
 	}
 	return pipelineErr

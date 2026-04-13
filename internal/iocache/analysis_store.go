@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -100,7 +100,7 @@ func NewAnalysisStore(backend schema.DatabaseBackend, connStr string) (AnalysisS
 
 	// Backfill URNs for legacy runs synchronously to ensure store consistency
 	if err := BackfillAnalysisURNs(store); err != nil {
-		contract.LogWarn("Analysis URN backfill encountered errors", err)
+		logger.Warn("Analysis URN backfill encountered errors", err)
 		// Don't fail store creation, but log the issue for debugging
 	}
 

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/logger"
 )
 
 // BackfillAnalysisURNs scans existing analysis runs and populates the 'urn' column.
@@ -38,7 +38,7 @@ func BackfillAnalysisURNs(store *AnalysisStoreImpl) error {
 		urn := "local:" + repoPath
 
 		if err = store.UpdateAnalysisRunURN(run.AnalysisID, urn); err != nil {
-			contract.LogWarn(fmt.Sprintf("Failed to backfill URN for run %d", run.AnalysisID), err)
+			logger.Warn(fmt.Sprintf("Failed to backfill URN for run %d", run.AnalysisID), err)
 		}
 	}
 

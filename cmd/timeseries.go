@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/huangsam/hotspot/core"
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -37,7 +37,7 @@ Examples:
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := core.ExecuteHotspotTimeseries(rootCtx, cfg, cacheManager); err != nil {
-			contract.LogFatal("Cannot run timeseries analysis", err)
+			logger.Fatal("Cannot run timeseries analysis", err)
 		}
 	},
 }

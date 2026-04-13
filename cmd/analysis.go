@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/iocache"
+	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -158,7 +158,7 @@ Examples:
 	PreRunE: analysisSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := iocache.ClearAnalysis(cfg.Runtime.AnalysisBackend, iocache.GetAnalysisDBFilePath(), cfg.Runtime.AnalysisDBConnect); err != nil {
-			contract.LogFatal("Failed to clear analysis data", err)
+			logger.Fatal("Failed to clear analysis data", err)
 		}
 		fmt.Println("Analysis data cleared successfully.")
 	},
@@ -190,7 +190,7 @@ Examples:
 	Run: func(_ *cobra.Command, _ []string) {
 		status, err := iocache.Manager.GetAnalysisStore().GetStatus()
 		if err != nil {
-			contract.LogFatal("Failed to get analysis status", err)
+			logger.Fatal("Failed to get analysis status", err)
 		}
 		iocache.PrintAnalysisStatus(status)
 	},
@@ -230,7 +230,7 @@ Examples:
 	PreRunE: analysisSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := iocache.ExecuteAnalysisExport(cfg.Output.OutputFile); err != nil {
-			contract.LogFatal("Failed to export analysis data", err)
+			logger.Fatal("Failed to export analysis data", err)
 		}
 	},
 }
@@ -262,7 +262,7 @@ Examples:
 	Run: func(_ *cobra.Command, _ []string) {
 		targetVersion := viper.GetInt("target-version")
 		if err := iocache.MigrateAnalysis(cfg.Runtime.AnalysisBackend, cfg.Runtime.AnalysisDBConnect, targetVersion); err != nil {
-			contract.LogFatal("Failed to run migrations", err)
+			logger.Fatal("Failed to run migrations", err)
 		}
 	},
 }

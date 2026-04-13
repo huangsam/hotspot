@@ -3,7 +3,7 @@ package cmd
 
 import (
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -62,15 +62,17 @@ func init() {
 	rootCmd.PersistentFlags().String("base-ref", "", "Base Git reference for the BEFORE state")
 	rootCmd.PersistentFlags().String("target-ref", "", "Target Git reference for the AFTER state")
 	rootCmd.PersistentFlags().String("config", "", "Path to config file")
+	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose telemetry output")
+	rootCmd.PersistentFlags().Bool("debug", false, "Enable debug telemetry output")
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
-		contract.LogFatal("Error binding root flags", err)
+		logger.Fatal("Error binding root flags", err)
 	}
 
 	// Bind all flags of filesCmd to Viper
 	filesCmd.Flags().Bool("explain", false, "Print per-file component score breakdown")
 	filesCmd.Flags().Bool("follow", false, "Re-run per-file analysis with --follow")
 	if err := viper.BindPFlags(filesCmd.Flags()); err != nil {
-		contract.LogFatal("Error binding files flags", err)
+		logger.Fatal("Error binding files flags", err)
 	}
 
 	// Bind all flags of timeseriesCmd to Viper
@@ -78,18 +80,18 @@ func init() {
 	timeseriesCmd.Flags().String("interval", "3 months", "Total time interval")
 	timeseriesCmd.Flags().Int("points", 3, "Number of lookback points")
 	if err := viper.BindPFlags(timeseriesCmd.Flags()); err != nil {
-		contract.LogFatal("Error binding timeseries flags", err)
+		logger.Fatal("Error binding timeseries flags", err)
 	}
 
 	// Bind all flags of checkCmd to Viper
 	checkCmd.Flags().String("thresholds-override", "", "Risk thresholds for CI/CD gating (format: 'hot:50,risk:50,complexity:50,stale:50')")
 	if err := viper.BindPFlags(checkCmd.Flags()); err != nil {
-		contract.LogFatal("Error binding check flags", err)
+		logger.Fatal("Error binding check flags", err)
 	}
 
 	// Bind all flags of analysisMigrateCmd to Viper
 	analysisMigrateCmd.Flags().Int("target-version", -1, "Target migration version (-1 means latest, 0 means rollback to initial state)")
 	if err := viper.BindPFlags(analysisMigrateCmd.Flags()); err != nil {
-		contract.LogFatal("Error binding analysis migrate flags", err)
+		logger.Fatal("Error binding analysis migrate flags", err)
 	}
 }

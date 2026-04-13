@@ -11,9 +11,9 @@ import (
 	"github.com/huangsam/hotspot/core/algo"
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
+	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -62,7 +62,7 @@ func (s *preparationStage) Execute(ac *AnalysisContext) error {
 		}
 		id, err := ac.AnalysisStore.BeginAnalysis(urn, time.Now(), configParams)
 		if err != nil {
-			contract.LogWarn("Analysis tracking initialization failed", err)
+			logger.Warn("Analysis tracking initialization failed", err)
 		} else if id > 0 {
 			ac.AnalysisID = id
 			ac.Context = withAnalysisID(ac.Context, id)
@@ -158,7 +158,7 @@ type finalizationStage struct{}
 func (s *finalizationStage) Execute(ac *AnalysisContext) error {
 	if ac.AnalysisStore != nil && ac.AnalysisID > 0 {
 		if err := ac.AnalysisStore.EndAnalysis(ac.AnalysisID, time.Now(), len(ac.FileResults)); err != nil {
-			contract.LogWarn("Failed to finalize analysis tracking", err)
+			logger.Warn("Failed to finalize analysis tracking", err)
 		}
 	}
 	return nil
@@ -515,7 +515,7 @@ func getOwnerString(owners []string) string {
 
 // logTrackingError logs database tracking errors to stderr without disrupting analysis.
 func logTrackingError(operation, path string, err error) {
-	contract.LogWarn(fmt.Sprintf("Analysis tracking failed for %s on %s", operation, path), err)
+	logger.Warn(fmt.Sprintf("Analysis tracking failed for %s on %s", operation, path), err)
 }
 
 // getAnalysisWindowForRef queries Git for the exact commit time of the given reference

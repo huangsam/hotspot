@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/huangsam/hotspot/core"
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -35,7 +35,7 @@ Examples:
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := core.ExecuteHotspotMetrics(rootCtx, cfg, cacheManager); err != nil {
-			contract.LogFatal("Cannot display metrics", err)
+			logger.Fatal("Cannot display metrics", err)
 		}
 	},
 }

@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/huangsam/hotspot/core"
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -40,7 +40,7 @@ Examples:
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := core.ExecuteHotspotFolders(rootCtx, cfg, cacheManager); err != nil {
-			contract.LogFatal("Cannot run folders analysis", err)
+			logger.Fatal("Cannot run folders analysis", err)
 		}
 	},
 }

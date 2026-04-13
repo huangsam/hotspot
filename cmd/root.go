@@ -10,6 +10,7 @@ import (
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
+	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -139,6 +140,9 @@ func sharedSetup(ctx context.Context, cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to start profiling: %w", err)
 		}
 	}
+
+	// Initialize the global logger using the persistent flags
+	logger.InitLogger(viper.GetBool("verbose"), viper.GetBool("debug"))
 
 	// 1. Read config file. This merges defaults, file, env, and flags.
 	if err := viper.ReadInConfig(); err != nil {

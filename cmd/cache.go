@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/iocache"
+	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -94,7 +94,7 @@ Examples:
 	PreRunE: cacheSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := iocache.ClearCache(cfg.Runtime.CacheBackend, iocache.GetDBFilePath(), cfg.Runtime.CacheDBConnect); err != nil {
-			contract.LogFatal("Failed to clear cache", err)
+			logger.Fatal("Failed to clear cache", err)
 		}
 		fmt.Println("Cache cleared successfully.")
 	},
@@ -125,7 +125,7 @@ Examples:
 	Run: func(_ *cobra.Command, _ []string) {
 		status, err := iocache.Manager.GetActivityStore().GetStatus()
 		if err != nil {
-			contract.LogFatal("Failed to get cache status", err)
+			logger.Fatal("Failed to get cache status", err)
 		}
 		iocache.PrintCacheStatus(status)
 	},

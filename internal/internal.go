@@ -3,6 +3,7 @@ package internal
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/huangsam/hotspot/internal/config"
@@ -17,10 +18,10 @@ func LogAnalysisHeader(git config.GitSettings, scoring config.ScoringSettings, _
 	}
 
 	// Line 1: The analysis summary (Repo and Mode)
-	fmt.Printf("Repo: %s (Mode: %s)\n", repoName, scoring.GetMode())
+	fmt.Fprintf(os.Stderr, "Repo: %s (Mode: %s)\n", repoName, scoring.GetMode())
 
 	// Line 2: The actual date range being analyzed
-	fmt.Printf("Range: %s → %s\n", git.GetStartTime().Format(schema.DateTimeFormat), git.GetEndTime().Format(schema.DateTimeFormat))
+	fmt.Fprintf(os.Stderr, "Range: %s → %s\n", git.GetStartTime().Format(schema.DateTimeFormat), git.GetEndTime().Format(schema.DateTimeFormat))
 }
 
 // LogTimeseriesHeader prints a header for timeseries analysis.
@@ -29,8 +30,8 @@ func LogTimeseriesHeader(git config.GitSettings, scoring config.ScoringSettings,
 	if repoName == "" || repoName == "." {
 		repoName = "current"
 	}
-	fmt.Printf("Repo: %s (Mode: %s)\n", repoName, scoring.GetMode())
-	fmt.Printf("Timeseries: %d data points (interval: %v)\n", timeseries.GetPoints(), timeseries.GetInterval())
+	fmt.Fprintf(os.Stderr, "Repo: %s (Mode: %s)\n", repoName, scoring.GetMode())
+	fmt.Fprintf(os.Stderr, "Timeseries: %d data points (interval: %v)\n", timeseries.GetPoints(), timeseries.GetInterval())
 }
 
 // LogCompareHeader prints a header for comparison analysis.
@@ -39,6 +40,6 @@ func LogCompareHeader(git config.GitSettings, scoring config.ScoringSettings, co
 	if repoName == "" || repoName == "." {
 		repoName = "current"
 	}
-	fmt.Printf("Repo: %s (Mode: %s)\n", repoName, scoring.GetMode())
-	fmt.Printf("Comparing: %s ↔ %s (lookback: %v)\n", compare.GetBaseRef(), compare.GetTargetRef(), compare.GetLookback())
+	fmt.Fprintf(os.Stderr, "Repo: %s (Mode: %s)\n", repoName, scoring.GetMode())
+	fmt.Fprintf(os.Stderr, "Comparing: %s ↔ %s (lookback: %v)\n", compare.GetBaseRef(), compare.GetTargetRef(), compare.GetLookback())
 }

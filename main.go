@@ -3,8 +3,8 @@ package main
 
 import (
 	"github.com/huangsam/hotspot/cmd"
-	"github.com/huangsam/hotspot/internal/contract"
 	"github.com/huangsam/hotspot/internal/iocache"
+	"github.com/huangsam/hotspot/internal/logger"
 )
 
 // main starts the execution of the logic.
@@ -17,11 +17,11 @@ func main() {
 		iocache.CloseCaching()
 
 		if err := cmd.StopProfiling(); err != nil {
-			contract.LogFatal("Error stopping profiling", err)
+			logger.Fatal("Error stopping profiling", err)
 		}
 	}()
 
 	if err := cmd.Execute(); err != nil {
-		contract.LogFatal("Error starting CLI", err)
+		logger.Fatal("Error starting CLI", err)
 	}
 }

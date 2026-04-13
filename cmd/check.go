@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/huangsam/hotspot/core"
-	"github.com/huangsam/hotspot/internal/contract"
+	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -40,7 +40,7 @@ Examples:
 	Run: func(_ *cobra.Command, _ []string) {
 		// Validation is done in ExecuteHotspotCheck
 		if err := core.ExecuteHotspotCheck(rootCtx, cfg, cacheManager); err != nil {
-			contract.LogFatal("Policy check failed", err)
+			logger.Fatal("Policy check failed", err)
 		}
 	},
 }
