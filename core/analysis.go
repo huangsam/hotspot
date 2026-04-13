@@ -355,7 +355,7 @@ func runFollowPass(
 	}
 
 	if !shouldSuppressHeader(ctx) {
-		fmt.Printf("Running --follow re-analysis for top %d files...\n", n)
+		logger.Info(fmt.Sprintf("Running --follow re-analysis for top %d files...", n))
 	}
 
 	var wg sync.WaitGroup

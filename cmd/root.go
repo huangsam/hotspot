@@ -141,9 +141,6 @@ func sharedSetup(ctx context.Context, cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Initialize the global logger using the persistent flags
-	logger.InitLogger(viper.GetBool("verbose"), viper.GetBool("debug"))
-
 	// 1. Read config file. This merges defaults, file, env, and flags.
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
@@ -157,6 +154,9 @@ func sharedSetup(ctx context.Context, cmd *cobra.Command, args []string) error {
 	if err := viper.Unmarshal(input); err != nil {
 		return fmt.Errorf("unable to unmarshal config: %w", err)
 	}
+
+	// Initialize the global logger using the resolved configuration (flags + file + env)
+	logger.InitLogger(viper.GetBool("verbose"), viper.GetBool("debug"))
 
 	// 3. Handle positional arguments (which Viper doesn't do).
 	if len(args) == 1 {

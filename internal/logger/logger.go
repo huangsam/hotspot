@@ -37,6 +37,16 @@ func Warn(msg string, err error) {
 	}
 }
 
+// Info logs an informational message to stderr.
+func Info(msg string, args ...any) {
+	slog.Info(msg, args...)
+}
+
+// Debug logs a debug message to stderr.
+func Debug(msg string, args ...any) {
+	slog.Debug(msg, args...)
+}
+
 // Fatal logs a fatal error message to stderr and exits the program.
 func Fatal(msg string, err error) {
 	if err != nil {
