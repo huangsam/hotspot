@@ -26,7 +26,7 @@ Agents can provide a `urn` for portable identity across machines, ensuring that 
 
 ### Scoring Modes
 
-The `core` package implements four distinct scoring algorithms based on different risk assessment principles. This is the most critical domain knowledge:
+The `core` package implements five distinct scoring algorithms based on different risk assessment principles. This is the most critical domain knowledge:
 
 1. **Hot Mode** (Activity hotspots)
    - **Principle**: Identifies files with high recent activity and volatility.
@@ -45,8 +45,12 @@ The `core` package implements four distinct scoring algorithms based on differen
 
 4. **Stale Mode** (Maintenance debt)
    - **Principle**: Identifies important files that haven't been touched recently.
-   - **Focus**: Lack of recent activity on historically important files.
    - **Use Case**: Find files that may have accumulated technical debt due to neglect.
+
+5. **ROI Mode** (Refactoring priority)
+   - **Principle**: Identifies files where refactoring effort provides the highest technical return.
+   - **Focus**: High churn on complex/large legacy files (Technical impact vs. Effort).
+   - **Use Case**: Prioritize refactoring targets in a large codebase with limited resources.
 
 ## Key Design Patterns
 
@@ -61,3 +65,7 @@ The `core` package implements four distinct scoring algorithms based on differen
 - **Quiet by Default & Telemetry Separation**: To support both human users and machine-readable pipelines (e.g., MCP, CI systems), the tool strictly separates output channels. Payload data (JSON, Parquet, or text tables) MUST go to `stdout`. Human UX contextual headers (`Repo: ..., Range: ...`) MUST go to `stderr`. Diagnostic and progress telemetry (e.g., "Running --follow...") MUST be routed through `internal/logger` (`logger.Info(...)`), remaining silent by default unless the user sets verbose/debug flags. **Never use `fmt.Println` or `fmt.Printf` for progress or status events**, to prevent corrupting structured data on standard out.
 
 - **Single-Pass Performance & AI Signal**: All git analysis (Total vs. Recent, Adds vs. Deletes) MUST happen in a single log pass in `core/agg` to avoid I/O regressions. Maintain raw magnitude metrics; modern AI handles absolute signals and ratios better than pre-normalized values.
+
+- **Enriched AI Signal (Reasoning)**: Analysis results (`FileResult`) include a `Reasoning` slice containing human-and-AI-readable justifications (e.g., "High Churn: Recent volatility...") to assist LLMs and human reviewers in interpreting complex score vectors without manual metric re-calculation.
+
+- **Modular Output Provider Pattern**: Output formatting is decoupled from core analysis via the `outwriter.FormatProvider` interface, with specific formats like JSON, CSV, Text, Markdown, Parquet, and Describe implemented as standalone sub-packages under `internal/outwriter/`. Cross-provider logic such as coloring, table rendering, and metric models is consolidated in `internal/outwriter/util/` to prevent circular dependencies between the main registry and individual providers. The `internal/outwriter/outwriter.go` registry dispatches calls based on the configured `OutputMode`, and the `FormatProvider` interface should always be used when passing writers through the core orchestration layer.
