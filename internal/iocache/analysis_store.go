@@ -86,10 +86,10 @@ func NewAnalysisStore(backend schema.DatabaseBackend, connStr string) (AnalysisS
 		return nil, fmt.Errorf("failed to connect to %s database: %w. %s", backend, err, connDetail)
 	}
 
-	// Create the table schemas
-	if err := createAnalysisTables(db, dialect); err != nil {
+	// Run migrations to ensure the schema is current
+	if err := migrateUpWithDB(backend, db); err != nil {
 		_ = db.Close()
-		return nil, fmt.Errorf("failed to create analysis tables: %w", err)
+		return nil, fmt.Errorf("failed to run analysis migrations: %w", err)
 	}
 
 	store := &AnalysisStoreImpl{
@@ -105,57 +105,6 @@ func NewAnalysisStore(backend schema.DatabaseBackend, connStr string) (AnalysisS
 	}
 
 	return store, nil
-}
-
-// createAnalysisTables creates the analysis tracking tables.
-func createAnalysisTables(db *sql.DB, dialect SQLDialect) error {
-	tables := []struct {
-		name  string
-		query string
-	}{
-		{analysisRunsTable, dialect.GetCreateAnalysisRunsQuery(analysisRunsTable)},
-		{fileScoresMetricsTable, dialect.GetCreateFileScoresMetricsQuery(fileScoresMetricsTable)},
-	}
-
-	for _, table := range tables {
-		if _, err := db.Exec(table.query); err != nil {
-			return fmt.Errorf("failed to create table %s: %w", table.name, err)
-		}
-	}
-
-	// Create index on URN column for filtered queries
-	if err := createURNIndex(db, dialect); err != nil {
-		return fmt.Errorf("failed to create URN index: %w", err)
-	}
-
-	return nil
-}
-
-// createURNIndex creates the idx_runs_urn index, handling dialect differences.
-// MySQL does not support CREATE INDEX IF NOT EXISTS, so we check existence first.
-func createURNIndex(db *sql.DB, dialect SQLDialect) error {
-	tableName := dialect.QuoteIdentifier(analysisRunsTable)
-
-	if dialect.DriverName() == "mysql" {
-		// MySQL: check if index exists before creating
-		var count int
-		err := db.QueryRow(
-			"SELECT COUNT(*) FROM information_schema.statistics WHERE table_name = ? AND index_name = ?",
-			analysisRunsTable, "idx_runs_urn",
-		).Scan(&count)
-		if err != nil {
-			return err
-		}
-		if count == 0 {
-			_, err = db.Exec(fmt.Sprintf("CREATE INDEX idx_runs_urn ON %s(urn)", tableName))
-			return err
-		}
-		return nil
-	}
-
-	// SQLite and PostgreSQL support IF NOT EXISTS
-	_, err := db.Exec(fmt.Sprintf("CREATE INDEX IF NOT EXISTS idx_runs_urn ON %s(urn)", tableName))
-	return err
 }
 
 // BeginAnalysis creates a new analysis run and returns its unique ID.

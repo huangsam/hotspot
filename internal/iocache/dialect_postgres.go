@@ -21,44 +21,6 @@ func (d *PostgresDialect) QuoteIdentifier(name string) string {
 	return fmt.Sprintf("\"%s\"", name)
 }
 
-// GetCreateAnalysisRunsQuery returns the PostgreSQL-specific table creation query for analysis runs.
-func (d *PostgresDialect) GetCreateAnalysisRunsQuery(tableName string) string {
-	return fmt.Sprintf(`
-		CREATE TABLE IF NOT EXISTS %s (
-			analysis_id BIGSERIAL PRIMARY KEY,
-			start_time TIMESTAMPTZ NOT NULL,
-			end_time TIMESTAMPTZ,
-			run_duration_ms INT,
-			total_files_analyzed INT,
-			config_params TEXT,
-			urn TEXT
-		);
-	`, d.QuoteIdentifier(tableName))
-}
-
-// GetCreateFileScoresMetricsQuery returns the PostgreSQL-specific table creation query for file scores.
-func (d *PostgresDialect) GetCreateFileScoresMetricsQuery(tableName string) string {
-	return fmt.Sprintf(`
-		CREATE TABLE IF NOT EXISTS %s (
-			analysis_id BIGINT NOT NULL,
-			file_path TEXT NOT NULL,
-			analysis_time TIMESTAMPTZ NOT NULL,
-			total_commits INT NOT NULL,
-			total_churn INT NOT NULL,
-			contributor_count INT NOT NULL,
-			age_days DOUBLE PRECISION NOT NULL,
-			gini_coefficient DOUBLE PRECISION NOT NULL,
-			file_owner TEXT,
-			score_hot DOUBLE PRECISION NOT NULL,
-			score_risk DOUBLE PRECISION NOT NULL,
-			score_complexity DOUBLE PRECISION NOT NULL,
-			score_stale DOUBLE PRECISION NOT NULL,
-			score_label TEXT NOT NULL,
-			PRIMARY KEY (analysis_id, file_path)
-		);
-	`, d.QuoteIdentifier(tableName))
-}
-
 // BeginAnalysis inserts a new analysis run into PostgreSQL and returns the generated ID using RETURNING.
 func (d *PostgresDialect) BeginAnalysis(db *sql.DB, tableName string, urn string, startTime time.Time, configJSON string) (int64, error) {
 	query := fmt.Sprintf(`INSERT INTO %s (start_time, config_params, urn) VALUES ($1, $2, $3) RETURNING analysis_id`, d.QuoteIdentifier(tableName))

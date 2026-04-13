@@ -21,44 +21,6 @@ func (d *MySQLDialect) QuoteIdentifier(name string) string {
 	return fmt.Sprintf("`%s`", name)
 }
 
-// GetCreateAnalysisRunsQuery returns the MySQL-specific table creation query for analysis runs.
-func (d *MySQLDialect) GetCreateAnalysisRunsQuery(tableName string) string {
-	return fmt.Sprintf(`
-		CREATE TABLE IF NOT EXISTS %s (
-			analysis_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-			start_time DATETIME(6) NOT NULL,
-			end_time DATETIME(6),
-			run_duration_ms INT,
-			total_files_analyzed INT,
-			config_params TEXT,
-			urn VARCHAR(255)
-		);
-	`, d.QuoteIdentifier(tableName))
-}
-
-// GetCreateFileScoresMetricsQuery returns the MySQL-specific table creation query for file scores.
-func (d *MySQLDialect) GetCreateFileScoresMetricsQuery(tableName string) string {
-	return fmt.Sprintf(`
-		CREATE TABLE IF NOT EXISTS %s (
-			analysis_id BIGINT NOT NULL,
-			file_path VARCHAR(512) NOT NULL,
-			analysis_time DATETIME(6) NOT NULL,
-			total_commits INT NOT NULL,
-			total_churn INT NOT NULL,
-			contributor_count INT NOT NULL,
-			age_days DOUBLE NOT NULL,
-			gini_coefficient DOUBLE NOT NULL,
-			file_owner VARCHAR(100),
-			score_hot DOUBLE NOT NULL,
-			score_risk DOUBLE NOT NULL,
-			score_complexity DOUBLE NOT NULL,
-			score_stale DOUBLE NOT NULL,
-			score_label VARCHAR(50) NOT NULL,
-			PRIMARY KEY (analysis_id, file_path)
-		);
-	`, d.QuoteIdentifier(tableName))
-}
-
 // BeginAnalysis inserts a new analysis run into MySQL and returns the generated ID.
 func (d *MySQLDialect) BeginAnalysis(db *sql.DB, tableName string, urn string, startTime time.Time, configJSON string) (int64, error) {
 	query := fmt.Sprintf(`INSERT INTO %s (start_time, config_params, urn) VALUES (?, ?, ?)`, d.QuoteIdentifier(tableName))

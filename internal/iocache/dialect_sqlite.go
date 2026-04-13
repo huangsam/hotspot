@@ -21,44 +21,6 @@ func (d *SQLiteDialect) QuoteIdentifier(name string) string {
 	return fmt.Sprintf("\"%s\"", name)
 }
 
-// GetCreateAnalysisRunsQuery returns the SQLite-specific table creation query for analysis runs.
-func (d *SQLiteDialect) GetCreateAnalysisRunsQuery(tableName string) string {
-	return fmt.Sprintf(`
-		CREATE TABLE IF NOT EXISTS %s (
-			analysis_id INTEGER PRIMARY KEY AUTOINCREMENT,
-			start_time TEXT NOT NULL,
-			end_time TEXT,
-			run_duration_ms INTEGER,
-			total_files_analyzed INTEGER,
-			config_params TEXT,
-			urn TEXT
-		);
-	`, d.QuoteIdentifier(tableName))
-}
-
-// GetCreateFileScoresMetricsQuery returns the SQLite-specific table creation query for file scores.
-func (d *SQLiteDialect) GetCreateFileScoresMetricsQuery(tableName string) string {
-	return fmt.Sprintf(`
-		CREATE TABLE IF NOT EXISTS %s (
-			analysis_id INTEGER NOT NULL,
-			file_path TEXT NOT NULL,
-			analysis_time TEXT NOT NULL,
-			total_commits INTEGER NOT NULL,
-			total_churn INTEGER NOT NULL,
-			contributor_count INTEGER NOT NULL,
-			age_days REAL NOT NULL,
-			gini_coefficient REAL NOT NULL,
-			file_owner TEXT,
-			score_hot REAL NOT NULL,
-			score_risk REAL NOT NULL,
-			score_complexity REAL NOT NULL,
-			score_stale REAL NOT NULL,
-			score_label TEXT NOT NULL,
-			PRIMARY KEY (analysis_id, file_path)
-		);
-	`, d.QuoteIdentifier(tableName))
-}
-
 // BeginAnalysis inserts a new analysis run into SQLite and returns the generated ID.
 func (d *SQLiteDialect) BeginAnalysis(db *sql.DB, tableName string, urn string, startTime time.Time, configJSON string) (int64, error) {
 	query := fmt.Sprintf(`INSERT INTO %s (start_time, config_params, urn) VALUES (?, ?, ?)`, d.QuoteIdentifier(tableName))

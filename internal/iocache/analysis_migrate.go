@@ -215,6 +215,37 @@ func executeMigration(m *migrate.Migrate, targetVersion int) error {
 	return nil
 }
 
+// migrateUpWithDB runs up-migrations using an already-open *sql.DB.
+// The caller retains ownership of db and must close it separately.
+// Used by NewAnalysisStore so the migrator shares the store's connection,
+// which is required for in-memory SQLite (each new connection sees a fresh DB).
+func migrateUpWithDB(backend schema.DatabaseBackend, db *sql.DB) error {
+	builder := &MigrationBuilder{
+		backend: backend,
+		db:      db,
+	}
+
+	if err := builder.buildDriver(); err != nil {
+		return err
+	}
+
+	if err := builder.buildSource(); err != nil {
+		return err
+	}
+
+	if err := builder.buildMigrate(); err != nil {
+		return err
+	}
+	// Close only the iofs source; do NOT call builder.m.Close() because the sqlite
+	// driver's Close() closes the underlying *sql.DB, which is owned by the caller.
+	defer func() { _ = builder.source.Close() }()
+
+	if err := builder.m.Up(); err != nil && err != migrate.ErrNoChange {
+		return fmt.Errorf("failed to run analysis migrations: %w", err)
+	}
+	return nil
+}
+
 // MigrateAnalysis runs database migrations for the analysis store.
 // If targetVersion == -1, it migrates to the latest version.
 // If targetVersion == 0, it rolls back all migrations (to initial state).

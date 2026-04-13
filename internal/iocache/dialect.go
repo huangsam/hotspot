@@ -15,12 +15,6 @@ type SQLDialect interface {
 	// QuoteIdentifier returns a quoted SQL identifier for the backend.
 	QuoteIdentifier(name string) string
 
-	// GetCreateAnalysisRunsQuery returns the DDL for analysis runs table.
-	GetCreateAnalysisRunsQuery(tableName string) string
-
-	// GetCreateFileScoresMetricsQuery returns the DDL for file scores metrics table.
-	GetCreateFileScoresMetricsQuery(tableName string) string
-
 	// BeginAnalysis inserts a new analysis run and returns its ID.
 	BeginAnalysis(db *sql.DB, tableName string, urn string, startTime time.Time, configJSON string) (int64, error)
 
