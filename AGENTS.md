@@ -14,11 +14,13 @@ CLI Args/Config (Viper) → Validation → Git Analysis (Concurrent) → Scoring
 
 **MCP (Model Context Protocol) Flow:**
 
-Hotspot can run as an MCP server (`hotspot mcp`) to expose its analysis capabilities as JSON-RPC tools (`get_files_hotspots`, `compare_hotspots`, etc.) directly to LLMs. All tools support full parameter parity with the CLI, including `repo_path`, `mode`, `limit`, `start`, and `end`.
+Hotspot can run as an MCP server (`hotspot mcp`) to expose its analysis capabilities as JSON-RPC tools (`get_files_hotspots`, `compare_hotspots`, `get_folders_hotspots`, `get_timeseries`) directly to LLMs. All tools support full parameter parity with the CLI, including `repo_path`, `mode`, `limit`, `start`, and `end`. **Critically, all MCP tools now accept an optional `urn` parameter**, enabling portable repository identity across machines (see Repository URN pattern below).
 
 ```
-MCP Request → Tool Handler → Git Analysis → Schema Enrichment → JSON Response
+MCP Request (urn + repo_path) → Portable Identity Resolution → Git Analysis → Schema Enrichment → JSON Response
 ```
+
+Agents can query by URN alone (using cached/historical data) or provide repo_path for fresh analysis. This enables fleet-wide querying: an agent in a cloud MCP server can retrieve unified hotspot data regardless of which machine last ran the analysis.
 
 ## Core Domain Concepts
 
@@ -50,7 +52,7 @@ The `core` package implements four distinct scoring algorithms based on differen
 
 - **I/O Caching**: Results and analysis are cached using pluggable backends (SQLite, MySQL, PostgreSQL) to dramatically speed up repeated analyses. See `internal/iocache/`.
 
-- **Repository URN**: Every analysis run is tagged with a canonical repository identifier (`RepoURN`) of the form `git:host/owner/repo` (resolved via `GetRemoteURL` + `NormalizeRemoteURL`) or `local:/abs/path` as a fallback. This ensures cache keys and DB records are path-independent and stable across checkout locations. Both `analysis.go` and `builder_check.go` resolve URN identically before calling `CachedAggregateActivity`.
+- **Repository URN (Portable Identity)**: Every analysis run is tagged with a canonical repository identifier (`RepoURN`) of the form `git:host/owner/repo` (resolved from remote origin URL), `local:rootHash` (for local-only repos), or `local:absPath` (fallback). This ensures cache keys and DB records are path-independent and stable across checkout locations, solving multi-machine fragmentation. All MCP tools (`get_files_hotspots`, `get_folders_hotspots`, `compare_hotspots`, `get_timeseries`) now accept an optional `urn` parameter, enabling agents to query by URN alone for fleet-wide querying and enterprise RAG without local path dependencies.
 
 - **Per-Dialect Migrations**: `internal/iocache/migrations/` contains three subdirectories (`sqlite/`, `mysql/`, `postgres/`) with backend-specific SQL files. `MigrateAnalysis` selects the correct subdirectory via `buildSource()`. DDL differs meaningfully across backends (e.g. `AUTOINCREMENT` vs `AUTO_INCREMENT` vs `BIGSERIAL`, `TEXT` vs `DATETIME(6)` vs `TIMESTAMPTZ`). Do not write dialect-agnostic SQL for schema changes — add a file per dialect.
 

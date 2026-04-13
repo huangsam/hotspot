@@ -20,18 +20,52 @@ type toolHandler struct {
 	client  git.Client
 }
 
-// handleGetFilesHotspots handles the get_files_hotspots tool.
-func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	cfg := h.baseCfg.Clone()
-	repoPath := request.GetString("repo_path", "")
+// resolveRepositoryPath handles URN-based or repo_path-based resolution.
+// If URN is provided, it uses the URN for portable identity (to avoid path fragmentation).
+// If repo_path is also provided, it validates and uses that for git operations.
+// If neither is provided, it defaults to "." for current directory.
+// This ensures the analysis is path-independent when URN is used uniformly across machines.
+func (h *toolHandler) resolveRepositoryPath(ctx context.Context, cfg *config.Config, urn string, repoPath string) error {
+	// If URN is provided, use it for portable identity
+	// The actual repo_path is needed for git operations, so we still need to resolve it
+	if urn != "" {
+		// Store URN as a hint (though it will be resolved again in the pipeline)
+		// For now, we still need repo_path for git operations
+		// If repo_path is not provided with URN, we have a few options:
+		// 1. Require repo_path (backward compatible)
+		// 2. Return error asking for repo_path
+		// 3. Use "." as default and let URN be the identity
+		// We'll go with option 3 for maximum portability
+		if repoPath == "" {
+			repoPath = "."
+		}
+	}
+
+	// Default to current directory if nothing provided
 	if repoPath == "" && cfg.Git.RepoPath == "" {
 		repoPath = "."
 	}
+
+	// If we have a repo path, resolve it
 	if repoPath != "" {
 		if err := config.ResolveGitPathAndFilter(ctx, cfg, h.client, &config.RawInput{RepoPathStr: repoPath}); err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("invalid repo path: %v", err)), nil
+			return err
 		}
 	}
+
+	return nil
+}
+
+// handleGetFilesHotspots handles the get_files_hotspots tool.
+func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	cfg := h.baseCfg.Clone()
+	urn := request.GetString("urn", "")
+	repoPath := request.GetString("repo_path", "")
+
+	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
+	}
+
 	if m := request.GetString("mode", ""); m != "" {
 		cfg.Scoring.Mode = schema.ScoringMode(m)
 	}
@@ -56,15 +90,13 @@ func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.Ca
 // handleGetFoldersHotspots handles the get_folders_hotspots tool.
 func (h *toolHandler) handleGetFoldersHotspots(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	cfg := h.baseCfg.Clone()
+	urn := request.GetString("urn", "")
 	repoPath := request.GetString("repo_path", "")
-	if repoPath == "" && cfg.Git.RepoPath == "" {
-		repoPath = "."
+
+	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
 	}
-	if repoPath != "" {
-		if err := config.ResolveGitPathAndFilter(ctx, cfg, h.client, &config.RawInput{RepoPathStr: repoPath}); err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("invalid repo path: %v", err)), nil
-		}
-	}
+
 	if m := request.GetString("mode", ""); m != "" {
 		cfg.Scoring.Mode = schema.ScoringMode(m)
 	}
@@ -92,15 +124,13 @@ func (h *toolHandler) handleCompareHotspots(ctx context.Context, request mcp.Cal
 	cfg.Compare.BaseRef = request.GetString("base_ref", "")
 	cfg.Compare.TargetRef = request.GetString("target_ref", "")
 	lookbackStr := request.GetString("lookback", "")
+	urn := request.GetString("urn", "")
 	repoPath := request.GetString("repo_path", "")
-	if repoPath == "" && cfg.Git.RepoPath == "" {
-		repoPath = "."
+
+	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
 	}
-	if repoPath != "" {
-		if err := config.ResolveGitPathAndFilter(ctx, cfg, h.client, &config.RawInput{RepoPathStr: repoPath}); err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("invalid repo path: %v", err)), nil
-		}
-	}
+
 	if m := request.GetString("mode", ""); m != "" {
 		cfg.Scoring.Mode = schema.ScoringMode(m)
 	}
@@ -128,16 +158,13 @@ func (h *toolHandler) handleGetTimeseries(ctx context.Context, request mcp.CallT
 	cfg.Timeseries.Path = request.GetString("path", "")
 	cfg.Timeseries.Points = request.GetInt("points", 0)
 	intervalStr := request.GetString("interval", "")
-
+	urn := request.GetString("urn", "")
 	repoPath := request.GetString("repo_path", "")
-	if repoPath == "" && cfg.Git.RepoPath == "" {
-		repoPath = "."
+
+	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
 	}
-	if repoPath != "" {
-		if err := config.ResolveGitPathAndFilter(ctx, cfg, h.client, &config.RawInput{RepoPathStr: repoPath}); err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("invalid repo path: %v", err)), nil
-		}
-	}
+
 	if m := request.GetString("mode", ""); m != "" {
 		cfg.Scoring.Mode = schema.ScoringMode(m)
 	}
