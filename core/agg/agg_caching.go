@@ -90,10 +90,11 @@ func generateCacheKey(ctx context.Context, gitSettings config.GitSettings, compa
 		repoHash = ""
 	}
 
-	// Use RepoURN if available for path-independent caching
+	// Use RepoURN if available for path-independent caching.
+	// Fall back to resolving the URN to ensure consistency even for legacy callers.
 	repoID := urn
 	if repoID == "" {
-		repoID = gitSettings.GetRepoPath()
+		repoID = git.ResolveURN(ctx, client, gitSettings.GetRepoPath())
 	}
 
 	key := fmt.Sprintf("%s:%d:%d:%d:%s",

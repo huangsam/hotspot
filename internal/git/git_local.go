@@ -79,6 +79,22 @@ func (c *LocalGitClient) GetRepoHash(ctx context.Context, repoPath string) (stri
 	return strings.TrimSpace(string(out)), nil
 }
 
+// GetRootCommitHash implements the GitClient interface.
+func (c *LocalGitClient) GetRootCommitHash(ctx context.Context, repoPath string) (string, error) {
+	out, err := c.Run(ctx, repoPath, "rev-list", "--max-parents=0", "HEAD")
+	if err != nil {
+		return "", err
+	}
+
+	// If there are multiple root commits (e.g. from joining unrelated histories),
+	// they will be separated by newlines. We take the first one (most recent root).
+	roots := strings.Split(strings.TrimSpace(string(out)), "\n")
+	if len(roots) > 0 && roots[0] != "" {
+		return roots[0], nil
+	}
+	return "", errors.New("no root commit found")
+}
+
 // GetFileActivityLog implements the GitClient interface.
 func (c *LocalGitClient) GetFileActivityLog(ctx context.Context, repoPath string, path string, startTime, endTime time.Time, follow bool) ([]byte, error) {
 	args := []string{

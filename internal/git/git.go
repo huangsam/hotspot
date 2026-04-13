@@ -46,17 +46,27 @@ type Client interface {
 	// GetOldestCommitDateForPath retrieves the commit date of the Nth oldest commit for a path.
 	GetOldestCommitDateForPath(ctx context.Context, repoPath string, path string, before time.Time, numCommits int, maxSearchDuration time.Duration) (time.Time, error)
 
+	// GetRootCommitHash returns the hash of the oldest/initial commit in the repository.
+	GetRootCommitHash(ctx context.Context, repoPath string) (string, error)
+
 	// GetRemoteURL returns the URL of the 'origin' remote for the repository.
 	GetRemoteURL(ctx context.Context, repoPath string) (string, error)
 }
 
 // ResolveURN returns a canonical repository identifier.
-// It prioritizes the remote 'origin' URL but falls back to the absolute local path.
+// It prioritizes the remote 'origin' URL but falls back to the root commit hash or absolute local path.
 func ResolveURN(ctx context.Context, client Client, repoPath string) string {
 	if url, err := client.GetRemoteURL(ctx, repoPath); err == nil && url != "" {
 		return "git:" + url
 	}
-	// Fallback to local path if no remote origin
+
+	// Fallback to the root commit hash of the local repository.
+	// This provides a stable identifier even if the repo directory is moved.
+	if rootHash, err := client.GetRootCommitHash(ctx, repoPath); err == nil && rootHash != "" {
+		return "local:" + rootHash
+	}
+
+	// Last resort fallback: local path if no remote origin and no commits exist yet
 	absPath, _ := client.GetRepoRoot(ctx, repoPath)
 	if absPath == "" {
 		absPath = repoPath

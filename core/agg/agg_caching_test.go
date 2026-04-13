@@ -122,6 +122,9 @@ func TestGenerateCacheKey(t *testing.T) {
 
 	// Mock GetRepoHash for any repo path
 	mockClient.On("GetRepoHash", mock.Anything, mock.AnythingOfType("string")).Return("abcd1234", nil)
+	mockClient.On("GetRemoteURL", mock.Anything, mock.AnythingOfType("string")).Return("", nil).Maybe()
+	mockClient.On("GetRootCommitHash", mock.Anything, mock.AnythingOfType("string")).Return("root123", nil).Maybe()
+	mockClient.On("GetRepoRoot", mock.Anything, mock.AnythingOfType("string")).Return("/test/repo", nil).Maybe()
 
 	key1 := generateCacheKey(context.Background(), cfg.Git, cfg.Compare, mockClient, "")
 
@@ -129,10 +132,8 @@ func TestGenerateCacheKey(t *testing.T) {
 	assert.NotEmpty(t, key1)
 	assert.Len(t, key1, 64) // SHA256 hash length
 
-	// Different config should produce different key
-	cfg2 := *cfg
-	cfg2.Git.RepoPath = "/different/repo"
-	key2 := generateCacheKey(context.Background(), cfg2.Git, cfg2.Compare, mockClient, "")
+	// Different config (different URN) should produce different key
+	key2 := generateCacheKey(context.Background(), cfg.Git, cfg.Compare, mockClient, "git:github.com/different/repo")
 	assert.NotEqual(t, key1, key2)
 
 	mockClient.AssertExpectations(t)
@@ -156,6 +157,9 @@ func TestGenerateCacheKey_RepoHashError(t *testing.T) {
 
 	// Mock GetRepoHash to return error
 	mockClient.On("GetRepoHash", mock.Anything, mock.AnythingOfType("string")).Return("", assert.AnError)
+	mockClient.On("GetRemoteURL", mock.Anything, mock.AnythingOfType("string")).Return("", nil).Maybe()
+	mockClient.On("GetRootCommitHash", mock.Anything, mock.AnythingOfType("string")).Return("root123", nil).Maybe()
+	mockClient.On("GetRepoRoot", mock.Anything, mock.AnythingOfType("string")).Return("/test/repo", nil).Maybe()
 
 	key := generateCacheKey(context.Background(), cfg.Git, cfg.Compare, mockClient, "")
 
@@ -183,6 +187,9 @@ func TestCachedAggregateActivity_CacheHit(t *testing.T) {
 	mockMgr.On("GetActivityStore").Return(mockStore)
 	mockStore.On("Get", mock.AnythingOfType("string")).Return(data, currentCacheVersion, time.Now().Unix(), nil)
 	mockClient.On("GetRepoHash", ctx, "/test/repo").Return("abcd1234", nil)
+	mockClient.On("GetRemoteURL", mock.Anything, mock.AnythingOfType("string")).Return("", nil).Maybe()
+	mockClient.On("GetRootCommitHash", mock.Anything, mock.AnythingOfType("string")).Return("root123", nil).Maybe()
+	mockClient.On("GetRepoRoot", mock.Anything, mock.AnythingOfType("string")).Return("/test/repo", nil).Maybe()
 
 	cfg := &config.Config{
 		Git: config.GitConfig{
@@ -213,6 +220,9 @@ func TestCachedAggregateActivity_CacheMiss(t *testing.T) {
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return(strings.Split(strings.TrimSpace(fileListFixture), "\n"), nil)
 	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(gitLogBasicFixture, nil)
 	mockClient.On("GetRepoHash", ctx, "/test/repo").Return("abcd1234", nil)
+	mockClient.On("GetRemoteURL", mock.Anything, mock.AnythingOfType("string")).Return("", nil).Maybe()
+	mockClient.On("GetRootCommitHash", mock.Anything, mock.AnythingOfType("string")).Return("root123", nil).Maybe()
+	mockClient.On("GetRepoRoot", mock.Anything, mock.AnythingOfType("string")).Return("/test/repo", nil).Maybe()
 
 	// Cache miss
 	mockMgr.On("GetActivityStore").Return(mockStore)
@@ -277,6 +287,9 @@ func TestCachedAggregateActivity_AggregateError(t *testing.T) {
 	// Setup for error in aggregateActivity
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return(nil, assert.AnError)
 	mockClient.On("GetRepoHash", ctx, "/test/repo").Return("abcd1234", nil)
+	mockClient.On("GetRemoteURL", mock.Anything, mock.AnythingOfType("string")).Return("", nil).Maybe()
+	mockClient.On("GetRootCommitHash", mock.Anything, mock.AnythingOfType("string")).Return("root123", nil).Maybe()
+	mockClient.On("GetRepoRoot", mock.Anything, mock.AnythingOfType("string")).Return("/test/repo", nil).Maybe()
 
 	// Cache miss
 	mockMgr.On("GetActivityStore").Return(mockStore)
