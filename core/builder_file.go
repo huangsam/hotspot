@@ -66,6 +66,12 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 		if churn, ok := b.output.ChurnMap[path]; ok {
 			b.result.Churn = churn
 		}
+		if added, ok := b.output.LinesAddedMap[path]; ok {
+			b.result.LinesAdded = added
+		}
+		if deleted, ok := b.output.LinesDeletedMap[path]; ok {
+			b.result.LinesDeleted = deleted
+		}
 		if contribMap, ok := b.output.ContribMap[path]; ok {
 			b.contribCount = make(map[string]int)
 			maps.Copy(b.contribCount, contribMap)
@@ -88,7 +94,8 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 			// Parse the output to populate metrics
 			lines := strings.Split(string(out), "\n")
 			var firstCommit time.Time
-			totalChanges := 0
+			totalAdd := 0
+			totalDel := 0
 			authorCommits := make(map[string]int)
 
 			for _, line := range lines {
@@ -112,7 +119,8 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 					// Numstat line
 					if add, errA := strconv.Atoi(strings.TrimSpace(parts[0])); errA == nil {
 						if del, errD := strconv.Atoi(strings.TrimSpace(parts[1])); errD == nil {
-							totalChanges += add + del
+							totalAdd += add
+							totalDel += del
 						}
 					}
 				}
@@ -121,7 +129,9 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 			b.contribCount = authorCommits
 			b.result.UniqueContributors = len(b.contribCount)
 			b.result.Commits = b.totalCommits
-			b.result.Churn = totalChanges
+			b.result.LinesAdded = totalAdd
+			b.result.LinesDeleted = totalDel
+			b.result.Churn = totalAdd + totalDel
 			b.result.FirstCommit = firstCommit
 		}
 	}
@@ -174,13 +184,19 @@ func (b *FileResultBuilder) CalculateDerivedMetrics() *FileResultBuilder {
 
 // FetchRecentInfo populates recent metrics from recent info if available.
 func (b *FileResultBuilder) FetchRecentInfo() *FileResultBuilder {
-	if v, ok := b.output.CommitMap[b.path]; ok {
+	b.result.RecentWindowDays = 30 // Fixed default window
+
+	if b.output == nil {
+		return b
+	}
+
+	if v, ok := b.output.RecentCommitMap[b.path]; ok {
 		b.result.RecentCommits = v
 	}
-	if v, ok := b.output.ChurnMap[b.path]; ok {
+	if v, ok := b.output.RecentChurnMap[b.path]; ok {
 		b.result.RecentChurn = v
 	}
-	if m, ok := b.output.ContribMap[b.path]; ok {
+	if m, ok := b.output.RecentContribMap[b.path]; ok {
 		b.result.RecentContributors = len(m)
 	}
 	return b

@@ -11,38 +11,36 @@ func TestParseAndAggregateGitLog_Comprehensive(t *testing.T) {
 	gitLogData, fileExists := generateComprehensiveTestData()
 
 	// Initialize aggregation maps
-	commitsMap := make(map[string]int)
-	churnMap := make(map[string]int)
-	contribMap := make(map[string]map[string]int)
-	firstCommitMap := make(map[string]time.Time)
+	output := initializeAggregateOutput()
+	recentThreshold := time.Now().AddDate(0, 0, -30)
 
 	// Execute parsing
-	parseAndAggregateGitLog(gitLogData, fileExists, commitsMap, churnMap, contribMap, firstCommitMap)
+	parseAndAggregateGitLog(gitLogData, fileExists, output, recentThreshold)
 
 	// Property-based assertions instead of hardcoded values
 	// Check that all expected files have been processed
 	expectedFiles := []string{"core/analysis.go", "core/core.go", "core/builder.go"}
 	for _, file := range expectedFiles {
-		assert.Contains(t, commitsMap, file, "File %s should be in commits map", file)
-		assert.Greater(t, commitsMap[file], 0, "File %s should have at least 1 commit", file)
-		assert.GreaterOrEqual(t, churnMap[file], 0, "File %s should have non-negative churn", file)
+		assert.Contains(t, output.CommitMap, file, "File %s should be in commits map", file)
+		assert.Greater(t, output.CommitMap[file], 0, "File %s should have at least 1 commit", file)
+		assert.GreaterOrEqual(t, output.ChurnMap[file], 0, "File %s should have non-negative churn", file)
 	}
 
 	// Check that contributors are tracked
-	assert.NotEmpty(t, contribMap["core/analysis.go"], "analysis.go should have contributors")
-	assert.NotEmpty(t, contribMap["core/core.go"], "core.go should have contributors")
+	assert.NotEmpty(t, output.ContribMap["core/analysis.go"], "analysis.go should have contributors")
+	assert.NotEmpty(t, output.ContribMap["core/core.go"], "core.go should have contributors")
 
 	// Check that first commit dates are reasonable
 	for _, file := range expectedFiles {
-		if commitsMap[file] > 0 {
-			assert.NotZero(t, firstCommitMap[file], "File %s should have a first commit date", file)
-			assert.True(t, firstCommitMap[file].Before(time.Now()), "First commit date should be in the past")
+		if output.CommitMap[file] > 0 {
+			assert.NotZero(t, output.FirstCommitMap[file], "File %s should have a first commit date", file)
+			assert.True(t, output.FirstCommitMap[file].Before(time.Now()), "First commit date should be in the past")
 		}
 	}
 
 	// Verify that total commits across all files is reasonable
 	totalCommits := 0
-	for _, count := range commitsMap {
+	for _, count := range output.CommitMap {
 		totalCommits += count
 	}
 	assert.Greater(t, totalCommits, 0, "Should have processed at least some commits")
@@ -52,55 +50,51 @@ func TestParseAndAggregateGitLog_Comprehensive(t *testing.T) {
 func TestParseAndAggregateGitLog_WithRenames(t *testing.T) {
 	gitLogData, fileExists := generateRenameTestData()
 
-	commitsMap := make(map[string]int)
-	churnMap := make(map[string]int)
-	contribMap := make(map[string]map[string]int)
-	firstCommitMap := make(map[string]time.Time)
+	output := initializeAggregateOutput()
+	recentThreshold := time.Now().AddDate(0, 0, -30)
 
-	parseAndAggregateGitLog(gitLogData, fileExists, commitsMap, churnMap, contribMap, firstCommitMap)
+	parseAndAggregateGitLog(gitLogData, fileExists, output, recentThreshold)
 
 	// Property-based checks for rename handling
 	expectedFiles := []string{"src/utils/helper.go", "src/helpers/utility.go", "src/main.go"}
 	for _, file := range expectedFiles {
-		assert.Contains(t, commitsMap, file, "File %s should be processed", file)
-		assert.Greater(t, commitsMap[file], 0, "File %s should have commits", file)
-		assert.GreaterOrEqual(t, churnMap[file], 0, "File %s should have valid churn", file)
+		assert.Contains(t, output.CommitMap, file, "File %s should be processed", file)
+		assert.Greater(t, output.CommitMap[file], 0, "File %s should have commits", file)
+		assert.GreaterOrEqual(t, output.ChurnMap[file], 0, "File %s should have valid churn", file)
 	}
 
 	// Check that rename contributions are properly attributed
-	assert.NotEmpty(t, contribMap["src/utils/helper.go"], "helper.go should have contributors")
-	assert.NotEmpty(t, contribMap["src/helpers/utility.go"], "utility.go should have contributors")
+	assert.NotEmpty(t, output.ContribMap["src/utils/helper.go"], "helper.go should have contributors")
+	assert.NotEmpty(t, output.ContribMap["src/helpers/utility.go"], "utility.go should have contributors")
 
 	// Verify first commit dates are set appropriately
 	for _, file := range expectedFiles {
-		assert.NotZero(t, firstCommitMap[file], "File %s should have first commit date", file)
+		assert.NotZero(t, output.FirstCommitMap[file], "File %s should have first commit date", file)
 	}
 }
 
 func TestParseAndAggregateGitLog_EdgeCases(t *testing.T) {
 	gitLogData, fileExists := generateEdgeCaseTestData()
 
-	commitsMap := make(map[string]int)
-	churnMap := make(map[string]int)
-	contribMap := make(map[string]map[string]int)
-	firstCommitMap := make(map[string]time.Time)
+	output := initializeAggregateOutput()
+	recentThreshold := time.Now().AddDate(0, 0, -30)
 
-	parseAndAggregateGitLog(gitLogData, fileExists, commitsMap, churnMap, contribMap, firstCommitMap)
+	parseAndAggregateGitLog(gitLogData, fileExists, output, recentThreshold)
 
 	// Property-based checks for edge cases
 	expectedFiles := []string{"src/main.go", "src/logo.png", "src/empty.txt"}
 	for _, file := range expectedFiles {
-		assert.Contains(t, commitsMap, file, "File %s should be processed", file)
-		assert.Greater(t, commitsMap[file], 0, "File %s should have at least 1 commit", file)
-		assert.GreaterOrEqual(t, churnMap[file], 0, "File %s should have valid churn", file)
+		assert.Contains(t, output.CommitMap, file, "File %s should be processed", file)
+		assert.Greater(t, output.CommitMap[file], 0, "File %s should have at least 1 commit", file)
+		assert.GreaterOrEqual(t, output.ChurnMap[file], 0, "File %s should have valid churn", file)
 	}
 
 	// Binary and empty files should have 0 churn
-	assert.Equal(t, 0, churnMap["src/logo.png"], "Binary file should have 0 churn")
-	assert.Equal(t, 0, churnMap["src/empty.txt"], "Empty file should have 0 churn")
+	assert.Equal(t, 0, output.ChurnMap["src/logo.png"], "Binary file should have 0 churn")
+	assert.Equal(t, 0, output.ChurnMap["src/empty.txt"], "Empty file should have 0 churn")
 
 	// Normal files should have positive churn
-	assert.Greater(t, churnMap["src/main.go"], 0, "Normal file should have positive churn")
+	assert.Greater(t, output.ChurnMap["src/main.go"], 0, "Normal file should have positive churn")
 }
 
 func TestParseCommitHeader(t *testing.T) {
@@ -248,59 +242,61 @@ func TestAggregateForPath(t *testing.T) {
 	laterTime := testTime.Add(time.Hour)
 
 	t.Run("single aggregation", func(t *testing.T) {
-		commitsMap, churnMap, contribMap, firstCommitMap := createAggregationMaps()
+		output := initializeAggregateOutput()
 
-		aggregateForPath("src/main.go", 15, "Alice", testTime, commitsMap, churnMap, contribMap, firstCommitMap)
+		aggregateForPath("src/main.go", 10, 5, "Alice", testTime, output, time.Time{})
 
-		assert.Equal(t, 1, commitsMap["src/main.go"])
-		assert.Equal(t, 15, churnMap["src/main.go"])
-		assert.Equal(t, map[string]int{"Alice": 1}, contribMap["src/main.go"])
-		assert.Equal(t, testTime, firstCommitMap["src/main.go"])
+		assert.Equal(t, 1, output.CommitMap["src/main.go"])
+		assert.Equal(t, 15, output.ChurnMap["src/main.go"])
+		assert.Equal(t, 10, output.LinesAddedMap["src/main.go"])
+		assert.Equal(t, 5, output.LinesDeletedMap["src/main.go"])
+		assert.Equal(t, map[string]int{"Alice": 1}, output.ContribMap["src/main.go"])
+		assert.Equal(t, testTime, output.FirstCommitMap["src/main.go"])
 	})
 
 	t.Run("multiple aggregations same file", func(t *testing.T) {
-		commitsMap, churnMap, contribMap, firstCommitMap := createAggregationMaps()
+		output := initializeAggregateOutput()
 
 		// First aggregation
-		aggregateForPath("src/main.go", 15, "Alice", testTime, commitsMap, churnMap, contribMap, firstCommitMap)
+		aggregateForPath("src/main.go", 10, 5, "Alice", testTime, output, time.Time{})
 		// Second aggregation
-		aggregateForPath("src/main.go", 10, "Alice", laterTime, commitsMap, churnMap, contribMap, firstCommitMap)
+		aggregateForPath("src/main.go", 8, 2, "Alice", laterTime, output, time.Time{})
 
-		assert.Equal(t, 2, commitsMap["src/main.go"])
-		assert.Equal(t, 25, churnMap["src/main.go"])
-		assert.Equal(t, map[string]int{"Alice": 2}, contribMap["src/main.go"])
-		assert.Equal(t, testTime, firstCommitMap["src/main.go"]) // Should keep earliest time
+		assert.Equal(t, 2, output.CommitMap["src/main.go"])
+		assert.Equal(t, 25, output.ChurnMap["src/main.go"])
+		assert.Equal(t, map[string]int{"Alice": 2}, output.ContribMap["src/main.go"])
+		assert.Equal(t, testTime, output.FirstCommitMap["src/main.go"]) // Should keep earliest time
 	})
 
 	t.Run("multiple authors", func(t *testing.T) {
-		commitsMap, churnMap, contribMap, firstCommitMap := createAggregationMaps()
+		output := initializeAggregateOutput()
 
-		aggregateForPath("src/main.go", 15, "Alice", testTime, commitsMap, churnMap, contribMap, firstCommitMap)
-		aggregateForPath("src/main.go", 10, "Bob", laterTime, commitsMap, churnMap, contribMap, firstCommitMap)
+		aggregateForPath("src/main.go", 10, 5, "Alice", testTime, output, time.Time{})
+		aggregateForPath("src/main.go", 5, 5, "Bob", laterTime, output, time.Time{})
 
-		assert.Equal(t, 2, commitsMap["src/main.go"])
-		assert.Equal(t, 25, churnMap["src/main.go"])
-		assert.Equal(t, map[string]int{"Alice": 1, "Bob": 1}, contribMap["src/main.go"])
+		assert.Equal(t, 2, output.CommitMap["src/main.go"])
+		assert.Equal(t, 25, output.ChurnMap["src/main.go"])
+		assert.Equal(t, map[string]int{"Alice": 1, "Bob": 1}, output.ContribMap["src/main.go"])
 	})
 
 	t.Run("empty author", func(t *testing.T) {
-		commitsMap, churnMap, contribMap, firstCommitMap := createAggregationMaps()
+		output := initializeAggregateOutput()
 
-		aggregateForPath("src/utils.go", 8, "", laterTime, commitsMap, churnMap, contribMap, firstCommitMap)
+		aggregateForPath("src/utils.go", 4, 4, "", laterTime, output, time.Time{})
 
-		assert.Equal(t, 1, commitsMap["src/utils.go"])
-		assert.Equal(t, 8, churnMap["src/utils.go"])
-		assert.NotContains(t, contribMap, "src/utils.go") // No contributors added
+		assert.Equal(t, 1, output.CommitMap["src/utils.go"])
+		assert.Equal(t, 8, output.ChurnMap["src/utils.go"])
+		assert.NotContains(t, output.ContribMap, "src/utils.go") // No contributors added
 	})
 
 	t.Run("zero time", func(t *testing.T) {
-		commitsMap, churnMap, contribMap, firstCommitMap := createAggregationMaps()
+		output := initializeAggregateOutput()
 
-		aggregateForPath("src/zero.go", 3, "Charlie", time.Time{}, commitsMap, churnMap, contribMap, firstCommitMap)
+		aggregateForPath("src/zero.go", 1, 2, "Charlie", time.Time{}, output, time.Time{})
 
-		assert.Equal(t, 1, commitsMap["src/zero.go"])
-		assert.Equal(t, 3, churnMap["src/zero.go"])
-		assert.Equal(t, map[string]int{"Charlie": 1}, contribMap["src/zero.go"])
-		assert.NotContains(t, firstCommitMap, "src/zero.go") // No time recorded
+		assert.Equal(t, 1, output.CommitMap["src/zero.go"])
+		assert.Equal(t, 3, output.ChurnMap["src/zero.go"])
+		assert.Equal(t, map[string]int{"Charlie": 1}, output.ContribMap["src/zero.go"])
+		assert.NotContains(t, output.FirstCommitMap, "src/zero.go") // No time recorded
 	})
 }

@@ -48,14 +48,14 @@ func (d *MySQLDialect) GetUpdateEndAnalysisQuery(tableName string) string {
 // RecordFileMetricsAndScores inserts file-level metrics and scores into MySQL.
 func (d *MySQLDialect) RecordFileMetricsAndScores(db *sql.DB, tableName string, analysisID int64, filePath string, metrics schema.FileMetrics, scores schema.FileScores) error {
 	query := fmt.Sprintf(`
-		INSERT INTO %s (analysis_id, file_path, analysis_time, total_commits, total_churn,
+		INSERT INTO %s (analysis_id, file_path, analysis_time, total_commits, total_churn, lines_added, lines_deleted,
 						 contributor_count, age_days, gini_coefficient, file_owner,
 						 score_hot, score_risk, score_complexity, score_stale, score_label)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, d.QuoteIdentifier(tableName))
 
 	_, err := db.Exec(query,
-		analysisID, filePath, d.FormatTime(metrics.AnalysisTime), metrics.TotalCommits, metrics.TotalChurn,
+		analysisID, filePath, d.FormatTime(metrics.AnalysisTime), metrics.TotalCommits, metrics.TotalChurn, metrics.LinesAdded, metrics.LinesDeleted,
 		metrics.ContributorCount, metrics.AgeDays, metrics.GiniCoefficient, metrics.FileOwner,
 		scores.HotScore, scores.RiskScore, scores.ComplexityScore, scores.StaleScore, scores.ScoreLabel,
 	)
@@ -96,7 +96,7 @@ func (d *MySQLDialect) ScanAnalysisRunRecord(rows *sql.Rows, record *schema.Anal
 // ScanFileScoresMetricsRecord parses a full file metrics and scores record from MySQL rows.
 func (d *MySQLDialect) ScanFileScoresMetricsRecord(rows *sql.Rows, record *schema.FileScoresMetricsRecord) error {
 	return rows.Scan(&record.AnalysisID, &record.FilePath, &record.AnalysisTime, &record.TotalCommits,
-		&record.TotalChurn, &record.ContributorCount, &record.AgeDays, &record.GiniCoefficient,
+		&record.TotalChurn, &record.LinesAdded, &record.LinesDeleted, &record.ContributorCount, &record.AgeDays, &record.GiniCoefficient,
 		&record.FileOwner, &record.ScoreHot, &record.ScoreRisk, &record.ScoreComplexity,
 		&record.ScoreStale, &record.ScoreLabel)
 }

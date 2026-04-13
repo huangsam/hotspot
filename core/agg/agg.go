@@ -27,23 +27,23 @@ func aggregateActivity(ctx context.Context, gitSettings config.GitSettings, clie
 	fileExists := buildFileExistenceMap(currentFiles)
 
 	// 2. Initialize aggregation maps
-	commitsMap, churnMap, contribMap, firstCommitMap := initializeAggregationMaps()
+	output := initializeAggregateOutput()
 
-	// 3. Run the git log command
+	// 3. Determine recent window threshold (e.g., 30 days before EndTime or Now)
+	endTime := gitSettings.GetEndTime()
+	if endTime.IsZero() {
+		endTime = time.Now()
+	}
+	recentThreshold := endTime.AddDate(0, 0, -30) // Fixed 30-day window for now
+
+	// 4. Run the git log command
 	out, err := client.GetActivityLog(ctx, gitSettings.GetRepoPath(), gitSettings.GetStartTime(), gitSettings.GetEndTime())
 	if err != nil {
 		return nil, err
 	}
 
-	// 4. Parse and aggregate the git log output
-	parseAndAggregateGitLog(out, fileExists, commitsMap, churnMap, contribMap, firstCommitMap)
-
-	output := &schema.AggregateOutput{
-		ChurnMap:       churnMap,
-		CommitMap:      commitsMap,
-		ContribMap:     contribMap,
-		FirstCommitMap: firstCommitMap,
-	}
+	// 5. Parse and aggregate the git log output
+	parseAndAggregateGitLog(out, fileExists, output, recentThreshold)
 
 	return output, nil
 }
@@ -57,17 +57,23 @@ func buildFileExistenceMap(currentFiles []string) map[string]bool {
 	return fileExists
 }
 
-// initializeAggregationMaps creates the maps used for aggregating git data.
-func initializeAggregationMaps() (map[string]int, map[string]int, map[string]map[string]int, map[string]time.Time) {
-	commitsMap := make(map[string]int)
-	churnMap := make(map[string]int)
-	contribMap := make(map[string]map[string]int)
-	firstCommitMap := make(map[string]time.Time)
-	return commitsMap, churnMap, contribMap, firstCommitMap
+// initializeAggregateOutput creates the AggregateOutput and its internal maps.
+func initializeAggregateOutput() *schema.AggregateOutput {
+	return &schema.AggregateOutput{
+		CommitMap:        make(map[string]int),
+		ChurnMap:         make(map[string]int),
+		ContribMap:       make(map[string]map[string]int),
+		FirstCommitMap:   make(map[string]time.Time),
+		LinesAddedMap:    make(map[string]int),
+		LinesDeletedMap:  make(map[string]int),
+		RecentCommitMap:  make(map[string]int),
+		RecentChurnMap:   make(map[string]int),
+		RecentContribMap: make(map[string]map[string]int),
+	}
 }
 
-// parseAndAggregateGitLog processes the git log output and aggregates data into the maps.
-func parseAndAggregateGitLog(out []byte, fileExists map[string]bool, commitsMap, churnMap map[string]int, contribMap map[string]map[string]int, firstCommitMap map[string]time.Time) {
+// parseAndAggregateGitLog processes the git log output and aggregates data into the output maps.
+func parseAndAggregateGitLog(out []byte, fileExists map[string]bool, output *schema.AggregateOutput, recentThreshold time.Time) {
 	lines := strings.Split(string(out), "\n")
 	var currentAuthor string
 	var currentDate time.Time
@@ -92,7 +98,7 @@ func parseAndAggregateGitLog(out []byte, fileExists map[string]bool, commitsMap,
 
 		// Aggregate for each relevant path
 		for _, p := range pathsToAggregate {
-			aggregateForPath(p, add+del, currentAuthor, currentDate, commitsMap, churnMap, contribMap, firstCommitMap)
+			aggregateForPath(p, add, del, currentAuthor, currentDate, output, recentThreshold)
 		}
 	}
 }
@@ -199,20 +205,37 @@ func parseRenamePath(path string) (string, string) {
 }
 
 // aggregateForPath updates the aggregation maps for a single path.
-func aggregateForPath(path string, churn int, author string, date time.Time, commitsMap, churnMap map[string]int, contribMap map[string]map[string]int, firstCommitMap map[string]time.Time) {
-	churnMap[path] += churn
-	commitsMap[path]++
+func aggregateForPath(path string, add int, del int, author string, date time.Time, output *schema.AggregateOutput, recentThreshold time.Time) {
+	churn := add + del
+
+	// Base metrics
+	output.ChurnMap[path] += churn
+	output.CommitMap[path]++
+	output.LinesAddedMap[path] += add
+	output.LinesDeletedMap[path] += del
 
 	if author != "" {
-		if contribMap[path] == nil {
-			contribMap[path] = make(map[string]int)
+		if output.ContribMap[path] == nil {
+			output.ContribMap[path] = make(map[string]int)
 		}
-		contribMap[path][author]++
+		output.ContribMap[path][author]++
 	}
 
 	if !date.IsZero() {
-		if existing, ok := firstCommitMap[path]; !ok || date.Before(existing) {
-			firstCommitMap[path] = date
+		if existing, ok := output.FirstCommitMap[path]; !ok || date.Before(existing) {
+			output.FirstCommitMap[path] = date
+		}
+	}
+
+	// Recent metrics filtering
+	if !date.IsZero() && !date.Before(recentThreshold) {
+		output.RecentChurnMap[path] += churn
+		output.RecentCommitMap[path]++
+		if author != "" {
+			if output.RecentContribMap[path] == nil {
+				output.RecentContribMap[path] = make(map[string]int)
+			}
+			output.RecentContribMap[path][author]++
 		}
 	}
 }

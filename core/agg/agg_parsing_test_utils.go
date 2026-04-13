@@ -173,8 +173,3 @@ func createTestFileExistsMap(files []string) map[string]bool {
 	}
 	return result
 }
-
-// createAggregationMaps creates initialized aggregation maps for testing.
-func createAggregationMaps() (map[string]int, map[string]int, map[string]map[string]int, map[string]time.Time) {
-	return make(map[string]int), make(map[string]int), make(map[string]map[string]int), make(map[string]time.Time)
-}

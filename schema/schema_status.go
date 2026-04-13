@@ -31,6 +31,8 @@ type FileScoresMetricsRecord struct {
 	AnalysisTime     time.Time
 	TotalCommits     int32
 	TotalChurn       int32
+	LinesAdded       int32
+	LinesDeleted     int32
 	ContributorCount int32
 	AgeDays          float64
 	GiniCoefficient  float64

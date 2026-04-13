@@ -8,6 +8,15 @@ type AggregateOutput struct {
 	ChurnMap       map[string]int            // Maps file path to its churn (lines added/deleted) count
 	ContribMap     map[string]map[string]int // Maps file path to an inner map of AuthorName:CommitCount
 	FirstCommitMap map[string]time.Time      // Maps file path to its first commit time in the analysis window
+
+	// Decomposed Churn
+	LinesAddedMap   map[string]int
+	LinesDeletedMap map[string]int
+
+	// Recent Activity (Fixed window, e.g. 30 days)
+	RecentCommitMap  map[string]int
+	RecentChurnMap   map[string]int
+	RecentContribMap map[string]map[string]int
 }
 
 // FileMetrics represents raw git metrics for a single file.
@@ -15,6 +24,8 @@ type FileMetrics struct {
 	AnalysisTime     time.Time
 	TotalCommits     int
 	TotalChurn       int
+	LinesAdded       int
+	LinesDeleted     int
 	ContributorCount int
 	AgeDays          float64
 	GiniCoefficient  float64

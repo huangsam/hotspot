@@ -30,6 +30,8 @@ func recordFileAnalysis(ctx context.Context, scoringSettings config.ScoringSetti
 		AnalysisTime:     now,
 		TotalCommits:     result.Commits,
 		TotalChurn:       result.Churn,
+		LinesAdded:       result.LinesAdded,
+		LinesDeleted:     result.LinesDeleted,
 		ContributorCount: result.UniqueContributors,
 		AgeDays:          float64(result.AgeDays), // Convert int to float64 for type compatibility with FileMetrics struct
 		GiniCoefficient:  result.Gini,
