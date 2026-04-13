@@ -7,7 +7,7 @@
 
 Hotspot is a CLI tool that analyzes Git history to diagnose technical debt and bus factor risk based on developer activity, ownership, and churn patterns.
 
-<img src="./images/logo.png" alt="Hotspot" width="250px" />
+<img src="./images/demo.gif" alt="Hotspot Demo" width="800px" />
 
 This tool operates as a **data-driven development intelligence.** While traditional [SCA] tools focus on code structure and style, and [DORA] metrics track team performance, Hotspot analyzes **actual development behavior** - commit patterns, ownership distribution, churn trends, and maintenance activity - to diagnose **technical debt** and **bus factor risk** within **your code** at the file and folder level.
 
@@ -69,14 +69,6 @@ The MCP tools (`get_files_hotspots`, `compare_hotspots`, etc.) support the same 
 
 - **[USERGUIDE.md](./USERGUIDE.md)**: Detailed commands, configuration options, backend setup, data exports, and common workflows.
 - **[PLAYBOOK.md](./PLAYBOOK.md)**: Actionable guidance on using this data to foster a healthy engineering culture.
-
-### Live demo
-
-Here's a demo of Hotspot in action:
-
-<img src="./images/demo.gif" alt="Hotspot Demo" width="800px" />
-
-
 
 ## Performance
 
