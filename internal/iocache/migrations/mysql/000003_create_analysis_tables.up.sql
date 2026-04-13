@@ -7,9 +7,10 @@ CREATE TABLE IF NOT EXISTS hotspot_analysis_runs (
     run_duration_ms INT,
     total_files_analyzed INT,
     config_params TEXT,
-    urn VARCHAR(255),
-    INDEX idx_runs_urn (urn)
+    urn VARCHAR(255)
 );
+
+CREATE INDEX idx_runs_urn ON hotspot_analysis_runs(urn);
 
 CREATE TABLE IF NOT EXISTS hotspot_file_scores_metrics (
     analysis_id BIGINT NOT NULL,

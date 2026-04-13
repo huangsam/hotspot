@@ -87,7 +87,7 @@ func NewAnalysisStore(backend schema.DatabaseBackend, connStr string) (AnalysisS
 	}
 
 	// Run migrations to ensure the schema is current
-	if err := migrateUpWithDB(backend, db); err != nil {
+	if err := migrateUpWithDB(backend, db, connStr); err != nil {
 		_ = db.Close()
 		return nil, fmt.Errorf("failed to run analysis migrations: %w", err)
 	}

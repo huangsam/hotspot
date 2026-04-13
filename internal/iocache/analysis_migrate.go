@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database"
@@ -215,11 +216,22 @@ func executeMigration(m *migrate.Migrate, targetVersion int) error {
 	return nil
 }
 
-// migrateUpWithDB runs up-migrations using an already-open *sql.DB.
-// The caller retains ownership of db and must close it separately.
-// Used by NewAnalysisStore so the migrator shares the store's connection,
-// which is required for in-memory SQLite (each new connection sees a fresh DB).
-func migrateUpWithDB(backend schema.DatabaseBackend, db *sql.DB) error {
+// migrateUpWithDB runs up-migrations to ensure the analysis schema is current.
+//
+// For SQLite the caller's *sql.DB is reused so that in-memory databases
+// (each connection sees a fresh DB) work correctly.
+// For MySQL and PostgreSQL a dedicated migration connection is opened and
+// closed, which is safe because the database is server-side and shared
+// across connections.  MySQL additionally requires multiStatements=true.
+func migrateUpWithDB(backend schema.DatabaseBackend, db *sql.DB, connStr string) error {
+	if backend == schema.SQLiteBackend {
+		return migrateSQLiteWithDB(backend, db)
+	}
+	return migrateServerDBUp(backend, connStr)
+}
+
+// migrateSQLiteWithDB shares the caller's *sql.DB for in-memory support.
+func migrateSQLiteWithDB(backend schema.DatabaseBackend, db *sql.DB) error {
 	builder := &MigrationBuilder{
 		backend: backend,
 		db:      db,
@@ -236,14 +248,60 @@ func migrateUpWithDB(backend schema.DatabaseBackend, db *sql.DB) error {
 	if err := builder.buildMigrate(); err != nil {
 		return err
 	}
-	// Close only the iofs source; do NOT call builder.m.Close() because the sqlite
-	// driver's Close() closes the underlying *sql.DB, which is owned by the caller.
+	// Close only the iofs source; do NOT call builder.m.Close() because the
+	// sqlite driver's Close() closes the underlying *sql.DB owned by the caller.
 	defer func() { _ = builder.source.Close() }()
 
 	if err := builder.m.Up(); err != nil && err != migrate.ErrNoChange {
 		return fmt.Errorf("failed to run analysis migrations: %w", err)
 	}
 	return nil
+}
+
+// migrateServerDBUp opens a dedicated connection for MySQL/PostgreSQL migrations.
+// For MySQL the DSN is augmented with multiStatements=true as required by the
+// golang-migrate MySQL driver.
+func migrateServerDBUp(backend schema.DatabaseBackend, connStr string) error {
+	effectiveConnStr := connStr
+	if backend == schema.MySQLBackend {
+		effectiveConnStr = ensureMySQLMultiStatements(connStr)
+	}
+
+	builder := NewMigrationBuilder(backend, effectiveConnStr)
+	if err := builder.buildDatabase(); err != nil {
+		return err
+	}
+	defer func() { _ = builder.db.Close() }()
+
+	if err := builder.buildDriver(); err != nil {
+		return err
+	}
+
+	if err := builder.buildSource(); err != nil {
+		return err
+	}
+
+	if err := builder.buildMigrate(); err != nil {
+		return err
+	}
+	defer func() { _, _ = builder.m.Close() }()
+
+	if err := builder.m.Up(); err != nil && err != migrate.ErrNoChange {
+		return fmt.Errorf("failed to run analysis migrations: %w", err)
+	}
+	return nil
+}
+
+// ensureMySQLMultiStatements appends multiStatements=true to a MySQL DSN
+// if it is not already present.
+func ensureMySQLMultiStatements(dsn string) string {
+	if strings.Contains(dsn, "multiStatements=true") {
+		return dsn
+	}
+	if strings.Contains(dsn, "?") {
+		return dsn + "&multiStatements=true"
+	}
+	return dsn + "?multiStatements=true"
 }
 
 // MigrateAnalysis runs database migrations for the analysis store.

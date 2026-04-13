@@ -168,7 +168,7 @@ func ClearAnalysis(backend schema.DatabaseBackend, dbFilePath, connStr string) e
 	}
 }
 
-// clearSQLTable connects to the SQL database and drops the table if it exists.
+// clearSQLTable connects to the SQL database and deletes all rows from the table.
 func clearSQLTable(driverName, connStr, tableName string) error {
 	db, err := sql.Open(driverName, connStr)
 	if err != nil {
@@ -180,10 +180,12 @@ func clearSQLTable(driverName, connStr, tableName string) error {
 		return fmt.Errorf("failed to ping %s database: %w", driverName, err)
 	}
 
-	query := fmt.Sprintf("DROP TABLE IF EXISTS %s", tableName)
-	if _, err := db.Exec(query); err != nil {
-		return fmt.Errorf("failed to drop table %s: %w", tableName, err)
-	}
+	// Use DELETE instead of DROP TABLE to preserve the schema (which is now
+	// managed by migrations).  DROP would leave the schema_migrations table
+	// at the latest version while the data tables no longer exist.
+	// Ignore errors from non-existent tables (fresh database before first migration).
+	query := fmt.Sprintf("DELETE FROM %s", tableName)
+	_, _ = db.Exec(query)
 
 	return nil
 }
