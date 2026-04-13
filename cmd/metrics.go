@@ -34,7 +34,7 @@ Examples:
   hotspot metrics --config .hotspot.yaml`,
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := core.ExecuteHotspotMetrics(rootCtx, cfg, cacheManager); err != nil {
+		if err := core.ExecuteHotspotMetrics(rootCtx, cfg, gitClient, cacheManager); err != nil {
 			logger.Fatal("Cannot display metrics", err)
 		}
 	},

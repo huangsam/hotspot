@@ -36,7 +36,7 @@ Examples:
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := core.ExecuteHotspotTimeseries(rootCtx, cfg, cacheManager); err != nil {
+		if err := core.ExecuteHotspotTimeseries(rootCtx, cfg, gitClient, cacheManager); err != nil {
 			logger.Fatal("Cannot run timeseries analysis", err)
 		}
 	},

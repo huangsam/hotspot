@@ -29,8 +29,7 @@ func TestCheckResultBuilder_ValidatePrerequisites_NoFilesChanged(t *testing.T) {
 	mockGitClient := &git.MockGitClient{}
 	mockGitClient.On("GetChangedFilesBetweenRefs", ctx, "/test/repo", "main", "feature").Return([]string{}, nil)
 
-	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, &iocache.MockCacheManager{})
-	builder.client = mockGitClient
+	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, mockGitClient, &iocache.MockCacheManager{})
 
 	_, err := builder.ValidatePrerequisites()
 	assert.NoError(t, err)
@@ -55,8 +54,7 @@ func TestCheckResultBuilder_ValidatePrerequisites_AllFilesExcluded(t *testing.T)
 	mockGitClient := &git.MockGitClient{}
 	mockGitClient.On("GetChangedFilesBetweenRefs", ctx, "/test/repo", "main", "feature").Return([]string{"main.go", "test.go"}, nil)
 
-	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, &iocache.MockCacheManager{})
-	builder.client = mockGitClient
+	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, mockGitClient, &iocache.MockCacheManager{})
 
 	_, err := builder.ValidatePrerequisites()
 	assert.NoError(t, err)
@@ -82,8 +80,7 @@ func TestCheckResultBuilder_ValidatePrerequisites_WithValidFiles(t *testing.T) {
 	mockGitClient := &git.MockGitClient{}
 	mockGitClient.On("GetChangedFilesBetweenRefs", ctx, "/test/repo", "main", "feature").Return([]string{"main.go", "README.md"}, nil)
 
-	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, &iocache.MockCacheManager{})
-	builder.client = mockGitClient
+	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, mockGitClient, &iocache.MockCacheManager{})
 
 	_, err := builder.ValidatePrerequisites()
 	assert.NoError(t, err)
@@ -102,7 +99,7 @@ func TestCheckResultBuilder_ValidatePrerequisites_MissingCompareMode(t *testing.
 		},
 	}
 
-	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, &iocache.MockCacheManager{})
+	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, &git.MockGitClient{}, &iocache.MockCacheManager{})
 
 	_, err := builder.ValidatePrerequisites()
 	assert.Error(t, err)
@@ -127,8 +124,7 @@ func TestCheckResultBuilder_PrepareAnalysisConfig(t *testing.T) {
 	mockGitClient := &git.MockGitClient{}
 	mockGitClient.On("GetCommitTime", ctx, "/test/repo", "feature").Return(targetTime, nil)
 
-	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, &iocache.MockCacheManager{})
-	builder.client = mockGitClient
+	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, mockGitClient, &iocache.MockCacheManager{})
 
 	_, err := builder.PrepareAnalysisConfig()
 	assert.NoError(t, err)

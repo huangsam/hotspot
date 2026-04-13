@@ -39,7 +39,7 @@ Examples:
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		// Validation is done in ExecuteHotspotCheck
-		if err := core.ExecuteHotspotCheck(rootCtx, cfg, cacheManager); err != nil {
+		if err := core.ExecuteHotspotCheck(rootCtx, cfg, gitClient, cacheManager); err != nil {
 			logger.Fatal("Policy check failed", err)
 		}
 	},

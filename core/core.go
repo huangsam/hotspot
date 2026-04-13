@@ -21,12 +21,12 @@ import (
 )
 
 // ExecutorFunc defines the function signature for executing different analysis modes.
-type ExecutorFunc func(ctx context.Context, cfg *config.Config, mgr iocache.CacheManager) error
+type ExecutorFunc func(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) error
 
 // ExecuteHotspotFiles runs the file-level analysis and prints results to stdout.
 // It serves as the main entry point for the 'files' mode.
-func ExecuteHotspotFiles(ctx context.Context, cfg *config.Config, mgr iocache.CacheManager) error {
-	ranked, duration, err := GetHotspotFilesResults(ctx, cfg, mgr)
+func ExecuteHotspotFiles(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) error {
+	ranked, duration, err := GetHotspotFilesResults(ctx, cfg, client, mgr)
 	if err != nil {
 		return err
 	}
@@ -37,9 +37,8 @@ func ExecuteHotspotFiles(ctx context.Context, cfg *config.Config, mgr iocache.Ca
 }
 
 // GetHotspotFilesResults runs the file-level analysis and returns the ranked results.
-func GetHotspotFilesResults(ctx context.Context, cfg *config.Config, mgr iocache.CacheManager) ([]schema.FileResult, time.Duration, error) {
+func GetHotspotFilesResults(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) ([]schema.FileResult, time.Duration, error) {
 	start := time.Now()
-	client := git.NewLocalGitClient()
 	output, err := runSingleAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, client, mgr)
 	if err != nil {
 		return nil, 0, err
@@ -55,8 +54,8 @@ func GetHotspotFilesResults(ctx context.Context, cfg *config.Config, mgr iocache
 
 // ExecuteHotspotFolders runs the folder-level analysis and prints results to stdout.
 // It serves as the main entry point for the 'folders' mode.
-func ExecuteHotspotFolders(ctx context.Context, cfg *config.Config, mgr iocache.CacheManager) error {
-	ranked, duration, err := GetHotspotFoldersResults(ctx, cfg, mgr)
+func ExecuteHotspotFolders(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) error {
+	ranked, duration, err := GetHotspotFoldersResults(ctx, cfg, client, mgr)
 	if err != nil {
 		return err
 	}
@@ -67,9 +66,8 @@ func ExecuteHotspotFolders(ctx context.Context, cfg *config.Config, mgr iocache.
 }
 
 // GetHotspotFoldersResults runs the folder-level analysis and returns the ranked results.
-func GetHotspotFoldersResults(ctx context.Context, cfg *config.Config, mgr iocache.CacheManager) ([]schema.FolderResult, time.Duration, error) {
+func GetHotspotFoldersResults(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) ([]schema.FolderResult, time.Duration, error) {
 	start := time.Now()
-	client := git.NewLocalGitClient()
 	output, err := runFolderAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, client, mgr)
 	if err != nil {
 		return nil, 0, err
@@ -80,10 +78,10 @@ func GetHotspotFoldersResults(ctx context.Context, cfg *config.Config, mgr iocac
 
 // ExecuteHotspotCompare runs two file-level analyses (Base and Target)
 // based on Git references and computes the delta results.
-func ExecuteHotspotCompare(ctx context.Context, cfg *config.Config, mgr iocache.CacheManager) error {
+func ExecuteHotspotCompare(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) error {
 	internal.LogCompareHeader(cfg.Git, cfg.Scoring, cfg.Compare)
 
-	comparisonResult, duration, err := GetHotspotCompareResults(ctx, cfg, mgr)
+	comparisonResult, duration, err := GetHotspotCompareResults(ctx, cfg, client, mgr)
 	if err != nil {
 		return err
 	}
@@ -94,9 +92,8 @@ func ExecuteHotspotCompare(ctx context.Context, cfg *config.Config, mgr iocache.
 }
 
 // GetHotspotCompareResults runs the file-level comparison analysis and returns the results.
-func GetHotspotCompareResults(ctx context.Context, cfg *config.Config, mgr iocache.CacheManager) (schema.ComparisonResult, time.Duration, error) {
+func GetHotspotCompareResults(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) (schema.ComparisonResult, time.Duration, error) {
 	start := time.Now()
-	client := git.NewLocalGitClient()
 
 	baseOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.Compare.BaseRef, mgr)
 	if err != nil {
@@ -114,9 +111,8 @@ func GetHotspotCompareResults(ctx context.Context, cfg *config.Config, mgr iocac
 // based on Git references and computes the delta results.
 // It follows the same pattern as ExecuteHotspotCompare but aggregates to folders
 // before performing the comparison.
-func ExecuteHotspotCompareFolders(ctx context.Context, cfg *config.Config, mgr iocache.CacheManager) error {
+func ExecuteHotspotCompareFolders(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) error {
 	start := time.Now()
-	client := git.NewLocalGitClient()
 
 	internal.LogCompareHeader(cfg.Git, cfg.Scoring, cfg.Compare)
 
@@ -137,8 +133,8 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *config.Config, mgr i
 }
 
 // ExecuteHotspotTimeseries runs multiple analyses over overlapping, dynamic-lookback time windows.
-func ExecuteHotspotTimeseries(ctx context.Context, cfg *config.Config, mgr iocache.CacheManager) error {
-	result, duration, err := GetHotspotTimeseriesResults(ctx, cfg, mgr)
+func ExecuteHotspotTimeseries(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) error {
+	result, duration, err := GetHotspotTimeseriesResults(ctx, cfg, client, mgr)
 	if err != nil {
 		return err
 	}
@@ -152,7 +148,7 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *config.Config, mgr iocac
 }
 
 // GetHotspotTimeseriesResults runs the timeseries analysis and returns the results.
-func GetHotspotTimeseriesResults(ctx context.Context, cfg *config.Config, mgr iocache.CacheManager) (schema.TimeseriesResult, time.Duration, error) {
+func GetHotspotTimeseriesResults(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) (schema.TimeseriesResult, time.Duration, error) {
 	start := time.Now()
 
 	// Get timeseries-specific parameters from config
@@ -169,8 +165,6 @@ func GetHotspotTimeseriesResults(ctx context.Context, cfg *config.Config, mgr io
 	if numPoints < 1 {
 		return schema.TimeseriesResult{}, 0, fmt.Errorf("--points must be at least 1 (received %d). Use --points 3 to --points 10 for meaningful trends", numPoints)
 	}
-
-	client := git.NewLocalGitClient()
 
 	// Normalize and validate the path relative to repo root
 	normalizedPath, err := schema.NormalizeTimeseriesPath(cfg.Git.RepoPath, path)
@@ -196,7 +190,7 @@ func GetHotspotTimeseriesResults(ctx context.Context, cfg *config.Config, mgr io
 
 // ExecuteHotspotMetrics displays the formal definitions of all scoring modes.
 // This is a static display that does not require Git analysis.
-func ExecuteHotspotMetrics(_ context.Context, cfg *config.Config, _ iocache.CacheManager) error {
+func ExecuteHotspotMetrics(_ context.Context, cfg *config.Config, _ git.Client, _ iocache.CacheManager) error {
 	writer := outwriter.NewOutWriter()
 	return outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
 		return writer.WriteMetrics(w, cfg.Scoring.CustomWeights, cfg.Output)
@@ -206,10 +200,10 @@ func ExecuteHotspotMetrics(_ context.Context, cfg *config.Config, _ iocache.Cach
 // ExecuteHotspotCheck runs the check command for CI/CD gating.
 // It analyzes only files changed between base and target refs, checks them against thresholds,
 // and returns a non-zero exit code if any files exceed the thresholds.
-func ExecuteHotspotCheck(ctx context.Context, cfg *config.Config, mgr iocache.CacheManager) error {
+func ExecuteHotspotCheck(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) error {
 	start := time.Now()
 
-	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, mgr)
+	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, client, mgr)
 
 	// Validate prerequisites
 	_, err := builder.ValidatePrerequisites()

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
@@ -36,7 +37,7 @@ func TestExecuteHotspotFiles(t *testing.T) {
 	}
 
 	// Execute - should fail due to non-existent repo
-	err := ExecuteHotspotFiles(ctx, cfg, mockCacheMgr)
+	err := ExecuteHotspotFiles(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr)
 
 	// Assert that we get an error (expected since repo doesn't exist)
 	assert.Error(t, err)
@@ -70,7 +71,7 @@ func TestExecuteHotspotFolders(t *testing.T) {
 	}
 
 	// Execute - should fail due to non-existent repo
-	err := ExecuteHotspotFolders(ctx, cfg, mockCacheMgr)
+	err := ExecuteHotspotFolders(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr)
 
 	// Assert that we get an error (expected since repo doesn't exist)
 	assert.Error(t, err)
@@ -107,7 +108,7 @@ func TestExecuteHotspotCompare(t *testing.T) {
 	}
 
 	// Execute - should fail due to non-existent repo
-	err := ExecuteHotspotCompare(ctx, cfg, mockCacheMgr)
+	err := ExecuteHotspotCompare(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr)
 
 	// Assert that we get an error (expected since repo doesn't exist)
 	assert.Error(t, err)
@@ -141,7 +142,7 @@ func TestExecuteHotspotCompareFolders(t *testing.T) {
 	}
 
 	// Execute - should fail due to non-existent repo
-	err := ExecuteHotspotCompareFolders(ctx, cfg, mockCacheMgr)
+	err := ExecuteHotspotCompareFolders(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr)
 
 	// Assert that we get an error (expected since repo doesn't exist)
 	assert.Error(t, err)
@@ -175,7 +176,7 @@ func TestExecuteHotspotTimeseries(t *testing.T) {
 	}
 
 	// Execute - should fail due to non-existent repo
-	err := ExecuteHotspotTimeseries(ctx, cfg, mockCacheMgr)
+	err := ExecuteHotspotTimeseries(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr)
 
 	// Assert that we get an error (expected since repo doesn't exist)
 	assert.Error(t, err)
@@ -196,7 +197,7 @@ func TestExecuteHotspotMetrics(t *testing.T) {
 	}
 
 	// Execute - should succeed (metrics is static)
-	err := ExecuteHotspotMetrics(ctx, cfg, mockCacheMgr)
+	err := ExecuteHotspotMetrics(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr)
 
 	// Assert that it succeeds
 	assert.NoError(t, err)
@@ -218,7 +219,7 @@ func TestExecuteHotspotCheck(t *testing.T) {
 			Enabled: false,
 		},
 	}
-	err := ExecuteHotspotCheck(ctx, cfg, mockCacheMgr)
+	err := ExecuteHotspotCheck(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "check command requires --base-ref and --target-ref flags")
 
@@ -242,7 +243,7 @@ func TestExecuteHotspotCheck(t *testing.T) {
 			},
 		},
 	}
-	err = ExecuteHotspotCheck(ctx, cfg, mockCacheMgr)
+	err = ExecuteHotspotCheck(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr)
 	assert.Error(t, err) // Should fail due to non-existent repo
 }
 
@@ -263,7 +264,7 @@ func TestExecuteHotspotCheck_MissingCompareMode(t *testing.T) {
 	mockManager := &iocache.MockCacheManager{}
 
 	// Execute should return error
-	err := ExecuteHotspotCheck(ctx, cfg, mockManager)
+	err := ExecuteHotspotCheck(ctx, cfg, git.NewLocalGitClient(), mockManager)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "base-ref and --target-ref")

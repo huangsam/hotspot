@@ -39,6 +39,9 @@ var profile = &config.ProfileConfig{}
 // cacheManager is the global persistence manager instance.
 var cacheManager iocache.CacheManager
 
+// gitClient is the global git client instance, initialized during sharedSetup.
+var gitClient git.Client
+
 // startProfiling starts CPU and memory profiling if enabled.
 func startProfiling() error {
 	if !profile.Enabled {
@@ -168,6 +171,7 @@ func sharedSetup(ctx context.Context, cmd *cobra.Command, args []string) error {
 	// 4. Run all validation and complex parsing.
 	// This function now populates the global 'cfg' from 'input'.
 	client := git.NewLocalGitClient()
+	gitClient = client
 	if err := config.ProcessAndValidate(ctx, cfg, client, input); err != nil {
 		if cmd == nil || cmd.Name() != "mcp" {
 			return err

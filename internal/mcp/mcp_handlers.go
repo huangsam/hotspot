@@ -42,7 +42,7 @@ func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.Ca
 		return mcp.NewToolResultError(fmt.Sprintf("invalid time range: %v", err)), nil
 	}
 
-	ranked, _, err := core.GetHotspotFilesResults(core.WithSuppressHeader(ctx), cfg, h.mgr)
+	ranked, _, err := core.GetHotspotFilesResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("analysis failed: %v", err)), nil
 	}
@@ -75,7 +75,7 @@ func (h *toolHandler) handleGetFoldersHotspots(ctx context.Context, request mcp.
 		return mcp.NewToolResultError(fmt.Sprintf("invalid time range: %v", err)), nil
 	}
 
-	ranked, _, err := core.GetHotspotFoldersResults(core.WithSuppressHeader(ctx), cfg, h.mgr)
+	ranked, _, err := core.GetHotspotFoldersResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("analysis failed: %v", err)), nil
 	}
@@ -113,7 +113,7 @@ func (h *toolHandler) handleCompareHotspots(ctx context.Context, request mcp.Cal
 		return mcp.NewToolResultError(fmt.Sprintf("invalid comparison parameters: %v", err)), nil
 	}
 
-	comparisonResult, _, err := core.GetHotspotCompareResults(core.WithSuppressHeader(ctx), cfg, h.mgr)
+	comparisonResult, _, err := core.GetHotspotCompareResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("comparison failed: %v", err)), nil
 	}
@@ -151,7 +151,7 @@ func (h *toolHandler) handleGetTimeseries(ctx context.Context, request mcp.CallT
 		return mcp.NewToolResultError(fmt.Sprintf("invalid timeseries parameters: %v", err)), nil
 	}
 
-	result, _, err := core.GetHotspotTimeseriesResults(core.WithSuppressHeader(ctx), cfg, h.mgr)
+	result, _, err := core.GetHotspotTimeseriesResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("timeseries analysis failed: %v", err)), nil
 	}

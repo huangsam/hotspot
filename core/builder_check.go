@@ -35,13 +35,14 @@ func NewCheckResultBuilder(
 	gitSettings config.GitSettings,
 	scoringSettings config.ScoringSettings,
 	compareSettings config.ComparisonSettings,
+	client git.Client,
 	mgr iocache.CacheManager,
 ) *CheckResultBuilder {
 	return &CheckResultBuilder{
 		gitSettings:     gitSettings,
 		scoringSettings: scoringSettings,
 		compareSettings: compareSettings,
-		client:          git.NewLocalGitClient(),
+		client:          client,
 		mgr:             mgr,
 		ctx:             ctx,
 	}
