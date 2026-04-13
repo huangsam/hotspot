@@ -14,6 +14,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
+	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -174,13 +175,13 @@ func executeMigration(m *migrate.Migrate, targetVersion int) error {
 			return fmt.Errorf("failed to migrate to latest version: %w", err)
 		}
 		if err == migrate.ErrNoChange {
-			fmt.Println("No migration needed. Database is already at the latest version.")
+			logger.Info("No migration needed. Database is already at the latest version.")
 		} else {
 			newVersion, _, _ := m.Version()
 			if isNewDatabase {
-				fmt.Printf("Successfully migrated new database to version %d.\n", newVersion)
+				logger.Info("Successfully migrated new database", "version", newVersion)
 			} else {
-				fmt.Printf("Successfully migrated from version %d to version %d.\n", currentVersion, newVersion)
+				logger.Info("Successfully migrated database", "from", currentVersion, "to", newVersion)
 			}
 		}
 	case targetVersion == targetInitialVersion:
@@ -190,9 +191,9 @@ func executeMigration(m *migrate.Migrate, targetVersion int) error {
 			return fmt.Errorf("failed to roll back to version 0: %w", err)
 		}
 		if err == migrate.ErrNoChange {
-			fmt.Println("No migration needed. Database is already at version 0.")
+			logger.Info("No migration needed. Database is already at version 0.")
 		} else {
-			fmt.Printf("Successfully rolled back from version %d to version 0.\n", currentVersion)
+			logger.Info("Successfully rolled back database", "from", currentVersion, "to", 0)
 		}
 	case targetVersion > targetInitialVersion:
 		// Migrate to specific version
@@ -201,12 +202,12 @@ func executeMigration(m *migrate.Migrate, targetVersion int) error {
 			return fmt.Errorf("failed to migrate to version %d: %w", targetVersion, err)
 		}
 		if err == migrate.ErrNoChange {
-			fmt.Printf("No migration needed. Database is already at version %d.\n", targetVersion)
+			logger.Info("No migration needed. Database is already at target version.", "version", targetVersion)
 		} else {
 			if isNewDatabase {
-				fmt.Printf("Successfully migrated new database to version %d.\n", targetVersion)
+				logger.Info("Successfully migrated new database", "version", targetVersion)
 			} else {
-				fmt.Printf("Successfully migrated from version %d to version %d.\n", currentVersion, targetVersion)
+				logger.Info("Successfully migrated database", "from", currentVersion, "to", targetVersion)
 			}
 		}
 	default:

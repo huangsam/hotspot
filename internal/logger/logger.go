@@ -5,18 +5,20 @@ package logger
 import (
 	"log/slog"
 	"os"
+	"strings"
 )
 
 // Level is the dynamic logging level for the global logger.
 var Level = new(slog.LevelVar)
 
 // InitLogger initializes the global default logger to write to os.Stderr
-// according to the provided verbosity settings.
-func InitLogger(verbose, debug bool) {
-	switch {
-	case debug:
+// according to the provided log level. Accepted values: warn, info, debug
+// (case-insensitive). Any unrecognized value defaults to warn.
+func InitLogger(level string) {
+	switch strings.ToLower(strings.TrimSpace(level)) {
+	case "debug":
 		Level.Set(slog.LevelDebug)
-	case verbose:
+	case "info":
 		Level.Set(slog.LevelInfo)
 	default:
 		Level.Set(slog.LevelWarn)
