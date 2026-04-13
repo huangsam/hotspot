@@ -2,6 +2,15 @@
 
 This guide provides detailed documentation for using Hotspot's analysis features, configuration options, and common workflows.
 
+## Core Philosophy
+
+Hotspot is built on the premise that **System Resilience** and **Team Sustainability** are just as critical as code correctness. While traditional QA tools (linters, unit tests, SCA) catch syntax errors and logic bugs, production outages and development bottlenecks often stem from:
+- **High Complexity**: Fragile code that is expensive and risky to modify.
+- **Knowledge Silos**: Critical subsystems owned by too few people (low bus factor).
+- **Maintenance Neglect**: Historically important files that have been abandoned.
+
+Hotspot provides the data-driven signal needed to identify these risks and start the conversations required to fix them.
+
 ## Analysis features
 
 ### Scoring modes
@@ -306,4 +315,24 @@ hotspot timeseries --path src/main/java/App.java --mode complexity --interval "1
 
 # Identify when risk started increasing
 hotspot timeseries --path lib/legacy.js --mode stale --interval "3 months" --points 8
+```
+
+### Power user workflows
+
+For massive repositories or complex historical audits, use parallelization and file-tracking flags.
+
+**Example:** Perform a deep-dive audit of technical debt over a full year, following file renames and excluding generated code.
+
+<img src="./images/ranking.png" alt="Hotspot Ranking" width="800px" />
+
+To get this output, run this command:
+
+```bash
+hotspot files \
+  --mode complexity \
+  --start 2024-01-01T00:00:00Z \
+  --end 2025-01-01T00:00:00Z \
+  --workers 16 \
+  --follow \
+  --exclude 'vendor/,*.pb.go,**/*.generated.go'
 ```
