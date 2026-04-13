@@ -11,7 +11,7 @@ import (
 )
 
 func TestAnalysisStore_NoneBackend(t *testing.T) {
-	store, err := NewAnalysisStore(schema.NoneBackend, "")
+	store, err := NewAnalysisStore(schema.NoneBackend, "", nil)
 	require.NoError(t, err)
 	require.NotNil(t, store)
 
@@ -33,7 +33,7 @@ func TestAnalysisStore_NoneBackend(t *testing.T) {
 
 func TestAnalysisStore_SQLite(t *testing.T) {
 	// Use in-memory SQLite for testing
-	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:", nil)
 	require.NoError(t, err)
 	require.NotNil(t, store)
 	defer func() { _ = store.Close() }()
@@ -77,7 +77,7 @@ func TestAnalysisStore_SQLite(t *testing.T) {
 }
 
 func TestAnalysisStore_MultipleFiles(t *testing.T) {
-	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:", nil)
 	require.NoError(t, err)
 	require.NotNil(t, store)
 	defer func() { _ = store.Close() }()
@@ -116,7 +116,7 @@ func TestAnalysisStore_MultipleFiles(t *testing.T) {
 }
 
 func TestAnalysisStore_MultipleRuns(t *testing.T) {
-	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:", nil)
 	require.NoError(t, err)
 	require.NotNil(t, store)
 	defer func() { _ = store.Close() }()
@@ -160,7 +160,7 @@ func TestAnalysisStore_MultipleRuns(t *testing.T) {
 }
 
 func TestAnalysisStore_RuntimeCapture(t *testing.T) {
-	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:", nil)
 	require.NoError(t, err)
 	require.NotNil(t, store)
 	defer func() { _ = store.Close() }()
@@ -246,7 +246,7 @@ func TestAnalysisStore_RuntimeCapture(t *testing.T) {
 }
 
 func TestAnalysisStore_GetAllAnalysisRuns(t *testing.T) {
-	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:", nil)
 	require.NoError(t, err)
 	require.NotNil(t, store)
 	defer func() { _ = store.Close() }()
@@ -289,7 +289,7 @@ func TestAnalysisStore_GetAllAnalysisRuns(t *testing.T) {
 }
 
 func TestAnalysisStore_GetAllFileScoresMetrics(t *testing.T) {
-	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:", nil)
 	require.NoError(t, err)
 	require.NotNil(t, store)
 	defer func() { _ = store.Close() }()
@@ -346,7 +346,7 @@ func TestAnalysisStore_GetAllFileScoresMetrics(t *testing.T) {
 }
 
 func TestAnalysisStore_BeginEndAnalysis(t *testing.T) {
-	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:", nil)
 	require.NoError(t, err)
 	require.NotNil(t, store)
 	defer func() { _ = store.Close() }()
@@ -376,7 +376,7 @@ func TestAnalysisStore_BeginEndAnalysis(t *testing.T) {
 }
 
 func TestAnalysisStore_RecordFileMetricsAndScores(t *testing.T) {
-	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:", nil)
 	require.NoError(t, err)
 	require.NotNil(t, store)
 	defer func() { _ = store.Close() }()
@@ -424,7 +424,7 @@ func TestAnalysisStore_RecordFileMetricsAndScores(t *testing.T) {
 // TestAnalysisStoreConcurrentOperations tests concurrent database operations
 // to ensure thread safety when multiple workers write analysis data simultaneously.
 func TestAnalysisStoreConcurrentOperations(t *testing.T) {
-	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:", nil)
 	require.NoError(t, err)
 	require.NotNil(t, store)
 	defer func() { _ = store.Close() }()
@@ -512,7 +512,7 @@ func TestAnalysisStoreConcurrentOperations(t *testing.T) {
 }
 
 func TestAnalysisStore_GetAnalysisRuns_FilterByURN(t *testing.T) {
-	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:", nil)
 	require.NoError(t, err)
 	require.NotNil(t, store)
 	defer func() { _ = store.Close() }()
@@ -545,7 +545,7 @@ func TestAnalysisStore_GetAnalysisRuns_FilterByURN(t *testing.T) {
 }
 
 func TestAnalysisStore_GetAnalysisRuns_Pagination(t *testing.T) {
-	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:", nil)
 	require.NoError(t, err)
 	require.NotNil(t, store)
 	defer func() { _ = store.Close() }()
@@ -575,7 +575,7 @@ func TestAnalysisStore_GetAnalysisRuns_Pagination(t *testing.T) {
 }
 
 func TestAnalysisStore_GetFileScoresMetrics_FilterByURN(t *testing.T) {
-	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:", nil)
 	require.NoError(t, err)
 	require.NotNil(t, store)
 	defer func() { _ = store.Close() }()

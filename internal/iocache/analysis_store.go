@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/huangsam/hotspot/schema"
 )
@@ -26,7 +27,7 @@ type AnalysisStoreImpl struct {
 var _ AnalysisStore = &AnalysisStoreImpl{} // Compile-time check
 
 // NewAnalysisStore creates a new AnalysisStore with the specified backend.
-func NewAnalysisStore(backend schema.DatabaseBackend, connStr string) (AnalysisStore, error) {
+func NewAnalysisStore(backend schema.DatabaseBackend, connStr string, client git.Client) (AnalysisStore, error) {
 	var db *sql.DB
 	var err error
 	var dialect SQLDialect
@@ -99,7 +100,7 @@ func NewAnalysisStore(backend schema.DatabaseBackend, connStr string) (AnalysisS
 	}
 
 	// Backfill URNs for legacy runs synchronously to ensure store consistency
-	if err := BackfillAnalysisURNs(store); err != nil {
+	if err := BackfillAnalysisURNs(store, client); err != nil {
 		logger.Warn("Analysis URN backfill encountered errors", err)
 		// Don't fail store creation, but log the issue for debugging
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/huangsam/hotspot/internal/config"
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/huangsam/hotspot/schema"
@@ -39,7 +40,7 @@ func analysisSetup() error {
 	outputFile := viper.GetString("output-file")
 
 	// Initialize stores with the loaded config (no cache tracking for analysis commands)
-	if err := iocache.InitStores(schema.NoneBackend, "", backend, connStr); err != nil {
+	if err := iocache.InitStores(schema.NoneBackend, "", backend, connStr, git.NewLocalGitClient()); err != nil {
 		return fmt.Errorf("failed to initialize analysis: %w", err)
 	}
 

@@ -1,15 +1,18 @@
 package iocache
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/logger"
 )
 
 // BackfillAnalysisURNs scans existing analysis runs and populates the 'urn' column.
-// It uses the 'repo_path' from the config_params and establishes a 'local:' URN for legacy runs.
-func BackfillAnalysisURNs(store *AnalysisStoreImpl) error {
+// It uses the 'repo_path' from the config_params to resolve a stable URN if the path exists.
+func BackfillAnalysisURNs(store *AnalysisStoreImpl, client git.Client) error {
 	runs, err := store.GetAllAnalysisRuns()
 	if err != nil {
 		return fmt.Errorf("failed to fetch analysis runs for backfill: %w", err)
@@ -34,8 +37,14 @@ func BackfillAnalysisURNs(store *AnalysisStoreImpl) error {
 			continue
 		}
 
-		// For backfill of legacy runs, we use the local path URN.
+		// If the repo directory still exists on this machine, try to resolve its actual URN.
+		// This upgrades legacy path-based URNs to modern git: or local:hash URNs.
 		urn := "local:" + repoPath
+		if info, err := os.Stat(repoPath); err == nil && info.IsDir() {
+			if resolved := git.ResolveURN(context.Background(), client, repoPath); resolved != "" {
+				urn = resolved
+			}
+		}
 
 		if err = store.UpdateAnalysisRunURN(run.AnalysisID, urn); err != nil {
 			logger.Warn(fmt.Sprintf("Failed to backfill URN for run %d", run.AnalysisID), err)

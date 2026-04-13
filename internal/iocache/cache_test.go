@@ -22,7 +22,7 @@ func TestCaching(t *testing.T) {
 		closeOnce = sync.Once{} // Reset for test
 
 		// Test initialization with SQLite backend
-		err := InitStores(schema.SQLiteBackend, "", "", "")
+		err := InitStores(schema.SQLiteBackend, "", "", "", nil)
 		assert.NoError(t, err, "Failed to initialize persistence")
 
 		// Test that Manager is accessible
@@ -47,9 +47,9 @@ func TestCaching(t *testing.T) {
 		closeOnce = sync.Once{} // Reset for test
 
 		// Multiple initializations should be safe (sync.Once)
-		err1 := InitStores(schema.SQLiteBackend, "", "", "")
-		err2 := InitStores(schema.SQLiteBackend, "", "", "")
-		err3 := InitStores(schema.SQLiteBackend, "", "", "")
+		err1 := InitStores(schema.SQLiteBackend, "", "", "", nil)
+		err2 := InitStores(schema.SQLiteBackend, "", "", "", nil)
+		err3 := InitStores(schema.SQLiteBackend, "", "", "", nil)
 
 		assert.NoError(t, err1, "First init should not fail")
 		assert.NoError(t, err2, "Second init should not fail")
@@ -66,7 +66,7 @@ func TestCaching(t *testing.T) {
 		closeOnce = sync.Once{} // Reset for test
 
 		// Test initialization with None backend (no database)
-		err := InitStores(schema.NoneBackend, "", "", "")
+		err := InitStores(schema.NoneBackend, "", "", "", nil)
 		assert.NoError(t, err, "Failed to initialize persistence with none backend")
 
 		// Test that Manager is accessible
@@ -543,7 +543,7 @@ func TestCacheStoreManagerConcurrency(t *testing.T) {
 	initOnce = sync.Once{}
 	closeOnce = sync.Once{}
 
-	err := InitStores(schema.SQLiteBackend, ":memory:", "", "")
+	err := InitStores(schema.SQLiteBackend, ":memory:", "", "", nil)
 	if err != nil {
 		t.Fatalf("InitStores failed: %v", err)
 	}
@@ -595,7 +595,7 @@ func TestInitStoresErrors(t *testing.T) {
 
 		// Try to init with an invalid connection string for MySQL
 		// This should fail during database connection
-		err := InitStores(schema.MySQLBackend, "invalid://connection", "", "")
+		err := InitStores(schema.MySQLBackend, "invalid://connection", "", "", nil)
 		assert.Error(t, err, "Expected error for invalid MySQL connection string")
 	})
 }
@@ -672,7 +672,7 @@ func TestInitStoresNoneBackend(t *testing.T) {
 		closeOnce = sync.Once{}
 
 		// Initialize with NoneBackend for cache, in-memory SQLite for analysis
-		err := InitStores(schema.NoneBackend, "", schema.SQLiteBackend, ":memory:")
+		err := InitStores(schema.NoneBackend, "", schema.SQLiteBackend, ":memory:", nil)
 		assert.NoError(t, err, "InitStores with NoneBackend cache should not error")
 
 		// Verify Manager is initialized
@@ -707,7 +707,7 @@ func TestInitStoresNoneBackend(t *testing.T) {
 		closeOnce = sync.Once{}
 
 		// Initialize with in-memory SQLite for cache, NoneBackend for analysis
-		err := InitStores(schema.SQLiteBackend, ":memory:", schema.NoneBackend, "")
+		err := InitStores(schema.SQLiteBackend, ":memory:", schema.NoneBackend, "", nil)
 		assert.NoError(t, err, "InitStores with NoneBackend analysis should not error")
 
 		// Verify Manager is initialized
@@ -734,7 +734,7 @@ func TestInitStoresNoneBackend(t *testing.T) {
 		closeOnce = sync.Once{}
 
 		// Initialize with NoneBackend for both
-		err := InitStores(schema.NoneBackend, "", schema.NoneBackend, "")
+		err := InitStores(schema.NoneBackend, "", schema.NoneBackend, "", nil)
 		assert.NoError(t, err, "InitStores with both NoneBackend should not error")
 
 		// Verify Manager is initialized

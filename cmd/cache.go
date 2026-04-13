@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/huangsam/hotspot/internal/config"
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/huangsam/hotspot/schema"
@@ -29,7 +30,7 @@ func cacheSetup() error {
 	}
 
 	// Initialize caching with the loaded config (no analysis tracking for cache commands)
-	if err := iocache.InitStores(backend, connStr, "", ""); err != nil {
+	if err := iocache.InitStores(backend, connStr, "", "", git.NewLocalGitClient()); err != nil {
 		return fmt.Errorf("failed to initialize cache: %w", err)
 	}
 

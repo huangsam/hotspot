@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -41,7 +42,7 @@ func GetAnalysisDBFilePath() string {
 // InitStores initializes the global cache manager with separate cache and analysis stores.
 // cacheBackend and cacheConnStr can be empty to disable cache initialization.
 // analysisBackend and analysisConnStr can be empty to disable analysis tracking.
-func InitStores(cacheBackend schema.DatabaseBackend, cacheConnStr string, analysisBackend schema.DatabaseBackend, analysisConnStr string) error {
+func InitStores(cacheBackend schema.DatabaseBackend, cacheConnStr string, analysisBackend schema.DatabaseBackend, analysisConnStr string, client git.Client) error {
 	var initErr error
 
 	initOnce.Do(func() {
@@ -61,7 +62,7 @@ func InitStores(cacheBackend schema.DatabaseBackend, cacheConnStr string, analys
 		// Initialize Analysis Store only if backend is configured
 		var analysisStore AnalysisStore
 		if analysisBackend != "" {
-			analysisStore, err = NewAnalysisStore(analysisBackend, analysisConnStr)
+			analysisStore, err = NewAnalysisStore(analysisBackend, analysisConnStr, client)
 			if err != nil {
 				if activityCacheStore != nil {
 					_ = activityCacheStore.Close()
