@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"os"
 	"sort"
 	"time"
 
@@ -21,7 +22,7 @@ func printCheckResult(result *schema.CheckResult, duration time.Duration) {
 
 // printCheckHeader prints the common header information for check results.
 func printCheckHeader(result *schema.CheckResult, duration time.Duration) {
-	fmt.Println("Policy Check Results:")
+	fmt.Fprintln(os.Stderr, "Policy Check Results:")
 
 	// Define labels and values for dynamic padding
 	labels := []string{"Base:", "Target:", "Lookback:", "Thresholds:"}
@@ -44,19 +45,19 @@ func printCheckHeader(result *schema.CheckResult, duration time.Duration) {
 		}
 	}
 
-	// Print each label-value pair with consistent padding
+	// Print each label-value pair with consistent padding to stderr
 	for i, label := range labels {
-		fmt.Printf("  %-*s %v\n", maxLabelLen+1, label, values[i])
+		fmt.Fprintf(os.Stderr, "  %-*s %v\n", maxLabelLen+1, label, values[i])
 	}
-	fmt.Println()
+	fmt.Fprintln(os.Stderr)
 
-	fmt.Printf("Checked %d files in %v\n\n", result.TotalFiles, duration)
+	fmt.Fprintf(os.Stderr, "Checked %d files in %v\n\n", result.TotalFiles, duration)
 }
 
 // printCheckSuccess prints the success case output.
 func printCheckSuccess(result *schema.CheckResult) {
-	fmt.Printf("PASS: All files passed policy checks\n\n")
-	fmt.Println("Scores observed:")
+	fmt.Fprintf(os.Stderr, "PASS: All files passed policy checks\n\n")
+	fmt.Fprintln(os.Stderr, "Scores observed:")
 
 	for _, mode := range result.CheckedModes {
 		score := result.MaxScores[mode]
@@ -64,7 +65,7 @@ func printCheckSuccess(result *schema.CheckResult) {
 		avgScore := result.AvgScores[mode]
 
 		if len(files) == 0 {
-			fmt.Printf("  %s: max=%.1f, avg=%.1f\n", mode, score, avgScore)
+			fmt.Fprintf(os.Stderr, "  %s: max=%.1f, avg=%.1f\n", mode, score, avgScore)
 			continue
 		}
 
@@ -74,14 +75,14 @@ func printCheckSuccess(result *schema.CheckResult) {
 			fileName += fmt.Sprintf(" (+%d more)", len(files)-1)
 		}
 
-		fmt.Printf("  %s: max=%.1f (%s), avg=%.1f\n", mode, score, fileName, avgScore)
+		fmt.Fprintf(os.Stderr, "  %s: max=%.1f (%s), avg=%.1f\n", mode, score, fileName, avgScore)
 	}
 }
 
 // printCheckFailure prints the failure case output.
 func printCheckFailure(result *schema.CheckResult) {
 	// Print failed files grouped by mode
-	fmt.Printf("FAIL: Policy check failed: %d violation(s) found across %d files\n\n", len(result.FailedFiles), result.TotalFiles)
+	fmt.Fprintf(os.Stderr, "FAIL: Policy check failed: %d violation(s) found across %d files\n\n", len(result.FailedFiles), result.TotalFiles)
 
 	// Group by mode for better readability
 	modeGroups := make(map[schema.ScoringMode][]schema.CheckFailedFile)
@@ -100,7 +101,7 @@ func printCheckFailure(result *schema.CheckResult) {
 			return files[i].Score > files[j].Score
 		})
 
-		fmt.Printf("Mode: %s (%d violations)\n", mode, len(files))
+		fmt.Fprintf(os.Stderr, "Mode: %s (%d violations)\n", mode, len(files))
 
 		// Show top 5 violations, with "+X more" if needed
 		maxToShow := 5
@@ -109,13 +110,13 @@ func printCheckFailure(result *schema.CheckResult) {
 			if shown >= maxToShow {
 				remaining := len(files) - shown
 				if remaining > 0 {
-					fmt.Printf("  ... and %d more\n", remaining)
+					fmt.Fprintf(os.Stderr, "  ... and %d more\n", remaining)
 				}
 				break
 			}
 			fmt.Printf("  - %s (score: %.1f > threshold: %.1f)\n", f.Path, f.Score, f.Threshold)
 			shown++
 		}
-		fmt.Println()
+		fmt.Fprintln(os.Stderr)
 	}
 }

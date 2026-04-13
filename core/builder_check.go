@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/huangsam/hotspot/core/agg"
 	"github.com/huangsam/hotspot/internal/config"
@@ -62,7 +63,7 @@ func (b *CheckResultBuilder) ValidatePrerequisites() (*CheckResultBuilder, error
 	}
 
 	if len(changedFiles) == 0 {
-		fmt.Println("No files changed between refs - check passed")
+		fmt.Fprintln(os.Stderr, "No files changed between refs - check passed")
 		b.result = &schema.CheckResult{Passed: true}
 		return b, nil
 	}
@@ -70,7 +71,7 @@ func (b *CheckResultBuilder) ValidatePrerequisites() (*CheckResultBuilder, error
 	// Filter changed files to only include those we want to analyze
 	b.filesToAnalyze = filterChangedFiles(changedFiles, b.gitSettings.GetExcludes())
 	if len(b.filesToAnalyze) == 0 {
-		fmt.Println("No relevant files to check (all excluded) - check passed")
+		fmt.Fprintln(os.Stderr, "No relevant files to check (all excluded) - check passed")
 		b.result = &schema.CheckResult{Passed: true}
 		return b, nil
 	}

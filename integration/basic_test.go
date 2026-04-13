@@ -549,11 +549,15 @@ func TestCheckVerification(t *testing.T) {
 		// Should succeed (exit code 0) with high thresholds
 		assert.NoError(t, err, "check should pass with high thresholds")
 
-		output := stdout.String()
-		assert.Contains(t, output, "Policy Check Results:", "should contain policy check header")
-		assert.Contains(t, output, "Base:", "should contain base ref info")
-		assert.Contains(t, output, "Target:", "should contain target ref info")
-		assert.Contains(t, output, "All files passed policy checks", "should indicate success")
+		// UX headers should be on stderr
+		errOutput := stderr.String()
+		assert.Contains(t, errOutput, "Policy Check Results:", "should contain policy check header")
+		assert.Contains(t, errOutput, "Base:", "should contain base ref info")
+		assert.Contains(t, errOutput, "Target:", "should contain target ref info")
+		assert.Contains(t, errOutput, "All files passed policy checks", "should indicate success")
+
+		// Stdout should be empty in the success case
+		assert.Empty(t, stdout.String(), "stdout should be empty when no violations are found")
 	})
 
 	// Test check command with very low thresholds (should fail)
@@ -570,9 +574,15 @@ func TestCheckVerification(t *testing.T) {
 		// Should fail (exit code non-zero) with low thresholds
 		assert.Error(t, err, "check should fail with low thresholds")
 
+		// UX headers and failure message should be on stderr
+		errOutput := stderr.String()
+		assert.Contains(t, errOutput, "Policy Check Results:", "should contain policy check header")
+		assert.Contains(t, errOutput, "Policy check failed:", "should indicate failure")
+
+		// Violation details should be on stdout
 		output := stdout.String()
-		assert.Contains(t, output, "Policy Check Results:", "should contain policy check header")
-		assert.Contains(t, output, "Policy check failed:", "should indicate failure")
+		assert.Contains(t, output, "score:", "stdout should contain violation scores")
+		assert.Contains(t, output, "threshold:", "stdout should contain threshold info")
 	}) // Test check command missing required flags
 	t.Run("check_missing_flags", func(t *testing.T) {
 		cmd := exec.Command(hotspotPath, "check")

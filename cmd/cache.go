@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/iocache"
@@ -96,7 +97,7 @@ Examples:
 		if err := iocache.ClearCache(cfg.Runtime.CacheBackend, iocache.GetDBFilePath(), cfg.Runtime.CacheDBConnect); err != nil {
 			logger.Fatal("Failed to clear cache", err)
 		}
-		fmt.Println("Cache cleared successfully.")
+		fmt.Fprintln(os.Stderr, "Cache cleared successfully.")
 	},
 }
 

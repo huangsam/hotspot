@@ -3,6 +3,7 @@ package iocache
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/huangsam/hotspot/internal/parquet"
 )
@@ -27,9 +28,9 @@ func ExecuteAnalysisExport(outputFile string) error {
 		return errors.New("no analysis data found to export")
 	}
 
-	fmt.Printf("Exporting data from %s backend...\n", status.Backend)
-	fmt.Printf("Total analysis runs: %d\n", status.TotalRuns)
-	fmt.Printf("Total file records: %d\n", status.TableSizes["hotspot_file_scores_metrics"])
+	fmt.Fprintf(os.Stderr, "Exporting data from %s backend...\n", status.Backend)
+	fmt.Fprintf(os.Stderr, "Total analysis runs: %d\n", status.TotalRuns)
+	fmt.Fprintf(os.Stderr, "Total file records: %d\n", status.TableSizes["hotspot_file_scores_metrics"])
 
 	// Retrieve all analysis runs
 	analysisRuns, err := store.GetAllAnalysisRuns()
@@ -52,21 +53,21 @@ func ExecuteAnalysisExport(outputFile string) error {
 	if err := parquet.WriteAnalysisRunsParquet(parquetAnalysisRuns, analysisRunsFile); err != nil {
 		return fmt.Errorf("failed to write analysis runs: %w", err)
 	}
-	fmt.Printf("Exported %d analysis runs to: %s\n", len(parquetAnalysisRuns), analysisRunsFile)
+	fmt.Fprintf(os.Stderr, "Exported %d analysis runs to: %s\n", len(parquetAnalysisRuns), analysisRunsFile)
 
 	// Write file scores metrics to Parquet
 	fileMetricsFile := outputFile + ".file_scores_metrics.parquet"
 	if err := parquet.WriteFileScoresMetricsParquet(parquetFileMetrics, fileMetricsFile); err != nil {
 		return fmt.Errorf("failed to write file scores metrics: %w", err)
 	}
-	fmt.Printf("Exported %d file score records to: %s\n", len(parquetFileMetrics), fileMetricsFile)
+	fmt.Fprintf(os.Stderr, "Exported %d file score records to: %s\n", len(parquetFileMetrics), fileMetricsFile)
 
-	fmt.Println("\nExport complete! The Parquet files can be used with:")
-	fmt.Println("  - Apache Spark")
-	fmt.Println("  - Apache Arrow")
-	fmt.Println("  - Pandas (via pyarrow)")
-	fmt.Println("  - DuckDB")
-	fmt.Println("  - Any other Parquet-compatible tool")
+	fmt.Fprintln(os.Stderr, "\nExport complete! The Parquet files can be used with:")
+	fmt.Fprintln(os.Stderr, "  - Apache Spark")
+	fmt.Fprintln(os.Stderr, "  - Apache Arrow")
+	fmt.Fprintln(os.Stderr, "  - Pandas (via pyarrow)")
+	fmt.Fprintln(os.Stderr, "  - DuckDB")
+	fmt.Fprintln(os.Stderr, "  - Any other Parquet-compatible tool")
 
 	return nil
 }

@@ -239,7 +239,7 @@ func ExecuteHotspotCheck(ctx context.Context, cfg *config.Config, client git.Cli
 
 		// Return error if check failed
 		if !result.Passed {
-			fmt.Printf("%d violation(s) found\n", len(result.FailedFiles))
+			fmt.Fprintf(os.Stderr, "%d violation(s) found\n", len(result.FailedFiles))
 			os.Exit(1)
 		}
 	}
