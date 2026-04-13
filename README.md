@@ -14,15 +14,7 @@ This tool operates as a **data-driven development intelligence.** While traditio
 [DORA]: https://en.wikipedia.org/wiki/DevOps_Research_and_Assessment
 [SCA]: https://en.wikipedia.org/wiki/Static_program_analysis
 
-## Motivation
-
-For years, I've managed projects where everyone *knew* which files were the maintenance nightmares—the ones where a small change led to a two-day debugging session. As engineers, we invest heavily in **Code Correctness** - we run linters, use SCA tools, and write comprehensive unit tests.
-
-However, these traditional QA methods often fail against **System Resilience** and **Team Sustainability**. Outages rarely stem from syntax errors; they're caused by code that's too complex, too fragile, or owned by too few people.
-
-Hotspot was born to provide a transparent, auditable tool for teams to diagnose the **technical debt** and **knowledge risk** that truly drive production instability—and, more importantly, to start the conversations needed to fix them.
-
-### Key features
+## Key features
 
 - 🔍 **See what matters** - rank files and folders by activity, complexity, etc.
 - ⚡ **Fast results** - analyze thousands of files in seconds
@@ -32,7 +24,7 @@ Hotspot was born to provide a transparent, auditable tool for teams to diagnose 
 - 📊 **Export results** - save to CSV/JSON/Parquet to track trends and progress
 - 🔄 **CI/CD integration** - enforce risk thresholds in pipelines
 
-### Target audience
+## Target audience
 
 - 🧑‍💻 **Developers** tracking sprint or release activity
 - 🧹 **Tech leads** prioritizing refactors and risk across projects
@@ -90,15 +82,7 @@ Here's a demo of Hotspot in action:
 
 <img src="./images/demo.gif" alt="Hotspot Demo" width="800px" />
 
-### Real world output
 
-Here is what the tool shows for [kubernetes/kubernetes](https://github.com/kubernetes/kubernetes):
-
-<img src="./images/ranking.png" alt="Hotspot" width="800px" />
-
-This ranking displays the **complexity score** and a colored label based on:
-
-`hotspot files --mode complexity --start 2024-01-01T00:00:00Z --end 2025-01-01T00:00:00Z --workers 16 --follow --exclude 'vendor/,.pb.go'`
 
 ## Performance
 
