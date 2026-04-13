@@ -363,7 +363,8 @@ func (as *AnalysisStoreImpl) GetFileScoresMetrics(filter schema.AnalysisQueryFil
 
 	quotedTableName := as.dialect.QuoteIdentifier(fileScoresMetricsTable)
 	query := fmt.Sprintf(`SELECT analysis_id, file_path, analysis_time, total_commits, total_churn, lines_added, lines_deleted,
-    contributor_count, age_days, gini_coefficient, file_owner,
+    contributor_count, recent_commits, recent_churn, recent_lines_added, recent_lines_deleted, recent_contributor_count,
+    age_days, gini_coefficient, file_owner,
     score_hot, score_risk, score_complexity, score_stale, score_label
     FROM %s`, quotedTableName)
 

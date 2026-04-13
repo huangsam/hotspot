@@ -26,20 +26,25 @@ type AnalysisStatus struct {
 
 // FileScoresMetricsRecord represents a row from the hotspot_file_scores_metrics table.
 type FileScoresMetricsRecord struct {
-	AnalysisID       int64
-	FilePath         string
-	AnalysisTime     time.Time
-	TotalCommits     int32
-	TotalChurn       int32
-	LinesAdded       int32
-	LinesDeleted     int32
-	ContributorCount int32
-	AgeDays          float64
-	GiniCoefficient  float64
-	FileOwner        *string
-	ScoreHot         float64
-	ScoreRisk        float64
-	ScoreComplexity  float64
-	ScoreStale       float64
-	ScoreLabel       string
+	AnalysisID             int64
+	FilePath               string
+	AnalysisTime           time.Time
+	TotalCommits           int32
+	TotalChurn             int32
+	LinesAdded             int32
+	LinesDeleted           int32
+	ContributorCount       int32
+	RecentCommits          int32
+	RecentChurn            int32
+	RecentLinesAdded       int32
+	RecentLinesDeleted     int32
+	RecentContributorCount int32
+	AgeDays                float64
+	GiniCoefficient        float64
+	FileOwner              *string
+	ScoreHot               float64
+	ScoreRisk              float64
+	ScoreComplexity        float64
+	ScoreStale             float64
+	ScoreLabel             string
 }

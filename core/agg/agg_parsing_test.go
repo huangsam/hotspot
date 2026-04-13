@@ -266,6 +266,12 @@ func TestAggregateForPath(t *testing.T) {
 		assert.Equal(t, 25, output.ChurnMap["src/main.go"])
 		assert.Equal(t, map[string]int{"Alice": 2}, output.ContribMap["src/main.go"])
 		assert.Equal(t, testTime, output.FirstCommitMap["src/main.go"]) // Should keep earliest time
+		assert.Equal(t, 18, output.LinesAddedMap["src/main.go"])
+		assert.Equal(t, 7, output.LinesDeletedMap["src/main.go"])
+		assert.Equal(t, 2, output.RecentCommitMap["src/main.go"])
+		assert.Equal(t, 25, output.RecentChurnMap["src/main.go"])
+		assert.Equal(t, 18, output.RecentLinesAddedMap["src/main.go"])
+		assert.Equal(t, 7, output.RecentLinesDeletedMap["src/main.go"])
 	})
 
 	t.Run("multiple authors", func(t *testing.T) {

@@ -5,22 +5,24 @@ import "time"
 
 // FileResult represents the Git and file system metrics for a single file.
 type FileResult struct {
-	Path               string    `json:"path"`                // Relative path to the file in the repository
-	UniqueContributors int       `json:"unique_contributors"` // Number of different authors who modified the file
-	Commits            int       `json:"commits"`             // Total number of commits affecting this file
-	RecentContributors int       `json:"recent_contributors"` // Recent contributor count within a time window
-	RecentCommits      int       `json:"recent_commits"`      // Recent commit count within a time window
-	RecentChurn        int       `json:"recent_churn"`        // Recent churn within a time window
-	RecentWindowDays   int       `json:"recent_window_days"`  // Number of days defining the 'recent' window
-	SizeBytes          int64     `json:"size_bytes"`          // Current size of the file in bytes
-	LinesOfCode        int       `json:"lines_of_code"`       // Current lines of code
-	AgeDays            int       `json:"age_days"`            // Age of the file in days since first commit
-	Churn              int       `json:"churn"`               // Total number of lines added/deleted plus number of commits
-	LinesAdded         int       `json:"lines_added"`         // Total lines added
-	LinesDeleted       int       `json:"lines_deleted"`       // Total lines deleted
-	Gini               float64   `json:"gini"`                // Gini coefficient of commit distribution (0-1, lower is more even)
-	FirstCommit        time.Time `json:"first_commit"`        // Timestamp of the file's first commit
-	Owners             []string  `json:"owners"`              // Top 2 owners by commit count
+	Path               string    `json:"path"`                 // Relative path to the file in the repository
+	UniqueContributors int       `json:"unique_contributors"`  // Number of different authors who modified the file
+	Commits            int       `json:"commits"`              // Total number of commits affecting this file
+	RecentContributors int       `json:"recent_contributors"`  // Recent contributor count within a time window
+	RecentCommits      int       `json:"recent_commits"`       // Recent commit count within a time window
+	RecentChurn        int       `json:"recent_churn"`         // Recent churn within a time window
+	RecentLinesAdded   int       `json:"recent_lines_added"`   // Recent lines added
+	RecentLinesDeleted int       `json:"recent_lines_deleted"` // Recent lines deleted
+	RecentWindowDays   int       `json:"recent_window_days"`   // Number of days defining the 'recent' window
+	SizeBytes          int64     `json:"size_bytes"`           // Current size of the file in bytes
+	LinesOfCode        int       `json:"lines_of_code"`        // Current lines of code
+	AgeDays            int       `json:"age_days"`             // Age of the file in days since first commit
+	Churn              int       `json:"churn"`                // Total number of lines added/deleted plus number of commits
+	LinesAdded         int       `json:"lines_added"`          // Total lines added
+	LinesDeleted       int       `json:"lines_deleted"`        // Total lines deleted
+	Gini               float64   `json:"gini"`                 // Gini coefficient of commit distribution (0-1, lower is more even)
+	FirstCommit        time.Time `json:"first_commit"`         // Timestamp of the file's first commit
+	Owners             []string  `json:"owners"`               // Top 2 owners by commit count
 
 	Mode          ScoringMode                              `json:"mode"`                 // Scoring mode used (hot, risk, complexity, stale)
 	ModeScore     float64                                  `json:"score"`                // Computed score for the current mode (0-100)

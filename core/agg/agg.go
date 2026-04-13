@@ -60,15 +60,17 @@ func buildFileExistenceMap(currentFiles []string) map[string]bool {
 // initializeAggregateOutput creates the AggregateOutput and its internal maps.
 func initializeAggregateOutput() *schema.AggregateOutput {
 	return &schema.AggregateOutput{
-		CommitMap:        make(map[string]int),
-		ChurnMap:         make(map[string]int),
-		ContribMap:       make(map[string]map[string]int),
-		FirstCommitMap:   make(map[string]time.Time),
-		LinesAddedMap:    make(map[string]int),
-		LinesDeletedMap:  make(map[string]int),
-		RecentCommitMap:  make(map[string]int),
-		RecentChurnMap:   make(map[string]int),
-		RecentContribMap: make(map[string]map[string]int),
+		CommitMap:             make(map[string]int),
+		ChurnMap:              make(map[string]int),
+		ContribMap:            make(map[string]map[string]int),
+		FirstCommitMap:        make(map[string]time.Time),
+		LinesAddedMap:         make(map[string]int),
+		LinesDeletedMap:       make(map[string]int),
+		RecentCommitMap:       make(map[string]int),
+		RecentChurnMap:        make(map[string]int),
+		RecentLinesAddedMap:   make(map[string]int),
+		RecentLinesDeletedMap: make(map[string]int),
+		RecentContribMap:      make(map[string]map[string]int),
 	}
 }
 
@@ -231,6 +233,8 @@ func aggregateForPath(path string, add int, del int, author string, date time.Ti
 	if !date.IsZero() && !date.Before(recentThreshold) {
 		output.RecentChurnMap[path] += churn
 		output.RecentCommitMap[path]++
+		output.RecentLinesAddedMap[path] += add
+		output.RecentLinesDeletedMap[path] += del
 		if author != "" {
 			if output.RecentContribMap[path] == nil {
 				output.RecentContribMap[path] = make(map[string]int)

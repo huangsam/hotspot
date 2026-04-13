@@ -1,0 +1,5 @@
+ALTER TABLE hotspot_file_scores_metrics DROP COLUMN recent_commits;
+ALTER TABLE hotspot_file_scores_metrics DROP COLUMN recent_churn;
+ALTER TABLE hotspot_file_scores_metrics DROP COLUMN recent_lines_added;
+ALTER TABLE hotspot_file_scores_metrics DROP COLUMN recent_lines_deleted;
+ALTER TABLE hotspot_file_scores_metrics DROP COLUMN recent_contributor_count;

@@ -196,6 +196,12 @@ func (b *FileResultBuilder) FetchRecentInfo() *FileResultBuilder {
 	if v, ok := b.output.RecentChurnMap[b.path]; ok {
 		b.result.RecentChurn = v
 	}
+	if v, ok := b.output.RecentLinesAddedMap[b.path]; ok {
+		b.result.RecentLinesAdded = v
+	}
+	if v, ok := b.output.RecentLinesDeletedMap[b.path]; ok {
+		b.result.RecentLinesDeleted = v
+	}
 	if m, ok := b.output.RecentContribMap[b.path]; ok {
 		b.result.RecentContributors = len(m)
 	}

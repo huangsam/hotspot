@@ -14,22 +14,29 @@ type AggregateOutput struct {
 	LinesDeletedMap map[string]int
 
 	// Recent Activity (Fixed window, e.g. 30 days)
-	RecentCommitMap  map[string]int
-	RecentChurnMap   map[string]int
-	RecentContribMap map[string]map[string]int
+	RecentCommitMap       map[string]int
+	RecentChurnMap        map[string]int
+	RecentLinesAddedMap   map[string]int
+	RecentLinesDeletedMap map[string]int
+	RecentContribMap      map[string]map[string]int
 }
 
 // FileMetrics represents raw git metrics for a single file.
 type FileMetrics struct {
-	AnalysisTime     time.Time
-	TotalCommits     int
-	TotalChurn       int
-	LinesAdded       int
-	LinesDeleted     int
-	ContributorCount int
-	AgeDays          float64
-	GiniCoefficient  float64
-	FileOwner        string
+	AnalysisTime           time.Time
+	TotalCommits           int
+	TotalChurn             int
+	LinesAdded             int
+	LinesDeleted           int
+	ContributorCount       int
+	RecentCommits          int
+	RecentChurn            int
+	RecentLinesAdded       int
+	RecentLinesDeleted     int
+	RecentContributorCount int
+	AgeDays                float64
+	GiniCoefficient        float64
+	FileOwner              string
 }
 
 // FileScores represents final computed scores for a single file.
