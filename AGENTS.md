@@ -20,7 +20,7 @@ Hotspot can run as an MCP server (`hotspot mcp`) to expose its analysis capabili
 MCP Request (urn + repo_path) → Portable Identity Resolution → Git Analysis → Schema Enrichment → JSON Response
 ```
 
-Agents can query by URN alone (using cached/historical data) or provide repo_path for fresh analysis. This enables fleet-wide querying: an agent in a cloud MCP server can retrieve unified hotspot data regardless of which machine last ran the analysis.
+Agents can provide a `urn` for portable identity across machines, ensuring that analysis runs for the same repository are unified in the database. However, a `repo_path` (defaulting to `.`) is still required to perform fresh Git analysis. In future versions, providing only a `urn` may allow querying historical/cached data from the database even without a local clone.
 
 ## Core Domain Concepts
 
