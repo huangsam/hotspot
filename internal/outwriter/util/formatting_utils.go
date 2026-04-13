@@ -1,4 +1,4 @@
-package outwriter
+package util
 
 import (
 	"encoding/csv"
@@ -6,9 +6,9 @@ import (
 	"io"
 )
 
-// truncatePath truncates a file path to a maximum width with ellipsis prefix.
+// TruncatePath truncates a file path to a maximum width with ellipsis prefix.
 // Requires maxWidth > 3 to ensure there's space for both the "..." prefix and at least one character of content.
-func truncatePath(path string, maxWidth int) string {
+func TruncatePath(path string, maxWidth int) string {
 	runes := []rune(path)
 	if len(runes) > maxWidth && maxWidth > 3 {
 		return "..." + string(runes[len(runes)-maxWidth+3:])
@@ -16,9 +16,9 @@ func truncatePath(path string, maxWidth int) string {
 	return path
 }
 
-// writeCSVWithHeader handles the common pattern of creating a CSV writer,
+// WriteCSVWithHeader handles the common pattern of creating a CSV writer,
 // writing a header, and writing data rows.
-func writeCSVWithHeader(w io.Writer, header []string, writeRows func(*csv.Writer) error) error {
+func WriteCSVWithHeader(w io.Writer, header []string, writeRows func(*csv.Writer) error) error {
 	csvWriter := csv.NewWriter(w)
 	defer csvWriter.Flush()
 
@@ -33,8 +33,8 @@ func writeCSVWithHeader(w io.Writer, header []string, writeRows func(*csv.Writer
 	return nil
 }
 
-// createFormatters creates the common formatter closures used across multiple output types.
-func createFormatters(precision int) (fmtFloat func(float64) string, intFmt string) {
+// CreateFormatters creates the common formatter closures used across multiple output types.
+func CreateFormatters(precision int) (fmtFloat func(float64) string, intFmt string) {
 	numFmt := "%.*f"
 	intFmt = "%d"
 	fmtFloat = func(v float64) string {

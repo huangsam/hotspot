@@ -1,4 +1,4 @@
-package outwriter
+package util
 
 import (
 	"fmt"
@@ -9,9 +9,9 @@ import (
 	"golang.org/x/term"
 )
 
-// getMaxTablePathWidth calculates the maximum width for file paths in table output
+// GetMaxTablePathWidth calculates the maximum width for file paths in table output
 // based on terminal width and table configuration.
-func getMaxTablePathWidth(output config.OutputSettings) int {
+func GetMaxTablePathWidth(output config.OutputSettings) int {
 	var termWidth int
 
 	// Check for absolute width override from flag/env
@@ -64,8 +64,8 @@ func getMaxTablePathWidth(output config.OutputSettings) int {
 	return available
 }
 
-// formatOwnershipDiff computes and formats the ownership difference between before and after states.
-func formatOwnershipDiff(r schema.ComparisonDetail) string {
+// FormatOwnershipDiff computes and formats the ownership difference between before and after states.
+func FormatOwnershipDiff(r schema.ComparisonDetail) string {
 	beforeOwners := r.BeforeOwners
 	afterOwners := r.AfterOwners
 

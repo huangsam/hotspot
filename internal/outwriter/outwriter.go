@@ -6,7 +6,12 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
+	"github.com/huangsam/hotspot/internal/outwriter/csv"
+	"github.com/huangsam/hotspot/internal/outwriter/describe"
 	"github.com/huangsam/hotspot/internal/outwriter/json"
+	"github.com/huangsam/hotspot/internal/outwriter/markdown"
+	"github.com/huangsam/hotspot/internal/outwriter/parquet"
+	"github.com/huangsam/hotspot/internal/outwriter/text"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -31,16 +36,12 @@ func NewOutWriter() *OutWriter {
 	}
 
 	// Register specific providers
-	jsonProvider := json.NewProvider()
-	ow.providers[schema.JSONOut] = jsonProvider
-
-	// For other modes, register a legacy dispatcher as a bridge.
-	legacy := &legacyDispatcher{}
-	for mode := range schema.ValidOutputModes {
-		if _, exists := ow.providers[mode]; !exists {
-			ow.providers[mode] = legacy
-		}
-	}
+	ow.providers[schema.JSONOut] = json.NewProvider()
+	ow.providers[schema.CSVOut] = csv.NewProvider()
+	ow.providers[schema.TextOut] = text.NewProvider()
+	ow.providers[schema.MarkdownOut] = markdown.NewProvider()
+	ow.providers[schema.Describe] = describe.NewProvider()
+	ow.providers[schema.ParquetOut] = parquet.NewProvider()
 
 	return ow
 }
@@ -68,27 +69,4 @@ func (ow *OutWriter) WriteTimeseries(w io.Writer, result schema.TimeseriesResult
 // WriteMetrics writes metrics definitions using the configured output format.
 func (ow *OutWriter) WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, output config.OutputSettings) error {
 	return ow.providers[output.GetFormat()].WriteMetrics(w, activeWeights, output)
-}
-
-// legacyDispatcher acts as a bridge to the existing package-level functions.
-type legacyDispatcher struct{}
-
-func (d *legacyDispatcher) WriteFiles(w io.Writer, results []schema.FileResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
-	return WriteFileResults(w, results, output, runtime, duration)
-}
-
-func (d *legacyDispatcher) WriteFolders(w io.Writer, results []schema.FolderResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
-	return WriteFolderResults(w, results, output, runtime, duration)
-}
-
-func (d *legacyDispatcher) WriteComparison(w io.Writer, results schema.ComparisonResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
-	return WriteComparisonResults(w, results, output, runtime, duration)
-}
-
-func (d *legacyDispatcher) WriteTimeseries(w io.Writer, result schema.TimeseriesResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
-	return WriteTimeseriesResults(w, result, output, runtime, duration)
-}
-
-func (d *legacyDispatcher) WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, output config.OutputSettings) error {
-	return WriteMetricsDefinitions(w, activeWeights, output)
 }

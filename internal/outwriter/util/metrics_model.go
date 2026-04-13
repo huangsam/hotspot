@@ -1,4 +1,4 @@
-package outwriter
+package util
 
 import (
 	"math"
@@ -8,8 +8,8 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// getDisplayNameForMode returns the display name for a given mode name.
-func getDisplayNameForMode(modeName string) string {
+// GetDisplayNameForMode returns the display name for a given mode name.
+func GetDisplayNameForMode(modeName string) string {
 	return schema.GetDisplayNameForMode(modeName)
 }
 
@@ -24,8 +24,8 @@ const (
 	topNMetrics          = 3
 )
 
-// formatTopMetricBreakdown computes the top 3 metric components that contribute to the final score.
-func formatTopMetricBreakdown(f *schema.FileResult) string {
+// FormatTopMetricBreakdown computes the top 3 metric components that contribute to the final score.
+func FormatTopMetricBreakdown(f *schema.FileResult) string {
 	var metrics []metricBreakdown
 
 	// 1. Filter and Convert Map to Slice
@@ -61,9 +61,4 @@ func formatTopMetricBreakdown(f *schema.FileResult) string {
 		return "No meaningful contributors"
 	}
 	return strings.Join(parts, " > ")
-}
-
-// buildMetricsRenderModel constructs the complete render model with all processed data.
-func buildMetricsRenderModel(activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64) *schema.MetricsRenderModel {
-	return schema.BuildMetricsRenderModel(activeWeights)
 }

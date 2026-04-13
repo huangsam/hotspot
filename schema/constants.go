@@ -35,11 +35,12 @@ const (
 
 // All output modes supported.
 const (
-	CSVOut     OutputMode = "csv"
-	TextOut    OutputMode = "text" // default
-	JSONOut    OutputMode = "json"
-	ParquetOut OutputMode = "parquet"
-	Describe   OutputMode = "describe"
+	CSVOut      OutputMode = "csv"
+	TextOut     OutputMode = "text" // default
+	JSONOut     OutputMode = "json"
+	ParquetOut  OutputMode = "parquet"
+	Describe    OutputMode = "describe"
+	MarkdownOut OutputMode = "markdown"
 )
 
 // All status supported.
@@ -80,11 +81,12 @@ var AllScoringModes = []ScoringMode{HotMode, RiskMode, ComplexityMode, StaleMode
 
 // ValidOutputModes lists all valid output modes.
 var ValidOutputModes = map[OutputMode]struct{}{
-	CSVOut:     {},
-	TextOut:    {},
-	JSONOut:    {},
-	ParquetOut: {},
-	Describe:   {},
+	CSVOut:      {},
+	TextOut:     {},
+	JSONOut:     {},
+	ParquetOut:  {},
+	Describe:    {},
+	MarkdownOut: {},
 }
 
 // ValidScoringModes lists all valid scoring modes.

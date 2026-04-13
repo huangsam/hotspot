@@ -45,7 +45,7 @@ func init() {
 	rootCmd.PersistentFlags().StringP("filter", "f", "", "Filter targets by path prefix")
 	rootCmd.PersistentFlags().IntP("limit", "l", config.DefaultResultLimit, "Number of results to display")
 	rootCmd.PersistentFlags().String("mode", string(schema.HotMode), "Scoring mode: hot or risk or complexity or stale")
-	rootCmd.PersistentFlags().String("output", string(schema.TextOut), "Output format: text or csv or json or parquet")
+	rootCmd.PersistentFlags().String("output", string(schema.TextOut), "Output format: text or csv or json or parquet or markdown or describe")
 	rootCmd.PersistentFlags().String("output-file", "", "Optional path to write output to")
 	rootCmd.PersistentFlags().Bool("owner", false, "Print per-target owner")
 	rootCmd.PersistentFlags().Int("precision", config.DefaultPrecision, "Decimal precision for numeric columns")

@@ -1,0 +1,93 @@
+// Package parquet provides a FormatProvider implementation for Parquet output.
+package parquet
+
+import (
+	"fmt"
+	"io"
+	"time"
+
+	"github.com/huangsam/hotspot/internal/config"
+	"github.com/huangsam/hotspot/internal/parquet"
+	"github.com/huangsam/hotspot/schema"
+)
+
+// Provider implements the util.FormatProvider interface for Parquet output.
+type Provider struct{}
+
+// NewProvider creates a new Parquet provider.
+func NewProvider() *Provider {
+	return &Provider{}
+}
+
+// WriteFiles writes file analysis results in Parquet format.
+// Note: Parquet output requires a file path. If io.Writer is not an *os.File,
+// it might fallback or error. However, the CLI usually provides a file.
+func (p *Provider) WriteFiles(_ io.Writer, files []schema.FileResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+	outputPath := output.GetOutputFile()
+	if outputPath == "" {
+		// Parquet usually requires a seekable file, it's hard to stream to stdout directly with standard libraries
+		return fmt.Errorf("parquet output requires a specific output file path via --output-file")
+	}
+
+	// Map schema.FileResult to parquet.FileScoresMetrics
+	records := make([]parquet.FileScoresMetrics, len(files))
+	for i, f := range files {
+		var owner *string
+		if len(f.Owners) > 0 {
+			o := f.Owners[0]
+			owner = &o
+		}
+
+		// Note: We don't have all scores here, only the current mode's score.
+		// We'll fill what we have.
+		records[i] = parquet.FileScoresMetrics{
+			FilePath:         f.Path,
+			AnalysisTime:     time.Now().UTC(),
+			TotalCommits:     int32(f.Commits),
+			TotalChurn:       int32(f.Churn),
+			ContributorCount: int32(f.UniqueContributors),
+			AgeDays:          float64(f.AgeDays),
+			GiniCoefficient:  f.Gini,
+			FileOwner:        owner,
+			ScoreLabel:       string(f.Mode),
+		}
+
+		// Set the appropriate score field based on mode
+		switch f.Mode {
+		case schema.HotMode:
+			records[i].ScoreHot = f.ModeScore
+		case schema.RiskMode:
+			records[i].ScoreRisk = f.ModeScore
+		case schema.ComplexityMode:
+			records[i].ScoreComplexity = f.ModeScore
+		case schema.StaleMode:
+			records[i].ScoreStale = f.ModeScore
+		}
+	}
+
+	return parquet.WriteFileScoresMetricsParquet(records, outputPath)
+}
+
+// WriteFolders is not specifically implemented for Parquet.
+func (p *Provider) WriteFolders(w io.Writer, _ []schema.FolderResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+	_, err := fmt.Fprintln(w, "Parquet output is not supported for folder analysis.")
+	return err
+}
+
+// WriteComparison is not specifically implemented for Parquet.
+func (p *Provider) WriteComparison(w io.Writer, _ schema.ComparisonResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+	_, err := fmt.Fprintln(w, "Parquet output is not supported for comparison analysis.")
+	return err
+}
+
+// WriteTimeseries is not specifically implemented for Parquet.
+func (p *Provider) WriteTimeseries(w io.Writer, _ schema.TimeseriesResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+	_, err := fmt.Fprintln(w, "Parquet output is not supported for timeseries analysis.")
+	return err
+}
+
+// WriteMetrics is not specifically implemented for Parquet.
+func (p *Provider) WriteMetrics(w io.Writer, _ map[schema.ScoringMode]map[schema.BreakdownKey]float64, _ config.OutputSettings) error {
+	_, err := fmt.Fprintln(w, "Parquet output is not supported for metrics definitions.")
+	return err
+}

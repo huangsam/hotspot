@@ -1,4 +1,5 @@
-package outwriter
+// Package util provides cross-provider formatting and rendering utilities.
+package util
 
 import (
 	"github.com/fatih/color"
@@ -13,9 +14,9 @@ var (
 	lowColor      = color.New(color.FgCyan)                // lowColor represents informational / low-priority signal.
 )
 
-// getColorLabel returns a colored text label for console output (table).
+// GetColorLabel returns a colored text label for console output (table).
 // It uses schema.GetPlainLabel to determine the string, and then applies the appropriate color.
-func getColorLabel(score float64) string {
+func GetColorLabel(score float64) string {
 	text := schema.GetPlainLabel(score)
 
 	switch text {

@@ -500,7 +500,7 @@ func validateSimpleInputs(cfg *Config, input *RawInput) error {
 
 	cfg.Output.Format = schema.OutputMode(strings.ToLower(input.Output))
 	if _, ok := schema.ValidOutputModes[cfg.Output.Format]; !ok {
-		return fmt.Errorf("invalid output format '%s'. Must be one of: text (pretty table), csv (comma-separated), json (structured), parquet (analytics)", cfg.Output.Format)
+		return fmt.Errorf("invalid output format '%s'. Must be one of: text (pretty table), csv (comma-separated), json (structured), parquet (analytics), markdown (github-flavored), describe (executive summary)", cfg.Output.Format)
 	}
 
 	// --- 5. Backend Validation ---

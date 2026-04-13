@@ -11,7 +11,7 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// Provider implements outwriter.FormatProvider for JSON output.
+// Provider implements util.FormatProvider for JSON output.
 type Provider struct{}
 
 // NewProvider creates a new JSON provider.
