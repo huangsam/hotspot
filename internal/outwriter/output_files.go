@@ -32,6 +32,10 @@ func WriteFileResults(w io.Writer, files []schema.FileResult, output config.Outp
 		if err := writeCSVResultsForFiles(csvWriter, files, fmtFloat, intFmt); err != nil {
 			return fmt.Errorf("error writing CSV output: %w", err)
 		}
+	case schema.Describe:
+		if err := writeDescribeResultsForFiles(w, files); err != nil {
+			return fmt.Errorf("error writing describe output: %w", err)
+		}
 	default:
 		// Default to human-readable table
 		return writeFileTable(files, output, runtime, fmtFloat, intFmt, duration, w)

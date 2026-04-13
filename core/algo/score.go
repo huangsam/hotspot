@@ -90,6 +90,9 @@ func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, weights map[sch
 		breakdown[schema.BreakdownLowRecent] = weights[schema.BreakdownLowRecent] * nInvRecentCommits
 	case schema.StaleMode:
 		breakdown[schema.BreakdownInvRecent] = weights[schema.BreakdownInvRecent] * nInvRecentCommits
+	case schema.ROIMode:
+		breakdown[schema.BreakdownGini] = weights[schema.BreakdownGini] * nGiniRaw
+		breakdown[schema.BreakdownLOC] = weights[schema.BreakdownLOC] * nLOC
 	}
 
 	for _, value := range breakdown {
@@ -121,7 +124,74 @@ func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, weights map[sch
 		breakdown[k] = v * 100.0
 	}
 
+	// Generate natural language reasoning based on the breakdown
+	m.Reasoning = computeReasoning(m, mode)
+
 	return score
+}
+
+// computeReasoning translates the numerical ModeBreakdown into an array of semantic justifications.
+func computeReasoning(m *schema.FileResult, mode schema.ScoringMode) []string {
+	var results []string
+	b := m.ModeBreakdown
+
+	// Constants for threshold-based reasoning
+	const (
+		significant = 20.0 // 20% contribution is "significant"
+		dominant    = 30.0 // 30% contribution is "dominant"
+	)
+
+	// 1. Core Synthesis Patterns (Cross-metric logic)
+	gini, hasGini := b[schema.BreakdownGini]
+	age, hasAge := b[schema.BreakdownAge]
+	invRecent, hasInvRecent := b[schema.BreakdownInvRecent]
+	lowRecent, hasLowRecent := b[schema.BreakdownLowRecent]
+	loc, hasLoc := b[schema.BreakdownLOC]
+	churn, hasChurn := b[schema.BreakdownChurn]
+
+	// Pattern: Institutional Amnesia (High Gini + High Age + Low Activity)
+	if hasGini && gini > significant && hasAge && age > significant && (hasInvRecent && invRecent > significant || hasLowRecent && lowRecent > significant) {
+		results = append(results, "Institutional Amnesia: Vital logic is concentrated in inactive authors with high maintenance decay.")
+	}
+
+	// Pattern: Volatile Anchor (High Churn + High LOC)
+	if hasChurn && churn > dominant && hasLoc && loc > significant {
+		results = append(results, "Volatile Anchor: Large module undergoing massive frequent changes; high refactoring ROI.")
+	}
+
+	// Pattern: Knowledge Silo (High Inverse Contrib or Gini)
+	if (hasGini && gini > dominant) || (b[schema.BreakdownInvContrib] > dominant) {
+		results = append(results, "Knowledge Silo: File ownership is dangerously concentrated in too few people.")
+	}
+
+	// 2. Fallback: Metric-Specific Logic (if no pattern matched or to add detail)
+	if len(results) < 2 {
+		if b[schema.BreakdownChurn] > significant {
+			results = append(results, "High Churn: Recent volatility indicates this file is currently a development bottleneck.")
+		}
+		if hasInvRecent && invRecent > significant {
+			results = append(results, "Maintenance Debt: File is stale and has not been updated in the recent analysis window.")
+		}
+		if hasLoc && loc > significant {
+			results = append(results, "Structural Complexity: High lines of code count increases cognitive load for maintainers.")
+		}
+	}
+
+	// 3. Mode-Specific Nuance
+	if mode == schema.ROIMode {
+		if churn > significant && loc > significant {
+			results = append(results, "High Conflict Tax: Parallel development in a large file is creating a coordination overhead.")
+		}
+		if hasGini && gini > significant {
+			results = append(results, "Knowledge Fragility: High financial risk if the primary code owners are unavailable.")
+		}
+	}
+
+	if mode == schema.RiskMode && len(results) == 0 {
+		results = append(results, "Ownership Risk: Low contributor diversity identified for this resource.")
+	}
+
+	return results
 }
 
 // Gini calculates the Gini coefficient for a set of values.

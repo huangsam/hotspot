@@ -97,7 +97,7 @@ func TestWriteMetricsCSV(t *testing.T) {
 	require.NoError(t, err)
 
 	lines := strings.Split(strings.TrimSpace(buf.String()), "\n")
-	require.Len(t, lines, 5) // header + 4 rows (all modes)
+	require.Len(t, lines, 6) // header + 5 rows (all modes)
 
 	assert.Contains(t, lines[0], "Mode")
 	assert.Contains(t, lines[0], "Purpose")

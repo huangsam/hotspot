@@ -702,12 +702,13 @@ func processTimeseriesMode(cfg *Config, input *RawInput) error {
 func ProcessWeightsRawInput(weights WeightsRawInput, validateSum bool) (map[schema.ScoringMode]map[schema.BreakdownKey]float64, error) {
 	result := make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
 
-	modes := []schema.ScoringMode{schema.StaleMode, schema.RiskMode, schema.HotMode, schema.ComplexityMode}
+	modes := []schema.ScoringMode{schema.StaleMode, schema.RiskMode, schema.HotMode, schema.ComplexityMode, schema.ROIMode}
 	modeWeights := map[schema.ScoringMode]*ModeWeightsRaw{
 		schema.StaleMode:      weights.Stale,
 		schema.RiskMode:       weights.Risk,
 		schema.HotMode:        weights.Hot,
 		schema.ComplexityMode: weights.Complexity,
+		schema.ROIMode:        weights.ROI,
 	}
 
 	// Process each mode's raw weights and validate sums if required.
@@ -786,7 +787,7 @@ func processCustomWeights(cfg *Config, input *RawInput) error {
 
 	// Compute final weights for each mode
 	cfg.Scoring.ComputedWeights = make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
-	for _, mode := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode} {
+	for _, mode := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode, schema.ROIMode} {
 		// Start with default weights
 		defaultWeights := schema.GetDefaultWeights(mode)
 
@@ -817,6 +818,7 @@ func processRiskThresholds(cfg *Config, input *RawInput) error {
 	thresholds[schema.RiskMode] = 50.0
 	thresholds[schema.ComplexityMode] = 50.0
 	thresholds[schema.StaleMode] = 50.0
+	thresholds[schema.ROIMode] = 50.0
 
 	// Override with config file values if provided
 	if input.Thresholds.Hot != nil {
@@ -830,6 +832,9 @@ func processRiskThresholds(cfg *Config, input *RawInput) error {
 	}
 	if input.Thresholds.Stale != nil {
 		thresholds[schema.StaleMode] = *input.Thresholds.Stale
+	}
+	if input.Thresholds.ROI != nil {
+		thresholds[schema.ROIMode] = *input.Thresholds.ROI
 	}
 
 	// Override with command-line flag if provided (takes precedence)
@@ -941,8 +946,10 @@ func parseRiskThresholdsString(s string) (map[schema.ScoringMode]float64, error)
 			mode = schema.ComplexityMode
 		case "stale":
 			mode = schema.StaleMode
+		case "roi":
+			mode = schema.ROIMode
 		default:
-			return nil, fmt.Errorf("invalid mode '%s', must be hot, risk, complexity, or stale", modeStr)
+			return nil, fmt.Errorf("invalid mode '%s', must be hot, risk, complexity, stale or roi", modeStr)
 		}
 
 		value, err := strconv.ParseFloat(valueStr, 64)
@@ -968,6 +975,7 @@ type WeightsRawInput struct {
 	Risk       *ModeWeightsRaw `mapstructure:"risk"`
 	Complexity *ModeWeightsRaw `mapstructure:"complexity"`
 	Stale      *ModeWeightsRaw `mapstructure:"stale"`
+	ROI        *ModeWeightsRaw `mapstructure:"roi"`
 }
 
 // ModeWeightsRaw holds the raw factor weights for a single mode.
@@ -990,4 +998,5 @@ type ThresholdsRawInput struct {
 	Risk       *float64 `mapstructure:"risk"`
 	Complexity *float64 `mapstructure:"complexity"`
 	Stale      *float64 `mapstructure:"stale"`
+	ROI        *float64 `mapstructure:"roi"`
 }

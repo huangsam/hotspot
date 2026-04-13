@@ -26,6 +26,7 @@ type FileResult struct {
 
 	Mode          ScoringMode                              `json:"mode"`                 // Scoring mode used (hot, risk, complexity, stale)
 	ModeScore     float64                                  `json:"score"`                // Computed score for the current mode (0-100)
+	Reasoning     []string                                 `json:"reasoning,omitempty"`  // Human-and-AI-readable justifications for the score
 	ModeBreakdown map[BreakdownKey]float64                 `json:"breakdown"`            // Normalized contribution of each metric to the score
 	AllScores     map[ScoringMode]float64                  `json:"scores"`               // All computed scores by mode
 	AllBreakdowns map[ScoringMode]map[BreakdownKey]float64 `json:"breakdowns,omitempty"` // Score breakdowns for all modes

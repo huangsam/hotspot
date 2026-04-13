@@ -252,6 +252,12 @@ func buildMetricsRenderModel(activeWeights map[schema.ScoringMode]map[schema.Bre
 			Factors:    []string{"InvRecent", "Age", "Size", "Commits", "Contributors"},
 			FactorKeys: []string{string(schema.BreakdownInvRecent), string(schema.BreakdownAge), string(schema.BreakdownSize), string(schema.BreakdownCommits), string(schema.BreakdownContrib)},
 		},
+		{
+			Name:       "roi",
+			Purpose:    "ROI - priority for refactoring effort based on technical impact",
+			Factors:    []string{"Churn", "LOC", "Gini", "Age"},
+			FactorKeys: []string{string(schema.BreakdownChurn), string(schema.BreakdownLOC), string(schema.BreakdownGini), string(schema.BreakdownAge)},
+		},
 	}
 	modesWithData := make([]schema.MetricsModeWithData, len(modes))
 

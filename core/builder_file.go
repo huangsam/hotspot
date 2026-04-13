@@ -253,19 +253,20 @@ func (b *FileResultBuilder) CalculateScore() *FileResultBuilder {
 	b.result.AllBreakdowns = make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
 
 	computedWeights := b.scoringSettings.GetComputedWeights()
-	for _, m := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode} {
+	for _, m := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode, schema.ROIMode} {
 		if m == mode {
 			// Already computed
 			b.result.AllScores[m] = b.result.ModeScore
 			b.result.AllBreakdowns[m] = make(map[schema.BreakdownKey]float64, len(b.result.ModeBreakdown))
 			maps.Copy(b.result.AllBreakdowns[m], b.result.ModeBreakdown)
 		} else {
-			mCopy := *b.result // Shallow copy
-			mCopy.Mode = m     // Set mode for computation
+			mCopy := *b.result // Shallow copy of top-level fields
+			// Crucially re-initialize the breakdown map to avoid stomping on the original
+			mCopy.ModeBreakdown = make(map[schema.BreakdownKey]float64, 8)
+			mCopy.Mode = m
 			score := algo.ComputeScore(&mCopy, m, computedWeights[m])
 			b.result.AllScores[m] = score
-			b.result.AllBreakdowns[m] = make(map[schema.BreakdownKey]float64, len(mCopy.ModeBreakdown))
-			maps.Copy(b.result.AllBreakdowns[m], mCopy.ModeBreakdown)
+			b.result.AllBreakdowns[m] = mCopy.ModeBreakdown
 		}
 	}
 

@@ -39,6 +39,7 @@ const (
 	TextOut    OutputMode = "text" // default
 	JSONOut    OutputMode = "json"
 	ParquetOut OutputMode = "parquet"
+	Describe   OutputMode = "describe"
 )
 
 // All status supported.
@@ -55,6 +56,7 @@ const (
 	RiskMode       ScoringMode = "risk"
 	ComplexityMode ScoringMode = "complexity"
 	StaleMode      ScoringMode = "stale"
+	ROIMode        ScoringMode = "roi"
 )
 
 // Scoring label constants for criticality levels.
@@ -74,7 +76,7 @@ const (
 )
 
 // AllScoringModes returns a list of all supported scoring modes.
-var AllScoringModes = []ScoringMode{HotMode, RiskMode, ComplexityMode, StaleMode}
+var AllScoringModes = []ScoringMode{HotMode, RiskMode, ComplexityMode, StaleMode, ROIMode}
 
 // ValidOutputModes lists all valid output modes.
 var ValidOutputModes = map[OutputMode]struct{}{
@@ -82,6 +84,7 @@ var ValidOutputModes = map[OutputMode]struct{}{
 	TextOut:    {},
 	JSONOut:    {},
 	ParquetOut: {},
+	Describe:   {},
 }
 
 // ValidScoringModes lists all valid scoring modes.
@@ -90,6 +93,7 @@ var ValidScoringModes = map[ScoringMode]struct{}{
 	RiskMode:       {},
 	ComplexityMode: {},
 	StaleMode:      {},
+	ROIMode:        {},
 }
 
 // ValidDatabaseBackends lists all valid database backends.
@@ -129,6 +133,13 @@ func GetDefaultWeights(mode ScoringMode) map[BreakdownKey]float64 {
 			BreakdownContrib:   0.05,
 			BreakdownInvRecent: 0.35,
 			BreakdownSize:      0.25,
+		}
+	case ROIMode:
+		return map[BreakdownKey]float64{
+			BreakdownChurn: 0.35, // High maintenance waste
+			BreakdownLOC:   0.25, // Complexity tax
+			BreakdownGini:  0.25, // Knowledge concentration risk
+			BreakdownAge:   0.15, // Legacy debt
 		}
 	default: // HotMode
 		return map[BreakdownKey]float64{
