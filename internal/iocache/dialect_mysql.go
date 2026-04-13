@@ -109,3 +109,18 @@ func (d *MySQLDialect) ScanFileScoresMetricsRecord(rows *sql.Rows, record *schem
 func (d *MySQLDialect) FormatTime(t time.Time) any {
 	return t
 }
+
+// Placeholder returns a MySQL-compatible placeholder (?).
+func (d *MySQLDialect) Placeholder(_ int) string {
+	return "?"
+}
+
+// GetSelectStartTimeQuery returns the MySQL-specific query for selecting start_time.
+func (d *MySQLDialect) GetSelectStartTimeQuery(tableName string) string {
+	return fmt.Sprintf(`SELECT start_time FROM %s WHERE analysis_id = ?`, d.QuoteIdentifier(tableName))
+}
+
+// GetUpdateURNQuery returns the MySQL-specific query for updating analysis URN.
+func (d *MySQLDialect) GetUpdateURNQuery(tableName string) string {
+	return fmt.Sprintf(`UPDATE %s SET urn = ? WHERE analysis_id = ?`, d.QuoteIdentifier(tableName))
+}

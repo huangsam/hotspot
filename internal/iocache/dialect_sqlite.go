@@ -135,3 +135,18 @@ func (d *SQLiteDialect) ScanFileScoresMetricsRecord(rows *sql.Rows, record *sche
 func (d *SQLiteDialect) FormatTime(t time.Time) any {
 	return t.Format(time.RFC3339Nano)
 }
+
+// Placeholder returns an SQLite-compatible placeholder (?).
+func (d *SQLiteDialect) Placeholder(_ int) string {
+	return "?"
+}
+
+// GetSelectStartTimeQuery returns the SQLite-specific query for selecting start_time.
+func (d *SQLiteDialect) GetSelectStartTimeQuery(tableName string) string {
+	return fmt.Sprintf(`SELECT start_time FROM %s WHERE analysis_id = ?`, d.QuoteIdentifier(tableName))
+}
+
+// GetUpdateURNQuery returns the SQLite-specific query for updating analysis URN.
+func (d *SQLiteDialect) GetUpdateURNQuery(tableName string) string {
+	return fmt.Sprintf(`UPDATE %s SET urn = ? WHERE analysis_id = ?`, d.QuoteIdentifier(tableName))
+}

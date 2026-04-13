@@ -41,4 +41,13 @@ type SQLDialect interface {
 
 	// FormatTime converts a time.Time to a backend-compatible value.
 	FormatTime(t time.Time) any
+
+	// Placeholder returns a backend-appropriate placeholder string (e.g., "$1" or "?").
+	Placeholder(index int) string
+
+	// GetSelectStartTimeQuery returns the query to select the start_time of an analysis run.
+	GetSelectStartTimeQuery(tableName string) string
+
+	// GetUpdateURNQuery returns the query to update the URN of an analysis run.
+	GetUpdateURNQuery(tableName string) string
 }

@@ -107,3 +107,18 @@ func (d *PostgresDialect) ScanFileScoresMetricsRecord(rows *sql.Rows, record *sc
 func (d *PostgresDialect) FormatTime(t time.Time) any {
 	return t
 }
+
+// Placeholder returns a PostgreSQL-compatible placeholder ($N).
+func (d *PostgresDialect) Placeholder(index int) string {
+	return fmt.Sprintf("$%d", index)
+}
+
+// GetSelectStartTimeQuery returns the PostgreSQL-specific query for selecting start_time.
+func (d *PostgresDialect) GetSelectStartTimeQuery(tableName string) string {
+	return fmt.Sprintf(`SELECT start_time FROM %s WHERE analysis_id = $1`, d.QuoteIdentifier(tableName))
+}
+
+// GetUpdateURNQuery returns the PostgreSQL-specific query for updating analysis URN.
+func (d *PostgresDialect) GetUpdateURNQuery(tableName string) string {
+	return fmt.Sprintf(`UPDATE %s SET urn = $1 WHERE analysis_id = $2`, d.QuoteIdentifier(tableName))
+}

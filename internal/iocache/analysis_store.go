@@ -137,15 +137,7 @@ func (as *AnalysisStoreImpl) EndAnalysis(analysisID int64, endTime time.Time, to
 	}
 
 	// First, get the start_time to calculate duration
-	quotedTableName := as.dialect.QuoteIdentifier(analysisRunsTable)
-
-	var query string
-	switch as.backend {
-	case schema.PostgreSQLBackend:
-		query = fmt.Sprintf(`SELECT start_time FROM %s WHERE analysis_id = $1`, quotedTableName)
-	default: // SQLite and MySQL
-		query = fmt.Sprintf(`SELECT start_time FROM %s WHERE analysis_id = ?`, quotedTableName)
-	}
+	query := as.dialect.GetSelectStartTimeQuery(analysisRunsTable)
 
 	row := as.db.QueryRow(query, analysisID)
 	startTime, err := as.dialect.ScanStartTime(row)
@@ -158,14 +150,7 @@ func (as *AnalysisStoreImpl) EndAnalysis(analysisID int64, endTime time.Time, to
 
 	// Update the analysis run with completion data
 	updateQuery := as.dialect.GetUpdateEndAnalysisQuery(analysisRunsTable)
-	var args []any
-
-	switch as.backend {
-	case schema.PostgreSQLBackend:
-		args = []any{endTime, durationMs, totalFiles, analysisID}
-	default: // SQLite and MySQL
-		args = []any{as.dialect.FormatTime(endTime), durationMs, totalFiles, analysisID}
-	}
+	args := []any{as.dialect.FormatTime(endTime), durationMs, totalFiles, analysisID}
 
 	_, err = as.db.Exec(updateQuery, args...)
 	if err != nil {
@@ -182,14 +167,7 @@ func (as *AnalysisStoreImpl) UpdateAnalysisRunURN(analysisID int64, urn string) 
 		return nil
 	}
 
-	quotedTableName := as.dialect.QuoteIdentifier(analysisRunsTable)
-	var query string
-	switch as.dialect.DriverName() {
-	case "pgx":
-		query = fmt.Sprintf("UPDATE %s SET urn = $1 WHERE analysis_id = $2", quotedTableName)
-	default:
-		query = fmt.Sprintf("UPDATE %s SET urn = ? WHERE analysis_id = ?", quotedTableName)
-	}
+	query := as.dialect.GetUpdateURNQuery(analysisRunsTable)
 
 	_, err := as.db.Exec(query, urn, analysisID)
 	return err
@@ -211,23 +189,6 @@ func (as *AnalysisStoreImpl) Close() error {
 		return as.db.Close()
 	}
 	return nil
-}
-
-// placeholder returns a SQL clause fragment with a backend-appropriate placeholder.
-// For PostgreSQL it uses $N; for others it uses ?.
-func (as *AnalysisStoreImpl) placeholder(prefix string, argIdx *int) string {
-	return prefix + as.placeholderStr(argIdx)
-}
-
-// placeholderStr returns a single placeholder token and increments the index.
-func (as *AnalysisStoreImpl) placeholderStr(argIdx *int) string {
-	if as.dialect.DriverName() == "pgx" {
-		p := fmt.Sprintf("$%d", *argIdx)
-		*argIdx++
-		return p
-	}
-	*argIdx++
-	return "?"
 }
 
 // GetStatus returns status information about the analysis store.
@@ -312,18 +273,20 @@ func (as *AnalysisStoreImpl) GetAnalysisRuns(filter schema.AnalysisQueryFilter) 
 	argIdx := 1 // For PostgreSQL $N placeholders
 
 	if filter.URN != "" {
-		query += as.placeholder(" WHERE urn = ", &argIdx)
+		query += " WHERE urn = " + as.dialect.Placeholder(argIdx)
+		argIdx++
 		args = append(args, filter.URN)
 	}
 
 	query += " ORDER BY analysis_id"
 
 	if filter.Limit > 0 {
-		query += as.placeholder(" LIMIT ", &argIdx)
+		query += " LIMIT " + as.dialect.Placeholder(argIdx)
+		argIdx++
 		args = append(args, filter.Limit)
 	}
 	if filter.Offset > 0 {
-		query += as.placeholder(" OFFSET ", &argIdx)
+		query += " OFFSET " + as.dialect.Placeholder(argIdx)
 		args = append(args, filter.Offset)
 	}
 
@@ -374,18 +337,20 @@ func (as *AnalysisStoreImpl) GetFileScoresMetrics(filter schema.AnalysisQueryFil
 
 	if filter.URN != "" {
 		runsTable := as.dialect.QuoteIdentifier(analysisRunsTable)
-		query += fmt.Sprintf(" WHERE analysis_id IN (SELECT analysis_id FROM %s WHERE urn = %s)", runsTable, as.placeholderStr(&argIdx))
+		query += fmt.Sprintf(" WHERE analysis_id IN (SELECT analysis_id FROM %s WHERE urn = %s)", runsTable, as.dialect.Placeholder(argIdx))
+		argIdx++
 		args = append(args, filter.URN)
 	}
 
 	query += " ORDER BY analysis_id, file_path"
 
 	if filter.Limit > 0 {
-		query += as.placeholder(" LIMIT ", &argIdx)
+		query += " LIMIT " + as.dialect.Placeholder(argIdx)
+		argIdx++
 		args = append(args, filter.Limit)
 	}
 	if filter.Offset > 0 {
-		query += as.placeholder(" OFFSET ", &argIdx)
+		query += " OFFSET " + as.dialect.Placeholder(argIdx)
 		args = append(args, filter.Offset)
 	}
 
