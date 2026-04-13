@@ -55,14 +55,12 @@ clean:
 	@echo "Clean complete"
 
 # Install the built binary to $GOPATH/bin
-install: $(BIN_DIR)/$(BINARY_NAME)
+install:
 	@echo "Installing $(BINARY_NAME) to $$(go env GOPATH)/bin..."
 	@mkdir -p $$(go env GOPATH)/bin
-	@cp $(BIN_DIR)/$(BINARY_NAME) $$(go env GOPATH)/bin/
+	@$(GO) build -o $$(go env GOPATH)/bin/$(BINARY_NAME) $(MAIN_FILE)
+	@xattr -c $$(go env GOPATH)/bin/$(BINARY_NAME) 2>/dev/null || true
 	@echo "Installed: $$(go env GOPATH)/bin/$(BINARY_NAME)"
-
-# Reinstall the built binary
-reinstall: clean install
 
 # Run tests
 # FORCE=1: Bypass test cache (default: use cache)
