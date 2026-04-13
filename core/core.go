@@ -21,16 +21,15 @@ import (
 )
 
 // ExecutorFunc defines the function signature for executing different analysis modes.
-type ExecutorFunc func(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) error
+type ExecutorFunc func(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager, writer outwriter.FormatProvider) error
 
 // ExecuteHotspotFiles runs the file-level analysis and prints results to stdout.
 // It serves as the main entry point for the 'files' mode.
-func ExecuteHotspotFiles(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) error {
+func ExecuteHotspotFiles(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager, writer outwriter.FormatProvider) error {
 	ranked, duration, err := GetHotspotFilesResults(ctx, cfg, client, mgr)
 	if err != nil {
 		return err
 	}
-	writer := outwriter.NewOutWriter()
 	return outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
 		return writer.WriteFiles(w, ranked, cfg.Output, cfg.Runtime, duration)
 	}, "Wrote files table")
@@ -54,12 +53,11 @@ func GetHotspotFilesResults(ctx context.Context, cfg *config.Config, client git.
 
 // ExecuteHotspotFolders runs the folder-level analysis and prints results to stdout.
 // It serves as the main entry point for the 'folders' mode.
-func ExecuteHotspotFolders(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) error {
+func ExecuteHotspotFolders(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager, writer outwriter.FormatProvider) error {
 	ranked, duration, err := GetHotspotFoldersResults(ctx, cfg, client, mgr)
 	if err != nil {
 		return err
 	}
-	writer := outwriter.NewOutWriter()
 	return outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
 		return writer.WriteFolders(w, ranked, cfg.Output, cfg.Runtime, duration)
 	}, "Wrote folders table")
@@ -78,14 +76,13 @@ func GetHotspotFoldersResults(ctx context.Context, cfg *config.Config, client gi
 
 // ExecuteHotspotCompare runs two file-level analyses (Base and Target)
 // based on Git references and computes the delta results.
-func ExecuteHotspotCompare(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) error {
+func ExecuteHotspotCompare(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager, writer outwriter.FormatProvider) error {
 	internal.LogCompareHeader(cfg.Git, cfg.Scoring, cfg.Compare)
 
 	comparisonResult, duration, err := GetHotspotCompareResults(ctx, cfg, client, mgr)
 	if err != nil {
 		return err
 	}
-	writer := outwriter.NewOutWriter()
 	return outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
 		return writer.WriteComparison(w, comparisonResult, cfg.Output, cfg.Runtime, duration)
 	}, "Wrote file comparison table")
@@ -111,7 +108,7 @@ func GetHotspotCompareResults(ctx context.Context, cfg *config.Config, client gi
 // based on Git references and computes the delta results.
 // It follows the same pattern as ExecuteHotspotCompare but aggregates to folders
 // before performing the comparison.
-func ExecuteHotspotCompareFolders(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) error {
+func ExecuteHotspotCompareFolders(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager, writer outwriter.FormatProvider) error {
 	start := time.Now()
 
 	internal.LogCompareHeader(cfg.Git, cfg.Scoring, cfg.Compare)
@@ -126,14 +123,13 @@ func ExecuteHotspotCompareFolders(ctx context.Context, cfg *config.Config, clien
 	}
 	comparisonResult := compareFolderMetrics(baseOutput.FolderResults, targetOutput.FolderResults, cfg.Output.ResultLimit, string(cfg.Scoring.Mode))
 	duration := time.Since(start)
-	writer := outwriter.NewOutWriter()
 	return outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
 		return writer.WriteComparison(w, comparisonResult, cfg.Output, cfg.Runtime, duration)
 	}, "Wrote folder comparison table")
 }
 
 // ExecuteHotspotTimeseries runs multiple analyses over overlapping, dynamic-lookback time windows.
-func ExecuteHotspotTimeseries(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) error {
+func ExecuteHotspotTimeseries(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager, writer outwriter.FormatProvider) error {
 	result, duration, err := GetHotspotTimeseriesResults(ctx, cfg, client, mgr)
 	if err != nil {
 		return err
@@ -141,7 +137,6 @@ func ExecuteHotspotTimeseries(ctx context.Context, cfg *config.Config, client gi
 
 	internal.LogTimeseriesHeader(cfg.Git, cfg.Scoring, cfg.Timeseries)
 
-	writer := outwriter.NewOutWriter()
 	return outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
 		return writer.WriteTimeseries(w, result, cfg.Output, cfg.Runtime, duration)
 	}, "Wrote timeseries table")
@@ -190,8 +185,7 @@ func GetHotspotTimeseriesResults(ctx context.Context, cfg *config.Config, client
 
 // ExecuteHotspotMetrics displays the formal definitions of all scoring modes.
 // This is a static display that does not require Git analysis.
-func ExecuteHotspotMetrics(_ context.Context, cfg *config.Config, _ git.Client, _ iocache.CacheManager) error {
-	writer := outwriter.NewOutWriter()
+func ExecuteHotspotMetrics(_ context.Context, cfg *config.Config, _ git.Client, _ iocache.CacheManager, writer outwriter.FormatProvider) error {
 	return outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
 		return writer.WriteMetrics(w, cfg.Scoring.CustomWeights, cfg.Output)
 	}, "Wrote metrics info")

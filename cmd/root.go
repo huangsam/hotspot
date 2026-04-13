@@ -11,6 +11,7 @@ import (
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/internal/logger"
+	"github.com/huangsam/hotspot/internal/outwriter"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -41,6 +42,9 @@ var cacheManager iocache.CacheManager
 
 // gitClient is the global git client instance, initialized during sharedSetup.
 var gitClient git.Client
+
+// resultWriter is the global output writer instance, initialized during sharedSetup.
+var resultWriter outwriter.FormatProvider
 
 // startProfiling starts CPU and memory profiling if enabled.
 func startProfiling() error {
@@ -182,6 +186,9 @@ func sharedSetup(ctx context.Context, cmd *cobra.Command, args []string) error {
 	if err := iocache.InitStores(cfg.Runtime.CacheBackend, cfg.Runtime.CacheDBConnect, cfg.Runtime.AnalysisBackend, cfg.Runtime.AnalysisDBConnect, gitClient); err != nil {
 		return fmt.Errorf("failed to initialize persistence: %w", err)
 	}
+
+	// 6. Initialize output infrastructure
+	resultWriter = outwriter.NewOutWriter()
 
 	return nil
 }

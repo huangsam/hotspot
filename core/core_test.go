@@ -8,6 +8,7 @@ import (
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
+	"github.com/huangsam/hotspot/internal/outwriter"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/assert"
 )
@@ -37,7 +38,7 @@ func TestExecuteHotspotFiles(t *testing.T) {
 	}
 
 	// Execute - should fail due to non-existent repo
-	err := ExecuteHotspotFiles(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr)
+	err := ExecuteHotspotFiles(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr, outwriter.NewOutWriter())
 
 	// Assert that we get an error (expected since repo doesn't exist)
 	assert.Error(t, err)
@@ -71,7 +72,7 @@ func TestExecuteHotspotFolders(t *testing.T) {
 	}
 
 	// Execute - should fail due to non-existent repo
-	err := ExecuteHotspotFolders(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr)
+	err := ExecuteHotspotFolders(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr, outwriter.NewOutWriter())
 
 	// Assert that we get an error (expected since repo doesn't exist)
 	assert.Error(t, err)
@@ -108,7 +109,7 @@ func TestExecuteHotspotCompare(t *testing.T) {
 	}
 
 	// Execute - should fail due to non-existent repo
-	err := ExecuteHotspotCompare(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr)
+	err := ExecuteHotspotCompare(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr, outwriter.NewOutWriter())
 
 	// Assert that we get an error (expected since repo doesn't exist)
 	assert.Error(t, err)
@@ -142,7 +143,7 @@ func TestExecuteHotspotCompareFolders(t *testing.T) {
 	}
 
 	// Execute - should fail due to non-existent repo
-	err := ExecuteHotspotCompareFolders(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr)
+	err := ExecuteHotspotCompareFolders(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr, outwriter.NewOutWriter())
 
 	// Assert that we get an error (expected since repo doesn't exist)
 	assert.Error(t, err)
@@ -176,7 +177,7 @@ func TestExecuteHotspotTimeseries(t *testing.T) {
 	}
 
 	// Execute - should fail due to non-existent repo
-	err := ExecuteHotspotTimeseries(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr)
+	err := ExecuteHotspotTimeseries(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr, outwriter.NewOutWriter())
 
 	// Assert that we get an error (expected since repo doesn't exist)
 	assert.Error(t, err)
@@ -197,7 +198,7 @@ func TestExecuteHotspotMetrics(t *testing.T) {
 	}
 
 	// Execute - should succeed (metrics is static)
-	err := ExecuteHotspotMetrics(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr)
+	err := ExecuteHotspotMetrics(ctx, cfg, git.NewLocalGitClient(), mockCacheMgr, outwriter.NewOutWriter())
 
 	// Assert that it succeeds
 	assert.NoError(t, err)

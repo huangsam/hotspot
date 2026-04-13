@@ -33,7 +33,7 @@ func checkCompareAndExecute(executeFunc core.ExecutorFunc) {
 	if !cfg.Compare.Enabled {
 		logger.Fatal("Cannot run compare analysis", errors.New("base and target refs must be provided"))
 	}
-	if err := executeFunc(rootCtx, cfg, gitClient, cacheManager); err != nil {
+	if err := executeFunc(rootCtx, cfg, gitClient, cacheManager, resultWriter); err != nil {
 		logger.Fatal("Cannot run compare analysis", err)
 	}
 }

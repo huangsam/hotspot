@@ -39,7 +39,7 @@ Examples:
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := core.ExecuteHotspotFolders(rootCtx, cfg, gitClient, cacheManager); err != nil {
+		if err := core.ExecuteHotspotFolders(rootCtx, cfg, gitClient, cacheManager, resultWriter); err != nil {
 			logger.Fatal("Cannot run folders analysis", err)
 		}
 	},
