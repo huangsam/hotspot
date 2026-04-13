@@ -49,3 +49,17 @@ type Client interface {
 	// GetRemoteURL returns the URL of the 'origin' remote for the repository.
 	GetRemoteURL(ctx context.Context, repoPath string) (string, error)
 }
+
+// ResolveURN returns a canonical repository identifier.
+// It prioritizes the remote 'origin' URL but falls back to the absolute local path.
+func ResolveURN(ctx context.Context, client Client, repoPath string) string {
+	if url, err := client.GetRemoteURL(ctx, repoPath); err == nil && url != "" {
+		return "git:" + url
+	}
+	// Fallback to local path if no remote origin
+	absPath, _ := client.GetRepoRoot(ctx, repoPath)
+	if absPath == "" {
+		absPath = repoPath
+	}
+	return "local:" + absPath
+}

@@ -8,6 +8,7 @@ import (
 	"github.com/huangsam/hotspot/core/agg"
 	"github.com/huangsam/hotspot/internal"
 	"github.com/huangsam/hotspot/internal/config"
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/huangsam/hotspot/schema"
 )
@@ -27,24 +28,13 @@ func (s *preparationStage) Execute(ac *AnalysisContext) error {
 
 	// Resolve Repository URN
 	repoPath := ac.Git.GetRepoPath()
-	var urn string
-	if url, err := ac.Client.GetRemoteURL(ac.Context, repoPath); err == nil && url != "" {
-		urn = "git:" + url
-	} else {
-		// Fallback to local path if no remote origin
-		absPath, _ := ac.Client.GetRepoRoot(ac.Context, repoPath)
-		if absPath == "" {
-			absPath = repoPath
-		}
-		urn = "local:" + absPath
-	}
+	urn := git.ResolveURN(ac.Context, ac.Client, repoPath)
 	ac.RepoURN = urn
 
 	if ac.AnalysisStore != nil {
 		configParams := map[string]any{
 			"mode":         string(ac.Scoring.GetMode()),
 			"lookback":     ac.Compare.GetLookback().String(),
-			"repo_path":    repoPath,
 			"workers":      ac.Runtime.GetWorkers(),
 			"result_limit": ac.Output.GetResultLimit(),
 		}
