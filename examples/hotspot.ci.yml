@@ -22,3 +22,4 @@ thresholds:
   risk: 55.0        # Knowledge risk/bus factor threshold
   complexity: 70.0  # Technical debt threshold
   stale: 65.0       # Maintenance debt threshold
+  roi: 60.0         # Refactoring ROI threshold

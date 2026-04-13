@@ -21,7 +21,7 @@ This tool operates as a **data-driven development intelligence.** While traditio
 - 🧮 **Rich insights** - contributors, churn, size, age, and risk metrics
 - 🎯 **Actionable filters** - narrow down by path or track trends over time
 - 🕓 **Robust time windows** - support for human-readable time
-- 📊 **Export results** - save to CSV/JSON/Parquet to track trends and progress
+- 📊 **Export results** - save to CSV/JSON/Parquet/Markdown to track trends and progress
 - 🔄 **CI/CD integration** - enforce risk thresholds in pipelines
 
 ## Installation

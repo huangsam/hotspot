@@ -27,6 +27,7 @@ The core power of Hotspot lies in its `--mode` flag, which selects the ranking a
 | **risk** | Knowledge risk | Find areas with unequal contribution and few owners. |
 | **complexity** | Technical debt | Triage files with high churn, large size, and high complexity. |
 | **stale** | Maintenance debt | Highlight critical files that are large, old, but rarely touched. |
+| **roi** | Refactoring ROI | Prioritize refactoring targets that offer the highest technical return. |
 
 ### Scoring transparency & customization
 
@@ -61,7 +62,7 @@ The `timeseries` subcommand tracks how hotspot scores change over time for a spe
 | Flags | Description |
 |-------|-------------|
 | `--path` | The file or folder path to analyze (required). |
-| `--mode` | Scoring mode (hot, risk, complexity, stale; default: hot). |
+| `--mode` | Scoring mode (hot, risk, complexity, stale, roi; default: hot). |
 | `--interval` | Total time window (e.g., `6 months`, `1 year`). |
 | `--points` | Number of data points to generate (default: 3). |
 
@@ -82,7 +83,7 @@ The `check` command allows you to enforce risk thresholds in CI/CD pipelines, fa
 | `--base-ref` | The BEFORE Git reference (e.g., `main`, `v1.0.0`, a commit hash). |
 | `--target-ref` | The AFTER Git reference (defaults to `HEAD`). |
 | `--lookback` | Time window (e.g. `6 months`) used for base and target. |
-| `--thresholds-override` | Custom risk thresholds per scoring mode (format: `hot:50,risk:50,complexity:50,stale:50`). |
+| `--thresholds-override` | Custom risk thresholds per scoring mode (format: `hot:50,risk:50,complexity:50,stale:50,roi:50`). |
 
 The [example CI config](./examples/hotspot.ci.yml) shows how custom thresholds can be configured for each scoring mode and is useful for maintaining code quality standards specific to your team.
 

@@ -44,6 +44,14 @@ If you use Hotspot to ask "Why did you write such complex code?" or "Why are you
     - **Complexity Check**: Run `hotspot files --mode complexity` on the same path. If both are high, the file is likely a "God Object" that needs splitting.
     - **Cool-down Period**: If the churn is driven by bug-fix loops, pause feature work to stabilize the architecture.
 
+### Area 5: High ROI Score (The "Refactoring Goldmine")
+
+**The Signal**: High maintenance burden on complex files where investment will yield the most impact.
+- **Supportive Action**:
+    - **Strategic Planning**: Use the `describe` output (`--output describe`) to generate an executive summary for stakeholders to justify refactoring time.
+    - **ROI Target**: Focus on these files first to get the most "bang for your buck" in terms of improved development velocity.
+    - **Impact Audit**: After refactoring, run `hotspot compare` in ROI mode to quantify the technical return on investment.
+
 ## Closing the Loop: Measuring Success
 
 Data is only useful if it shows progress. Use these commands to quantify your impact:

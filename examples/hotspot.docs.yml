@@ -25,12 +25,12 @@
 # precision: 1
 
 # mode: The scoring method to use.
-# Valid values: hot, risk, complexity, stale
+# Valid values: hot, risk, complexity, stale, roi
 # Corresponds to: --mode
 # mode: hot
 
 # output: The format for the final result table.
-# Valid values: text, csv, json
+# Valid values: text, csv, json, parquet, markdown, describe
 # Corresponds to: --output
 # output: text
 
@@ -131,6 +131,11 @@
 #     contrib: 0.05
 #     inv_recent: 0.35
 #     size: 0.25
+#   roi:
+#     churn: 0.35
+#     loc: 0.25
+#     gini: 0.25
+#     age: 0.15
 
 
 # --- Comparison Settings (Applicable only to 'hotspot compare' commands) ---
@@ -197,3 +202,4 @@
 #   risk: 55.0        # Knowledge risk/bus factor threshold
 #   complexity: 70.0  # Technical debt threshold
 #   stale: 65.0       # Maintenance debt threshold
+#   roi: 60.0         # Refactoring ROI threshold
