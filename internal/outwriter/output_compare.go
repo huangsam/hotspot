@@ -22,10 +22,6 @@ func WriteComparisonResults(w io.Writer, comparisonResult schema.ComparisonResul
 
 	// Dispatcher: Handle different output formats
 	switch output.GetFormat() {
-	case schema.JSONOut:
-		if err := writeJSONResultsForComparison(w, comparisonResult); err != nil {
-			return fmt.Errorf("error writing JSON output: %w", err)
-		}
 	case schema.CSVOut:
 		csvWriter := csv.NewWriter(w)
 		defer csvWriter.Flush()
@@ -134,11 +130,6 @@ func writeComparisonTable(comparisonResult schema.ComparisonResult, output confi
 		return err
 	}
 	return nil
-}
-
-// writeJSONResultsForComparison marshals the schema.ComparisonResult to JSON and writes it.
-func writeJSONResultsForComparison(w io.Writer, comparisonResult schema.ComparisonResult) error {
-	return writeJSON(w, comparisonResult)
 }
 
 // writeCSVResultsForComparison writes the schema.ComparisonResult data to a CSV writer.

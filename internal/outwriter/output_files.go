@@ -22,10 +22,6 @@ func WriteFileResults(w io.Writer, files []schema.FileResult, output config.Outp
 
 	// Dispatcher: Handle different output formats
 	switch output.GetFormat() {
-	case schema.JSONOut:
-		if err := writeJSONResultsForFiles(w, files); err != nil {
-			return fmt.Errorf("error writing JSON output: %w", err)
-		}
 	case schema.CSVOut:
 		csvWriter := csv.NewWriter(w)
 		defer csvWriter.Flush()
@@ -167,10 +163,4 @@ func writeCSVResultsForFiles(w *csv.Writer, files []schema.FileResult, fmtFloat 
 		}
 	}
 	return nil
-}
-
-// writeJSONResultsForFiles writes the analysis results in JSON format.
-func writeJSONResultsForFiles(w io.Writer, files []schema.FileResult) error {
-	// Use the shared enrichment logic and generic JSON writer
-	return writeJSON(w, schema.EnrichFiles(files))
 }

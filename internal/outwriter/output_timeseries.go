@@ -20,10 +20,6 @@ func WriteTimeseriesResults(w io.Writer, result schema.TimeseriesResult, output 
 
 	// Dispatcher: Handle different output formats
 	switch output.GetFormat() {
-	case schema.JSONOut:
-		if err := writeJSONResultsForTimeseries(w, result); err != nil {
-			return fmt.Errorf("error writing JSON output: %w", err)
-		}
 	case schema.CSVOut:
 		csvWriter := csv.NewWriter(w)
 		defer csvWriter.Flush()
@@ -82,11 +78,6 @@ func writeTimeseriesTable(result schema.TimeseriesResult, output config.OutputSe
 		return err
 	}
 	return nil
-}
-
-// writeJSONResultsForTimeseries marshals the schema.TimeseriesResult to JSON and writes it.
-func writeJSONResultsForTimeseries(w io.Writer, result schema.TimeseriesResult) error {
-	return writeJSON(w, result)
 }
 
 // writeCSVResultsForTimeseries writes the schema.TimeseriesResult data to a CSV writer.

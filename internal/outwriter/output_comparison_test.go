@@ -3,7 +3,6 @@ package outwriter
 import (
 	"bytes"
 	"encoding/csv"
-	"encoding/json"
 	"strings"
 	"testing"
 	"time"
@@ -91,75 +90,6 @@ func TestWriteComparisonResultsTable(t *testing.T) {
 	assert.Contains(t, output, "Ownership changes: 1")
 }
 
-func TestWriteComparisonResultsJSON(t *testing.T) {
-	comparison := schema.ComparisonResult{
-		Details: []schema.ComparisonDetail{
-			{
-				Path:         "test.go",
-				BeforeScore:  50.0,
-				AfterScore:   60.0,
-				Delta:        10.0,
-				DeltaCommits: 3,
-				DeltaChurn:   50,
-				Status:       schema.ActiveStatus,
-				BeforeOwners: []string{"Alice"},
-				AfterOwners:  []string{"Alice"},
-				Mode:         schema.RiskMode,
-			},
-		},
-		Summary: schema.ComparisonSummary{
-			NetScoreDelta:         10.0,
-			NetChurnDelta:         50,
-			TotalNewFiles:         0,
-			TotalInactiveFiles:    0,
-			TotalModifiedFiles:    1,
-			TotalOwnershipChanges: 0,
-		},
-	}
-
-	cfg := &config.Config{
-		Output: config.OutputConfig{
-			Format:    schema.JSONOut,
-			Precision: 2,
-		},
-	}
-
-	var buf bytes.Buffer
-	duration := 50 * time.Millisecond
-	err := WriteComparisonResults(&buf, comparison, cfg.Output, cfg.Runtime, duration)
-	require.NoError(t, err)
-
-	var result map[string]any
-	err = json.Unmarshal(buf.Bytes(), &result)
-	require.NoError(t, err)
-
-	assert.Contains(t, result, "details")
-	assert.Contains(t, result, "summary")
-
-	details := result["details"].([]any)
-	require.Len(t, details, 1)
-
-	detail := details[0].(map[string]any)
-	assert.Equal(t, "test.go", detail["path"])
-	assert.Equal(t, 50.0, detail["before_score"])
-	assert.Equal(t, 60.0, detail["after_score"])
-	assert.Equal(t, 10.0, detail["delta"])
-	assert.Equal(t, float64(3), detail["delta_commits"])
-	assert.Equal(t, float64(50), detail["delta_churn"])
-	assert.Equal(t, "active", detail["status"])
-	assert.Equal(t, []any{"Alice"}, detail["before_owners"])
-	assert.Equal(t, []any{"Alice"}, detail["after_owners"])
-	assert.Equal(t, "risk", detail["mode"])
-
-	summary := result["summary"].(map[string]any)
-	assert.Equal(t, 10.0, summary["net_score_delta"])
-	assert.Equal(t, float64(50), summary["net_churn_delta"])
-	assert.Equal(t, float64(0), summary["total_new_files"])
-	assert.Equal(t, float64(0), summary["total_inactive_files"])
-	assert.Equal(t, float64(1), summary["total_modified_files"])
-	assert.Equal(t, float64(0), summary["total_ownership_changes"])
-}
-
 func TestWriteComparisonResultsCSV(t *testing.T) {
 	comparison := schema.ComparisonResult{
 		Details: []schema.ComparisonDetail{
@@ -218,44 +148,6 @@ func TestWriteComparisonResultsCSV(t *testing.T) {
 	assert.Contains(t, lines[1], "25")
 	assert.Contains(t, lines[1], ",Bob,")
 	assert.Contains(t, lines[1], "complexity")
-}
-
-func TestWriteJSONResultsForComparison(t *testing.T) {
-	comparison := schema.ComparisonResult{
-		Details: []schema.ComparisonDetail{
-			{
-				Path:         "main.go",
-				BeforeScore:  70.0,
-				AfterScore:   80.0,
-				Delta:        10.0,
-				DeltaCommits: 5,
-				DeltaChurn:   100,
-				Status:       schema.ActiveStatus,
-				BeforeOwners: []string{"Alice"},
-				AfterOwners:  []string{"Alice", "Bob"},
-				Mode:         schema.HotMode,
-			},
-		},
-		Summary: schema.ComparisonSummary{
-			NetScoreDelta:         10.0,
-			NetChurnDelta:         100,
-			TotalNewFiles:         0,
-			TotalInactiveFiles:    0,
-			TotalModifiedFiles:    1,
-			TotalOwnershipChanges: 1,
-		},
-	}
-
-	var buf bytes.Buffer
-	err := writeJSONResultsForComparison(&buf, comparison)
-	require.NoError(t, err)
-
-	var result map[string]any
-	err = json.Unmarshal(buf.Bytes(), &result)
-	require.NoError(t, err)
-
-	assert.Contains(t, result, "details")
-	assert.Contains(t, result, "summary")
 }
 
 func TestWriteCSVResultsForComparison(t *testing.T) {

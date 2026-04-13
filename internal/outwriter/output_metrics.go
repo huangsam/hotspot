@@ -17,8 +17,6 @@ func WriteMetricsDefinitions(w io.Writer, activeWeights map[schema.ScoringMode]m
 	renderModel := buildMetricsRenderModel(activeWeights)
 
 	switch output.GetFormat() {
-	case schema.JSONOut:
-		return writeJSONMetrics(w, renderModel)
 	case schema.CSVOut:
 		csvWriter := csv.NewWriter(w)
 		defer csvWriter.Flush()
@@ -60,11 +58,6 @@ func writeMetricsText(w io.Writer, renderModel *schema.MetricsRenderModel, _ con
 	}
 
 	return nil
-}
-
-// writeJSONMetrics writes the metrics definitions in JSON format.
-func writeJSONMetrics(w io.Writer, renderModel *schema.MetricsRenderModel) error {
-	return writeJSON(w, renderModel)
 }
 
 // writeCSVMetrics writes the metrics definitions in CSV format.

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
+	"github.com/huangsam/hotspot/internal/outwriter/json"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -23,17 +24,22 @@ type OutWriter struct {
 	providers map[schema.OutputMode]FormatProvider
 }
 
-// NewOutWriter creates a new instance of the output writer and registers the legacy provider.
+// NewOutWriter creates a new instance of the output writer and registers handlers.
 func NewOutWriter() *OutWriter {
 	ow := &OutWriter{
 		providers: make(map[schema.OutputMode]FormatProvider),
 	}
 
-	// For now, we register a single 'legacy' dispatcher for all modes.
-	// As we decompose into sub-packages, we will replace these with specific providers.
+	// Register specific providers
+	jsonProvider := json.NewProvider()
+	ow.providers[schema.JSONOut] = jsonProvider
+
+	// For other modes, register a legacy dispatcher as a bridge.
 	legacy := &legacyDispatcher{}
 	for mode := range schema.ValidOutputModes {
-		ow.providers[mode] = legacy
+		if _, exists := ow.providers[mode]; !exists {
+			ow.providers[mode] = legacy
+		}
 	}
 
 	return ow

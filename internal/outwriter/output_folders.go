@@ -21,10 +21,6 @@ func WriteFolderResults(w io.Writer, results []schema.FolderResult, output confi
 
 	// Dispatcher: Handle different output formats
 	switch output.GetFormat() {
-	case schema.JSONOut:
-		if err := writeJSONResultsForFolders(w, results); err != nil {
-			return fmt.Errorf("error writing JSON output: %w", err)
-		}
 	case schema.CSVOut:
 		csvWriter := csv.NewWriter(w)
 		defer csvWriter.Flush()
@@ -110,12 +106,6 @@ func writeFolderTable(results []schema.FolderResult, output config.OutputSetting
 		return err
 	}
 	return nil
-}
-
-// writeJSONResultsForFolders marshals the schema.FolderResults slice to JSON and writes it.
-func writeJSONResultsForFolders(w io.Writer, results []schema.FolderResult) error {
-	// Use the shared enrichment logic and generic JSON writer
-	return writeJSON(w, schema.EnrichFolders(results))
 }
 
 // writeCSVResultsForFolders writes the schema.FolderResults data to a CSV writer.

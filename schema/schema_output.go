@@ -1,5 +1,7 @@
 package schema
 
+import "time"
+
 // EnrichedFileResult adds presentation data to a FileResult.
 type EnrichedFileResult struct {
 	Rank  int    `json:"rank"`
@@ -53,4 +55,48 @@ func EnrichFolders(folders []FolderResult) []EnrichedFolderResult {
 		}
 	}
 	return output
+}
+
+// Metadata contains runtime information about the analysis.
+type Metadata struct {
+	AnalysisDuration time.Duration `json:"analysis_duration_ns"`
+	AnalysisTime     string        `json:"analysis_duration"`
+	Workers          int           `json:"workers"`
+	CacheBackend     string        `json:"cache_backend"`
+	Timestamp        time.Time     `json:"timestamp"`
+}
+
+// FileResultsOutput is the standard container for file analysis results.
+type FileResultsOutput struct {
+	Results  []EnrichedFileResult `json:"results"`
+	Metadata Metadata             `json:"metadata"`
+}
+
+// FolderResultsOutput is the standard container for folder analysis results.
+type FolderResultsOutput struct {
+	Results  []EnrichedFolderResult `json:"results"`
+	Metadata Metadata               `json:"metadata"`
+}
+
+// ComparisonResultsOutput is the standard container for comparison analysis results.
+type ComparisonResultsOutput struct {
+	Results  ComparisonResult `json:"results"`
+	Metadata Metadata         `json:"metadata"`
+}
+
+// RuntimeSettings matches the minimal interface needed for metadata building.
+type RuntimeSettings interface {
+	GetWorkers() int
+	GetCacheBackend() DatabaseBackend
+}
+
+// BuildMetadata constructs a standard metadata object from runtime and duration.
+func BuildMetadata(runtime RuntimeSettings, duration time.Duration) Metadata {
+	return Metadata{
+		AnalysisDuration: duration,
+		AnalysisTime:     duration.String(),
+		Workers:          runtime.GetWorkers(),
+		CacheBackend:     string(runtime.GetCacheBackend()),
+		Timestamp:        time.Now().UTC(),
+	}
 }

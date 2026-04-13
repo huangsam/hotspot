@@ -3,7 +3,6 @@ package outwriter
 import (
 	"bytes"
 	"encoding/csv"
-	"encoding/json"
 	"strings"
 	"testing"
 	"time"
@@ -65,46 +64,6 @@ func TestWriteFoldersResultsTable(t *testing.T) {
 	assert.Contains(t, output, "Analysis completed in 100ms")
 }
 
-func TestWriteFoldersResultsJSON(t *testing.T) {
-	folders := []schema.FolderResult{
-		{
-			Path:     "test/",
-			Score:    85.0,
-			Commits:  10,
-			Churn:    500,
-			TotalLOC: 2500,
-			Owners:   []string{"Alice"},
-			Mode:     schema.ComplexityMode,
-		},
-	}
-
-	cfg := &config.Config{
-		Output: config.OutputConfig{
-			Format:    schema.JSONOut,
-			Precision: 2,
-		},
-	}
-
-	var buf bytes.Buffer
-	duration := 50 * time.Millisecond
-	err := WriteFolderResults(&buf, folders, cfg.Output, cfg.Runtime, duration)
-	require.NoError(t, err)
-
-	var result []map[string]any
-	err = json.Unmarshal(buf.Bytes(), &result)
-	require.NoError(t, err)
-	require.Len(t, result, 1)
-
-	assert.Equal(t, "test/", result[0]["path"])
-	assert.Equal(t, 85.0, result[0]["score"])
-	assert.Equal(t, "Critical", result[0]["label"])
-	assert.Equal(t, float64(10), result[0]["commits"])
-	assert.Equal(t, float64(500), result[0]["churn"])
-	assert.Equal(t, float64(2500), result[0]["total_loc"])
-	assert.Equal(t, []any{"Alice"}, result[0]["owners"])
-	assert.Equal(t, "complexity", result[0]["mode"])
-}
-
 func TestWriteFoldersResultsCSV(t *testing.T) {
 	folders := []schema.FolderResult{
 		{
@@ -148,33 +107,6 @@ func TestWriteFoldersResultsCSV(t *testing.T) {
 	assert.Contains(t, lines[1], "2000")
 	assert.Contains(t, lines[1], "Bob|Charlie")
 	assert.Contains(t, lines[1], "stale")
-}
-
-func TestWriteJSONResultsForFolders(t *testing.T) {
-	folders := []schema.FolderResult{
-		{
-			Path:     "src/",
-			Score:    90.0,
-			Commits:  20,
-			Churn:    1000,
-			TotalLOC: 5000,
-			Owners:   []string{"Alice", "Bob"},
-			Mode:     schema.HotMode,
-		},
-	}
-
-	var buf bytes.Buffer
-	err := writeJSONResultsForFolders(&buf, folders)
-	require.NoError(t, err)
-
-	var result []map[string]any
-	err = json.Unmarshal(buf.Bytes(), &result)
-	require.NoError(t, err)
-	require.Len(t, result, 1)
-
-	assert.Equal(t, float64(1), result[0]["rank"])
-	assert.Equal(t, "src/", result[0]["path"])
-	assert.Equal(t, 90.0, result[0]["score"])
 }
 
 func TestWriteCSVResultsForFolders(t *testing.T) {

@@ -130,14 +130,18 @@ func TestFilesVerification(t *testing.T) {
 // Works with both basic and detailed output formats.
 func parseHotspotDetailOutput(output string) map[string]schema.FileResult {
 	var files []schema.FileResult
-	lines := strings.Split(output, "\n")
-	for i, line := range lines {
-		if strings.TrimSpace(line) == "[" { // Start of JSON array
-			jsonPart := strings.Join(lines[i:], "\n")
-			if json.Unmarshal([]byte(jsonPart), &files) == nil {
-				break
-			}
+	jsonPart := extractJSONFromOutput(output)
+
+	// Try parsing as the new structured output first
+	var structured schema.FileResultsOutput
+	if err := json.Unmarshal([]byte(jsonPart), &structured); err == nil && len(structured.Results) > 0 {
+		files = make([]schema.FileResult, len(structured.Results))
+		for i, r := range structured.Results {
+			files[i] = r.FileResult
 		}
+	} else {
+		// Fallback to old flat array format
+		_ = json.Unmarshal([]byte(jsonPart), &files)
 	}
 
 	fileDetails := make(map[string]schema.FileResult)
@@ -224,9 +228,11 @@ func TestCompareFilesVerification(t *testing.T) {
 
 	// Parse the comparison JSON output
 	jsonPart := extractJSONFromOutput(stdout.String())
-	var result schema.ComparisonResult
-	err = json.Unmarshal([]byte(jsonPart), &result)
+	var output schema.ComparisonResultsOutput
+	err = json.Unmarshal([]byte(jsonPart), &output)
 	require.NoError(t, err)
+
+	result := output.Results
 
 	// Verify basic structure
 	require.NotEmpty(t, result.Details, "should have comparison results")
@@ -288,9 +294,11 @@ func TestCompareFoldersVerification(t *testing.T) {
 
 	// Parse the comparison JSON output
 	jsonPart := extractJSONFromOutput(stdout.String())
-	var result schema.ComparisonResult
-	err = json.Unmarshal([]byte(jsonPart), &result)
+	var output schema.ComparisonResultsOutput
+	err = json.Unmarshal([]byte(jsonPart), &output)
 	require.NoError(t, err)
+
+	result := output.Results
 
 	// Verify basic structure
 	require.NotEmpty(t, result.Details, "should have comparison results")
@@ -324,14 +332,18 @@ func TestCompareFoldersVerification(t *testing.T) {
 // parseHotspotFolderOutput extracts folder details from hotspot JSON output.
 func parseHotspotFolderOutput(output string) map[string]schema.FolderResult {
 	var folders []schema.FolderResult
-	lines := strings.Split(output, "\n")
-	for i, line := range lines {
-		if strings.TrimSpace(line) == "[" { // Start of JSON array
-			jsonPart := strings.Join(lines[i:], "\n")
-			if json.Unmarshal([]byte(jsonPart), &folders) == nil {
-				break
-			}
+	jsonPart := extractJSONFromOutput(output)
+
+	// Try parsing as the new structured output first
+	var structured schema.FolderResultsOutput
+	if err := json.Unmarshal([]byte(jsonPart), &structured); err == nil && len(structured.Results) > 0 {
+		folders = make([]schema.FolderResult, len(structured.Results))
+		for i, r := range structured.Results {
+			folders[i] = r.FolderResult
 		}
+	} else {
+		// Fallback to old flat array format
+		_ = json.Unmarshal([]byte(jsonPart), &folders)
 	}
 
 	folderDetails := make(map[string]schema.FolderResult)
@@ -425,12 +437,14 @@ func TestTimeseriesVerification(t *testing.T) {
 		jsonOutput := extractJSONFromOutput(stdout.String())
 
 		// Parse JSON output
-		var result map[string][]map[string]any
-		err = json.Unmarshal([]byte(jsonOutput), &result)
+		var output struct {
+			Points   []map[string]any `json:"points"`
+			Metadata any              `json:"metadata"`
+		}
+		err = json.Unmarshal([]byte(jsonOutput), &output)
 		require.NoError(t, err)
 
-		points, ok := result["points"]
-		require.True(t, ok, "output should contain 'points' array")
+		points := output.Points
 		require.Len(t, points, 3, "should have 3 data points")
 
 		// Verify each point has required fields
@@ -468,12 +482,14 @@ func TestTimeseriesVerification(t *testing.T) {
 		jsonOutput := extractJSONFromOutput(stdout.String())
 
 		// Parse JSON output
-		var result map[string][]map[string]any
-		err = json.Unmarshal([]byte(jsonOutput), &result)
+		var output struct {
+			Points   []map[string]any `json:"points"`
+			Metadata any              `json:"metadata"`
+		}
+		err = json.Unmarshal([]byte(jsonOutput), &output)
 		require.NoError(t, err)
 
-		points, ok := result["points"]
-		require.True(t, ok, "output should contain 'points' array")
+		points := output.Points
 		require.Len(t, points, 3, "should have 3 data points")
 
 		// Verify each point

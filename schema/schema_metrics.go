@@ -1,5 +1,10 @@
 package schema
 
+import (
+	"fmt"
+	"strings"
+)
+
 // MetricsMode represents a scoring mode for display purposes.
 type MetricsMode struct {
 	Name       string             `json:"name"`
@@ -23,4 +28,115 @@ type MetricsModeWithData struct {
 	MetricsMode
 	Weights map[string]float64 `json:"weights"`
 	Formula string             `json:"formula"`
+}
+
+// BuildMetricsRenderModel constructs the complete render model with all processed data.
+func BuildMetricsRenderModel(activeWeights map[ScoringMode]map[BreakdownKey]float64) *MetricsRenderModel {
+	modes := []MetricsMode{
+		{
+			Name:       "hot",
+			Purpose:    "Activity hotspots - high recent activity & volatility",
+			Factors:    []string{"Commits", "Churn", "Contributors", "Age", "Size"},
+			FactorKeys: []string{string(BreakdownCommits), string(BreakdownChurn), string(BreakdownContrib), string(BreakdownAge), string(BreakdownSize)},
+		},
+		{
+			Name:       "risk",
+			Purpose:    "Knowledge risk/bus factor - concentrated ownership",
+			Factors:    []string{"InvContributors", "Gini", "Age", "Churn", "Commits", "LOC", "Size"},
+			FactorKeys: []string{string(BreakdownInvContrib), string(BreakdownGini), string(BreakdownAge), string(BreakdownChurn), string(BreakdownCommits), string(BreakdownLOC), string(BreakdownSize)},
+		},
+		{
+			Name:       "complexity",
+			Purpose:    "Technical debt - large, old files with high maintenance burden",
+			Factors:    []string{"Age", "Churn", "Commits", "LOC", "LowRecent", "Size"},
+			FactorKeys: []string{string(BreakdownAge), string(BreakdownChurn), string(BreakdownCommits), string(BreakdownLOC), string(BreakdownLowRecent), string(BreakdownSize)},
+		},
+		{
+			Name:       "stale",
+			Purpose:    "Maintenance debt - important files untouched recently",
+			Factors:    []string{"InvRecent", "Age", "Size", "Commits", "Contributors"},
+			FactorKeys: []string{string(BreakdownInvRecent), string(BreakdownAge), string(BreakdownSize), string(BreakdownCommits), string(BreakdownContrib)},
+		},
+		{
+			Name:       "roi",
+			Purpose:    "ROI - priority for refactoring effort based on technical impact",
+			Factors:    []string{"Churn", "LOC", "Gini", "Age"},
+			FactorKeys: []string{string(BreakdownChurn), string(BreakdownLOC), string(BreakdownGini), string(BreakdownAge)},
+		},
+	}
+	modesWithData := make([]MetricsModeWithData, len(modes))
+
+	for i, mode := range modes {
+		weights := GetDisplayWeightsForMode(ScoringMode(mode.Name), activeWeights)
+		formula := FormatWeights(weights, mode.FactorKeys)
+
+		modesWithData[i] = MetricsModeWithData{
+			MetricsMode: mode,
+			Weights:     weights,
+			Formula:     formula,
+		}
+	}
+
+	return &MetricsRenderModel{
+		Title:       "Hotspot Scoring Modes",
+		Description: "All scores = weighted sum of normalized factors",
+		Modes:       modesWithData,
+		SpecialRelationship: map[string]string{
+			"description": "RISK Score = HOT Score / Ownership Diversity Factor",
+			"note":        "(Factor ↓ when few contributors → RISK Score ↑)",
+		},
+	}
+}
+
+// GetDisplayNameForMode returns the display name for a given mode name.
+func GetDisplayNameForMode(modeName string) string {
+	switch modeName {
+	case "hot":
+		return "Hot"
+	case "risk":
+		return "Risk"
+	case "complexity":
+		return "Complexity"
+	case "stale":
+		return "Stale"
+	default:
+		return strings.ToUpper(modeName)
+	}
+}
+
+// GetDisplayWeightsForMode returns the weights to display for a given scoring mode.
+// Uses active weights if available, otherwise falls back to defaults.
+func GetDisplayWeightsForMode(mode ScoringMode, activeWeights map[ScoringMode]map[BreakdownKey]float64) map[string]float64 {
+	// Start with default weights
+	defaultWeights := GetDefaultWeights(mode)
+
+	// Convert BreakdownKey map to string map for backward compatibility
+	weights := make(map[string]float64)
+	for k, v := range defaultWeights {
+		weights[string(k)] = v
+	}
+
+	// Override with active weights if provided
+	if activeWeights != nil {
+		if modeWeights, ok := activeWeights[mode]; ok {
+			// Only override weights that are actually customized
+			for k, v := range modeWeights {
+				weights[string(k)] = v
+			}
+		}
+	}
+
+	return weights
+}
+
+// FormatWeights formats weights for display in formulas.
+func FormatWeights(weights map[string]float64, factorKeys []string) string {
+	var parts []string
+	for _, key := range factorKeys {
+		if weight, ok := weights[key]; ok && weight > 0 {
+			factorName := strings.ToLower(strings.TrimPrefix(key, "breakdown_"))
+			parts = append(parts, fmt.Sprintf("%.2f*%s", weight, factorName))
+		}
+	}
+	return strings.Join(parts, "+")
 }

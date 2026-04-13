@@ -3,7 +3,6 @@ package outwriter
 import (
 	"bytes"
 	"encoding/csv"
-	"encoding/json"
 	"io"
 	"os"
 	"path/filepath"
@@ -57,60 +56,6 @@ func TestCreateFormatters(t *testing.T) {
 			assert.Equal(t, "%d", intFmt)
 		})
 	}
-}
-
-func TestWriteJSON(t *testing.T) {
-	tests := []struct {
-		name     string
-		data     any
-		expected string
-	}{
-		{
-			name: "simple object",
-			data: map[string]any{
-				"name":  "test",
-				"value": 42,
-			},
-			expected: `{
-  "name": "test",
-  "value": 42
-}
-`,
-		},
-		{
-			name: "array",
-			data: []string{"a", "b", "c"},
-			expected: `[
-  "a",
-  "b",
-  "c"
-]
-`,
-		},
-		{
-			name:     "string",
-			data:     "hello",
-			expected: `"hello"` + "\n",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var buf bytes.Buffer
-			err := writeJSON(&buf, tt.data)
-			require.NoError(t, err)
-			assert.Equal(t, tt.expected, buf.String())
-		})
-	}
-}
-
-func TestWriteJSONError(t *testing.T) {
-	// Test with a value that can't be marshaled to JSON
-	invalidData := make(chan int)
-	var buf bytes.Buffer
-	err := writeJSON(&buf, invalidData)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to encode JSON")
 }
 
 func TestWriteCSVWithHeader(t *testing.T) {
@@ -230,35 +175,6 @@ func TestWriteWithOutputFileInvalidPath(t *testing.T) {
 	}, "Test message")
 
 	require.Error(t, err)
-}
-
-func TestWriteJSONIntegration(t *testing.T) {
-	// Test full integration: write JSON to file using helpers
-	tmpDir := t.TempDir()
-	tmpFile := filepath.Join(tmpDir, "test.json")
-
-	testData := map[string]any{
-		"name":  "integration test",
-		"count": 123,
-	}
-
-	cfg := &config.Config{Output: config.OutputConfig{OutputFile: tmpFile}}
-	err := WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
-		return writeJSON(w, testData)
-	}, "Wrote JSON")
-
-	require.NoError(t, err)
-
-	// Read and verify
-	content, err := os.ReadFile(tmpFile)
-	require.NoError(t, err)
-
-	var result map[string]any
-	err = json.Unmarshal(content, &result)
-	require.NoError(t, err)
-
-	assert.Equal(t, "integration test", result["name"])
-	assert.Equal(t, float64(123), result["count"]) // JSON numbers are float64
 }
 
 func TestWriteCSVIntegration(t *testing.T) {

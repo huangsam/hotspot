@@ -3,7 +3,6 @@ package outwriter
 import (
 	"bytes"
 	"encoding/csv"
-	"encoding/json"
 	"strings"
 	"testing"
 	"time"
@@ -75,52 +74,6 @@ func TestWriteTimeseriesResultsTable(t *testing.T) {
 	assert.Contains(t, output, "Timeseries analysis completed in 100ms")
 }
 
-func TestWriteTimeseriesResultsJSON(t *testing.T) {
-	result := schema.TimeseriesResult{
-		Points: []schema.TimeseriesPoint{
-			{
-				Path:   "test.go",
-				Period: "Current (30d)",
-				Start:  time.Date(2023, 11, 1, 0, 0, 0, 0, time.UTC),
-				End:    time.Date(2023, 12, 1, 0, 0, 0, 0, time.UTC),
-				Score:  75.0,
-				Owners: []string{"Bob"},
-				Mode:   schema.RiskMode,
-			},
-		},
-	}
-
-	cfg := &config.Config{
-		Output: config.OutputConfig{
-			Format:    schema.JSONOut,
-			Precision: 2,
-		},
-	}
-
-	var buf bytes.Buffer
-	duration := 50 * time.Millisecond
-	err := WriteTimeseriesResults(&buf, result, cfg.Output, cfg.Runtime, duration)
-	require.NoError(t, err)
-
-	var parsed map[string]any
-	err = json.Unmarshal(buf.Bytes(), &parsed)
-	require.NoError(t, err)
-
-	assert.Contains(t, parsed, "points")
-
-	points := parsed["points"].([]any)
-	require.Len(t, points, 1)
-
-	point := points[0].(map[string]any)
-	assert.Equal(t, "test.go", point["path"])
-	assert.Equal(t, "Current (30d)", point["period"])
-	assert.Equal(t, 75.0, point["score"])
-	assert.Equal(t, []any{"Bob"}, point["owners"])
-	assert.Equal(t, "risk", point["mode"])
-	assert.Contains(t, point, "start")
-	assert.Contains(t, point, "end")
-}
-
 func TestWriteTimeseriesResultsCSV(t *testing.T) {
 	result := schema.TimeseriesResult{
 		Points: []schema.TimeseriesPoint{
@@ -163,32 +116,6 @@ func TestWriteTimeseriesResultsCSV(t *testing.T) {
 	assert.Contains(t, lines[1], "65.25")
 	assert.Contains(t, lines[1], "Charlie|Alice")
 	assert.Contains(t, lines[1], "complexity")
-}
-
-func TestWriteJSONResultsForTimeseries(t *testing.T) {
-	result := schema.TimeseriesResult{
-		Points: []schema.TimeseriesPoint{
-			{
-				Path:   "main.go",
-				Period: "Current (30d)",
-				Start:  time.Date(2023, 11, 1, 0, 0, 0, 0, time.UTC),
-				End:    time.Date(2023, 12, 1, 0, 0, 0, 0, time.UTC),
-				Score:  85.5,
-				Owners: []string{"Alice"},
-				Mode:   schema.HotMode,
-			},
-		},
-	}
-
-	var buf bytes.Buffer
-	err := writeJSONResultsForTimeseries(&buf, result)
-	require.NoError(t, err)
-
-	var parsed map[string]any
-	err = json.Unmarshal(buf.Bytes(), &parsed)
-	require.NoError(t, err)
-
-	assert.Contains(t, parsed, "points")
 }
 
 func TestWriteCSVResultsForTimeseries(t *testing.T) {

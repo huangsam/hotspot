@@ -2,10 +2,8 @@ package outwriter
 
 import (
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"io"
-	"strings"
 )
 
 // truncatePath truncates a file path to a maximum width with ellipsis prefix.
@@ -16,16 +14,6 @@ func truncatePath(path string, maxWidth int) string {
 		return "..." + string(runes[len(runes)-maxWidth+3:])
 	}
 	return path
-}
-
-// writeJSON is a generic JSON encoder that handles indentation consistently.
-func writeJSON(w io.Writer, data any) error {
-	encoder := json.NewEncoder(w)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(data); err != nil {
-		return fmt.Errorf("failed to encode JSON: %w", err)
-	}
-	return nil
 }
 
 // writeCSVWithHeader handles the common pattern of creating a CSV writer,
@@ -55,14 +43,4 @@ func createFormatters(precision int) (fmtFloat func(float64) string, intFmt stri
 	return fmtFloat, intFmt
 }
 
-// formatWeights formats weights for display in formulas.
-func formatWeights(weights map[string]float64, factorKeys []string) string {
-	var parts []string
-	for _, key := range factorKeys {
-		if weight, ok := weights[key]; ok && weight > 0 {
-			factorName := strings.ToLower(strings.TrimPrefix(key, "breakdown_"))
-			parts = append(parts, fmt.Sprintf("%.2f*%s", weight, factorName))
-		}
-	}
-	return strings.Join(parts, "+")
-}
+// formatWeights was moved to schema.FormatWeights
