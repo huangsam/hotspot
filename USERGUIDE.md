@@ -85,7 +85,7 @@ The `check` command allows you to enforce risk thresholds in CI/CD pipelines, fa
 | `--lookback` | Time window (e.g. `6 months`) used for base and target. |
 | `--thresholds-override` | Custom risk thresholds per scoring mode (format: `hot:50,risk:50,complexity:50,stale:50,roi:50`). |
 
-The [example CI config](./examples/hotspot.ci.yml) shows how custom thresholds can be configured for each scoring mode and is useful for maintaining code quality standards specific to your team.
+The [example CI config](./examples/cli/hotspot.ci.yml) shows how custom thresholds can be configured for each scoring mode and is useful for maintaining code quality standards specific to your team.
 
 ## Model Context Protocol (MCP) Server
 
@@ -130,15 +130,20 @@ The server exposes the following tools to the AI agent:
 
 For complex or repetitive commands, Hotspot can read all flags from a configuration file named **`.hotspot.yaml`** or **`.hotspot.yml`** placed in your repository root or home directory.
 
-This allows you to manage settings without long command-line strings. Flags always override file settings. We provide documented examples in the `examples/` directory to cover common use cases:
+This allows you to manage settings without long command-line strings. Flags always override file settings. We provide documented examples organized by use case in the `examples/` directory:
 
-1. [hotspot.large.yml](./examples/hotspot.large.yml): Optimized for large monorepos with many contributors and long histories
-2. [hotspot.small.yml](./examples/hotspot.small.yml): Lightweight setup for small tools, services, or single-purpose modules
-3. [hotspot.infra.yml](./examples/hotspot.infra.yml): Tuned for IaC repos (Ansible, Terraform, Helm) with risk/stale focus
-4. [hotspot.ci.yml](./examples/hotspot.ci.yml): Optimized settings for CI/CD policy enforcement
-5. [hotspot.docs.yml](./examples/hotspot.docs.yml): The canonical template listing every available setting
-6. [hotspot.weights.yml](./examples/hotspot.weights.yml): Advanced customization of scoring algorithm weights
-7. [hotspot.mcp.yml](./examples/hotspot.mcp.yml): Optimized settings for AI Agent (MCP) server
+**CLI Use Cases** (for repository analysis):
+- [hotspot.large.yml](./examples/cli/hotspot.large.yml): Optimized for large monorepos with many contributors and long histories
+- [hotspot.small.yml](./examples/cli/hotspot.small.yml): Lightweight setup for small tools, services, or single-purpose modules
+- [hotspot.infra.yml](./examples/cli/hotspot.infra.yml): Tuned for IaC repos (Ansible, Terraform, Helm) with risk/stale focus
+- [hotspot.ci.yml](./examples/cli/hotspot.ci.yml): Optimized settings for CI/CD policy enforcement
+
+**AI Agent / MCP**:
+- [hotspot.mcp.yml](./examples/mcp/hotspot.mcp.yml): Optimized settings for AI Agent (MCP) server
+
+**Reference & Advanced**:
+- [hotspot.docs.yml](./examples/reference/hotspot.docs.yml): The canonical template listing every available setting
+- [hotspot.weights.yml](./examples/reference/hotspot.weights.yml): Advanced customization of scoring algorithm weights
 
 ### Backend configuration
 

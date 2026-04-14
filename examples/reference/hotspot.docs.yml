@@ -102,7 +102,7 @@
 
 # --- Custom Scoring Weights (Advanced) ---
 # Override default scoring algo weights for fine-tuned analysis.
-# Each mode's weights must sum to 1.0. See examples/hotspot.weights.yml for details.
+# Each mode's weights must sum to 1.0. See examples/reference/hotspot.weights.yml for details.
 # weights:
 #   hot:
 #     age: 0.10
