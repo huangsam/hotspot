@@ -1,0 +1,46 @@
+# examples/hotspot.large.yml
+#
+# Configuration optimized for large monorepos (e.g., a single repo containing
+# multiple services, shared libraries, and platform tooling).
+#
+# Key concerns in a monorepo context:
+#   - Surface subsystems accumulating outsized churn across many contributors.
+#   - Detect ownership dilution and bus factor risk in platform-critical paths.
+#   - Prioritize ROI refactoring targets among a large backlog of technical debt.
+#   - Cope with long Git histories and high file-counts without excessive runtime.
+
+# --- Global Settings ---
+# limit: Show the top 30 results; monorepos have many competing hotspots.
+limit: 30
+# workers: Max out parallelism for fast traversal of a deep commit history.
+workers: 16
+# mode: 'roi' surfaces files where refactoring pays the most — ideal for planning
+#       sprint backlogs or quarterly debt-reduction initiatives in a monorepo.
+mode: roi
+# precision: Two decimal places to distinguish closely-scored files.
+precision: 2
+# start: Restrict to the past year; older history is usually pre-restructure noise.
+start: "1 year ago"
+
+# --- Output Settings ---
+# output: Markdown is convenient for pasting results into wiki pages or PRs.
+output: markdown
+# color: Keep color on for terminal readability; disable if piping to CI artifacts.
+color: yes
+
+# --- Command-Specific Settings ---
+# owner: Always print the primary owner — accountability matters at scale.
+owner: true
+# detail: Print LOC, size, and age metadata alongside scores.
+detail: true
+# explain: Show per-file component score breakdowns for triaging decisions.
+explain: false
+# follow: Enable --follow to track files through cross-service moves and renames.
+#         This is slower but more accurate for long-lived monorepo modules.
+follow: true
+
+# --- Exclusions ---
+# exclude: Skip generated code, vendored dependencies, and build artifacts.
+#          Includes standard patterns for Java (target, build), Go (vendor, pb.go),
+#          and Rust (target) to ensure metrics reflect real source code activity.
+exclude: "vendor/,*.pb.go,**/*.generated.go,dist/,node_modules/,**/*_mock.go,target/,build/,bin/,*.class,*.jar,**/generated-sources/,Cargo.lock"

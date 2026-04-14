@@ -130,13 +130,15 @@ The server exposes the following tools to the AI agent:
 
 For complex or repetitive commands, Hotspot can read all flags from a configuration file named **`.hotspot.yaml`** or **`.hotspot.yml`** placed in your repository root or home directory.
 
-This allows you to manage settings without long command-line strings. Flags always override file settings. We provide four documented examples in the `examples/` directory to cover common use cases:
+This allows you to manage settings without long command-line strings. Flags always override file settings. We provide documented examples in the `examples/` directory to cover common use cases:
 
-1. [hotspot.basic.yml](./examples/hotspot.basic.yml): Quick setup for local development
-2. [hotspot.ci.yml](./examples/hotspot.ci.yml): Optimized settings for CI/CD policy enforcement
-3. [hotspot.docs.yml](./examples/hotspot.docs.yml): The canonical template listing every available setting
-4. [hotspot.weights.yml](./examples/hotspot.weights.yml): Advanced customization of scoring algorithm weights
-5. [hotspot.mcp.yml](./examples/hotspot.mcp.yml): Optimized settings for AI Agent (MCP) server
+1. [hotspot.large.yml](./examples/hotspot.large.yml): Optimized for large monorepos with many contributors and long histories
+2. [hotspot.small.yml](./examples/hotspot.small.yml): Lightweight setup for small tools, services, or single-purpose modules
+3. [hotspot.infra.yml](./examples/hotspot.infra.yml): Tuned for IaC repos (Ansible, Terraform, Helm) with risk/stale focus
+4. [hotspot.ci.yml](./examples/hotspot.ci.yml): Optimized settings for CI/CD policy enforcement
+5. [hotspot.docs.yml](./examples/hotspot.docs.yml): The canonical template listing every available setting
+6. [hotspot.weights.yml](./examples/hotspot.weights.yml): Advanced customization of scoring algorithm weights
+7. [hotspot.mcp.yml](./examples/hotspot.mcp.yml): Optimized settings for AI Agent (MCP) server
 
 ### Backend configuration
 
