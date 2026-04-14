@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/outwriter/util"
+	"github.com/huangsam/hotspot/internal/outwriter/oututil"
 	"github.com/huangsam/hotspot/schema"
 )
 
-// Provider implements the util.FormatProvider interface for Markdown output.
+// Provider implements the oututil.FormatProvider interface for Markdown output.
 type Provider struct{}
 
 // NewProvider creates a new markdown provider.
@@ -23,7 +23,7 @@ func NewProvider() *Provider {
 
 // WriteFiles writes file analysis results in Markdown format.
 func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output config.OutputSettings, _ config.RuntimeSettings, duration time.Duration) error {
-	fmtFloat := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := oututil.CreateFormatters(output.GetPrecision())
 
 	if _, err := fmt.Fprintln(w, "## File Hotspots"); err != nil {
 		return err
@@ -76,7 +76,7 @@ func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output con
 
 // WriteFolders writes folder analysis results in Markdown format.
 func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, output config.OutputSettings, _ config.RuntimeSettings, duration time.Duration) error {
-	fmtFloat := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := oututil.CreateFormatters(output.GetPrecision())
 
 	if _, err := fmt.Fprintln(w, "## Folder Hotspots"); err != nil {
 		return err
@@ -126,7 +126,7 @@ func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, outp
 
 // WriteComparison writes comparison analysis results in Markdown format.
 func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
-	fmtFloat := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := oututil.CreateFormatters(output.GetPrecision())
 
 	if _, err := fmt.Fprintln(w, "## Comparison Results"); err != nil {
 		return err
@@ -159,7 +159,7 @@ func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult,
 			row = append(row, r.DeltaChurn.Display())
 		}
 		if output.IsOwner() {
-			row = append(row, util.FormatOwnershipDiff(r))
+			row = append(row, oututil.FormatOwnershipDiff(r))
 		}
 		p.writeMarkdownRow(w, row)
 	}
@@ -191,7 +191,7 @@ func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult,
 
 // WriteTimeseries writes timeseries analysis results in Markdown format.
 func (p *Provider) WriteTimeseries(w io.Writer, result schema.TimeseriesResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
-	fmtFloat := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := oututil.CreateFormatters(output.GetPrecision())
 
 	if _, err := fmt.Fprintln(w, "## Timeseries Analysis"); err != nil {
 		return err

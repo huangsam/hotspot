@@ -1,5 +1,5 @@
-// Package json provides a FormatProvider implementation for JSON output.
-package json
+// Package jsonwriter provides a FormatProvider implementation for JSON output.
+package jsonwriter
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// Provider implements util.FormatProvider for JSON output.
+// Provider implements oututil.FormatProvider for JSON output.
 type Provider struct{}
 
 // NewProvider creates a new JSON provider.

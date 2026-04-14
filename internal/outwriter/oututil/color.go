@@ -1,5 +1,5 @@
-// Package util provides cross-provider formatting and rendering utilities.
-package util
+// Package oututil provides cross-provider formatting and rendering utilities.
+package oututil
 
 import (
 	"github.com/fatih/color"

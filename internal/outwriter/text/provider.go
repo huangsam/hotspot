@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/outwriter/util"
+	"github.com/huangsam/hotspot/internal/outwriter/oututil"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
 )
 
-// Provider implements the util.FormatProvider interface for human-readable text output.
+// Provider implements the oututil.FormatProvider interface for human-readable text output.
 type Provider struct{}
 
 // NewProvider creates a new text provider.
@@ -25,7 +25,7 @@ func NewProvider() *Provider {
 
 // WriteFiles writes file analysis results in a human-readable table.
 func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
-	fmtFloat := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := oututil.CreateFormatters(output.GetPrecision())
 	table := tablewriter.NewWriter(w)
 	defer func() { _ = table.Close() }()
 
@@ -49,11 +49,11 @@ func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output con
 	for i, f := range files {
 		label := schema.GetPlainLabel(f.ModeScore)
 		if output.IsUseColors() {
-			label = util.GetColorLabel(f.ModeScore)
+			label = oututil.GetColorLabel(f.ModeScore)
 		}
 		row := []string{
 			strconv.Itoa(i + 1), // Rank
-			util.TruncatePath(f.Path, util.GetMaxTablePathWidth(output)), // File
+			oututil.TruncatePath(f.Path, oututil.GetMaxTablePathWidth(output)), // File
 			fmtFloat(f.ModeScore), // Score
 			label,                 // Label
 		}
@@ -69,7 +69,7 @@ func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output con
 			)
 		}
 		if output.IsExplain() {
-			topOnes := util.FormatTopMetricBreakdown(&f)
+			topOnes := oututil.FormatTopMetricBreakdown(&f)
 			row = append(row, topOnes)
 		}
 		if output.IsOwner() {
@@ -103,7 +103,7 @@ func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output con
 
 // WriteFolders writes folder analysis results in a human-readable table.
 func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
-	fmtFloat := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := oututil.CreateFormatters(output.GetPrecision())
 	table := tablewriter.NewWriter(w)
 	defer func() { _ = table.Close() }()
 
@@ -124,11 +124,11 @@ func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, outp
 	for i, r := range results {
 		label := schema.GetPlainLabel(r.Score)
 		if output.IsUseColors() {
-			label = util.GetColorLabel(r.Score)
+			label = oututil.GetColorLabel(r.Score)
 		}
 		row := []string{
 			strconv.Itoa(i + 1), // Rank
-			util.TruncatePath(r.Path, util.GetMaxTablePathWidth(output)), // Folder Path
+			oututil.TruncatePath(r.Path, oututil.GetMaxTablePathWidth(output)), // Folder Path
 			fmtFloat(r.Score), // Score
 			label,             // Label
 		}
@@ -172,7 +172,7 @@ func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, outp
 
 // WriteComparison writes comparison analysis results in a human-readable table.
 func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
-	fmtFloat := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := oututil.CreateFormatters(output.GetPrecision())
 	table := tablewriter.NewWriter(w)
 	defer func() { _ = table.Close() }()
 
@@ -191,11 +191,11 @@ func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult,
 
 	var data [][]string
 	for i, r := range results.Details {
-		deltaStr := util.FormatComparisonDelta(r.Delta, output.GetPrecision(), output.IsUseColors())
+		deltaStr := oututil.FormatComparisonDelta(r.Delta, output.GetPrecision(), output.IsUseColors())
 
 		row := []string{
 			strconv.Itoa(i + 1), // Rank
-			util.TruncatePath(r.Path, util.GetMaxTablePathWidth(output)), // File Path
+			oututil.TruncatePath(r.Path, oututil.GetMaxTablePathWidth(output)), // File Path
 			fmtFloat(r.BeforeScore), // Base Score
 			fmtFloat(r.AfterScore),  // Comparison Score
 			deltaStr,                // Delta Score
@@ -205,7 +205,7 @@ func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult,
 			row = append(row, r.DeltaChurn.Display())
 		}
 		if output.IsOwner() {
-			row = append(row, util.FormatOwnershipDiff(r))
+			row = append(row, oututil.FormatOwnershipDiff(r))
 		}
 		data = append(data, row)
 	}
@@ -235,7 +235,7 @@ func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult,
 
 // WriteTimeseries writes timeseries analysis results in a human-readable table.
 func (p *Provider) WriteTimeseries(w io.Writer, result schema.TimeseriesResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
-	fmtFloat := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := oututil.CreateFormatters(output.GetPrecision())
 	table := tablewriter.NewWriter(w)
 	defer func() { _ = table.Close() }()
 
@@ -254,7 +254,7 @@ func (p *Provider) WriteTimeseries(w io.Writer, result schema.TimeseriesResult, 
 		}
 		row := []string{
 			strconv.Itoa(i + 1),
-			util.TruncatePath(pt.Path, util.GetMaxTablePathWidth(output)),
+			oututil.TruncatePath(pt.Path, oututil.GetMaxTablePathWidth(output)),
 			pt.Period,
 			fmtFloat(pt.Score),
 			string(pt.Mode),
@@ -294,7 +294,7 @@ func (p *Provider) WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMod
 	}
 
 	for _, m := range renderModel.Modes {
-		if _, err := fmt.Fprintf(w, "%s: %s\n", util.GetDisplayNameForMode(m.Name), m.Purpose); err != nil {
+		if _, err := fmt.Fprintf(w, "%s: %s\n", oututil.GetDisplayNameForMode(m.Name), m.Purpose); err != nil {
 			return err
 		}
 		factors := strings.Join(m.Factors, ", ")

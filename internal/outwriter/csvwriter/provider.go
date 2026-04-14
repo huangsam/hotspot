@@ -1,5 +1,5 @@
-// Package csv provides a FormatProvider implementation for CSV output.
-package csv
+// Package csvwriter provides a FormatProvider implementation for CSV output.
+package csvwriter
 
 import (
 	"encoding/csv"
@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/outwriter/util"
+	"github.com/huangsam/hotspot/internal/outwriter/oututil"
 	"github.com/huangsam/hotspot/schema"
 )
 
-// Provider implements the util.FormatProvider interface for CSV output.
+// Provider implements the oututil.FormatProvider interface for CSV output.
 type Provider struct{}
 
 // NewProvider creates a new CSV provider.
@@ -23,7 +23,7 @@ func NewProvider() *Provider {
 
 // WriteFiles writes file analysis results in CSV format.
 func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
-	fmtFloat := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := oututil.CreateFormatters(output.GetPrecision())
 	header := []string{
 		"rank",
 		"file",
@@ -41,7 +41,7 @@ func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output con
 		"mode",
 	}
 
-	return util.WriteCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {
+	return oututil.WriteCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {
 		for i, f := range files {
 			rec := []string{
 				strconv.Itoa(i + 1),                         // Rank
@@ -69,7 +69,7 @@ func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output con
 
 // WriteFolders writes folder analysis results in CSV format.
 func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
-	fmtFloat := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := oututil.CreateFormatters(output.GetPrecision())
 	header := []string{
 		"rank",
 		"folder",
@@ -82,7 +82,7 @@ func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, outp
 		"mode",
 	}
 
-	return util.WriteCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {
+	return oututil.WriteCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {
 		for i, r := range results {
 			row := []string{
 				strconv.Itoa(i + 1),           // Rank
@@ -105,7 +105,7 @@ func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, outp
 
 // WriteComparison writes comparison analysis results in CSV format.
 func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
-	fmtFloat := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := oututil.CreateFormatters(output.GetPrecision())
 	header := []string{
 		"rank",
 		"path",
@@ -119,7 +119,7 @@ func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult,
 		"mode",
 	}
 
-	return util.WriteCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {
+	return oututil.WriteCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {
 		for i, r := range results.Details {
 			row := []string{
 				strconv.Itoa(i + 1),               // Rank
@@ -143,7 +143,7 @@ func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult,
 
 // WriteTimeseries writes timeseries analysis results in CSV format.
 func (p *Provider) WriteTimeseries(w io.Writer, result schema.TimeseriesResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
-	fmtFloat := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := oututil.CreateFormatters(output.GetPrecision())
 	header := []string{
 		"path",
 		"period",
@@ -155,7 +155,7 @@ func (p *Provider) WriteTimeseries(w io.Writer, result schema.TimeseriesResult, 
 		"end",
 	}
 
-	return util.WriteCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {
+	return oututil.WriteCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {
 		for _, point := range result.Points {
 			row := []string{
 				point.Path,                                // Path
@@ -185,7 +185,7 @@ func (p *Provider) WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMod
 		"Formula",
 	}
 
-	return util.WriteCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {
+	return oututil.WriteCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {
 		for _, m := range renderModel.Modes {
 			row := []string{
 				m.Name,

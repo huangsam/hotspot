@@ -1,5 +1,5 @@
 // Package json_test contains unit tests for the JSON provider.
-package json
+package jsonwriter
 
 import (
 	"bytes"

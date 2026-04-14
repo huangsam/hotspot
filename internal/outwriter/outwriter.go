@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/outwriter/csv"
+	"github.com/huangsam/hotspot/internal/outwriter/csvwriter"
 	"github.com/huangsam/hotspot/internal/outwriter/describe"
-	"github.com/huangsam/hotspot/internal/outwriter/json"
+	"github.com/huangsam/hotspot/internal/outwriter/jsonwriter"
 	"github.com/huangsam/hotspot/internal/outwriter/markdown"
 	"github.com/huangsam/hotspot/internal/outwriter/parquet"
 	"github.com/huangsam/hotspot/internal/outwriter/text"
@@ -36,8 +36,8 @@ func NewOutWriter() *OutWriter {
 	}
 
 	// Register specific providers
-	ow.providers[schema.JSONOut] = json.NewProvider()
-	ow.providers[schema.CSVOut] = csv.NewProvider()
+	ow.providers[schema.JSONOut] = jsonwriter.NewProvider()
+	ow.providers[schema.CSVOut] = csvwriter.NewProvider()
 	ow.providers[schema.TextOut] = text.NewProvider()
 	ow.providers[schema.MarkdownOut] = markdown.NewProvider()
 	ow.providers[schema.Describe] = describe.NewProvider()

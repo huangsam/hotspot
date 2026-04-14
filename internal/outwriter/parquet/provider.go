@@ -11,7 +11,7 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// Provider implements the util.FormatProvider interface for Parquet output.
+// Provider implements the oututil.FormatProvider interface for Parquet output.
 type Provider struct{}
 
 // NewProvider creates a new Parquet provider.
