@@ -68,4 +68,9 @@ The `core` package implements five distinct scoring algorithms based on differen
 
 - **Enriched AI Signal (Reasoning)**: Analysis results (`FileResult`) include a `Reasoning` slice containing human-and-AI-readable justifications (e.g., "High Churn: Recent volatility...") to assist LLMs and human reviewers in interpreting complex score vectors without manual metric re-calculation.
 
+- **High-Precision Architecture (Metric Type)**: Hotspot has evolved from a discrete integer engine to a continuous signal architecture via the `schema.Metric` type (aliased to `float64`).
+  - **From Discrete to Continuous**: Traditional metrics (commits, churn) are now high-precision magnitudes. This eliminates "clipping" artifacts when applying decay or weights.
+  - **AI Signal Readiness**: LLMs and Agents perform more robust reasoning when presented with raw, continuous magnitudes rather than coarse-grained integers.
+  - **Multi-Source Ingestion (The Sponge)**: This architecture enables Hotspot to ingest and blend "fuzzy" signals from non-git sources (e.g., JIRA story points, Slack activity weights, or sentiment scores) into a unified scoring vector.
+
 - **Modular Output Provider Pattern**: Output formatting is decoupled from core analysis via the `outwriter.FormatProvider` interface, with specific formats like JSON, CSV, Text, Markdown, Parquet, and Describe implemented as standalone sub-packages under `internal/outwriter/`. Cross-provider logic such as coloring, table rendering, and metric models is consolidated in `internal/outwriter/util/` to prevent circular dependencies between the main registry and individual providers. The `internal/outwriter/outwriter.go` registry dispatches calls based on the configured `OutputMode`, and the `FormatProvider` interface should always be used when passing writers through the core orchestration layer.

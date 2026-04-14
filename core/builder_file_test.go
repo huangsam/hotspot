@@ -23,16 +23,16 @@ func TestFileResultBuilder_BasicChaining(t *testing.T) {
 
 	// Create a mock output with some basic data
 	output := &schema.AggregateOutput{
-		CommitMap: map[string]int{
-			"test.go": 10,
+		CommitMap: map[string]schema.Metric{
+			"test.go": schema.Metric(10),
 		},
-		ChurnMap: map[string]int{
-			"test.go": 100,
+		ChurnMap: map[string]schema.Metric{
+			"test.go": schema.Metric(100),
 		},
-		ContribMap: map[string]map[string]int{
+		ContribMap: map[string]map[string]schema.Metric{
 			"test.go": {
-				"alice": 5,
-				"bob":   5,
+				"alice": schema.Metric(5),
+				"bob":   schema.Metric(5),
 			},
 		},
 		FirstCommitMap: map[string]time.Time{
@@ -65,9 +65,9 @@ func TestFileResultBuilder_BasicChaining(t *testing.T) {
 	fileResult := builder.Build()
 	assert.Equal(t, "test.go", fileResult.Path)
 	assert.Equal(t, schema.HotMode, fileResult.Mode)
-	assert.Equal(t, 10, fileResult.Commits)
-	assert.Equal(t, 100, fileResult.Churn)
-	assert.Equal(t, 2, fileResult.UniqueContributors)
+	assert.Equal(t, schema.Metric(10), fileResult.Commits)
+	assert.Equal(t, schema.Metric(100), fileResult.Churn)
+	assert.Equal(t, schema.Metric(2), fileResult.UniqueContributors)
 	assert.NotNil(t, fileResult.AllScores)
 	assert.Contains(t, fileResult.AllScores, schema.HotMode)
 	assert.Contains(t, fileResult.AllScores, schema.RiskMode)
@@ -87,7 +87,7 @@ func TestFileResultBuilder_EmptyContribMap(t *testing.T) {
 	}
 
 	output := &schema.AggregateOutput{
-		ContribMap: map[string]map[string]int{}, // Empty contrib map
+		ContribMap: map[string]map[string]schema.Metric{}, // Empty contrib map
 	}
 
 	builder := NewFileMetricsBuilder(ctx, cfg.Git, cfg.Scoring, nil, "test.go", output)
@@ -96,7 +96,7 @@ func TestFileResultBuilder_EmptyContribMap(t *testing.T) {
 
 	fileResult := builder.Build()
 	assert.Empty(t, fileResult.Owners)
-	assert.Equal(t, 0, fileResult.UniqueContributors)
+	assert.Equal(t, schema.Metric(0), fileResult.UniqueContributors)
 }
 
 func TestFileResultBuilder_ZeroFirstCommit(t *testing.T) {
@@ -119,5 +119,5 @@ func TestFileResultBuilder_ZeroFirstCommit(t *testing.T) {
 	builder.FetchAllGitMetrics().CalculateDerivedMetrics()
 
 	fileResult := builder.Build()
-	assert.Equal(t, 0, fileResult.AgeDays)
+	assert.Equal(t, schema.Metric(0), fileResult.AgeDays)
 }

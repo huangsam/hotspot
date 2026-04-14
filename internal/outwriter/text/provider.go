@@ -25,7 +25,7 @@ func NewProvider() *Provider {
 
 // WriteFiles writes file analysis results in a human-readable table.
 func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
-	fmtFloat, intFmt := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := util.CreateFormatters(output.GetPrecision())
 	table := tablewriter.NewWriter(w)
 	defer func() { _ = table.Close() }()
 
@@ -60,12 +60,12 @@ func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output con
 		if output.IsDetail() {
 			row = append(
 				row,
-				fmt.Sprintf(intFmt, f.UniqueContributors), // Contrib
-				fmt.Sprintf(intFmt, f.Commits),            // Commits
-				fmt.Sprintf(intFmt, f.LinesOfCode),        // LOC
-				fmt.Sprintf(intFmt, f.Churn),              // Churn
-				fmt.Sprintf(intFmt, f.AgeDays),            // Age
-				fmtFloat(f.Gini),                          // Gini
+				f.UniqueContributors.Display(), // Contrib
+				f.Commits.Display(),            // Commits
+				f.LinesOfCode.Display(),        // LOC
+				f.Churn.Display(),              // Churn
+				f.AgeDays.Display(),            // Age
+				fmtFloat(f.Gini),               // Gini
 			)
 		}
 		if output.IsExplain() {
@@ -86,13 +86,13 @@ func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output con
 	}
 
 	numFiles := len(files)
-	totalCommits := 0
-	totalChurn := 0
+	var totalCommits schema.Metric
+	var totalChurn schema.Metric
 	for _, f := range files {
 		totalCommits += f.Commits
 		totalChurn += f.Churn
 	}
-	if _, err := fmt.Fprintf(w, "Showing top %d files (total commits: %d, total churn: %d)\n", numFiles, totalCommits, totalChurn); err != nil {
+	if _, err := fmt.Fprintf(w, "Showing top %d files (total commits: %s, total churn: %s)\n", numFiles, totalCommits.Display(), totalChurn.Display()); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintf(w, "Analysis completed in %v with %d workers. Cache backend: %s\n", duration, runtime.GetWorkers(), runtime.GetCacheBackend()); err != nil {
@@ -103,7 +103,7 @@ func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output con
 
 // WriteFolders writes folder analysis results in a human-readable table.
 func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
-	fmtFloat, intFmt := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := util.CreateFormatters(output.GetPrecision())
 	table := tablewriter.NewWriter(w)
 	defer func() { _ = table.Close() }()
 
@@ -134,9 +134,9 @@ func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, outp
 		}
 		if output.IsDetail() {
 			row = append(row,
-				fmt.Sprintf(intFmt, r.Commits),  // Total Commits
-				fmt.Sprintf(intFmt, r.Churn),    // Total Churn
-				fmt.Sprintf(intFmt, r.TotalLOC), // Total LOC
+				r.Commits.Display(),  // Total Commits
+				r.Churn.Display(),    // Total Churn
+				r.TotalLOC.Display(), // Total LOC
 			)
 		}
 		if output.IsOwner() {
@@ -153,15 +153,15 @@ func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, outp
 	}
 
 	numFolders := len(results)
-	totalCommits := 0
-	totalChurn := 0
-	totalLOC := 0
+	var totalCommits schema.Metric
+	var totalChurn schema.Metric
+	var totalLOC schema.Metric
 	for _, r := range results {
 		totalCommits += r.Commits
 		totalChurn += r.Churn
 		totalLOC += r.TotalLOC
 	}
-	if _, err := fmt.Fprintf(w, "Showing top %d folders (total commits: %d, total churn: %d, total LOC: %d)\n", numFolders, totalCommits, totalChurn, totalLOC); err != nil {
+	if _, err := fmt.Fprintf(w, "Showing top %d folders (total commits: %s, total churn: %s, total LOC: %s)\n", numFolders, totalCommits.Display(), totalChurn.Display(), totalLOC.Display()); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintf(w, "Analysis completed in %v with %d workers. Cache backend: %s\n", duration, runtime.GetWorkers(), runtime.GetCacheBackend()); err != nil {
@@ -172,7 +172,7 @@ func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, outp
 
 // WriteComparison writes comparison analysis results in a human-readable table.
 func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
-	fmtFloat, intFmt := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := util.CreateFormatters(output.GetPrecision())
 	table := tablewriter.NewWriter(w)
 	defer func() { _ = table.Close() }()
 
@@ -202,7 +202,7 @@ func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult,
 			string(r.Status),        // Status
 		}
 		if output.IsDetail() {
-			row = append(row, fmt.Sprintf(intFmt, r.DeltaChurn))
+			row = append(row, r.DeltaChurn.Display())
 		}
 		if output.IsOwner() {
 			row = append(row, util.FormatOwnershipDiff(r))
@@ -221,7 +221,7 @@ func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult,
 	if _, err := fmt.Fprintf(w, "Showing top %d changes\n", numItems); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(w, "Net score delta: %.*f, Net churn delta: %d\n", output.GetPrecision(), results.Summary.NetScoreDelta, results.Summary.NetChurnDelta); err != nil {
+	if _, err := fmt.Fprintf(w, "Net score delta: %.*f, Net churn delta: %s\n", output.GetPrecision(), results.Summary.NetScoreDelta, results.Summary.NetChurnDelta.Display()); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintf(w, "New files: %d, Inactive files: %d, Modified files: %d, Ownership changes: %d\n", results.Summary.TotalNewFiles, results.Summary.TotalInactiveFiles, results.Summary.TotalModifiedFiles, results.Summary.TotalOwnershipChanges); err != nil {
@@ -235,7 +235,7 @@ func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult,
 
 // WriteTimeseries writes timeseries analysis results in a human-readable table.
 func (p *Provider) WriteTimeseries(w io.Writer, result schema.TimeseriesResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
-	fmtFloat, _ := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := util.CreateFormatters(output.GetPrecision())
 	table := tablewriter.NewWriter(w)
 	defer func() { _ = table.Close() }()
 

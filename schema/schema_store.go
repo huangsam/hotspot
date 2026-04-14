@@ -4,37 +4,38 @@ import "time"
 
 // AggregateOutput is the aggregation of all things from the one-pass Git operation.
 type AggregateOutput struct {
-	CommitMap      map[string]int            // Maps file path to its commit count
-	ChurnMap       map[string]int            // Maps file path to its churn (lines added/deleted) count
-	ContribMap     map[string]map[string]int // Maps file path to an inner map of AuthorName:CommitCount
-	FirstCommitMap map[string]time.Time      // Maps file path to its first commit time in the analysis window
+	CommitMap      map[string]Metric            // Maps file path to its commit count
+	ChurnMap       map[string]Metric            // Maps file path to its churn (lines added/deleted) count
+	ContribMap     map[string]map[string]Metric // Maps file path to an inner map of AuthorName:CommitCount
+	FirstCommitMap map[string]time.Time         // Maps file path to its first commit time in the analysis window
 
 	// Decomposed Churn
-	LinesAddedMap   map[string]int
-	LinesDeletedMap map[string]int
+	LinesAddedMap   map[string]Metric
+	LinesDeletedMap map[string]Metric
 
 	// Recent Activity (Fixed window, e.g. 30 days)
-	RecentCommitMap       map[string]int
-	RecentChurnMap        map[string]int
-	RecentLinesAddedMap   map[string]int
-	RecentLinesDeletedMap map[string]int
-	RecentContribMap      map[string]map[string]int
+	RecentCommitMap       map[string]Metric
+	RecentChurnMap        map[string]Metric
+	RecentLinesAddedMap   map[string]Metric
+	RecentLinesDeletedMap map[string]Metric
+	RecentContribMap      map[string]map[string]Metric
 }
 
 // FileMetrics represents raw git metrics for a single file.
 type FileMetrics struct {
 	AnalysisTime           time.Time
-	TotalCommits           int
-	TotalChurn             int
-	LinesAdded             int
-	LinesDeleted           int
-	ContributorCount       int
-	RecentCommits          int
-	RecentChurn            int
-	RecentLinesAdded       int
-	RecentLinesDeleted     int
-	RecentContributorCount int
-	AgeDays                float64
+	TotalCommits           Metric
+	TotalChurn             Metric
+	LinesAdded             Metric
+	LinesDeleted           Metric
+	LinesOfCode            Metric
+	ContributorCount       Metric
+	RecentCommits          Metric
+	RecentChurn            Metric
+	RecentLinesAdded       Metric
+	RecentLinesDeleted     Metric
+	RecentContributorCount Metric
+	AgeDays                Metric
 	GiniCoefficient        float64
 	FileOwner              string
 }

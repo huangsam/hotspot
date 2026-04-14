@@ -60,17 +60,17 @@ func buildFileExistenceMap(currentFiles []string) map[string]bool {
 // initializeAggregateOutput creates the AggregateOutput and its internal maps.
 func initializeAggregateOutput() *schema.AggregateOutput {
 	return &schema.AggregateOutput{
-		CommitMap:             make(map[string]int),
-		ChurnMap:              make(map[string]int),
-		ContribMap:            make(map[string]map[string]int),
+		CommitMap:             make(map[string]schema.Metric),
+		ChurnMap:              make(map[string]schema.Metric),
+		ContribMap:            make(map[string]map[string]schema.Metric),
 		FirstCommitMap:        make(map[string]time.Time),
-		LinesAddedMap:         make(map[string]int),
-		LinesDeletedMap:       make(map[string]int),
-		RecentCommitMap:       make(map[string]int),
-		RecentChurnMap:        make(map[string]int),
-		RecentLinesAddedMap:   make(map[string]int),
-		RecentLinesDeletedMap: make(map[string]int),
-		RecentContribMap:      make(map[string]map[string]int),
+		LinesAddedMap:         make(map[string]schema.Metric),
+		LinesDeletedMap:       make(map[string]schema.Metric),
+		RecentCommitMap:       make(map[string]schema.Metric),
+		RecentChurnMap:        make(map[string]schema.Metric),
+		RecentLinesAddedMap:   make(map[string]schema.Metric),
+		RecentLinesDeletedMap: make(map[string]schema.Metric),
+		RecentContribMap:      make(map[string]map[string]schema.Metric),
 	}
 }
 
@@ -122,7 +122,7 @@ func parseCommitHeader(line string) (string, time.Time) {
 }
 
 // parseFileStatsLine parses a file stats line and returns paths to aggregate and churn values.
-func parseFileStatsLine(line string, fileExists map[string]bool) ([]string, int, int) {
+func parseFileStatsLine(line string, fileExists map[string]bool) ([]string, schema.Metric, schema.Metric) {
 	parts := strings.SplitN(line, "\t", 3)
 	if len(parts) < 3 {
 		return nil, 0, 0
@@ -137,13 +137,13 @@ func parseFileStatsLine(line string, fileExists map[string]bool) ([]string, int,
 	return pathsToAggregate, add, del
 }
 
-// parseChurnValue converts a churn string to int, handling "-" as 0.
-func parseChurnValue(s string) int {
+// parseChurnValue converts a churn string to Metric, handling "-" as 0.
+func parseChurnValue(s string) schema.Metric {
 	if s == "-" {
 		return 0
 	}
-	if val, err := strconv.Atoi(s); err == nil && val >= 0 {
-		return val
+	if val, err := strconv.ParseFloat(s, 64); err == nil && val >= 0 {
+		return schema.Metric(val)
 	}
 	return 0
 }
@@ -207,7 +207,7 @@ func parseRenamePath(path string) (string, string) {
 }
 
 // aggregateForPath updates the aggregation maps for a single path.
-func aggregateForPath(path string, add int, del int, author string, date time.Time, output *schema.AggregateOutput, recentThreshold time.Time) {
+func aggregateForPath(path string, add schema.Metric, del schema.Metric, author string, date time.Time, output *schema.AggregateOutput, recentThreshold time.Time) {
 	churn := add + del
 
 	// Base metrics
@@ -218,7 +218,7 @@ func aggregateForPath(path string, add int, del int, author string, date time.Ti
 
 	if author != "" {
 		if output.ContribMap[path] == nil {
-			output.ContribMap[path] = make(map[string]int)
+			output.ContribMap[path] = make(map[string]schema.Metric)
 		}
 		output.ContribMap[path][author]++
 	}
@@ -237,7 +237,7 @@ func aggregateForPath(path string, add int, del int, author string, date time.Ti
 		output.RecentLinesDeletedMap[path] += del
 		if author != "" {
 			if output.RecentContribMap[path] == nil {
-				output.RecentContribMap[path] = make(map[string]int)
+				output.RecentContribMap[path] = make(map[string]schema.Metric)
 			}
 			output.RecentContribMap[path][author]++
 		}
@@ -302,7 +302,7 @@ func AggregateAndScoreFolders(gitSettings config.GitSettings, scoringSettings co
 
 	// Map to track the aggregate commit count per author per folder:
 	// folderPath -> authorName -> totalCommitsByAuthorInFolder
-	folderAuthorContributions := make(map[string]map[string]int)
+	folderAuthorContributions := make(map[string]map[string]schema.Metric)
 
 	pathFilter := gitSettings.GetPathFilter()
 	scoringMode := scoringSettings.GetMode()
@@ -325,12 +325,12 @@ func AggregateAndScoreFolders(gitSettings config.GitSettings, scoringSettings co
 		folderResults[folderPath].Commits += fr.Commits
 		folderResults[folderPath].Churn += fr.Churn
 		folderResults[folderPath].TotalLOC += fr.LinesOfCode
-		folderResults[folderPath].WeightedScoreSum += fr.ModeScore * float64(fr.LinesOfCode)
+		folderResults[folderPath].WeightedScoreSum += fr.ModeScore * fr.LinesOfCode.Float64()
 
 		// 3. Aggregate author contributions for owner calculation
 		if len(fr.Owners) > 0 {
 			if folderAuthorContributions[folderPath] == nil {
-				folderAuthorContributions[folderPath] = make(map[string]int)
+				folderAuthorContributions[folderPath] = make(map[string]schema.Metric)
 			}
 
 			// Use the file's primary owner's total commits as the weight for its author's contribution
@@ -351,7 +351,7 @@ func AggregateAndScoreFolders(gitSettings config.GitSettings, scoringSettings co
 			// Sort authors by commit count descending
 			type authorCommits struct {
 				author  string
-				commits int
+				commits schema.Metric
 			}
 			var authors []authorCommits
 			for author, commits := range authorMap {
@@ -384,7 +384,7 @@ func computeFolderScore(folderResult *schema.FolderResult) float64 {
 		return 0.0
 	}
 	// Weighted Average Score = SUM(FileScore * FileLOC) / SUM(FileLOC)
-	score := folderResult.WeightedScoreSum / float64(folderResult.TotalLOC)
+	score := folderResult.WeightedScoreSum / folderResult.TotalLOC.Float64()
 
 	// Apply optional debuffs if needed, similar to CalculateFileScore
 	// For simplicity, we just return the raw weighted average here.

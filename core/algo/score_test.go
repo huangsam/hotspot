@@ -92,12 +92,12 @@ func TestComputeScoreAllModes(t *testing.T) {
 
 	metrics := schema.FileResult{
 		Path:               "test.go",
-		UniqueContributors: 5,
-		Commits:            50,
-		RecentCommits:      10,
+		UniqueContributors: schema.Metric(5),
+		Commits:            schema.Metric(50),
+		RecentCommits:      schema.Metric(10),
 		SizeBytes:          50 * 1024,
-		AgeDays:            365,
-		Churn:              250,
+		AgeDays:            schema.Metric(365),
+		Churn:              schema.Metric(250),
 		Gini:               0.3,
 		FirstCommit:        time.Now().AddDate(0, 0, -365),
 		Mode:               schema.HotMode,
@@ -186,14 +186,14 @@ func TestComputeScoreCustomWeightsAllModes(t *testing.T) {
 
 	metrics := schema.FileResult{
 		Path:               "test.go",
-		UniqueContributors: 5,
-		Commits:            50,
-		RecentCommits:      10,
+		UniqueContributors: schema.Metric(5),
+		Commits:            schema.Metric(50),
+		RecentCommits:      schema.Metric(10),
 		SizeBytes:          50 * 1024,
-		AgeDays:            365,
-		Churn:              250,
+		AgeDays:            schema.Metric(365),
+		Churn:              schema.Metric(250),
 		Gini:               0.3,
-		LinesOfCode:        500,
+		LinesOfCode:        schema.Metric(500),
 		Mode:               schema.HotMode,
 	}
 
@@ -318,34 +318,42 @@ func FuzzComputeScore(f *testing.F) {
 		},
 	}
 	for _, seed := range seeds {
-		f.Add(seed.result.Path, seed.result.SizeBytes, seed.result.LinesOfCode,
-			seed.result.Commits, seed.result.Churn, seed.result.AgeDays,
-			seed.result.UniqueContributors, seed.result.Gini, seed.result.RecentCommits,
-			string(seed.mode))
+		f.Add(
+			seed.result.Path,
+			seed.result.SizeBytes,
+			seed.result.LinesOfCode.Float64(),
+			seed.result.Commits.Float64(),
+			seed.result.Churn.Float64(),
+			seed.result.AgeDays.Float64(),
+			seed.result.UniqueContributors.Float64(),
+			seed.result.Gini,
+			seed.result.RecentCommits.Float64(),
+			string(seed.mode),
+		)
 	}
 
 	f.Fuzz(func(_ *testing.T,
 		path string,
 		sizeBytes int64,
-		linesOfCode int,
-		commits int,
-		churn int,
-		ageDays int,
-		uniqueContributors int,
+		linesOfCode float64,
+		commits float64,
+		churn float64,
+		ageDays float64,
+		uniqueContributors float64,
 		gini float64,
-		recentCommits int,
+		recentCommits float64,
 		mode string,
 	) {
 		result := schema.FileResult{
 			Path:               path,
 			SizeBytes:          sizeBytes,
-			LinesOfCode:        linesOfCode,
-			Commits:            commits,
-			Churn:              churn,
-			AgeDays:            ageDays,
-			UniqueContributors: uniqueContributors,
+			LinesOfCode:        schema.Metric(linesOfCode),
+			Commits:            schema.Metric(commits),
+			Churn:              schema.Metric(churn),
+			AgeDays:            schema.Metric(ageDays),
+			UniqueContributors: schema.Metric(uniqueContributors),
 			Gini:               gini,
-			RecentCommits:      recentCommits,
+			RecentCommits:      schema.Metric(recentCommits),
 			Mode:               schema.ScoringMode(mode),
 		}
 		_ = ComputeScore(&result, schema.ScoringMode(mode), getWeightsForMode(schema.ScoringMode(mode), nil))

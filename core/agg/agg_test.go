@@ -47,43 +47,43 @@ func TestAggregateActivity(t *testing.T) {
 	assert.NotNil(t, output)
 
 	// Verify commit counts (number of commits affecting each file)
-	assert.Equal(t, 1, output.CommitMap["AGENTS.md"])
-	assert.Equal(t, 2, output.CommitMap["integration/verification_test.go"])
-	assert.Equal(t, 2, output.CommitMap["core/core.go"])
-	assert.Equal(t, 2, output.CommitMap["internal/configs.go"])
-	assert.Equal(t, 1, output.CommitMap["internal/output_timeseries.go"])
-	assert.Equal(t, 1, output.CommitMap["internal/time.go"])
-	assert.Equal(t, 1, output.CommitMap["internal/time_fuzz_test.go"])
-	assert.Equal(t, 1, output.CommitMap["internal/time_test.go"])
-	assert.Equal(t, 1, output.CommitMap["internal/writer_timeseries.go"])
-	assert.Equal(t, 1, output.CommitMap["main.go"])
-	assert.Equal(t, 1, output.CommitMap["schema/schema.go"])
+	assert.Equal(t, schema.Metric(1), output.CommitMap["AGENTS.md"])
+	assert.Equal(t, schema.Metric(2), output.CommitMap["integration/verification_test.go"])
+	assert.Equal(t, schema.Metric(2), output.CommitMap["core/core.go"])
+	assert.Equal(t, schema.Metric(2), output.CommitMap["internal/configs.go"])
+	assert.Equal(t, schema.Metric(1), output.CommitMap["internal/output_timeseries.go"])
+	assert.Equal(t, schema.Metric(1), output.CommitMap["internal/time.go"])
+	assert.Equal(t, schema.Metric(1), output.CommitMap["internal/time_fuzz_test.go"])
+	assert.Equal(t, schema.Metric(1), output.CommitMap["internal/time_test.go"])
+	assert.Equal(t, schema.Metric(1), output.CommitMap["internal/writer_timeseries.go"])
+	assert.Equal(t, schema.Metric(1), output.CommitMap["main.go"])
+	assert.Equal(t, schema.Metric(1), output.CommitMap["schema/schema.go"])
 
 	// Verify contributor counts (all commits are by "Samuel Huang")
-	assert.Equal(t, map[string]int{"Samuel Huang": 1}, output.ContribMap["AGENTS.md"])
-	assert.Equal(t, map[string]int{"Samuel Huang": 2}, output.ContribMap["integration/verification_test.go"])
-	assert.Equal(t, map[string]int{"Samuel Huang": 2}, output.ContribMap["core/core.go"])
-	assert.Equal(t, map[string]int{"Samuel Huang": 2}, output.ContribMap["internal/configs.go"])
-	assert.Equal(t, map[string]int{"Samuel Huang": 1}, output.ContribMap["internal/output_timeseries.go"])
-	assert.Equal(t, map[string]int{"Samuel Huang": 1}, output.ContribMap["internal/time.go"])
-	assert.Equal(t, map[string]int{"Samuel Huang": 1}, output.ContribMap["internal/time_fuzz_test.go"])
-	assert.Equal(t, map[string]int{"Samuel Huang": 1}, output.ContribMap["internal/time_test.go"])
-	assert.Equal(t, map[string]int{"Samuel Huang": 1}, output.ContribMap["internal/writer_timeseries.go"])
-	assert.Equal(t, map[string]int{"Samuel Huang": 1}, output.ContribMap["main.go"])
-	assert.Equal(t, map[string]int{"Samuel Huang": 1}, output.ContribMap["schema/schema.go"])
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.ContribMap["AGENTS.md"])
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 2}, output.ContribMap["integration/verification_test.go"])
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 2}, output.ContribMap["core/core.go"])
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 2}, output.ContribMap["internal/configs.go"])
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.ContribMap["internal/output_timeseries.go"])
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.ContribMap["internal/time.go"])
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.ContribMap["internal/time_fuzz_test.go"])
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.ContribMap["internal/time_test.go"])
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.ContribMap["internal/writer_timeseries.go"])
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.ContribMap["main.go"])
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.ContribMap["schema/schema.go"])
 
 	// Verify churn counts (additions + deletions)
-	assert.Equal(t, 272, output.ChurnMap["AGENTS.md"])
-	assert.Equal(t, 125, output.ChurnMap["integration/verification_test.go"])
-	assert.Equal(t, 120, output.ChurnMap["core/core.go"])
-	assert.Equal(t, 31, output.ChurnMap["internal/configs.go"])
-	assert.Equal(t, 116, output.ChurnMap["internal/output_timeseries.go"])
-	assert.Equal(t, 4, output.ChurnMap["internal/time.go"])
-	assert.Equal(t, 2, output.ChurnMap["internal/time_fuzz_test.go"])
-	assert.Equal(t, 2, output.ChurnMap["internal/time_test.go"])
-	assert.Equal(t, 44, output.ChurnMap["internal/writer_timeseries.go"])
-	assert.Equal(t, 27, output.ChurnMap["main.go"])
-	assert.Equal(t, 13, output.ChurnMap["schema/schema.go"])
+	assert.Equal(t, schema.Metric(272), output.ChurnMap["AGENTS.md"])
+	assert.Equal(t, schema.Metric(125), output.ChurnMap["integration/verification_test.go"])
+	assert.Equal(t, schema.Metric(120), output.ChurnMap["core/core.go"])
+	assert.Equal(t, schema.Metric(31), output.ChurnMap["internal/configs.go"])
+	assert.Equal(t, schema.Metric(116), output.ChurnMap["internal/output_timeseries.go"])
+	assert.Equal(t, schema.Metric(4), output.ChurnMap["internal/time.go"])
+	assert.Equal(t, schema.Metric(2), output.ChurnMap["internal/time_fuzz_test.go"])
+	assert.Equal(t, schema.Metric(2), output.ChurnMap["internal/time_test.go"])
+	assert.Equal(t, schema.Metric(44), output.ChurnMap["internal/writer_timeseries.go"])
+	assert.Equal(t, schema.Metric(27), output.ChurnMap["main.go"])
+	assert.Equal(t, schema.Metric(13), output.ChurnMap["schema/schema.go"])
 
 	mockClient.AssertExpectations(t)
 }
@@ -91,21 +91,21 @@ func TestAggregateActivity(t *testing.T) {
 func TestBuildFilteredFileList(t *testing.T) {
 	// Create sample aggregate output
 	output := &schema.AggregateOutput{
-		CommitMap: map[string]int{
+		CommitMap: map[string]schema.Metric{
 			"main.go":          10,
 			"core/agg.go":      5,
 			"core/analysis.go": 8,
 			"test_main.go":     3,
 			"README.md":        2,
 		},
-		ChurnMap: map[string]int{
+		ChurnMap: map[string]schema.Metric{
 			"main.go":          50,
 			"core/agg.go":      25,
 			"core/analysis.go": 40,
 			"test_main.go":     15,
 			"README.md":        10,
 		},
-		ContribMap: map[string]map[string]int{
+		ContribMap: map[string]map[string]schema.Metric{
 			"main.go":          {"alice": 8, "bob": 2},
 			"core/agg.go":      {"alice": 3, "charlie": 2},
 			"core/analysis.go": {"bob": 5, "charlie": 3},
@@ -136,19 +136,19 @@ func TestBuildFilteredFileList(t *testing.T) {
 func TestBuildFilteredFileList_WithPathFilter(t *testing.T) {
 	// Create sample aggregate output
 	output := &schema.AggregateOutput{
-		CommitMap: map[string]int{
+		CommitMap: map[string]schema.Metric{
 			"main.go":          10,
 			"core/agg.go":      5,
 			"core/analysis.go": 8,
 			"schema/types.go":  3,
 		},
-		ChurnMap: map[string]int{
+		ChurnMap: map[string]schema.Metric{
 			"main.go":          50,
 			"core/agg.go":      25,
 			"core/analysis.go": 40,
 			"schema/types.go":  15,
 		},
-		ContribMap: map[string]map[string]int{
+		ContribMap: map[string]map[string]schema.Metric{
 			"main.go":          {"alice": 8, "bob": 2},
 			"core/agg.go":      {"alice": 3, "charlie": 2},
 			"core/analysis.go": {"bob": 5, "charlie": 3},
@@ -241,9 +241,9 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 
 		coreFolder := &folders[0]
 		assert.Equal(t, "core", coreFolder.Path)
-		assert.Equal(t, 33, coreFolder.Commits)   // 10 + 8 + 15
-		assert.Equal(t, 120, coreFolder.Churn)    // 50 + 40 + 30
-		assert.Equal(t, 230, coreFolder.TotalLOC) // 100 + 80 + 50
+		assert.Equal(t, schema.Metric(33), coreFolder.Commits)   // 10 + 8 + 15
+		assert.Equal(t, schema.Metric(120), coreFolder.Churn)    // 50 + 40 + 30
+		assert.Equal(t, schema.Metric(230), coreFolder.TotalLOC) // 100 + 80 + 50
 		// Score: (85.0*100 + 75.0*80 + 90.0*50) / (100+80+50) = (8500 + 6000 + 4500) / 230 = 19000/230 ≈ 82.61
 		assert.InEpsilon(t, 82.61, coreFolder.Score, 0.01)
 		assert.Equal(t, []string{"alice", "bob"}, coreFolder.Owners) // alice has most commits (10+15=25), then bob (8)
@@ -292,9 +292,9 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		folder := folders[0]
 
 		assert.Equal(t, "src", folder.Path)
-		assert.Equal(t, 18, folder.Commits)   // 5 + 10 + 3
-		assert.Equal(t, 70, folder.Churn)     // 25 + 30 + 15
-		assert.Equal(t, 150, folder.TotalLOC) // 50 + 60 + 40
+		assert.Equal(t, schema.Metric(18), folder.Commits)   // 5 + 10 + 3
+		assert.Equal(t, schema.Metric(70), folder.Churn)     // 25 + 30 + 15
+		assert.Equal(t, schema.Metric(150), folder.TotalLOC) // 50 + 60 + 40
 		// Score: (80.0*50 + 70.0*60 + 75.0*40) / 150 = (4000 + 4200 + 3000) / 150 = 11200/150 ≈ 74.67
 		assert.InEpsilon(t, 74.67, folder.Score, 0.01)
 		// Owners: bob has most commits (10), then alice (5+3=8)
@@ -345,9 +345,9 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		folder := folders[0]
 
 		assert.Equal(t, "utils", folder.Path)
-		assert.Equal(t, 7, folder.Commits)
-		assert.Equal(t, 20, folder.Churn)
-		assert.Equal(t, 30, folder.TotalLOC)
+		assert.Equal(t, schema.Metric(7), folder.Commits)
+		assert.Equal(t, schema.Metric(20), folder.Churn)
+		assert.Equal(t, schema.Metric(30), folder.TotalLOC)
 		assert.Equal(t, 65.0, folder.Score)
 		assert.Equal(t, []string{"charlie"}, folder.Owners)
 	})
@@ -387,9 +387,9 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		assert.Len(t, folders, 1)
 		rootFolder := folders[0]
 		assert.Equal(t, ".", rootFolder.Path)
-		assert.Equal(t, 14, rootFolder.Commits)   // 12 + 2
-		assert.Equal(t, 50, rootFolder.Churn)     // 45 + 5
-		assert.Equal(t, 100, rootFolder.TotalLOC) // 75 + 25
+		assert.Equal(t, schema.Metric(14), rootFolder.Commits)   // 12 + 2
+		assert.Equal(t, schema.Metric(50), rootFolder.Churn)     // 45 + 5
+		assert.Equal(t, schema.Metric(100), rootFolder.TotalLOC) // 75 + 25
 		// Score: (85.0*75 + 20.0*25) / 100 = (6375 + 500) / 100 = 6875/100 = 68.75
 		assert.InEpsilon(t, 68.75, rootFolder.Score, 0.01)
 		assert.Equal(t, []string{"alice", "bob"}, rootFolder.Owners) // alice has more commits (12 > 2)
@@ -430,9 +430,9 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		assert.Len(t, folders, 1)
 		rootFolder := folders[0]
 		assert.Equal(t, ".", rootFolder.Path)
-		assert.Equal(t, 20, rootFolder.Commits)   // 12 + 8
-		assert.Equal(t, 70, rootFolder.Churn)     // 45 + 25
-		assert.Equal(t, 125, rootFolder.TotalLOC) // 75 + 50
+		assert.Equal(t, schema.Metric(20), rootFolder.Commits)   // 12 + 8
+		assert.Equal(t, schema.Metric(70), rootFolder.Churn)     // 45 + 25
+		assert.Equal(t, schema.Metric(125), rootFolder.TotalLOC) // 75 + 50
 		// Score: (85.0*75 + 70.0*50) / 125 = (6375 + 3500) / 125 = 9875/125 = 79.0
 		assert.InEpsilon(t, 79.0, rootFolder.Score, 0.01)
 		assert.Equal(t, []string{"alice", "bob"}, rootFolder.Owners) // alice has more commits (12 > 8)
@@ -473,9 +473,9 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		folder := folders[0]
 
 		assert.Equal(t, "pkg", folder.Path)
-		assert.Equal(t, 20, folder.Commits)   // 5 + 15
-		assert.Equal(t, 60, folder.Churn)     // 10 + 50
-		assert.Equal(t, 220, folder.TotalLOC) // 20 + 200
+		assert.Equal(t, schema.Metric(20), folder.Commits)   // 5 + 15
+		assert.Equal(t, schema.Metric(60), folder.Churn)     // 10 + 50
+		assert.Equal(t, schema.Metric(220), folder.TotalLOC) // 20 + 200
 		// Score: (90.0*20 + 70.0*200) / 220 = (1800 + 14000) / 220 = 15800/220 ≈ 71.82
 		// Large file (70.0) weighted more heavily than small file (90.0)
 		assert.InEpsilon(t, 71.82, folder.Score, 0.01)
@@ -517,9 +517,9 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		folder := folders[0]
 
 		assert.Equal(t, "lib", folder.Path)
-		assert.Equal(t, 14, folder.Commits)  // 8 + 6
-		assert.Equal(t, 45, folder.Churn)    // 25 + 20
-		assert.Equal(t, 80, folder.TotalLOC) // 45 + 35
+		assert.Equal(t, schema.Metric(14), folder.Commits)  // 8 + 6
+		assert.Equal(t, schema.Metric(45), folder.Churn)    // 25 + 20
+		assert.Equal(t, schema.Metric(80), folder.TotalLOC) // 45 + 35
 		// Score: (75.0*45 + 80.0*35) / 80 = (3375 + 2800) / 80 = 6175/80 = 77.19
 		assert.InEpsilon(t, 77.19, folder.Score, 0.01)
 		assert.Empty(t, folder.Owners) // No owners available
@@ -586,18 +586,18 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		// Test api folder
 		apiFolder := folderMap["api"]
 		assert.NotNil(t, apiFolder)
-		assert.Equal(t, 20, apiFolder.Commits)           // 12 + 8
-		assert.Equal(t, 65, apiFolder.Churn)             // 40 + 25
-		assert.Equal(t, 180, apiFolder.TotalLOC)         // 100 + 80
-		assert.InEpsilon(t, 80.56, apiFolder.Score, 0.1) // (85*100 + 75*80) / 180
+		assert.Equal(t, schema.Metric(20), apiFolder.Commits)   // 12 + 8
+		assert.Equal(t, schema.Metric(65), apiFolder.Churn)     // 40 + 25
+		assert.Equal(t, schema.Metric(180), apiFolder.TotalLOC) // 100 + 80
+		assert.InEpsilon(t, 80.56, apiFolder.Score, 0.1)        // (85*100 + 75*80) / 180
 		assert.Equal(t, []string{"alice", "bob"}, apiFolder.Owners)
 
 		// Test db folder
 		dbFolder := folderMap["db"]
 		assert.NotNil(t, dbFolder)
-		assert.Equal(t, 10, dbFolder.Commits)
-		assert.Equal(t, 35, dbFolder.Churn)
-		assert.Equal(t, 90, dbFolder.TotalLOC)
+		assert.Equal(t, schema.Metric(10), dbFolder.Commits)
+		assert.Equal(t, schema.Metric(35), dbFolder.Churn)
+		assert.Equal(t, schema.Metric(90), dbFolder.TotalLOC)
 		assert.Equal(t, 80.0, dbFolder.Score)
 		assert.Equal(t, []string{"charlie"}, dbFolder.Owners)
 

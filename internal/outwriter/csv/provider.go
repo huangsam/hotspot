@@ -3,7 +3,6 @@ package csv
 
 import (
 	"encoding/csv"
-	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -24,7 +23,7 @@ func NewProvider() *Provider {
 
 // WriteFiles writes file analysis results in CSV format.
 func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
-	fmtFloat, intFmt := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := util.CreateFormatters(output.GetPrecision())
 	header := []string{
 		"rank",
 		"file",
@@ -32,6 +31,7 @@ func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output con
 		"label",
 		"contributors",
 		"commits",
+		"loc",
 		"size_kb",
 		"age_days",
 		"churn",
@@ -48,11 +48,12 @@ func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output con
 				f.Path,                                      // File Path
 				fmtFloat(f.ModeScore),                       // Score
 				schema.GetPlainLabel(f.ModeScore),           // Label
-				fmt.Sprintf(intFmt, f.UniqueContributors),   // Contributors
-				fmt.Sprintf(intFmt, f.Commits),              // Commits
+				f.UniqueContributors.Display(),              // Contributors
+				f.Commits.Display(),                         // Commits
+				f.LinesOfCode.Display(),                     // Lines of Code
 				fmtFloat(float64(f.SizeBytes) / 1024.0),     // Size in KB
-				fmt.Sprintf(intFmt, f.AgeDays),              // Age in Days
-				fmt.Sprintf(intFmt, f.Churn),                // Churn
+				f.AgeDays.Display(),                         // Age in Days
+				f.Churn.Display(),                           // Churn
 				fmtFloat(f.Gini),                            // Gini Coefficient
 				f.FirstCommit.Format(schema.DateTimeFormat), // First Commit Date
 				strings.Join(f.Owners, "|"),                 // Owners
@@ -68,7 +69,7 @@ func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output con
 
 // WriteFolders writes folder analysis results in CSV format.
 func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
-	fmtFloat, intFmt := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := util.CreateFormatters(output.GetPrecision())
 	header := []string{
 		"rank",
 		"folder",
@@ -84,15 +85,15 @@ func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, outp
 	return util.WriteCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {
 		for i, r := range results {
 			row := []string{
-				strconv.Itoa(i + 1),             // Rank
-				r.Path,                          // Folder Path
-				fmtFloat(r.Score),               // Score
-				schema.GetPlainLabel(r.Score),   // Label
-				fmt.Sprintf(intFmt, r.Commits),  // Total Commits
-				fmt.Sprintf(intFmt, r.Churn),    // Total Churn
-				fmt.Sprintf(intFmt, r.TotalLOC), // Total LOC
-				strings.Join(r.Owners, "|"),     // Owners
-				string(r.Mode),                  // Mode
+				strconv.Itoa(i + 1),           // Rank
+				r.Path,                        // Folder Path
+				fmtFloat(r.Score),             // Score
+				schema.GetPlainLabel(r.Score), // Label
+				r.Commits.Display(),           // Total Commits
+				r.Churn.Display(),             // Total Churn
+				r.TotalLOC.Display(),          // Total LOC
+				strings.Join(r.Owners, "|"),   // Owners
+				string(r.Mode),                // Mode
 			}
 			if err := csvWriter.Write(row); err != nil {
 				return err
@@ -104,7 +105,7 @@ func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, outp
 
 // WriteComparison writes comparison analysis results in CSV format.
 func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
-	fmtFloat, intFmt := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := util.CreateFormatters(output.GetPrecision())
 	header := []string{
 		"rank",
 		"path",
@@ -121,16 +122,16 @@ func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult,
 	return util.WriteCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {
 		for i, r := range results.Details {
 			row := []string{
-				strconv.Itoa(i + 1),                 // Rank
-				r.Path,                              // Path
-				fmtFloat(r.BeforeScore),             // Base Score
-				fmtFloat(r.AfterScore),              // Current Score
-				fmtFloat(r.Delta),                   // Delta Score (Current - Base)
-				fmt.Sprintf(intFmt, r.DeltaCommits), // Delta Commits
-				fmt.Sprintf(intFmt, r.DeltaChurn),   // Delta Churn
-				strings.Join(r.BeforeOwners, "|"),   // Base Owners
-				strings.Join(r.AfterOwners, "|"),    // Current Owners
-				string(r.Mode),                      // Mode
+				strconv.Itoa(i + 1),               // Rank
+				r.Path,                            // Path
+				fmtFloat(r.BeforeScore),           // Base Score
+				fmtFloat(r.AfterScore),            // Current Score
+				fmtFloat(r.Delta),                 // Delta Score (Current - Base)
+				r.DeltaCommits.Display(),          // Delta Commits
+				r.DeltaChurn.Display(),            // Delta Churn
+				strings.Join(r.BeforeOwners, "|"), // Base Owners
+				strings.Join(r.AfterOwners, "|"),  // Current Owners
+				string(r.Mode),                    // Mode
 			}
 			if err := csvWriter.Write(row); err != nil {
 				return err
@@ -142,7 +143,7 @@ func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult,
 
 // WriteTimeseries writes timeseries analysis results in CSV format.
 func (p *Provider) WriteTimeseries(w io.Writer, result schema.TimeseriesResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
-	fmtFloat, _ := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := util.CreateFormatters(output.GetPrecision())
 	header := []string{
 		"path",
 		"period",

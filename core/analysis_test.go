@@ -38,10 +38,10 @@ func TestAnalyzeFileCommon(t *testing.T) {
 
 	// Create aggregate output
 	aggOutput := &schema.AggregateOutput{
-		CommitMap: map[string]int{"main.go": 5},
-		ChurnMap:  map[string]int{"main.go": 15},
-		ContribMap: map[string]map[string]int{
-			"main.go": {"alice": 3, "bob": 2},
+		CommitMap: map[string]schema.Metric{"main.go": schema.Metric(5)},
+		ChurnMap:  map[string]schema.Metric{"main.go": schema.Metric(15)},
+		ContribMap: map[string]map[string]schema.Metric{
+			"main.go": {"alice": schema.Metric(3), "bob": schema.Metric(2)},
 		},
 		FirstCommitMap: map[string]time.Time{
 			"main.go": time.Date(2023, 1, 15, 10, 30, 0, 0, time.UTC),
@@ -53,9 +53,9 @@ func TestAnalyzeFileCommon(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, "main.go", result.Path)
-	assert.Equal(t, 5, result.Commits)
-	assert.Equal(t, 15, result.Churn)
-	assert.Equal(t, 2, result.UniqueContributors)
+	assert.Equal(t, schema.Metric(5), result.Commits)
+	assert.Equal(t, schema.Metric(15), result.Churn)
+	assert.Equal(t, schema.Metric(2), result.UniqueContributors)
 	assert.True(t, result.ModeScore >= 0 && result.ModeScore <= 100)
 	// Note: Breakdown will be empty because SizeBytes is 0 (file doesn't exist in test)
 	// assert.NotEmpty(t, result.Breakdown)
@@ -86,17 +86,17 @@ func TestAnalyzeRepo(t *testing.T) {
 
 	// Create aggregate output
 	aggOutput := &schema.AggregateOutput{
-		CommitMap: map[string]int{
-			"main.go":     1,
-			"core/agg.go": 1,
+		CommitMap: map[string]schema.Metric{
+			"main.go":     schema.Metric(1),
+			"core/agg.go": schema.Metric(1),
 		},
-		ChurnMap: map[string]int{
-			"main.go":     3,
-			"core/agg.go": 4,
+		ChurnMap: map[string]schema.Metric{
+			"main.go":     schema.Metric(3),
+			"core/agg.go": schema.Metric(4),
 		},
-		ContribMap: map[string]map[string]int{
-			"main.go":     {"alice": 1},
-			"core/agg.go": {"bob": 1},
+		ContribMap: map[string]map[string]schema.Metric{
+			"main.go":     {"alice": schema.Metric(1)},
+			"core/agg.go": {"bob": schema.Metric(1)},
 		},
 		FirstCommitMap: map[string]time.Time{
 			"main.go":     time.Date(2023, 1, 15, 10, 30, 0, 0, time.UTC),
@@ -152,18 +152,18 @@ func TestAnalyzeRepo_ConcurrentWorkers(t *testing.T) {
 	}
 
 	// Create aggregate output with many files to test concurrency
-	commitMap := make(map[string]int)
-	churnMap := make(map[string]int)
-	contribMap := make(map[string]map[string]int)
+	commitMap := make(map[string]schema.Metric)
+	churnMap := make(map[string]schema.Metric)
+	contribMap := make(map[string]map[string]schema.Metric)
 	firstCommitMap := make(map[string]time.Time)
 
 	files := make([]string, 20) // Test with 20 files
 	for i := range 20 {
 		fileName := fmt.Sprintf("file%d.go", i)
 		files[i] = fileName
-		commitMap[fileName] = i + 1
-		churnMap[fileName] = (i + 1) * 2
-		contribMap[fileName] = map[string]int{"alice": i + 1}
+		commitMap[fileName] = schema.Metric(i + 1)
+		churnMap[fileName] = schema.Metric((i + 1) * 2)
+		contribMap[fileName] = map[string]schema.Metric{"alice": schema.Metric(i + 1)}
 		firstCommitMap[fileName] = time.Date(2023, 1, 15, 10, 30, 0, 0, time.UTC)
 	}
 
@@ -244,10 +244,10 @@ func TestRecordFileAnalysis(t *testing.T) {
 	// Create file result with all scores
 	fileResult := &schema.FileResult{
 		Path:               "test.go",
-		Commits:            100,
-		Churn:              500,
-		UniqueContributors: 5,
-		AgeDays:            365,
+		Commits:            schema.Metric(100),
+		Churn:              schema.Metric(500),
+		UniqueContributors: schema.Metric(5),
+		AgeDays:            schema.Metric(365),
 		Gini:               0.3,
 		Owners:             []string{"alice", "bob"},
 		AllScores: map[schema.ScoringMode]float64{

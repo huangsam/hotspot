@@ -16,33 +16,33 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 	fileResults := []schema.FileResult{
 		{
 			Path:        "src/main.go",
-			Commits:     10,
-			Churn:       50,
-			LinesOfCode: 100,
+			Commits:     schema.Metric(10),
+			Churn:       schema.Metric(50),
+			LinesOfCode: schema.Metric(100),
 			ModeScore:   25.0,
 			Owners:      []string{"Alice"},
 		},
 		{
 			Path:        "src/utils.go",
-			Commits:     5,
-			Churn:       25,
-			LinesOfCode: 50,
+			Commits:     schema.Metric(5),
+			Churn:       schema.Metric(25),
+			LinesOfCode: schema.Metric(50),
 			ModeScore:   15.0,
 			Owners:      []string{"Bob"},
 		},
 		{
 			Path:        "tests/main_test.go",
-			Commits:     8,
-			Churn:       40,
-			LinesOfCode: 80,
+			Commits:     schema.Metric(8),
+			Churn:       schema.Metric(40),
+			LinesOfCode: schema.Metric(80),
 			ModeScore:   20.0,
 			Owners:      []string{"Alice"},
 		},
 		{
 			Path:        "README.md",
-			Commits:     3,
-			Churn:       15,
-			LinesOfCode: 30,
+			Commits:     schema.Metric(3),
+			Churn:       schema.Metric(15),
+			LinesOfCode: schema.Metric(30),
 			ModeScore:   10.0,
 			Owners:      []string{"Charlie"},
 		},
@@ -74,18 +74,18 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 	require.NotNil(t, srcFolder)
 	assert.Equal(t, "src", srcFolder.Path)
 	assert.Equal(t, schema.HotMode, srcFolder.Mode)
-	assert.Equal(t, 15, srcFolder.Commits)        // 10 + 5
-	assert.Equal(t, 75, srcFolder.Churn)          // 50 + 25
-	assert.Equal(t, 150, srcFolder.TotalLOC)      // 100 + 50
-	assert.True(t, srcFolder.Score > 0)           // Should be calculated
-	assert.Contains(t, srcFolder.Owners, "Alice") // Most commits by Alice
+	assert.Equal(t, schema.Metric(15), srcFolder.Commits)   // 10 + 5
+	assert.Equal(t, schema.Metric(75), srcFolder.Churn)     // 50 + 25
+	assert.Equal(t, schema.Metric(150), srcFolder.TotalLOC) // 100 + 50
+	assert.True(t, srcFolder.Score > 0)                     // Should be calculated
+	assert.Contains(t, srcFolder.Owners, "Alice")           // Most commits by Alice
 
 	// Check tests/ folder
 	require.NotNil(t, testsFolder)
 	assert.Equal(t, "tests", testsFolder.Path)
-	assert.Equal(t, 8, testsFolder.Commits)
-	assert.Equal(t, 40, testsFolder.Churn)
-	assert.Equal(t, 80, testsFolder.TotalLOC)
+	assert.Equal(t, schema.Metric(8), testsFolder.Commits)
+	assert.Equal(t, schema.Metric(40), testsFolder.Churn)
+	assert.Equal(t, schema.Metric(80), testsFolder.TotalLOC)
 	assert.True(t, testsFolder.Score > 0)
 }
 
@@ -94,25 +94,25 @@ func TestAggregateAndScoreFolders_WithPathFilter(t *testing.T) {
 	fileResults := []schema.FileResult{
 		{
 			Path:        "src/main.go",
-			Commits:     10,
-			Churn:       50,
-			LinesOfCode: 100,
+			Commits:     schema.Metric(10),
+			Churn:       schema.Metric(50),
+			LinesOfCode: schema.Metric(100),
 			ModeScore:   25.0,
 			Owners:      []string{"Alice"},
 		},
 		{
 			Path:        "src/utils.go",
-			Commits:     5,
-			Churn:       25,
-			LinesOfCode: 50,
+			Commits:     schema.Metric(5),
+			Churn:       schema.Metric(25),
+			LinesOfCode: schema.Metric(50),
 			ModeScore:   15.0,
 			Owners:      []string{"Bob"},
 		},
 		{
 			Path:        "tests/main_test.go",
-			Commits:     8,
-			Churn:       40,
-			LinesOfCode: 80,
+			Commits:     schema.Metric(8),
+			Churn:       schema.Metric(40),
+			LinesOfCode: schema.Metric(80),
 			ModeScore:   20.0,
 			Owners:      []string{"Alice"},
 		},
@@ -150,9 +150,9 @@ func TestAggregateAndScoreFolders_SingleFileInRoot(t *testing.T) {
 	fileResults := []schema.FileResult{
 		{
 			Path:        "main.go",
-			Commits:     5,
-			Churn:       25,
-			LinesOfCode: 50,
+			Commits:     schema.Metric(5),
+			Churn:       schema.Metric(25),
+			LinesOfCode: schema.Metric(50),
 			ModeScore:   12.0,
 			Owners:      []string{"Alice"},
 		},
@@ -175,25 +175,25 @@ func TestAggregateAndScoreFolders_OwnerCalculation(t *testing.T) {
 	fileResults := []schema.FileResult{
 		{
 			Path:        "src/feature1.go",
-			Commits:     8,
-			Churn:       40,
-			LinesOfCode: 80,
+			Commits:     schema.Metric(8),
+			Churn:       schema.Metric(40),
+			LinesOfCode: schema.Metric(80),
 			ModeScore:   20.0,
 			Owners:      []string{"Alice"}, // Alice has 8 commits
 		},
 		{
 			Path:        "src/feature2.go",
-			Commits:     12,
-			Churn:       60,
-			LinesOfCode: 120,
+			Commits:     schema.Metric(12),
+			Churn:       schema.Metric(60),
+			LinesOfCode: schema.Metric(120),
 			ModeScore:   25.0,
 			Owners:      []string{"Bob"}, // Bob has 12 commits
 		},
 		{
 			Path:        "src/feature3.go",
-			Commits:     6,
-			Churn:       30,
-			LinesOfCode: 60,
+			Commits:     schema.Metric(6),
+			Churn:       schema.Metric(30),
+			LinesOfCode: schema.Metric(60),
 			ModeScore:   15.0,
 			Owners:      []string{"Alice"}, // Alice has another 6 commits
 		},
@@ -212,18 +212,18 @@ func TestAggregateAndScoreFolders_OwnerCalculation(t *testing.T) {
 
 	// Alice should be the primary owner (14 commits > Bob's 12)
 	assert.Equal(t, []string{"Alice", "Bob"}, folder.Owners)
-	assert.Equal(t, 26, folder.Commits)   // 8 + 12 + 6
-	assert.Equal(t, 130, folder.Churn)    // 40 + 60 + 30
-	assert.Equal(t, 260, folder.TotalLOC) // 80 + 120 + 60
+	assert.Equal(t, schema.Metric(26), folder.Commits)   // 8 + 12 + 6
+	assert.Equal(t, schema.Metric(130), folder.Churn)    // 40 + 60 + 30
+	assert.Equal(t, schema.Metric(260), folder.TotalLOC) // 80 + 120 + 60
 }
 
 func TestAggregateAndScoreFolders_NoOwners(t *testing.T) {
 	fileResults := []schema.FileResult{
 		{
 			Path:        "src/main.go",
-			Commits:     5,
-			Churn:       25,
-			LinesOfCode: 50,
+			Commits:     schema.Metric(5),
+			Churn:       schema.Metric(25),
+			LinesOfCode: schema.Metric(50),
 			ModeScore:   12.0,
 			Owners:      []string{}, // No owners
 		},
@@ -365,7 +365,7 @@ func TestCompareFolderMetrics_NoChanges(t *testing.T) {
 
 	// Summary should be zero except for modified files (existing in both)
 	assert.Equal(t, 0.0, result.Summary.NetScoreDelta)
-	assert.Equal(t, 0, result.Summary.NetChurnDelta)
+	assert.Equal(t, schema.Metric(0), result.Summary.NetChurnDelta)
 	assert.Equal(t, 0, result.Summary.TotalNewFiles)
 	assert.Equal(t, 0, result.Summary.TotalInactiveFiles)
 	assert.Equal(t, 1, result.Summary.TotalModifiedFiles) // Folder exists in both base and target

@@ -43,17 +43,17 @@ func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, weights map[sch
 	}
 
 	// --- Normalized Metrics [0,1] ---
-	nContrib := clamp01(float64(m.UniqueContributors) / maxContrib)
-	nCommits := clamp01(float64(m.Commits) / maxCommits)
+	nContrib := clamp01(m.UniqueContributors.Float64() / maxContrib)
+	nCommits := clamp01(m.Commits.Float64() / maxCommits)
 	nSize := clamp01((float64(m.SizeBytes) / 1024.0) / maxSizeKB)
-	nAge := clamp01(math.Log1p(float64(m.AgeDays)) / math.Log1p(maxAgeDays))
-	nChurn := clamp01(float64(m.Churn) / maxChurn)
-	nLOC := clamp01(float64(m.LinesOfCode) / maxLOC) // Normalized Lines of Code
+	nAge := clamp01(math.Log1p(m.AgeDays.Float64()) / math.Log1p(maxAgeDays))
+	nChurn := clamp01(m.Churn.Float64() / maxChurn)
+	nLOC := clamp01(m.LinesOfCode.Float64() / maxLOC) // Normalized Lines of Code
 
 	// Inverted Metrics
 	nGiniRaw := clamp01(m.Gini)            // Gini (raw: high is bad)
 	nInvContrib := clamp01(1.0 - nContrib) // Inverse Contributors (high is bad/risky)
-	nRecentCommits := clamp01(float64(m.RecentCommits) / maxRecent)
+	nRecentCommits := clamp01(m.RecentCommits.Float64() / maxRecent)
 	nInvRecentCommits := clamp01(1.0 - nRecentCommits) // Inverse Recent Activity (high is stale)
 
 	// --------------------------------

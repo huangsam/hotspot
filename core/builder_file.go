@@ -27,8 +27,8 @@ type FileResultBuilder struct {
 	ctx             context.Context
 
 	// Internal data collected during the build process
-	contribCount map[string]int
-	totalCommits int
+	contribCount map[string]schema.Metric
+	totalCommits schema.Metric
 }
 
 // NewFileMetricsBuilder is the starting point for building file metrics.
@@ -48,7 +48,7 @@ func NewFileMetricsBuilder(
 		output:          output,
 		path:            path,
 		ctx:             ctx,
-		contribCount:    make(map[string]int),
+		contribCount:    make(map[string]schema.Metric),
 	}
 }
 
@@ -73,9 +73,9 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 			b.result.LinesDeleted = deleted
 		}
 		if contribMap, ok := b.output.ContribMap[path]; ok {
-			b.contribCount = make(map[string]int)
+			b.contribCount = make(map[string]schema.Metric)
 			maps.Copy(b.contribCount, contribMap)
-			b.result.UniqueContributors = len(b.contribCount)
+			b.result.UniqueContributors = schema.Metric(len(b.contribCount))
 		}
 		if firstCommit, ok := b.output.FirstCommitMap[path]; ok {
 			b.result.FirstCommit = firstCommit
@@ -94,9 +94,9 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 			// Parse the output to populate metrics
 			lines := strings.Split(string(out), "\n")
 			var firstCommit time.Time
-			totalAdd := 0
-			totalDel := 0
-			authorCommits := make(map[string]int)
+			totalAdd := schema.Metric(0)
+			totalDel := schema.Metric(0)
+			authorCommits := make(map[string]schema.Metric)
 
 			for _, line := range lines {
 				line = strings.Trim(line, " \t\r\n'")
@@ -119,19 +119,19 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 					// Numstat line
 					if add, errA := strconv.Atoi(strings.TrimSpace(parts[0])); errA == nil {
 						if del, errD := strconv.Atoi(strings.TrimSpace(parts[1])); errD == nil {
-							totalAdd += add
-							totalDel += del
+							totalAdd += schema.Metric(add)
+							totalDel += schema.Metric(del)
 						}
 					}
 				}
 			}
 
 			b.contribCount = authorCommits
-			b.result.UniqueContributors = len(b.contribCount)
-			b.result.Commits = b.totalCommits
-			b.result.LinesAdded = totalAdd
-			b.result.LinesDeleted = totalDel
-			b.result.Churn = totalAdd + totalDel
+			b.result.UniqueContributors = schema.Metric(len(b.contribCount))
+			b.result.Commits = schema.Metric(b.totalCommits)
+			b.result.LinesAdded = schema.Metric(totalAdd)
+			b.result.LinesDeleted = schema.Metric(totalDel)
+			b.result.Churn = schema.Metric(totalAdd + totalDel)
 			b.result.FirstCommit = firstCommit
 		}
 	}
@@ -158,7 +158,7 @@ func (b *FileResultBuilder) FetchFileStats() *FileResultBuilder {
 	lines := len(strings.Split(string(content), "\n"))
 
 	b.result.SizeBytes = size
-	b.result.LinesOfCode = lines
+	b.result.LinesOfCode = schema.Metric(lines)
 
 	return b
 }
@@ -169,7 +169,7 @@ func (b *FileResultBuilder) CalculateDerivedMetrics() *FileResultBuilder {
 	if b.result.FirstCommit.IsZero() {
 		b.result.AgeDays = 0
 	} else {
-		b.result.AgeDays = schema.CalculateDaysBetween(b.result.FirstCommit, time.Now())
+		b.result.AgeDays = schema.Metric(schema.CalculateDaysBetween(b.result.FirstCommit, time.Now()))
 	}
 
 	// Gini coefficient for author diversity
@@ -203,7 +203,7 @@ func (b *FileResultBuilder) FetchRecentInfo() *FileResultBuilder {
 		b.result.RecentLinesDeleted = v
 	}
 	if m, ok := b.output.RecentContribMap[b.path]; ok {
-		b.result.RecentContributors = len(m)
+		b.result.RecentContributors = schema.Metric(len(m))
 	}
 	return b
 }
@@ -218,7 +218,7 @@ func (b *FileResultBuilder) CalculateOwner() *FileResultBuilder {
 	// Sort authors by commit count descending, then by author name ascending for stable ordering
 	type authorCommits struct {
 		author  string
-		commits int
+		commits schema.Metric
 	}
 	var authors []authorCommits
 	for author, commits := range authorMap {

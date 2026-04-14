@@ -6,20 +6,20 @@ import "time"
 // FileResult represents the Git and file system metrics for a single file.
 type FileResult struct {
 	Path               string    `json:"path"`                 // Relative path to the file in the repository
-	UniqueContributors int       `json:"unique_contributors"`  // Number of different authors who modified the file
-	Commits            int       `json:"commits"`              // Total number of commits affecting this file
-	RecentContributors int       `json:"recent_contributors"`  // Recent contributor count within a time window
-	RecentCommits      int       `json:"recent_commits"`       // Recent commit count within a time window
-	RecentChurn        int       `json:"recent_churn"`         // Recent churn within a time window
-	RecentLinesAdded   int       `json:"recent_lines_added"`   // Recent lines added
-	RecentLinesDeleted int       `json:"recent_lines_deleted"` // Recent lines deleted
+	UniqueContributors Metric    `json:"unique_contributors"`  // Number of different authors who modified the file
+	Commits            Metric    `json:"commits"`              // Total number of commits affecting this file
+	RecentContributors Metric    `json:"recent_contributors"`  // Recent contributor count within a time window
+	RecentCommits      Metric    `json:"recent_commits"`       // Recent commit count within a time window
+	RecentChurn        Metric    `json:"recent_churn"`         // Recent churn within a time window
+	RecentLinesAdded   Metric    `json:"recent_lines_added"`   // Recent lines added
+	RecentLinesDeleted Metric    `json:"recent_lines_deleted"` // Recent lines deleted
 	RecentWindowDays   int       `json:"recent_window_days"`   // Number of days defining the 'recent' window
-	SizeBytes          int64     `json:"size_bytes"`           // Current size of the file in bytes
-	LinesOfCode        int       `json:"lines_of_code"`        // Current lines of code
-	AgeDays            int       `json:"age_days"`             // Age of the file in days since first commit
-	Churn              int       `json:"churn"`                // Total number of lines added/deleted plus number of commits
-	LinesAdded         int       `json:"lines_added"`          // Total lines added
-	LinesDeleted       int       `json:"lines_deleted"`        // Total lines deleted
+	SizeBytes          int64     `json:"size_bytes"`           // Current size of the file in bytes (Stay int64 as it's a file property)
+	LinesOfCode        Metric    `json:"lines_of_code"`        // Current lines of code
+	AgeDays            Metric    `json:"age_days"`             // Age of the file in days since first commit
+	Churn              Metric    `json:"churn"`                // Total number of lines added/deleted
+	LinesAdded         Metric    `json:"lines_added"`          // Total lines added
+	LinesDeleted       Metric    `json:"lines_deleted"`        // Total lines deleted
 	Gini               float64   `json:"gini"`                 // Gini coefficient of commit distribution (0-1, lower is more even)
 	FirstCommit        time.Time `json:"first_commit"`         // Timestamp of the file's first commit
 	Owners             []string  `json:"owners"`               // Top 2 owners by commit count
@@ -43,12 +43,12 @@ func (f FileResult) GetScore() float64 {
 }
 
 // GetCommits returns the total commit count.
-func (f FileResult) GetCommits() int {
+func (f FileResult) GetCommits() Metric {
 	return f.Commits
 }
 
 // GetChurn returns the total churn.
-func (f FileResult) GetChurn() int {
+func (f FileResult) GetChurn() Metric {
 	return f.Churn
 }
 
@@ -63,12 +63,12 @@ func (f FileResult) GetOwners() []string {
 // FolderResult holds the final computed scores and aggregated metrics for a folder.
 type FolderResult struct {
 	Path    string   `json:"path"`    // Relative path to the folder in the repository
-	Commits int      `json:"commits"` // Total number of commits across all contained files
-	Churn   int      `json:"churn"`   // Total number of lines added/deleted across all contained files
+	Commits Metric   `json:"commits"` // Total number of commits across all contained files
+	Churn   Metric   `json:"churn"`   // Total number of lines added/deleted across all contained files
 	Score   float64  `json:"score"`   // Computed importance score for the folder
 	Owners  []string `json:"owners"`  // Top 2 owners by commit count
 
-	TotalLOC         int         `json:"total_loc"`          // Sum of LOC of all contained files (used for weighted average)
+	TotalLOC         Metric      `json:"total_loc"`          // Sum of LOC of all contained files (used for weighted average)
 	WeightedScoreSum float64     `json:"weighted_score_sum"` // Sum of (FileScore * FileLOC)
 	Mode             ScoringMode `json:"mode"`               // Scoring mode used (hot, risk, complexity, stale)
 }
@@ -84,12 +84,12 @@ func (f FolderResult) GetScore() float64 {
 }
 
 // GetCommits returns the total commit count.
-func (f FolderResult) GetCommits() int {
+func (f FolderResult) GetCommits() Metric {
 	return f.Commits
 }
 
 // GetChurn returns the total churn.
-func (f FolderResult) GetChurn() int {
+func (f FolderResult) GetChurn() Metric {
 	return f.Churn
 }
 

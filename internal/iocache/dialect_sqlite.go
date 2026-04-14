@@ -48,15 +48,15 @@ func (d *SQLiteDialect) GetUpdateEndAnalysisQuery(tableName string) string {
 // RecordFileMetricsAndScores inserts file-level metrics and scores into SQLite.
 func (d *SQLiteDialect) RecordFileMetricsAndScores(db *sql.DB, tableName string, analysisID int64, filePath string, metrics schema.FileMetrics, scores schema.FileScores) error {
 	query := fmt.Sprintf(`
-		INSERT INTO %s (analysis_id, file_path, analysis_time, total_commits, total_churn, lines_added, lines_deleted,
+		INSERT INTO %s (analysis_id, file_path, analysis_time, total_commits, total_churn, lines_added, lines_deleted, lines_of_code,
 						 contributor_count, recent_commits, recent_churn, recent_lines_added, recent_lines_deleted, recent_contributor_count,
 						 age_days, gini_coefficient, file_owner,
 						 score_hot, score_risk, score_complexity, score_stale, score_label)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, d.QuoteIdentifier(tableName))
 
 	_, err := db.Exec(query,
-		analysisID, filePath, d.FormatTime(metrics.AnalysisTime), metrics.TotalCommits, metrics.TotalChurn, metrics.LinesAdded, metrics.LinesDeleted,
+		analysisID, filePath, d.FormatTime(metrics.AnalysisTime), metrics.TotalCommits, metrics.TotalChurn, metrics.LinesAdded, metrics.LinesDeleted, metrics.LinesOfCode,
 		metrics.ContributorCount, metrics.RecentCommits, metrics.RecentChurn, metrics.RecentLinesAdded, metrics.RecentLinesDeleted, metrics.RecentContributorCount,
 		metrics.AgeDays, metrics.GiniCoefficient, metrics.FileOwner,
 		scores.HotScore, scores.RiskScore, scores.ComplexityScore, scores.StaleScore, scores.ScoreLabel,
@@ -116,7 +116,7 @@ func (d *SQLiteDialect) ScanAnalysisRunRecord(rows *sql.Rows, record *schema.Ana
 func (d *SQLiteDialect) ScanFileScoresMetricsRecord(rows *sql.Rows, record *schema.FileScoresMetricsRecord) error {
 	var analysisTimeStr string
 	if err := rows.Scan(&record.AnalysisID, &record.FilePath, &analysisTimeStr, &record.TotalCommits,
-		&record.TotalChurn, &record.LinesAdded, &record.LinesDeleted, &record.ContributorCount,
+		&record.TotalChurn, &record.LinesAdded, &record.LinesDeleted, &record.LinesOfCode, &record.ContributorCount,
 		&record.RecentCommits, &record.RecentChurn, &record.RecentLinesAdded, &record.RecentLinesDeleted, &record.RecentContributorCount,
 		&record.AgeDays, &record.GiniCoefficient,
 		&record.FileOwner, &record.ScoreHot, &record.ScoreRisk, &record.ScoreComplexity,

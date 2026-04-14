@@ -12,13 +12,13 @@ import (
 type ComparableResult interface {
 	GetPath() string
 	GetScore() float64
-	GetCommits() int
-	GetChurn() int
+	GetCommits() schema.Metric
+	GetChurn() schema.Metric
 	GetOwners() []string
 }
 
 // DeltaExtractor extracts additional deltas for comparison details.
-type DeltaExtractor[T ComparableResult] func(base, target T) (deltaLOC, deltaContrib int)
+type DeltaExtractor[T ComparableResult] func(base, target T) (deltaLOC, deltaContrib schema.Metric)
 
 // compareResults is a generic function that compares two sets of results.
 func compareResults[T ComparableResult](baseResults, targetResults []T, limit int, mode string, extractDeltas DeltaExtractor[T]) schema.ComparisonResult {
@@ -40,7 +40,7 @@ func compareResults[T ComparableResult](baseResults, targetResults []T, limit in
 
 	// Initialize summary accumulators
 	var netScoreDelta float64
-	var netChurnDelta int
+	var netChurnDelta schema.Metric
 	var totalNewFiles, totalInactiveFiles, totalModifiedFiles int
 	var totalOwnershipChanges int
 
@@ -61,15 +61,15 @@ func compareResults[T ComparableResult](baseResults, targetResults []T, limit in
 
 		// Calculate deltas
 		deltaScore := targetScore - baseScore
-		deltaCommits := 0
-		deltaChurn := 0
+		deltaCommits := schema.Metric(0)
+		deltaChurn := schema.Metric(0)
 		if baseExists && targetExists {
 			deltaCommits = targetR.GetCommits() - baseR.GetCommits()
 			deltaChurn = targetR.GetChurn() - baseR.GetChurn()
 		}
 
 		// Extract additional deltas
-		deltaLOC, deltaContrib := 0, 0
+		deltaLOC, deltaContrib := schema.Metric(0), schema.Metric(0)
 		if extractDeltas != nil && baseExists && targetExists {
 			deltaLOC, deltaContrib = extractDeltas(baseR, targetR)
 		}
@@ -192,7 +192,7 @@ func sortComparisonResults(results []schema.ComparisonDetail) {
 // compareFileResults matches metrics from the base run against the comparison run
 // and computes the difference (delta) for key metrics like Score.
 func compareFileResults(baseResults, targetResults []schema.FileResult, limit int, mode string) schema.ComparisonResult {
-	return compareResults(baseResults, targetResults, limit, mode, func(base, target schema.FileResult) (int, int) {
+	return compareResults(baseResults, targetResults, limit, mode, func(base, target schema.FileResult) (schema.Metric, schema.Metric) {
 		deltaLOC := target.LinesOfCode - base.LinesOfCode
 		deltaContrib := target.UniqueContributors - base.UniqueContributors
 		return deltaLOC, deltaContrib

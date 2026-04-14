@@ -97,7 +97,7 @@ func TestFilesVerification(t *testing.T) {
 			}
 			gitCommits := len(gitLines)
 
-			assert.Equal(t, details.Commits, gitCommits,
+			assert.Equal(t, details.Commits, schema.Metric(gitCommits),
 				"commit count mismatch for %s in time range %s to %s", file, startTime, endTime)
 
 			// Verify age calculation against the first commit within the time range
@@ -117,8 +117,8 @@ func TestFilesVerification(t *testing.T) {
 					expectedAgeDays := schema.CalculateDaysBetween(firstCommitTime, time.Now())
 
 					// Age should match exactly since we're using the same time range
-					assert.Equal(t, expectedAgeDays, details.AgeDays,
-						"age calculation should match first commit in analysis window for %s (got %d, expected %d)",
+					assert.Equal(t, schema.Metric(expectedAgeDays), details.AgeDays,
+						"age calculation should match first commit in analysis window for %s (got %v, expected %v)",
 						file, details.AgeDays, expectedAgeDays)
 				}
 			}
@@ -188,8 +188,8 @@ func TestFoldersVerification(t *testing.T) {
 	for folderPath, folder := range folderDetails {
 		t.Run(folderPath, func(t *testing.T) {
 			// Verify that folder has reasonable values and structure
-			assert.Greater(t, folder.Commits, 0, "folder should have commits")
-			assert.GreaterOrEqual(t, folder.Churn, 0, "folder should have non-negative churn")
+			assert.Greater(t, folder.Commits, schema.Metric(0), "folder should have commits")
+			assert.GreaterOrEqual(t, folder.Churn, schema.Metric(0), "folder should have non-negative churn")
 			assert.GreaterOrEqual(t, folder.Score, 0.0, "folder should have non-negative score")
 			assert.NotEmpty(t, folder.Path, "folder should have a path")
 			assert.Contains(t, []string{"hot", "risk", "complexity", "stale"}, string(folder.Mode), "folder should have valid mode")

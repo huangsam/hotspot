@@ -292,11 +292,11 @@ func TestRunFollowPass(t *testing.T) {
 	}
 
 	output := &schema.AggregateOutput{
-		CommitMap: map[string]int{"main.go": 5, "core/agg.go": 3},
-		ChurnMap:  map[string]int{"main.go": 15, "core/agg.go": 9},
-		ContribMap: map[string]map[string]int{
-			"main.go":     {"Alice": 5},
-			"core/agg.go": {"Bob": 3},
+		CommitMap: map[string]schema.Metric{"main.go": schema.Metric(5), "core/agg.go": schema.Metric(3)},
+		ChurnMap:  map[string]schema.Metric{"main.go": schema.Metric(15), "core/agg.go": schema.Metric(9)},
+		ContribMap: map[string]map[string]schema.Metric{
+			"main.go":     {"Alice": schema.Metric(5)},
+			"core/agg.go": {"Bob": schema.Metric(3)},
 		},
 		FirstCommitMap: map[string]time.Time{
 			"main.go":     time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),

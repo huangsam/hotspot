@@ -32,13 +32,14 @@ func recordFileAnalysis(ctx context.Context, scoringSettings config.ScoringSetti
 		TotalChurn:             result.Churn,
 		LinesAdded:             result.LinesAdded,
 		LinesDeleted:           result.LinesDeleted,
+		LinesOfCode:            result.LinesOfCode,
 		ContributorCount:       result.UniqueContributors,
 		RecentCommits:          result.RecentCommits,
 		RecentChurn:            result.RecentChurn,
 		RecentLinesAdded:       result.RecentLinesAdded,
 		RecentLinesDeleted:     result.RecentLinesDeleted,
 		RecentContributorCount: result.RecentContributors,
-		AgeDays:                float64(result.AgeDays), // Convert int to float64 for type compatibility with FileMetrics struct
+		AgeDays:                result.AgeDays, // Convert int to float64 for type compatibility with FileMetrics struct
 		GiniCoefficient:        result.Gini,
 		FileOwner:              getOwnerString(result.Owners),
 	}

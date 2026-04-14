@@ -6,8 +6,8 @@ type ComparisonDetail struct {
 	BeforeScore  float64     `json:"before_score"`  // Score from the original/base analysis
 	AfterScore   float64     `json:"after_score"`   // Score from the comparison/new analysis
 	Delta        float64     `json:"delta"`         // CompScore - BaseScore (Positive means worse/higher)
-	DeltaCommits int         `json:"delta_commits"` // Change in total commits (Positive means more activity)
-	DeltaChurn   int         `json:"delta_churn"`   // Change in total churn (Positive means more volatility)
+	DeltaCommits Metric      `json:"delta_commits"` // Change in total commits (Positive means more activity)
+	DeltaChurn   Metric      `json:"delta_churn"`   // Change in total churn (Positive means more volatility)
 	Status       Status      `json:"status"`        // Intrinsic status of the file as of now
 	BeforeOwners []string    `json:"before_owners"` // Owners from the base analysis
 	AfterOwners  []string    `json:"after_owners"`  // Owners from the target analysis
@@ -23,7 +23,7 @@ type ComparisonSummary struct {
 	NetScoreDelta float64 `json:"net_score_delta"`
 
 	// 2. Net Churn Delta
-	NetChurnDelta int `json:"net_churn_delta"`
+	NetChurnDelta Metric `json:"net_churn_delta"`
 
 	// 3. File Status Counts
 	TotalNewFiles      int `json:"total_new_files"`
@@ -42,8 +42,8 @@ type ComparisonResult struct {
 
 // FileComparison has file deltas.
 type FileComparison struct {
-	DeltaLOC     int `json:"delta_loc"`     // Change in LOC (Positive means file growth)
-	DeltaContrib int `json:"delta_contrib"` // Change in contributors (Positive means contrib growth)
+	DeltaLOC     Metric `json:"delta_loc"`     // Change in LOC (Positive means file growth)
+	DeltaContrib Metric `json:"delta_contrib"` // Change in contributors (Positive means contrib growth)
 }
 
 // FolderComparison has folder deltas.

@@ -29,17 +29,18 @@ type FileScoresMetricsRecord struct {
 	AnalysisID             int64
 	FilePath               string
 	AnalysisTime           time.Time
-	TotalCommits           int32
-	TotalChurn             int32
-	LinesAdded             int32
-	LinesDeleted           int32
-	ContributorCount       int32
-	RecentCommits          int32
-	RecentChurn            int32
-	RecentLinesAdded       int32
-	RecentLinesDeleted     int32
-	RecentContributorCount int32
-	AgeDays                float64
+	TotalCommits           Metric
+	TotalChurn             Metric
+	LinesAdded             Metric
+	LinesDeleted           Metric
+	LinesOfCode            Metric
+	ContributorCount       Metric
+	RecentCommits          Metric
+	RecentChurn            Metric
+	RecentLinesAdded       Metric
+	RecentLinesDeleted     Metric
+	RecentContributorCount Metric
+	AgeDays                Metric
 	GiniCoefficient        float64
 	FileOwner              *string
 	ScoreHot               float64

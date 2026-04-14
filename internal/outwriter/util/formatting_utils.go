@@ -33,14 +33,13 @@ func WriteCSVWithHeader(w io.Writer, header []string, writeRows func(*csv.Writer
 	return nil
 }
 
-// CreateFormatters creates the common formatter closures used across multiple output types.
-func CreateFormatters(precision int) (fmtFloat func(float64) string, intFmt string) {
+// CreateFormatters creates the common float formatter closures used across multiple output types.
+func CreateFormatters(precision int) (fmtFloat func(float64) string) {
 	numFmt := "%.*f"
-	intFmt = "%d"
 	fmtFloat = func(v float64) string {
 		return fmt.Sprintf(numFmt, precision, v)
 	}
-	return fmtFloat, intFmt
+	return fmtFloat
 }
 
 // formatWeights was moved to schema.FormatWeights

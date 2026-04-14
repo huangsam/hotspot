@@ -44,7 +44,7 @@ func (m *MockCacheManager) GetAnalysisStore() iocache.AnalysisStore {
 func TestCheckCacheHit_CacheHit(t *testing.T) {
 	mockStore := &MockCacheStore{}
 	result := &schema.AggregateOutput{
-		CommitMap: map[string]int{"test.go": 5},
+		CommitMap: map[string]schema.Metric{"test.go": 5},
 	}
 	data, _ := json.Marshal(result)
 
@@ -53,7 +53,7 @@ func TestCheckCacheHit_CacheHit(t *testing.T) {
 
 	actual := checkCacheHit(mockStore, "test-key")
 	assert.NotNil(t, actual)
-	assert.Equal(t, 5, actual.CommitMap["test.go"])
+	assert.Equal(t, schema.Metric(5), actual.CommitMap["test.go"])
 	mockStore.AssertExpectations(t)
 }
 
@@ -178,7 +178,7 @@ func TestCachedAggregateActivity_CacheHit(t *testing.T) {
 
 	// Expected cached result
 	expected := &schema.AggregateOutput{
-		CommitMap: map[string]int{"test.go": 5},
+		CommitMap: map[string]schema.Metric{"test.go": 5},
 	}
 
 	data, _ := json.Marshal(expected)
@@ -241,7 +241,7 @@ func TestCachedAggregateActivity_CacheMiss(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.Equal(t, 1, result.CommitMap["AGENTS.md"])
+	assert.Equal(t, schema.Metric(1), result.CommitMap["AGENTS.md"])
 
 	mockMgr.AssertExpectations(t)
 	mockStore.AssertExpectations(t)
@@ -272,7 +272,7 @@ func TestCachedAggregateActivity_NoCacheManager(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.Equal(t, 1, result.CommitMap["AGENTS.md"])
+	assert.Equal(t, schema.Metric(1), result.CommitMap["AGENTS.md"])
 
 	mockMgr.AssertExpectations(t)
 	mockClient.AssertExpectations(t)

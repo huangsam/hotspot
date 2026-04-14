@@ -41,15 +41,18 @@ func (p *Provider) WriteFiles(_ io.Writer, files []schema.FileResult, output con
 		// Note: We don't have all scores here, only the current mode's score.
 		// We'll fill what we have.
 		records[i] = parquet.FileScoresMetrics{
-			FilePath:         f.Path,
-			AnalysisTime:     time.Now().UTC(),
-			TotalCommits:     int32(f.Commits),
-			TotalChurn:       int32(f.Churn),
-			ContributorCount: int32(f.UniqueContributors),
-			AgeDays:          float64(f.AgeDays),
-			GiniCoefficient:  f.Gini,
-			FileOwner:        owner,
-			ScoreLabel:       string(f.Mode),
+			FilePath:           f.Path,
+			AnalysisTime:       time.Now().UTC(),
+			TotalCommits:       f.Commits.Float64(),
+			TotalChurn:         f.Churn.Float64(),
+			LinesOfCode:        f.LinesOfCode.Float64(),
+			ContributorCount:   f.UniqueContributors.Float64(),
+			AgeDays:            f.AgeDays.Float64(),
+			RecentLinesAdded:   f.RecentLinesAdded.Float64(),
+			RecentLinesDeleted: f.RecentLinesDeleted.Float64(),
+			GiniCoefficient:    f.Gini,
+			FileOwner:          owner,
+			ScoreLabel:         string(f.Mode),
 		}
 
 		// Set the appropriate score field based on mode

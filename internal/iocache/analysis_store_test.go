@@ -52,10 +52,10 @@ func TestAnalysisStore_SQLite(t *testing.T) {
 	// Test RecordFileMetricsAndScores
 	metrics := schema.FileMetrics{
 		AnalysisTime:     time.Now(),
-		TotalCommits:     100,
-		TotalChurn:       500,
-		ContributorCount: 5,
-		AgeDays:          365.0,
+		TotalCommits:     schema.Metric(100),
+		TotalChurn:       schema.Metric(500),
+		ContributorCount: schema.Metric(5),
+		AgeDays:          schema.Metric(365.0),
 		GiniCoefficient:  0.5,
 		FileOwner:        "test-owner",
 	}
@@ -91,10 +91,10 @@ func TestAnalysisStore_MultipleFiles(t *testing.T) {
 	for _, file := range files {
 		metrics := schema.FileMetrics{
 			AnalysisTime:     time.Now(),
-			TotalCommits:     100,
-			TotalChurn:       500,
-			ContributorCount: 5,
-			AgeDays:          365.0,
+			TotalCommits:     schema.Metric(100),
+			TotalChurn:       schema.Metric(500),
+			ContributorCount: schema.Metric(5),
+			AgeDays:          schema.Metric(365.0),
 			GiniCoefficient:  0.5,
 			FileOwner:        "owner",
 		}
@@ -131,10 +131,10 @@ func TestAnalysisStore_MultipleRuns(t *testing.T) {
 		// Record a file for each run
 		metrics := schema.FileMetrics{
 			AnalysisTime:     time.Now(),
-			TotalCommits:     100 + i*10,
-			TotalChurn:       500 + i*50,
-			ContributorCount: 5,
-			AgeDays:          365.0,
+			TotalCommits:     schema.Metric(100 + i*10),
+			TotalChurn:       schema.Metric(500 + i*50),
+			ContributorCount: schema.Metric(5),
+			AgeDays:          schema.Metric(365.0),
 			GiniCoefficient:  0.5,
 			FileOwner:        "owner",
 		}
@@ -305,10 +305,10 @@ func TestAnalysisStore_GetAllFileScoresMetrics(t *testing.T) {
 
 	fileMetrics := schema.FileMetrics{
 		AnalysisTime:     time.Now(),
-		TotalCommits:     100,
-		TotalChurn:       500,
-		ContributorCount: 5,
-		AgeDays:          365.0,
+		TotalCommits:     schema.Metric(100),
+		TotalChurn:       schema.Metric(500),
+		ContributorCount: schema.Metric(5),
+		AgeDays:          schema.Metric(365.0),
 		GiniCoefficient:  0.5,
 		FileOwner:        "test-owner",
 	}
@@ -336,9 +336,9 @@ func TestAnalysisStore_GetAllFileScoresMetrics(t *testing.T) {
 	record := metrics[0]
 	assert.Equal(t, analysisID, record.AnalysisID)
 	assert.Equal(t, "test/file.go", record.FilePath)
-	assert.Equal(t, int32(fileMetrics.TotalCommits), record.TotalCommits)
-	assert.Equal(t, int32(fileMetrics.TotalChurn), record.TotalChurn)
-	assert.Equal(t, int32(fileMetrics.ContributorCount), record.ContributorCount)
+	assert.Equal(t, fileMetrics.TotalCommits, record.TotalCommits)
+	assert.Equal(t, fileMetrics.TotalChurn, record.TotalChurn)
+	assert.Equal(t, fileMetrics.ContributorCount, record.ContributorCount)
 	assert.Equal(t, fileMetrics.AgeDays, record.AgeDays)
 	assert.Equal(t, fileMetrics.GiniCoefficient, record.GiniCoefficient)
 	assert.Equal(t, fileScores.HotScore, record.ScoreHot)
@@ -389,10 +389,10 @@ func TestAnalysisStore_RecordFileMetricsAndScores(t *testing.T) {
 	filePath := "src/main.go"
 	metrics := schema.FileMetrics{
 		AnalysisTime:     time.Now(),
-		TotalCommits:     150,
-		TotalChurn:       750,
-		ContributorCount: 8,
-		AgeDays:          200.5,
+		TotalCommits:     schema.Metric(150),
+		TotalChurn:       schema.Metric(750),
+		ContributorCount: schema.Metric(8),
+		AgeDays:          schema.Metric(200.5),
 		GiniCoefficient:  0.3,
 		FileOwner:        "developer@example.com",
 	}
@@ -416,7 +416,7 @@ func TestAnalysisStore_RecordFileMetricsAndScores(t *testing.T) {
 	record := fileMetrics[0]
 	assert.Equal(t, analysisID, record.AnalysisID)
 	assert.Equal(t, filePath, record.FilePath)
-	assert.Equal(t, int32(metrics.TotalCommits), record.TotalCommits)
+	assert.Equal(t, metrics.TotalCommits, record.TotalCommits)
 	assert.Equal(t, scores.HotScore, record.ScoreHot)
 	assert.Equal(t, scores.ScoreLabel, record.ScoreLabel)
 }
@@ -454,10 +454,10 @@ func TestAnalysisStoreConcurrentOperations(t *testing.T) {
 				filePath := fmt.Sprintf("worker%d/file%d.go", workerID, j)
 				metrics := schema.FileMetrics{
 					AnalysisTime:     time.Now(),
-					TotalCommits:     workerID*filesPerGoroutine + j + 1,
-					TotalChurn:       (workerID*filesPerGoroutine + j + 1) * 2,
-					ContributorCount: workerID + 1,
-					AgeDays:          float64(workerID*10 + j),
+					TotalCommits:     schema.Metric(workerID*filesPerGoroutine + j + 1),
+					TotalChurn:       schema.Metric((workerID*filesPerGoroutine + j + 1) * 2),
+					ContributorCount: schema.Metric(workerID + 1),
+					AgeDays:          schema.Metric(workerID*10 + j),
 					GiniCoefficient:  0.5,
 					FileOwner:        fmt.Sprintf("owner%d", workerID),
 				}
@@ -584,16 +584,16 @@ func TestAnalysisStore_GetFileScoresMetrics_FilterByURN(t *testing.T) {
 	idA, err := store.BeginAnalysis("git:github.com/org/repo-a", time.Now(), map[string]any{"test": "a"})
 	require.NoError(t, err)
 	err = store.RecordFileMetricsAndScores(idA, "main.go", schema.FileMetrics{
-		AnalysisTime: time.Now(), TotalCommits: 10, TotalChurn: 100,
-		ContributorCount: 3, AgeDays: 30, GiniCoefficient: 0.5, FileOwner: "alice",
+		AnalysisTime: time.Now(), TotalCommits: schema.Metric(10), TotalChurn: schema.Metric(100),
+		ContributorCount: schema.Metric(3), AgeDays: schema.Metric(30), GiniCoefficient: 0.5, FileOwner: "alice",
 	}, schema.FileScores{HotScore: 80, RiskScore: 60, ComplexityScore: 50, StaleScore: 20, ScoreLabel: "hot"})
 	require.NoError(t, err)
 
 	idB, err := store.BeginAnalysis("git:github.com/org/repo-b", time.Now(), map[string]any{"test": "b"})
 	require.NoError(t, err)
 	err = store.RecordFileMetricsAndScores(idB, "lib.go", schema.FileMetrics{
-		AnalysisTime: time.Now(), TotalCommits: 5, TotalChurn: 50,
-		ContributorCount: 1, AgeDays: 60, GiniCoefficient: 0.8, FileOwner: "bob",
+		AnalysisTime: time.Now(), TotalCommits: schema.Metric(5), TotalChurn: schema.Metric(50),
+		ContributorCount: schema.Metric(1), AgeDays: schema.Metric(60), GiniCoefficient: 0.8, FileOwner: "bob",
 	}, schema.FileScores{HotScore: 40, RiskScore: 70, ComplexityScore: 30, StaleScore: 50, ScoreLabel: "risk"})
 	require.NoError(t, err)
 

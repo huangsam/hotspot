@@ -128,8 +128,8 @@ func TestFileResultGetters(t *testing.T) {
 	file := FileResult{
 		Path:      "src/main.go",
 		ModeScore: 85.5,
-		Commits:   42,
-		Churn:     156,
+		Commits:   Metric(42),
+		Churn:     Metric(156),
 		Owners:    []string{"Alice", "Bob"},
 	}
 
@@ -140,10 +140,10 @@ func TestFileResultGetters(t *testing.T) {
 	assert.Equal(t, 85.5, file.GetScore(), "GetScore should return the computed score")
 
 	// Test GetCommits
-	assert.Equal(t, 42, file.GetCommits(), "GetCommits should return the total commit count")
+	assert.Equal(t, Metric(42), file.GetCommits(), "GetCommits should return the total commit count")
 
 	// Test GetChurn
-	assert.Equal(t, 156, file.GetChurn(), "GetChurn should return the total churn")
+	assert.Equal(t, Metric(156), file.GetChurn(), "GetChurn should return the total churn")
 
 	// Test GetOwners with populated owners
 	assert.Equal(t, []string{"Alice", "Bob"}, file.GetOwners(), "GetOwners should return the top owners")
@@ -157,8 +157,8 @@ func TestFolderResultGetters(t *testing.T) {
 	folder := FolderResult{
 		Path:    "src/",
 		Score:   72.3,
-		Commits: 128,
-		Churn:   543,
+		Commits: Metric(128),
+		Churn:   Metric(543),
 		Owners:  []string{"Charlie", "Dana"},
 	}
 
@@ -169,10 +169,10 @@ func TestFolderResultGetters(t *testing.T) {
 	assert.Equal(t, 72.3, folder.GetScore(), "GetScore should return the computed score")
 
 	// Test GetCommits
-	assert.Equal(t, 128, folder.GetCommits(), "GetCommits should return the total commit count")
+	assert.Equal(t, Metric(128), folder.GetCommits(), "GetCommits should return the total commit count")
 
 	// Test GetChurn
-	assert.Equal(t, 543, folder.GetChurn(), "GetChurn should return the total churn")
+	assert.Equal(t, Metric(543), folder.GetChurn(), "GetChurn should return the total churn")
 
 	// Test GetOwners with populated owners
 	assert.Equal(t, []string{"Charlie", "Dana"}, folder.GetOwners(), "GetOwners should return the top owners")

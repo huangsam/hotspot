@@ -16,19 +16,19 @@ func TestCompareFileResults_StatusClassification(t *testing.T) {
 		{
 			Path:               "existing_in_both.go",
 			ModeScore:          10.0,
-			Commits:            5,
-			Churn:              15,
-			LinesOfCode:        100,
-			UniqueContributors: 2,
+			Commits:            schema.Metric(5),
+			Churn:              schema.Metric(15),
+			LinesOfCode:        schema.Metric(100),
+			UniqueContributors: schema.Metric(2),
 			Mode:               schema.HotMode,
 		},
 		{
 			Path:               "only_in_base.go",
 			ModeScore:          5.0,
-			Commits:            2,
-			Churn:              8,
-			LinesOfCode:        50,
-			UniqueContributors: 1,
+			Commits:            schema.Metric(2),
+			Churn:              schema.Metric(8),
+			LinesOfCode:        schema.Metric(50),
+			UniqueContributors: schema.Metric(1),
 			Mode:               schema.HotMode,
 		},
 	}
@@ -37,19 +37,19 @@ func TestCompareFileResults_StatusClassification(t *testing.T) {
 		{
 			Path:               "existing_in_both.go",
 			ModeScore:          12.0,
-			Commits:            7,
-			Churn:              20,
-			LinesOfCode:        110,
-			UniqueContributors: 3,
+			Commits:            schema.Metric(7),
+			Churn:              schema.Metric(20),
+			LinesOfCode:        schema.Metric(110),
+			UniqueContributors: schema.Metric(3),
 			Mode:               schema.HotMode,
 		},
 		{
 			Path:               "only_in_target.go",
 			ModeScore:          8.0,
-			Commits:            4,
-			Churn:              12,
-			LinesOfCode:        80,
-			UniqueContributors: 2,
+			Commits:            schema.Metric(4),
+			Churn:              schema.Metric(12),
+			LinesOfCode:        schema.Metric(80),
+			UniqueContributors: schema.Metric(2),
 			Mode:               schema.HotMode,
 		},
 	}
@@ -70,12 +70,12 @@ func TestCompareFileResults_StatusClassification(t *testing.T) {
 	assert.Equal(t, schema.ActiveStatus, bothFile.Status)
 	assert.Equal(t, 10.0, bothFile.BeforeScore)
 	assert.Equal(t, 12.0, bothFile.AfterScore)
-	assert.Equal(t, 2.0, bothFile.Delta)      // 12.0 - 10.0
-	assert.Equal(t, 2, bothFile.DeltaCommits) // 7 - 5
-	assert.Equal(t, 5, bothFile.DeltaChurn)   // 20 - 15
+	assert.Equal(t, 2.0, bothFile.Delta)                     // 12.0 - 10.0
+	assert.Equal(t, schema.Metric(2), bothFile.DeltaCommits) // 7 - 5
+	assert.Equal(t, schema.Metric(5), bothFile.DeltaChurn)   // 20 - 15
 	assert.NotNil(t, bothFile.FileComparison)
-	assert.Equal(t, 10, bothFile.DeltaLOC)    // 110 - 100
-	assert.Equal(t, 1, bothFile.DeltaContrib) // 3 - 2
+	assert.Equal(t, schema.Metric(10), bothFile.DeltaLOC)    // 110 - 100
+	assert.Equal(t, schema.Metric(1), bothFile.DeltaContrib) // 3 - 2
 
 	// Test file that only exists in base (should be "inactive")
 	baseOnlyFile := resultMap["only_in_base.go"]
@@ -83,8 +83,8 @@ func TestCompareFileResults_StatusClassification(t *testing.T) {
 	assert.Equal(t, 5.0, baseOnlyFile.BeforeScore)
 	assert.Equal(t, 0.0, baseOnlyFile.AfterScore) // Default when not exists
 	assert.Equal(t, -5.0, baseOnlyFile.Delta)
-	assert.Equal(t, 0, baseOnlyFile.DeltaCommits) // No delta when target doesn't exist
-	assert.Equal(t, 0, baseOnlyFile.DeltaChurn)
+	assert.Equal(t, schema.Metric(0), baseOnlyFile.DeltaCommits) // No delta when target doesn't exist
+	assert.Equal(t, schema.Metric(0), baseOnlyFile.DeltaChurn)
 	assert.Nil(t, baseOnlyFile.FileComparison) // No file comparison when target doesn't exist
 
 	// Test file that only exists in target (should be "new")
@@ -93,16 +93,16 @@ func TestCompareFileResults_StatusClassification(t *testing.T) {
 	assert.Equal(t, 0.0, targetOnlyFile.BeforeScore) // Default when not exists
 	assert.Equal(t, 8.0, targetOnlyFile.AfterScore)
 	assert.Equal(t, 8.0, targetOnlyFile.Delta)
-	assert.Equal(t, 0, targetOnlyFile.DeltaCommits) // No delta when base doesn't exist
-	assert.Equal(t, 0, targetOnlyFile.DeltaChurn)
+	assert.Equal(t, schema.Metric(0), targetOnlyFile.DeltaCommits) // No delta when base doesn't exist
+	assert.Equal(t, schema.Metric(0), targetOnlyFile.DeltaChurn)
 	assert.Nil(t, targetOnlyFile.FileComparison) // No file comparison when base doesn't exist
 
 	// Verify summary counts
 	assert.Equal(t, 1, result.Summary.TotalNewFiles)
 	assert.Equal(t, 1, result.Summary.TotalInactiveFiles)
 	assert.Equal(t, 1, result.Summary.TotalModifiedFiles)
-	assert.Equal(t, 5.0, result.Summary.NetScoreDelta) // 2.0 + (-5.0) + 8.0
-	assert.Equal(t, 5, result.Summary.NetChurnDelta)   // 5 + 0 + 0
+	assert.Equal(t, 5.0, result.Summary.NetScoreDelta)              // 2.0 + (-5.0) + 8.0
+	assert.Equal(t, schema.Metric(5), result.Summary.NetChurnDelta) // 5 + 0 + 0
 }
 
 func TestCompareFileResults_NoSignificantChanges(t *testing.T) {

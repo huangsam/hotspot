@@ -23,7 +23,7 @@ func NewProvider() *Provider {
 
 // WriteFiles writes file analysis results in Markdown format.
 func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output config.OutputSettings, _ config.RuntimeSettings, duration time.Duration) error {
-	fmtFloat, intFmt := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := util.CreateFormatters(output.GetPrecision())
 
 	if _, err := fmt.Fprintln(w, "## File Hotspots"); err != nil {
 		return err
@@ -51,11 +51,11 @@ func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output con
 		}
 		if output.IsDetail() {
 			row = append(row,
-				fmt.Sprintf(intFmt, f.UniqueContributors),
-				fmt.Sprintf(intFmt, f.Commits),
-				fmt.Sprintf(intFmt, f.LinesOfCode),
-				fmt.Sprintf(intFmt, f.Churn),
-				fmt.Sprintf(intFmt, f.AgeDays),
+				f.UniqueContributors.Display(),
+				f.Commits.Display(),
+				f.LinesOfCode.Display(),
+				f.Churn.Display(),
+				f.AgeDays.Display(),
 				fmtFloat(f.Gini),
 			)
 		}
@@ -76,7 +76,7 @@ func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output con
 
 // WriteFolders writes folder analysis results in Markdown format.
 func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, output config.OutputSettings, _ config.RuntimeSettings, duration time.Duration) error {
-	fmtFloat, intFmt := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := util.CreateFormatters(output.GetPrecision())
 
 	if _, err := fmt.Fprintln(w, "## Folder Hotspots"); err != nil {
 		return err
@@ -104,9 +104,9 @@ func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, outp
 		}
 		if output.IsDetail() {
 			row = append(row,
-				fmt.Sprintf(intFmt, r.Commits),
-				fmt.Sprintf(intFmt, r.Churn),
-				fmt.Sprintf(intFmt, r.TotalLOC),
+				r.Commits.Display(),
+				r.Churn.Display(),
+				r.TotalLOC.Display(),
 			)
 		}
 		if output.IsOwner() {
@@ -126,7 +126,7 @@ func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, outp
 
 // WriteComparison writes comparison analysis results in Markdown format.
 func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
-	fmtFloat, intFmt := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := util.CreateFormatters(output.GetPrecision())
 
 	if _, err := fmt.Fprintln(w, "## Comparison Results"); err != nil {
 		return err
@@ -156,7 +156,7 @@ func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult,
 			string(r.Status),
 		}
 		if output.IsDetail() {
-			row = append(row, fmt.Sprintf(intFmt, r.DeltaChurn))
+			row = append(row, r.DeltaChurn.Display())
 		}
 		if output.IsOwner() {
 			row = append(row, util.FormatOwnershipDiff(r))
@@ -173,7 +173,7 @@ func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult,
 	if _, err := fmt.Fprintf(w, "- Net score delta: %.*f\n", output.GetPrecision(), results.Summary.NetScoreDelta); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(w, "- Net churn delta: %d\n", results.Summary.NetChurnDelta); err != nil {
+	if _, err := fmt.Fprintf(w, "- Net churn delta: %s\n", results.Summary.NetChurnDelta.Display()); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintf(w, "- New files: %d\n", results.Summary.TotalNewFiles); err != nil {
@@ -191,7 +191,7 @@ func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult,
 
 // WriteTimeseries writes timeseries analysis results in Markdown format.
 func (p *Provider) WriteTimeseries(w io.Writer, result schema.TimeseriesResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
-	fmtFloat, _ := util.CreateFormatters(output.GetPrecision())
+	fmtFloat := util.CreateFormatters(output.GetPrecision())
 
 	if _, err := fmt.Fprintln(w, "## Timeseries Analysis"); err != nil {
 		return err

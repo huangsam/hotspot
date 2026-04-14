@@ -49,19 +49,28 @@ type FileScoresMetrics struct {
 	AnalysisTime time.Time `parquet:"analysis_time,snappy"`
 
 	// TotalCommits is the number of commits affecting this file
-	TotalCommits int32 `parquet:"total_commits,snappy"`
+	TotalCommits float64 `parquet:"total_commits,snappy"`
 
 	// TotalChurn is the number of lines added/deleted in this file
-	TotalChurn int32 `parquet:"total_churn,snappy"`
+	TotalChurn float64 `parquet:"total_churn,snappy"`
+
+	// LinesOfCode is the current number of lines in the file
+	LinesOfCode float64 `parquet:"lines_of_code,snappy"`
 
 	// ContributorCount is the number of unique contributors to this file
-	ContributorCount int32 `parquet:"contributor_count,snappy"`
+	ContributorCount float64 `parquet:"contributor_count,snappy"`
 
 	// AgeDays is the age of the file in days since first commit
 	AgeDays float64 `parquet:"age_days,snappy"`
 
 	// GiniCoefficient measures commit distribution (0-1, lower is more even)
 	GiniCoefficient float64 `parquet:"gini_coefficient,snappy"`
+
+	// RecentLinesAdded is the number of lines added in the recent window
+	RecentLinesAdded float64 `parquet:"recent_lines_added,snappy"`
+
+	// RecentLinesDeleted is the number of lines deleted in the recent window
+	RecentLinesDeleted float64 `parquet:"recent_lines_deleted,snappy"`
 
 	// FileOwner is the primary owner of the file (nullable)
 	FileOwner *string `parquet:"file_owner,optional,snappy"`
@@ -262,20 +271,23 @@ func ConvertFileScoresMetricsRecords(records []schema.FileScoresMetricsRecord) [
 	result := make([]FileScoresMetrics, len(records))
 	for i, record := range records {
 		result[i] = FileScoresMetrics{
-			AnalysisID:       record.AnalysisID,
-			FilePath:         record.FilePath,
-			AnalysisTime:     record.AnalysisTime,
-			TotalCommits:     record.TotalCommits,
-			TotalChurn:       record.TotalChurn,
-			ContributorCount: record.ContributorCount,
-			AgeDays:          record.AgeDays,
-			GiniCoefficient:  record.GiniCoefficient,
-			FileOwner:        record.FileOwner,
-			ScoreHot:         record.ScoreHot,
-			ScoreRisk:        record.ScoreRisk,
-			ScoreComplexity:  record.ScoreComplexity,
-			ScoreStale:       record.ScoreStale,
-			ScoreLabel:       record.ScoreLabel,
+			AnalysisID:         record.AnalysisID,
+			FilePath:           record.FilePath,
+			AnalysisTime:       record.AnalysisTime,
+			TotalCommits:       record.TotalCommits.Float64(),
+			TotalChurn:         record.TotalChurn.Float64(),
+			LinesOfCode:        record.LinesOfCode.Float64(),
+			ContributorCount:   record.ContributorCount.Float64(),
+			AgeDays:            record.AgeDays.Float64(),
+			RecentLinesAdded:   record.RecentLinesAdded.Float64(),
+			RecentLinesDeleted: record.RecentLinesDeleted.Float64(),
+			GiniCoefficient:    record.GiniCoefficient,
+			FileOwner:          record.FileOwner,
+			ScoreHot:           record.ScoreHot,
+			ScoreRisk:          record.ScoreRisk,
+			ScoreComplexity:    record.ScoreComplexity,
+			ScoreStale:         record.ScoreStale,
+			ScoreLabel:         record.ScoreLabel,
 		}
 	}
 	return result
