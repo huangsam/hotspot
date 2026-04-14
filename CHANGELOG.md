@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Decoupled output architecture into a modular Provider/Registry pattern
-- Transitioned all output formatting to specialized sub-packages under `internal/outwriter`
+- Transitioned all output formatting to a consolidated `provider` package
 - Standardized metadata containers for consistent API responses across all analysis modes
 - Migrated time parsing and calculation logic to the core `schema` package
 
