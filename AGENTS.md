@@ -4,21 +4,17 @@ This document provides high-level architectural context and domain concepts for 
 
 ## Architecture & Data Flow
 
-Hotspot is a Git repository analysis CLI tool that identifies code hotspots through various scoring algorithms.
+Hotspot is a Git repository analysis tool that identifies code hotspots through various scoring algorithms. Whether invoked via the traditional CLI or the MCP server, it follows a unified analysis pipeline:
 
-**Standard Flow:**
+**Analysis Pipeline:**
 
 ```
-CLI Args/Config (Viper) → Validation → Git Analysis (Concurrent) → Scoring → Ranking → Output
+CLI Args (Viper) \                                                     / CLI (Table/CSV/etc.)
+                  → Validation → Git Analysis → Scoring → Ranking → Output
+MCP Request (URN) /                                                     \ MCP (JSON Response)
 ```
-
-**MCP (Model Context Protocol) Flow:**
 
 Hotspot can run as an MCP server (`hotspot mcp`) to expose its analysis capabilities as JSON-RPC tools with full parameter parity. **Critically, all MCP tools now support an optional `urn` parameter** to enable portable repository identity across machines (see Repository URN pattern below).
-
-```
-MCP Request (urn + repo_path) → Portable Identity Resolution → Git Analysis → Schema Enrichment → JSON Response
-```
 
 Agents should provide a `urn` to ensure analysis runs for the same repository are unified in the database, regardless of the local clone path. Note that `repo_path` (defaulting to `.`) is still required to perform fresh Git analysis.
 
