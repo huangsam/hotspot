@@ -27,13 +27,13 @@ func aggregateActivity(ctx context.Context, gitSettings config.GitSettings, clie
 	fileExists := buildFileExistenceMap(currentFiles)
 
 	// 2. Initialize aggregation maps
-	output := initializeAggregateOutput()
-
-	// 3. Determine recent window threshold (e.g., 30 days before EndTime or Now)
 	endTime := gitSettings.GetEndTime()
 	if endTime.IsZero() {
 		endTime = time.Now()
 	}
+	output := initializeAggregateOutput(endTime)
+
+	// 3. Determine recent window threshold (e.g., 30 days before EndTime or Now)
 	recentThreshold := endTime.AddDate(0, 0, -30) // Fixed 30-day window for now
 
 	// 4. Run the git log command
@@ -58,8 +58,9 @@ func buildFileExistenceMap(currentFiles []string) map[string]bool {
 }
 
 // initializeAggregateOutput creates the AggregateOutput and its internal maps.
-func initializeAggregateOutput() *schema.AggregateOutput {
+func initializeAggregateOutput(endTime time.Time) *schema.AggregateOutput {
 	return &schema.AggregateOutput{
+		EndTime:               endTime,
 		CommitMap:             make(map[string]schema.Metric),
 		ChurnMap:              make(map[string]schema.Metric),
 		ContribMap:            make(map[string]map[string]schema.Metric),
@@ -71,6 +72,8 @@ func initializeAggregateOutput() *schema.AggregateOutput {
 		RecentLinesAddedMap:   make(map[string]schema.Metric),
 		RecentLinesDeletedMap: make(map[string]schema.Metric),
 		RecentContribMap:      make(map[string]map[string]schema.Metric),
+		DecayedCommitMap:      make(map[string]schema.Metric),
+		DecayedChurnMap:       make(map[string]schema.Metric),
 	}
 }
 
@@ -210,9 +213,19 @@ func parseRenamePath(path string) (string, string) {
 func aggregateForPath(path string, add schema.Metric, del schema.Metric, author string, date time.Time, output *schema.AggregateOutput, recentThreshold time.Time) {
 	churn := add + del
 
+	// Calculate decay factor (Half-life: 180 days)
+	decayFactor := 1.0
+	if !date.IsZero() {
+		// Calculate age relative to the analysis end time
+		ageDays := output.EndTime.Sub(date).Hours() / 24.0
+		decayFactor = schema.CalculateDecayFactor(ageDays, 180.0)
+	}
+
 	// Base metrics
 	output.ChurnMap[path] += churn
 	output.CommitMap[path]++
+	output.DecayedCommitMap[path] += schema.Metric(decayFactor)
+	output.DecayedChurnMap[path] += churn * schema.Metric(decayFactor)
 	output.LinesAddedMap[path] += add
 	output.LinesDeletedMap[path] += del
 
@@ -324,6 +337,8 @@ func AggregateAndScoreFolders(gitSettings config.GitSettings, scoringSettings co
 		// 2. Aggregate simple metrics and score components
 		folderResults[folderPath].Commits += fr.Commits
 		folderResults[folderPath].Churn += fr.Churn
+		folderResults[folderPath].DecayedCommits += fr.DecayedCommits
+		folderResults[folderPath].DecayedChurn += fr.DecayedChurn
 		folderResults[folderPath].TotalLOC += fr.LinesOfCode
 		folderResults[folderPath].WeightedScoreSum += fr.ModeScore * fr.LinesOfCode.Float64()
 

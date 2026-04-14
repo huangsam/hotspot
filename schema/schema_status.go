@@ -33,6 +33,8 @@ type FileScoresMetricsRecord struct {
 	TotalChurn             Metric
 	LinesAdded             Metric
 	LinesDeleted           Metric
+	DecayedCommits         Metric
+	DecayedChurn           Metric
 	LinesOfCode            Metric
 	ContributorCount       Metric
 	RecentCommits          Metric

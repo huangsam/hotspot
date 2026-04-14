@@ -13,6 +13,8 @@ type FileResult struct {
 	RecentChurn        Metric    `json:"recent_churn"`         // Recent churn within a time window
 	RecentLinesAdded   Metric    `json:"recent_lines_added"`   // Recent lines added
 	RecentLinesDeleted Metric    `json:"recent_lines_deleted"` // Recent lines deleted
+	DecayedCommits     Metric    `json:"decayed_commits"`      // Time-weighted commit count
+	DecayedChurn       Metric    `json:"decayed_churn"`        // Time-weighted churn count
 	RecentWindowDays   int       `json:"recent_window_days"`   // Number of days defining the 'recent' window
 	SizeBytes          int64     `json:"size_bytes"`           // Current size of the file in bytes (Stay int64 as it's a file property)
 	LinesOfCode        Metric    `json:"lines_of_code"`        // Current lines of code
@@ -62,11 +64,13 @@ func (f FileResult) GetOwners() []string {
 
 // FolderResult holds the final computed scores and aggregated metrics for a folder.
 type FolderResult struct {
-	Path    string   `json:"path"`    // Relative path to the folder in the repository
-	Commits Metric   `json:"commits"` // Total number of commits across all contained files
-	Churn   Metric   `json:"churn"`   // Total number of lines added/deleted across all contained files
-	Score   float64  `json:"score"`   // Computed importance score for the folder
-	Owners  []string `json:"owners"`  // Top 2 owners by commit count
+	Path           string   `json:"path"`            // Relative path to the folder in the repository
+	Commits        Metric   `json:"commits"`         // Total number of commits across all contained files
+	Churn          Metric   `json:"churn"`           // Total number of lines added/deleted across all contained files
+	DecayedCommits Metric   `json:"decayed_commits"` // Time-weighted commits across all contained files
+	DecayedChurn   Metric   `json:"decayed_churn"`   // Time-weighted churn across all contained files
+	Score          float64  `json:"score"`           // Computed importance score for the folder
+	Owners         []string `json:"owners"`          // Top 2 owners by commit count
 
 	TotalLOC         Metric      `json:"total_loc"`          // Sum of LOC of all contained files (used for weighted average)
 	WeightedScoreSum float64     `json:"weighted_score_sum"` // Sum of (FileScore * FileLOC)

@@ -3,6 +3,7 @@ package schema
 import (
 	"errors"
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -120,4 +121,15 @@ func CalculateDaysBetween(start, end time.Time) int {
 		return 0
 	}
 	return int(end.Sub(start) / (24 * time.Hour))
+}
+
+// CalculateDecayFactor computes a weighting factor [0,1] based on age in days.
+// Formula: e^(-k * ageDays), where k = ln(2) / halfLifeDays.
+func CalculateDecayFactor(ageDays float64, halfLifeDays float64) float64 {
+	if halfLifeDays <= 0 {
+		return 1.0 // No decay if half-life is non-positive
+	}
+	// k = ln(2) / halfLife
+	k := math.Log(2) / halfLifeDays
+	return math.Exp(-k * ageDays)
 }

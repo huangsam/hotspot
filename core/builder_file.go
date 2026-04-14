@@ -72,6 +72,12 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 		if deleted, ok := b.output.LinesDeletedMap[path]; ok {
 			b.result.LinesDeleted = deleted
 		}
+		if decayedCommits, ok := b.output.DecayedCommitMap[path]; ok {
+			b.result.DecayedCommits = decayedCommits
+		}
+		if decayedChurn, ok := b.output.DecayedChurnMap[path]; ok {
+			b.result.DecayedChurn = decayedChurn
+		}
 		if contribMap, ok := b.output.ContribMap[path]; ok {
 			b.contribCount = make(map[string]schema.Metric)
 			maps.Copy(b.contribCount, contribMap)
@@ -169,7 +175,12 @@ func (b *FileResultBuilder) CalculateDerivedMetrics() *FileResultBuilder {
 	if b.result.FirstCommit.IsZero() {
 		b.result.AgeDays = 0
 	} else {
-		b.result.AgeDays = schema.Metric(schema.CalculateDaysBetween(b.result.FirstCommit, time.Now()))
+		// Calculate age relative to the analysis EndTime if available, else time.Now()
+		refTime := time.Now()
+		if b.output != nil && !b.output.EndTime.IsZero() {
+			refTime = b.output.EndTime
+		}
+		b.result.AgeDays = schema.Metric(schema.CalculateDaysBetween(b.result.FirstCommit, refTime))
 	}
 
 	// Gini coefficient for author diversity

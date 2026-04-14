@@ -70,6 +70,7 @@ The `core` package implements five distinct scoring algorithms based on differen
 
 - **High-Precision Architecture (Metric Type)**: Hotspot has evolved from a discrete integer engine to a continuous signal architecture via the `schema.Metric` type (aliased to `float64`).
   - **From Discrete to Continuous**: Traditional metrics (commits, churn) are now high-precision magnitudes. This eliminates "clipping" artifacts when applying decay or weights.
+  - **Time-Weighted Activity (Decay)**: Scoring algorithms (`hot`, `roi`) now use exponential decay (default half-life of 180 days) on commits and churn. This ensures that current development bottlenecks are prioritized over historical volume.
   - **AI Signal Readiness**: LLMs and Agents perform more robust reasoning when presented with raw, continuous magnitudes rather than coarse-grained integers.
   - **Multi-Source Ingestion (The Sponge)**: This architecture enables Hotspot to ingest and blend "fuzzy" signals from non-git sources (e.g., JIRA story points, Slack activity weights, or sentiment scores) into a unified scoring vector.
 

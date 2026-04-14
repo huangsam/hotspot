@@ -12,7 +12,7 @@ func TestParseAndAggregateGitLog_Comprehensive(t *testing.T) {
 	gitLogData, fileExists := generateComprehensiveTestData()
 
 	// Initialize aggregation maps
-	output := initializeAggregateOutput()
+	output := initializeAggregateOutput(time.Now())
 	recentThreshold := time.Now().AddDate(0, 0, -30)
 
 	// Execute parsing
@@ -51,7 +51,7 @@ func TestParseAndAggregateGitLog_Comprehensive(t *testing.T) {
 func TestParseAndAggregateGitLog_WithRenames(t *testing.T) {
 	gitLogData, fileExists := generateRenameTestData()
 
-	output := initializeAggregateOutput()
+	output := initializeAggregateOutput(time.Now())
 	recentThreshold := time.Now().AddDate(0, 0, -30)
 
 	parseAndAggregateGitLog(gitLogData, fileExists, output, recentThreshold)
@@ -77,7 +77,7 @@ func TestParseAndAggregateGitLog_WithRenames(t *testing.T) {
 func TestParseAndAggregateGitLog_EdgeCases(t *testing.T) {
 	gitLogData, fileExists := generateEdgeCaseTestData()
 
-	output := initializeAggregateOutput()
+	output := initializeAggregateOutput(time.Now())
 	recentThreshold := time.Now().AddDate(0, 0, -30)
 
 	parseAndAggregateGitLog(gitLogData, fileExists, output, recentThreshold)
@@ -243,7 +243,7 @@ func TestAggregateForPath(t *testing.T) {
 	laterTime := testTime.Add(time.Hour)
 
 	t.Run("single aggregation", func(t *testing.T) {
-		output := initializeAggregateOutput()
+		output := initializeAggregateOutput(time.Now())
 
 		aggregateForPath("src/main.go", 10, 5, "Alice", testTime, output, time.Time{})
 
@@ -256,7 +256,7 @@ func TestAggregateForPath(t *testing.T) {
 	})
 
 	t.Run("multiple aggregations same file", func(t *testing.T) {
-		output := initializeAggregateOutput()
+		output := initializeAggregateOutput(time.Now())
 
 		// First aggregation
 		aggregateForPath("src/main.go", 10, 5, "Alice", testTime, output, time.Time{})
@@ -276,7 +276,7 @@ func TestAggregateForPath(t *testing.T) {
 	})
 
 	t.Run("multiple authors", func(t *testing.T) {
-		output := initializeAggregateOutput()
+		output := initializeAggregateOutput(time.Now())
 
 		aggregateForPath("src/main.go", 10, 5, "Alice", testTime, output, time.Time{})
 		aggregateForPath("src/main.go", 5, 5, "Bob", laterTime, output, time.Time{})
@@ -287,7 +287,7 @@ func TestAggregateForPath(t *testing.T) {
 	})
 
 	t.Run("empty author", func(t *testing.T) {
-		output := initializeAggregateOutput()
+		output := initializeAggregateOutput(time.Now())
 
 		aggregateForPath("src/utils.go", 4, 4, "", laterTime, output, time.Time{})
 
@@ -297,7 +297,7 @@ func TestAggregateForPath(t *testing.T) {
 	})
 
 	t.Run("zero time", func(t *testing.T) {
-		output := initializeAggregateOutput()
+		output := initializeAggregateOutput(time.Now())
 
 		aggregateForPath("src/zero.go", 1, 2, "Charlie", time.Time{}, output, time.Time{})
 

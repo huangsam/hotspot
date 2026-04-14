@@ -4,10 +4,13 @@ import "time"
 
 // AggregateOutput is the aggregation of all things from the one-pass Git operation.
 type AggregateOutput struct {
-	CommitMap      map[string]Metric            // Maps file path to its commit count
-	ChurnMap       map[string]Metric            // Maps file path to its churn (lines added/deleted) count
-	ContribMap     map[string]map[string]Metric // Maps file path to an inner map of AuthorName:CommitCount
-	FirstCommitMap map[string]time.Time         // Maps file path to its first commit time in the analysis window
+	CommitMap        map[string]Metric            // Maps file path to its commit count
+	ChurnMap         map[string]Metric            // Maps file path to its churn (lines added/deleted) count
+	ContribMap       map[string]map[string]Metric // Maps file path to an inner map of AuthorName:CommitCount
+	FirstCommitMap   map[string]time.Time         // Maps file path to its first commit time in the analysis window
+	DecayedCommitMap map[string]Metric            // Maps file path to time-weighted commit count
+	DecayedChurnMap  map[string]Metric            // Maps file path to time-weighted churn count
+	EndTime          time.Time                    // The end time of the analysis window (reference for decay)
 
 	// Decomposed Churn
 	LinesAddedMap   map[string]Metric
@@ -28,6 +31,8 @@ type FileMetrics struct {
 	TotalChurn             Metric
 	LinesAdded             Metric
 	LinesDeleted           Metric
+	DecayedCommits         Metric
+	DecayedChurn           Metric
 	LinesOfCode            Metric
 	ContributorCount       Metric
 	RecentCommits          Metric

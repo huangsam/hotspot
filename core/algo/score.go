@@ -50,6 +50,10 @@ func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, weights map[sch
 	nChurn := clamp01(m.Churn.Float64() / maxChurn)
 	nLOC := clamp01(m.LinesOfCode.Float64() / maxLOC) // Normalized Lines of Code
 
+	// Decayed Activity Metrics
+	nDecayedCommits := clamp01(m.DecayedCommits.Float64() / maxCommits)
+	nDecayedChurn := clamp01(m.DecayedChurn.Float64() / maxChurn)
+
 	// Inverted Metrics
 	nGiniRaw := clamp01(m.Gini)            // Gini (raw: high is bad)
 	nInvContrib := clamp01(1.0 - nContrib) // Inverse Contributors (high is bad/risky)
@@ -73,9 +77,18 @@ func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, weights map[sch
 	clear(breakdown)
 
 	// Build breakdown by applying weights to normalized metrics
+	// Default to raw volume unless the mode specifically benefits from decay
+	finalCommits := nCommits
+	finalChurn := nChurn
+
+	if mode == schema.HotMode || mode == schema.ROIMode {
+		finalCommits = nDecayedCommits
+		finalChurn = nDecayedChurn
+	}
+
 	breakdown[schema.BreakdownAge] = weights[schema.BreakdownAge] * nAge
-	breakdown[schema.BreakdownChurn] = weights[schema.BreakdownChurn] * nChurn
-	breakdown[schema.BreakdownCommits] = weights[schema.BreakdownCommits] * nCommits
+	breakdown[schema.BreakdownChurn] = weights[schema.BreakdownChurn] * finalChurn
+	breakdown[schema.BreakdownCommits] = weights[schema.BreakdownCommits] * finalCommits
 	breakdown[schema.BreakdownContrib] = weights[schema.BreakdownContrib] * nContrib
 	breakdown[schema.BreakdownSize] = weights[schema.BreakdownSize] * nSize
 

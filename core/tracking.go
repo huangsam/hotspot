@@ -32,6 +32,8 @@ func recordFileAnalysis(ctx context.Context, scoringSettings config.ScoringSetti
 		TotalChurn:             result.Churn,
 		LinesAdded:             result.LinesAdded,
 		LinesDeleted:           result.LinesDeleted,
+		DecayedCommits:         result.DecayedCommits,
+		DecayedChurn:           result.DecayedChurn,
 		LinesOfCode:            result.LinesOfCode,
 		ContributorCount:       result.UniqueContributors,
 		RecentCommits:          result.RecentCommits,

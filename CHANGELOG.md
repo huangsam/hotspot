@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - ROI scoring mode to prioritize refactoring efforts with highest technical return
+- Time-weighted activity (exponential decay) for commits and churn to prioritize recent impact
 - Repository URN tracking for portable repository identity across machines
 - Granular recent activity metrics (lines added/deleted, recent churn) to analysis history
 - Markdown and Describe (Executive Summary) output formats
