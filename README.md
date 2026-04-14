@@ -54,9 +54,9 @@ hotspot folders
 hotspot files /path/to/repo/pkg
 ```
 
-### AI Agent Integration (MCP)
+### MCP server
 
-Hotspot includes a built-in [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server. This allows AI agents (like Claude Desktop or Cursor) to analyze your repositories directly with full support for filtering and time-anchored trends!
+Hotspot includes a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server. This allows AI agents (like Claude Desktop or Cursor) to analyze your repositories directly with full support for filtering and time-anchored trends!
 
 ```bash
 # Start the MCP server (stdio)
@@ -65,7 +65,7 @@ hotspot mcp
 
 The MCP tools (`get_files_hotspots`, `compare_hotspots`, etc.) support the same parameters as the CLI, including `repo_path`, `mode`, `limit`, `start`, and `end`.
 
-### Full Documentation
+### Documentation
 
 - **[USERGUIDE.md](./USERGUIDE.md)**: Detailed commands, configuration options, backend setup, data exports, and common workflows.
 - **[PLAYBOOK.md](./PLAYBOOK.md)**: Actionable guidance on using this data to foster a healthy engineering culture.
