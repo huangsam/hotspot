@@ -1,5 +1,5 @@
-// Package jsonwriter provides a FormatProvider implementation for JSON output.
-package jsonwriter
+// Package provider implements the FormatProvider implementation for JSON output.
+package provider
 
 import (
 	"encoding/json"
@@ -11,16 +11,16 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// Provider implements oututil.FormatProvider for JSON output.
-type Provider struct{}
+// JSONProvider implements FormatProvider for JSON output.
+type JSONProvider struct{}
 
-// NewProvider creates a new JSON provider.
-func NewProvider() *Provider {
-	return &Provider{}
+// NewJSONProvider creates a new JSON provider.
+func NewJSONProvider() *JSONProvider {
+	return &JSONProvider{}
 }
 
 // WriteFiles serializes file analysis results to JSON.
-func (p *Provider) WriteFiles(w io.Writer, results []schema.FileResult, _ config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
+func (p *JSONProvider) WriteFiles(w io.Writer, results []schema.FileResult, _ config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
 	output := schema.FileResultsOutput{
 		Results:  schema.EnrichFiles(results),
 		Metadata: schema.BuildMetadata(runtime, duration),
@@ -29,7 +29,7 @@ func (p *Provider) WriteFiles(w io.Writer, results []schema.FileResult, _ config
 }
 
 // WriteFolders serializes folder analysis results to JSON.
-func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, _ config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
+func (p *JSONProvider) WriteFolders(w io.Writer, results []schema.FolderResult, _ config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
 	output := schema.FolderResultsOutput{
 		Results:  schema.EnrichFolders(results),
 		Metadata: schema.BuildMetadata(runtime, duration),
@@ -38,7 +38,7 @@ func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, _ co
 }
 
 // WriteComparison serializes comparison results to JSON.
-func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult, _ config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
+func (p *JSONProvider) WriteComparison(w io.Writer, results schema.ComparisonResult, _ config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
 	output := schema.ComparisonResultsOutput{
 		Results:  results,
 		Metadata: schema.BuildMetadata(runtime, duration),
@@ -47,18 +47,18 @@ func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult,
 }
 
 // WriteTimeseries serializes timeseries points to JSON.
-func (p *Provider) WriteTimeseries(w io.Writer, result schema.TimeseriesResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+func (p *JSONProvider) WriteTimeseries(w io.Writer, result schema.TimeseriesResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	return p.encode(w, result)
 }
 
 // WriteMetrics serializes metrics definitions to JSON.
-func (p *Provider) WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, _ config.OutputSettings) error {
+func (p *JSONProvider) WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, _ config.OutputSettings) error {
 	model := schema.BuildMetricsRenderModel(activeWeights)
 	return p.encode(w, model)
 }
 
 // encode is a private helper to handle consistent JSON formatting.
-func (p *Provider) encode(w io.Writer, data any) error {
+func (p *JSONProvider) encode(w io.Writer, data any) error {
 	encoder := json.NewEncoder(w)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(data); err != nil {

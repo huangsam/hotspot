@@ -1,5 +1,5 @@
-// Package parquet provides a FormatProvider implementation for Parquet output.
-package parquet
+// Package provider implements the FormatProvider implementation for Parquet output.
+package provider
 
 import (
 	"fmt"
@@ -11,18 +11,18 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// Provider implements the oututil.FormatProvider interface for Parquet output.
-type Provider struct{}
+// ParquetProvider implements the FormatProvider interface for Parquet output.
+type ParquetProvider struct{}
 
-// NewProvider creates a new Parquet provider.
-func NewProvider() *Provider {
-	return &Provider{}
+// NewParquetProvider creates a new Parquet provider.
+func NewParquetProvider() *ParquetProvider {
+	return &ParquetProvider{}
 }
 
 // WriteFiles writes file analysis results in Parquet format.
 // Note: Parquet output requires a file path. If io.Writer is not an *os.File,
 // it might fallback or error. However, the CLI usually provides a file.
-func (p *Provider) WriteFiles(_ io.Writer, files []schema.FileResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+func (p *ParquetProvider) WriteFiles(_ io.Writer, files []schema.FileResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	outputPath := output.GetOutputFile()
 	if outputPath == "" {
 		// Parquet usually requires a seekable file, it's hard to stream to stdout directly with standard libraries
@@ -72,25 +72,25 @@ func (p *Provider) WriteFiles(_ io.Writer, files []schema.FileResult, output con
 }
 
 // WriteFolders is not specifically implemented for Parquet.
-func (p *Provider) WriteFolders(w io.Writer, _ []schema.FolderResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+func (p *ParquetProvider) WriteFolders(w io.Writer, _ []schema.FolderResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	_, err := fmt.Fprintln(w, "Parquet output is not supported for folder analysis.")
 	return err
 }
 
 // WriteComparison is not specifically implemented for Parquet.
-func (p *Provider) WriteComparison(w io.Writer, _ schema.ComparisonResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+func (p *ParquetProvider) WriteComparison(w io.Writer, _ schema.ComparisonResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	_, err := fmt.Fprintln(w, "Parquet output is not supported for comparison analysis.")
 	return err
 }
 
 // WriteTimeseries is not specifically implemented for Parquet.
-func (p *Provider) WriteTimeseries(w io.Writer, _ schema.TimeseriesResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+func (p *ParquetProvider) WriteTimeseries(w io.Writer, _ schema.TimeseriesResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	_, err := fmt.Fprintln(w, "Parquet output is not supported for timeseries analysis.")
 	return err
 }
 
 // WriteMetrics is not specifically implemented for Parquet.
-func (p *Provider) WriteMetrics(w io.Writer, _ map[schema.ScoringMode]map[schema.BreakdownKey]float64, _ config.OutputSettings) error {
+func (p *ParquetProvider) WriteMetrics(w io.Writer, _ map[schema.ScoringMode]map[schema.BreakdownKey]float64, _ config.OutputSettings) error {
 	_, err := fmt.Fprintln(w, "Parquet output is not supported for metrics definitions.")
 	return err
 }

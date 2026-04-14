@@ -1,5 +1,5 @@
-// Package describe provides a FormatProvider implementation for executive summary output.
-package describe
+// Package provider implements the FormatProvider implementation for executive summary output.
+package provider
 
 import (
 	"fmt"
@@ -11,16 +11,16 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// Provider implements the oututil.FormatProvider interface for executive summary output.
-type Provider struct{}
+// DescribeProvider implements the FormatProvider interface for executive summary output.
+type DescribeProvider struct{}
 
-// NewProvider creates a new describe provider.
-func NewProvider() *Provider {
-	return &Provider{}
+// NewDescribeProvider creates a new describe provider.
+func NewDescribeProvider() *DescribeProvider {
+	return &DescribeProvider{}
 }
 
 // WriteFiles writes the analysis results in a markdown-based executive summary.
-func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+func (p *DescribeProvider) WriteFiles(w io.Writer, files []schema.FileResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	if _, err := fmt.Fprintln(w, "# Repository Health Executive Summary"); err != nil {
 		return err
 	}
@@ -84,30 +84,30 @@ func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, _ config.O
 }
 
 // WriteFolders is not specifically implemented for describe mode, fallback to no-op or message.
-func (p *Provider) WriteFolders(w io.Writer, _ []schema.FolderResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+func (p *DescribeProvider) WriteFolders(w io.Writer, _ []schema.FolderResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	_, err := fmt.Fprintln(w, "Describe mode is not supported for folder analysis.")
 	return err
 }
 
 // WriteComparison is not specifically implemented for describe mode.
-func (p *Provider) WriteComparison(w io.Writer, _ schema.ComparisonResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+func (p *DescribeProvider) WriteComparison(w io.Writer, _ schema.ComparisonResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	_, err := fmt.Fprintln(w, "Describe mode is not supported for comparison analysis.")
 	return err
 }
 
 // WriteTimeseries is not specifically implemented for describe mode.
-func (p *Provider) WriteTimeseries(w io.Writer, _ schema.TimeseriesResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+func (p *DescribeProvider) WriteTimeseries(w io.Writer, _ schema.TimeseriesResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	_, err := fmt.Fprintln(w, "Describe mode is not supported for timeseries analysis.")
 	return err
 }
 
 // WriteMetrics is not specifically implemented for describe mode.
-func (p *Provider) WriteMetrics(w io.Writer, _ map[schema.ScoringMode]map[schema.BreakdownKey]float64, _ config.OutputSettings) error {
+func (p *DescribeProvider) WriteMetrics(w io.Writer, _ map[schema.ScoringMode]map[schema.BreakdownKey]float64, _ config.OutputSettings) error {
 	_, err := fmt.Fprintln(w, "Describe mode is not supported for metrics definitions.")
 	return err
 }
 
-func (p *Provider) writeFileSummary(w io.Writer, f schema.FileResult) error {
+func (p *DescribeProvider) writeFileSummary(w io.Writer, f schema.FileResult) error {
 	reasoning := "No specific reasons identified."
 	if len(f.Reasoning) > 0 {
 		reasoning = strings.Join(f.Reasoning, " ")

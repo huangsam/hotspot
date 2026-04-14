@@ -1,5 +1,5 @@
-// Package markdown provides a FormatProvider implementation for Markdown output.
-package markdown
+// Package provider implements the FormatProvider implementation for Markdown output.
+package provider
 
 import (
 	"fmt"
@@ -9,21 +9,20 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/outwriter/oututil"
 	"github.com/huangsam/hotspot/schema"
 )
 
-// Provider implements the oututil.FormatProvider interface for Markdown output.
-type Provider struct{}
+// MarkdownProvider implements the FormatProvider interface for Markdown output.
+type MarkdownProvider struct{}
 
-// NewProvider creates a new markdown provider.
-func NewProvider() *Provider {
-	return &Provider{}
+// NewMarkdownProvider creates a new markdown provider.
+func NewMarkdownProvider() *MarkdownProvider {
+	return &MarkdownProvider{}
 }
 
 // WriteFiles writes file analysis results in Markdown format.
-func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output config.OutputSettings, _ config.RuntimeSettings, duration time.Duration) error {
-	fmtFloat := oututil.CreateFormatters(output.GetPrecision())
+func (p *MarkdownProvider) WriteFiles(w io.Writer, files []schema.FileResult, output config.OutputSettings, _ config.RuntimeSettings, duration time.Duration) error {
+	fmtFloat := CreateFormatters(output.GetPrecision())
 
 	if _, err := fmt.Fprintln(w, "## File Hotspots"); err != nil {
 		return err
@@ -75,8 +74,8 @@ func (p *Provider) WriteFiles(w io.Writer, files []schema.FileResult, output con
 }
 
 // WriteFolders writes folder analysis results in Markdown format.
-func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, output config.OutputSettings, _ config.RuntimeSettings, duration time.Duration) error {
-	fmtFloat := oututil.CreateFormatters(output.GetPrecision())
+func (p *MarkdownProvider) WriteFolders(w io.Writer, results []schema.FolderResult, output config.OutputSettings, _ config.RuntimeSettings, duration time.Duration) error {
+	fmtFloat := CreateFormatters(output.GetPrecision())
 
 	if _, err := fmt.Fprintln(w, "## Folder Hotspots"); err != nil {
 		return err
@@ -125,8 +124,8 @@ func (p *Provider) WriteFolders(w io.Writer, results []schema.FolderResult, outp
 }
 
 // WriteComparison writes comparison analysis results in Markdown format.
-func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
-	fmtFloat := oututil.CreateFormatters(output.GetPrecision())
+func (p *MarkdownProvider) WriteComparison(w io.Writer, results schema.ComparisonResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+	fmtFloat := CreateFormatters(output.GetPrecision())
 
 	if _, err := fmt.Fprintln(w, "## Comparison Results"); err != nil {
 		return err
@@ -159,7 +158,7 @@ func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult,
 			row = append(row, r.DeltaChurn.Display())
 		}
 		if output.IsOwner() {
-			row = append(row, oututil.FormatOwnershipDiff(r))
+			row = append(row, FormatOwnershipDiff(r))
 		}
 		p.writeMarkdownRow(w, row)
 	}
@@ -190,8 +189,8 @@ func (p *Provider) WriteComparison(w io.Writer, results schema.ComparisonResult,
 }
 
 // WriteTimeseries writes timeseries analysis results in Markdown format.
-func (p *Provider) WriteTimeseries(w io.Writer, result schema.TimeseriesResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
-	fmtFloat := oututil.CreateFormatters(output.GetPrecision())
+func (p *MarkdownProvider) WriteTimeseries(w io.Writer, result schema.TimeseriesResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+	fmtFloat := CreateFormatters(output.GetPrecision())
 
 	if _, err := fmt.Fprintln(w, "## Timeseries Analysis"); err != nil {
 		return err
@@ -223,7 +222,7 @@ func (p *Provider) WriteTimeseries(w io.Writer, result schema.TimeseriesResult, 
 }
 
 // WriteMetrics writes metrics definitions in Markdown format.
-func (p *Provider) WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, _ config.OutputSettings) error {
+func (p *MarkdownProvider) WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, _ config.OutputSettings) error {
 	renderModel := schema.BuildMetricsRenderModel(activeWeights)
 
 	if _, err := fmt.Fprintf(w, "## %s\n\n", renderModel.Title); err != nil {
@@ -249,7 +248,7 @@ func (p *Provider) WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMod
 	return nil
 }
 
-func (p *Provider) writeMarkdownTable(w io.Writer, headers []string) {
+func (p *MarkdownProvider) writeMarkdownTable(w io.Writer, headers []string) {
 	_, _ = fmt.Fprintf(w, "| %s |\n", strings.Join(headers, " | "))
 	sep := make([]string, len(headers))
 	for i := range sep {
@@ -258,6 +257,6 @@ func (p *Provider) writeMarkdownTable(w io.Writer, headers []string) {
 	_, _ = fmt.Fprintf(w, "| %s |\n", strings.Join(sep, " | "))
 }
 
-func (p *Provider) writeMarkdownRow(w io.Writer, columns []string) {
+func (p *MarkdownProvider) writeMarkdownRow(w io.Writer, columns []string) {
 	_, _ = fmt.Fprintf(w, "| %s |\n", strings.Join(columns, " | "))
 }

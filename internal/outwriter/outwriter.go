@@ -6,12 +6,7 @@ import (
 	"time"
 
 	"github.com/huangsam/hotspot/internal/config"
-	"github.com/huangsam/hotspot/internal/outwriter/csvwriter"
-	"github.com/huangsam/hotspot/internal/outwriter/describe"
-	"github.com/huangsam/hotspot/internal/outwriter/jsonwriter"
-	"github.com/huangsam/hotspot/internal/outwriter/markdown"
-	"github.com/huangsam/hotspot/internal/outwriter/parquet"
-	"github.com/huangsam/hotspot/internal/outwriter/text"
+	"github.com/huangsam/hotspot/internal/outwriter/provider"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -36,12 +31,12 @@ func NewOutWriter() *OutWriter {
 	}
 
 	// Register specific providers
-	ow.providers[schema.JSONOut] = jsonwriter.NewProvider()
-	ow.providers[schema.CSVOut] = csvwriter.NewProvider()
-	ow.providers[schema.TextOut] = text.NewProvider()
-	ow.providers[schema.MarkdownOut] = markdown.NewProvider()
-	ow.providers[schema.Describe] = describe.NewProvider()
-	ow.providers[schema.ParquetOut] = parquet.NewProvider()
+	ow.providers[schema.JSONOut] = provider.NewJSONProvider()
+	ow.providers[schema.CSVOut] = provider.NewCSVProvider()
+	ow.providers[schema.TextOut] = provider.NewTextProvider()
+	ow.providers[schema.MarkdownOut] = provider.NewMarkdownProvider()
+	ow.providers[schema.Describe] = provider.NewDescribeProvider()
+	ow.providers[schema.ParquetOut] = provider.NewParquetProvider()
 
 	return ow
 }

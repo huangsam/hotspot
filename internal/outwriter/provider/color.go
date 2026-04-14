@@ -1,5 +1,5 @@
-// Package oututil provides cross-provider formatting and rendering utilities.
-package oututil
+// Package provider provides cross-provider formatting and rendering utilities.
+package provider
 
 import (
 	"github.com/fatih/color"

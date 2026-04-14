@@ -1,5 +1,5 @@
-// Package json_test contains unit tests for the JSON provider.
-package jsonwriter
+// Package provider_test contains unit tests for the JSON provider.
+package provider
 
 import (
 	"bytes"
@@ -14,7 +14,7 @@ import (
 )
 
 func TestWriteFiles(t *testing.T) {
-	p := NewProvider()
+	p := NewJSONProvider()
 	files := []schema.FileResult{
 		{
 			Path:      "test.go",
@@ -46,7 +46,7 @@ func TestWriteFiles(t *testing.T) {
 }
 
 func TestWriteFolders(t *testing.T) {
-	p := NewProvider()
+	p := NewJSONProvider()
 	folders := []schema.FolderResult{
 		{
 			Path:  "cmd/",
@@ -72,7 +72,7 @@ func TestWriteFolders(t *testing.T) {
 }
 
 func TestWriteMetrics(t *testing.T) {
-	p := NewProvider()
+	p := NewJSONProvider()
 	activeWeights := map[schema.ScoringMode]map[schema.BreakdownKey]float64{
 		schema.HotMode: {
 			schema.BreakdownCommits: 1.0,
@@ -101,7 +101,7 @@ func TestWriteMetrics(t *testing.T) {
 }
 
 func TestWriteComparison(t *testing.T) {
-	p := NewProvider()
+	p := NewJSONProvider()
 	comparison := schema.ComparisonResult{
 		Details: []schema.ComparisonDetail{
 			{
