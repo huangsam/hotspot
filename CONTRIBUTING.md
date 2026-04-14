@@ -12,6 +12,17 @@ cd hotspot
 make
 ```
 
+## High-Level Architecture
+
+Hotspot is designed with a "Sponge" architecture that separates data ingestion (Git) from analysis logic and output formatting.
+
+-   **`cmd/`**: Entry points for the Cobra CLI.
+-   **`core/`**: The analysis engine. Responsible for concurrent Git log processing, scoring calculations, and the "Single-Pass" pipeline.
+-   **`schema/`**: Shared domain models, constants, and enrichment logic.
+-   **`internal/iocache/`**: Persistence layer with pluggable SQL dialects (SQLite, MySQL, PostgreSQL).
+-   **`internal/outwriter/`**: Extensible output provider pattern. Each format (JSON, CSV, Parquet, etc.) is isolated in `provider/` to prevent circular dependencies.
+-   **`internal/mcp/`**: Standard Model Context Protocol server implementation.
+
 ## How to Submit Feedback and Issues
 
 Before submitting an issue, please check the existing issues to see if the problem has already been reported.
