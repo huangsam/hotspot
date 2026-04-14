@@ -8,7 +8,7 @@
 limit: 15
 # workers: Use half the default workers for less impact on local machine performance.
 workers: 4
-# mode: Use the standard 'hot' scoring mode, prioritizing recent churn.
+# mode: Use 'hot' for tactical churn or 'roi' for strategic refactoring priority.
 mode: hot
 # precision: Keep precision low for readability.
 precision: 1
