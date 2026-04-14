@@ -14,13 +14,13 @@ CLI Args/Config (Viper) → Validation → Git Analysis (Concurrent) → Scoring
 
 **MCP (Model Context Protocol) Flow:**
 
-Hotspot can run as an MCP server (`hotspot mcp`) to expose its analysis capabilities as JSON-RPC tools (`get_files_hotspots`, `compare_hotspots`, `get_folders_hotspots`, `get_timeseries`) directly to LLMs. All tools support full parameter parity with the CLI, including `repo_path`, `mode`, `limit`, `start`, and `end`. **Critically, all MCP tools now accept an optional `urn` parameter**, enabling portable repository identity across machines (see Repository URN pattern below).
+Hotspot can run as an MCP server (`hotspot mcp`) to expose its analysis capabilities as JSON-RPC tools with full parameter parity. **Critically, all MCP tools now support an optional `urn` parameter** to enable portable repository identity across machines (see Repository URN pattern below).
 
 ```
 MCP Request (urn + repo_path) → Portable Identity Resolution → Git Analysis → Schema Enrichment → JSON Response
 ```
 
-Agents can provide a `urn` for portable identity across machines, ensuring that analysis runs for the same repository are unified in the database. However, a `repo_path` (defaulting to `.`) is still required to perform fresh Git analysis. In future versions, providing only a `urn` may allow querying historical/cached data from the database even without a local clone.
+Agents should provide a `urn` to ensure analysis runs for the same repository are unified in the database, regardless of the local clone path. Note that `repo_path` (defaulting to `.`) is still required to perform fresh Git analysis.
 
 ## Core Domain Concepts
 
@@ -60,7 +60,7 @@ The `core` package implements five distinct scoring algorithms based on differen
 
 - **Per-Dialect Migrations**: `internal/iocache/migrations/` contains three subdirectories (`sqlite/`, `mysql/`, `postgres/`) with backend-specific SQL files. `MigrateAnalysis` selects the correct subdirectory via `buildSource()`. DDL differs meaningfully across backends (e.g. `AUTOINCREMENT` vs `AUTO_INCREMENT` vs `BIGSERIAL`, `TEXT` vs `DATETIME(6)` vs `TIMESTAMPTZ`). Do not write dialect-agnostic SQL for schema changes — add a file per dialect.
 
-- **Analysis Store Filtering**: `AnalysisStore` exposes `GetAnalysisRuns(filter)` and `GetFileScoresMetrics(filter)` accepting `schema.AnalysisQueryFilter{URN, Limit, Offset}` for pagination and per-repo filtering. PostgreSQL requires `$N`-style placeholders (handled by `placeholderStr()`); SQLite and MySQL use `?`.
+- **Analysis Store Filtering**: `AnalysisStore` supports pagination and URN-based filtering via `schema.AnalysisQueryFilter`. Persistence dialects handle backend-specific variations (e.g., PostgreSQL placeholders vs SQLite/MySQL) internally.
 
 - **Quiet by Default & Telemetry Separation**: To support both human users and machine-readable pipelines (e.g., MCP, CI systems), the tool strictly separates output channels. Payload data (JSON, Parquet, or text tables) MUST go to `stdout`. Human UX contextual headers (`Repo: ..., Range: ...`) MUST go to `stderr`. Diagnostic and progress telemetry (e.g., "Running --follow...") MUST be routed through `internal/logger` (`logger.Info(...)`), remaining silent by default unless the user sets verbose/debug flags. **Never use `fmt.Println` or `fmt.Printf` for progress or status events**, to prevent corrupting structured data on standard out.
 
