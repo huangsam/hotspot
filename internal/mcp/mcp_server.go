@@ -26,9 +26,17 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		client:  client,
 	}
 
+	// --- 0. Tool: get_repo_shape ---
+	s.AddTool(mcp.NewTool("get_repo_shape",
+		mcp.WithDescription("Analyze the repository shape via a lightweight aggregation pass and return a recommended configuration preset (small, large, infra)."),
+		mcp.WithString("urn", mcp.Description("Universal Resource Name (e.g., 'git:github.com/org/repo' or 'local:hash'). If provided, repo_path is optional.")),
+		mcp.WithString("repo_path", mcp.Description("Path to the Git repository (defaults to current directory if not specified).")),
+	), h.handleGetRepoShape)
+
 	// --- 1. Tool: get_files_hotspots ---
 	s.AddTool(mcp.NewTool("get_files_hotspots",
 		mcp.WithDescription("Analyze git history to find code hotspots at the file level."),
+		mcp.WithString("preset", mcp.Description("Apply a named configuration preset (small, large, infra) before other parameters. Explicit parameters override preset defaults."), mcp.Enum("small", "large", "infra")),
 		mcp.WithString("urn", mcp.Description("Universal Resource Name (e.g., 'git:github.com/org/repo' or 'local:hash'). If provided, repo_path is optional and uses cached/historical analysis.")),
 		mcp.WithString("repo_path", mcp.Description("Path to the Git repository (defaults to current directory if not specified).")),
 		mcp.WithString("mode", mcp.Description("Scoring mode (hot, risk, complexity, stale). Defaults to 'hot'."), mcp.Enum("hot", "risk", "complexity", "stale")),
@@ -40,6 +48,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 	// --- 2. Tool: get_folders_hotspots ---
 	s.AddTool(mcp.NewTool("get_folders_hotspots",
 		mcp.WithDescription("Analyze git history to find code hotspots aggregated by folder."),
+		mcp.WithString("preset", mcp.Description("Apply a named configuration preset (small, large, infra) before other parameters. Explicit parameters override preset defaults."), mcp.Enum("small", "large", "infra")),
 		mcp.WithString("urn", mcp.Description("Universal Resource Name (e.g., 'git:github.com/org/repo' or 'local:hash'). If provided, repo_path is optional and uses cached/historical analysis.")),
 		mcp.WithString("repo_path", mcp.Description("Path to the Git repository.")),
 		mcp.WithString("mode", mcp.Description("Scoring mode (hot, risk, complexity, stale)."), mcp.Enum("hot", "risk", "complexity", "stale")),
@@ -53,6 +62,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithDescription("Compare hotspots between two Git references (e.g., branches, tags, or commits)."),
 		mcp.WithString("base_ref", mcp.Description("The base reference for comparison."), mcp.Required()),
 		mcp.WithString("target_ref", mcp.Description("The target reference for comparison."), mcp.Required()),
+		mcp.WithString("preset", mcp.Description("Apply a named configuration preset (small, large, infra) before other parameters. Explicit parameters override preset defaults."), mcp.Enum("small", "large", "infra")),
 		mcp.WithString("urn", mcp.Description("Universal Resource Name (e.g., 'git:github.com/org/repo' or 'local:hash'). If provided, repo_path is optional and uses cached/historical analysis.")),
 		mcp.WithString("lookback", mcp.Description("Time window for analysis (e.g., '6 months', '30d').")),
 		mcp.WithString("repo_path", mcp.Description("Path to the Git repository.")),
@@ -67,6 +77,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("path", mcp.Description("The file or folder path to analyze."), mcp.Required()),
 		mcp.WithString("interval", mcp.Description("Timeseries interval (e.g., '1 month', '3 months', '1 year')."), mcp.Required()),
 		mcp.WithNumber("points", mcp.Description("Number of data points to generate (trends)."), mcp.Required()),
+		mcp.WithString("preset", mcp.Description("Apply a named configuration preset (small, large, infra) before other parameters. Explicit parameters override preset defaults."), mcp.Enum("small", "large", "infra")),
 		mcp.WithString("urn", mcp.Description("Universal Resource Name (e.g., 'git:github.com/org/repo' or 'local:hash'). If provided, repo_path is optional and uses cached/historical analysis.")),
 		mcp.WithString("repo_path", mcp.Description("Path to the Git repository.")),
 		mcp.WithString("mode", mcp.Description("Scoring mode.")),
