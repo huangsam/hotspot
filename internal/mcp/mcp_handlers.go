@@ -57,12 +57,13 @@ func (h *toolHandler) resolveRepositoryPath(ctx context.Context, cfg *config.Con
 }
 
 // applyPresetToConfig applies a named preset to cfg if preset is non-empty.
-// Explicit request parameters applied after this call take precedence.
-func applyPresetToConfig(cfg *config.Config, presetName string) error {
+// Unknown preset names silently fall back to defaults. Explicit request parameters
+// applied after this call take precedence.
+func applyPresetToConfig(cfg *config.Config, presetName string) {
 	if presetName == "" {
-		return nil
+		return
 	}
-	return core.ApplyPreset(cfg, schema.PresetName(presetName))
+	_ = core.ApplyPreset(cfg, schema.PresetName(presetName))
 }
 
 // handleGetRepoShape handles the get_repo_shape tool.
@@ -97,9 +98,7 @@ func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.Ca
 		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
 	}
 
-	if err := applyPresetToConfig(cfg, request.GetString("preset", "")); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid preset: %v", err)), nil
-	}
+	applyPresetToConfig(cfg, request.GetString("preset", ""))
 
 	if m := request.GetString("mode", ""); m != "" {
 		cfg.Scoring.Mode = schema.ScoringMode(m)
@@ -132,9 +131,7 @@ func (h *toolHandler) handleGetFoldersHotspots(ctx context.Context, request mcp.
 		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
 	}
 
-	if err := applyPresetToConfig(cfg, request.GetString("preset", "")); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid preset: %v", err)), nil
-	}
+	applyPresetToConfig(cfg, request.GetString("preset", ""))
 
 	if m := request.GetString("mode", ""); m != "" {
 		cfg.Scoring.Mode = schema.ScoringMode(m)
@@ -170,9 +167,7 @@ func (h *toolHandler) handleCompareHotspots(ctx context.Context, request mcp.Cal
 		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
 	}
 
-	if err := applyPresetToConfig(cfg, request.GetString("preset", "")); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid preset: %v", err)), nil
-	}
+	applyPresetToConfig(cfg, request.GetString("preset", ""))
 
 	if m := request.GetString("mode", ""); m != "" {
 		cfg.Scoring.Mode = schema.ScoringMode(m)
@@ -208,9 +203,7 @@ func (h *toolHandler) handleGetTimeseries(ctx context.Context, request mcp.CallT
 		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
 	}
 
-	if err := applyPresetToConfig(cfg, request.GetString("preset", "")); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid preset: %v", err)), nil
-	}
+	applyPresetToConfig(cfg, request.GetString("preset", ""))
 
 	if m := request.GetString("mode", ""); m != "" {
 		cfg.Scoring.Mode = schema.ScoringMode(m)
