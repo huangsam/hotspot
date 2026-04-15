@@ -56,6 +56,37 @@ func (h *toolHandler) resolveRepositoryPath(ctx context.Context, cfg *config.Con
 	return nil
 }
 
+// applyPresetToConfig applies a named preset to cfg if preset is non-empty.
+// Explicit request parameters applied after this call take precedence.
+func applyPresetToConfig(cfg *config.Config, presetName string) error {
+	if presetName == "" {
+		return nil
+	}
+	return core.ApplyPreset(cfg, schema.PresetName(presetName))
+}
+
+// handleGetRepoShape handles the get_repo_shape tool.
+func (h *toolHandler) handleGetRepoShape(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	cfg := h.baseCfg.Clone()
+	urn := request.GetString("urn", "")
+	repoPath := request.GetString("repo_path", "")
+
+	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
+	}
+
+	shape, _, err := core.GetHotspotShapeResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("shape analysis failed: %v", err)), nil
+	}
+
+	jsonData, err := json.MarshalIndent(shape, "", "  ")
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("failed to serialize shape: %v", err)), nil
+	}
+	return mcp.NewToolResultText(string(jsonData)), nil
+}
+
 // handleGetFilesHotspots handles the get_files_hotspots tool.
 func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	cfg := h.baseCfg.Clone()
@@ -64,6 +95,10 @@ func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.Ca
 
 	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
+	}
+
+	if err := applyPresetToConfig(cfg, request.GetString("preset", "")); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid preset: %v", err)), nil
 	}
 
 	if m := request.GetString("mode", ""); m != "" {
@@ -95,6 +130,10 @@ func (h *toolHandler) handleGetFoldersHotspots(ctx context.Context, request mcp.
 
 	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
+	}
+
+	if err := applyPresetToConfig(cfg, request.GetString("preset", "")); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid preset: %v", err)), nil
 	}
 
 	if m := request.GetString("mode", ""); m != "" {
@@ -131,6 +170,10 @@ func (h *toolHandler) handleCompareHotspots(ctx context.Context, request mcp.Cal
 		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
 	}
 
+	if err := applyPresetToConfig(cfg, request.GetString("preset", "")); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid preset: %v", err)), nil
+	}
+
 	if m := request.GetString("mode", ""); m != "" {
 		cfg.Scoring.Mode = schema.ScoringMode(m)
 	}
@@ -163,6 +206,10 @@ func (h *toolHandler) handleGetTimeseries(ctx context.Context, request mcp.CallT
 
 	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
+	}
+
+	if err := applyPresetToConfig(cfg, request.GetString("preset", "")); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid preset: %v", err)), nil
 	}
 
 	if m := request.GetString("mode", ""); m != "" {
