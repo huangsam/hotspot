@@ -13,6 +13,16 @@ Hotspot provides the data-driven signal needed to identify these risks and start
 
 ## Analysis features
 
+### Repository shape & preset recommendation
+
+The `shape` command characterizes your repo in a single aggregation pass:
+
+```bash
+hotspot shape           # Print shape metrics as JSON
+hotspot shape --init    # Write recommended preset to .hotspot.yml
+hotspot files --preset large  # Use preset to configure analysis
+```
+
 ### Scoring modes
 
 The core power of Hotspot lies in its `--mode` flag, which selects the ranking algorithm used to identify different types of risk.
@@ -119,10 +129,13 @@ To use Hotspot with Claude Desktop, add it to your `claude_desktop_config.json`:
 ### Supported MCP Tools
 
 The server exposes the following tools to the AI agent:
+- `get_repo_shape`: Characterize the repository and get a recommended preset (lightweight aggregation pass).
 - `get_files_hotspots`: Rank files by hot, risk, complexity, or stale modes.
 - `get_folders_hotspots`: Same as above, but aggregated at the folder level.
 - `compare_hotspots`: Compare changes in technical debt between two Git references.
 - `get_timeseries`: Track the trend of a specific file or folder over time.
+
+All analysis tools support an optional `preset` parameter to auto-configure scoring mode, worker count, result limit, and time window based on the recommended preset family.
 
 ## Configuration
 

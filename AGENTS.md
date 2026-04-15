@@ -48,6 +48,19 @@ The `core` package implements five distinct scoring algorithms based on differen
    - **Focus**: High churn on complex/large legacy files (Technical impact vs. Effort).
    - **Use Case**: Prioritize refactoring targets in a large codebase with limited resources.
 
+## Repository Shape & Preset System
+
+Hotspot includes **shape analysis** (lightweight single-pass aggregation) to characterize repositories and recommend presets.
+
+**Three fixed presets:**
+| Preset | Mode | Use Case |
+|--------|------|----------|
+| **small** | hot | CLI tools, microservices, libraries |
+| **large** | roi | Large monorepos with deep histories |
+| **infra** | risk | Infrastructure-as-code repositories |
+
+**Workflow:** `hotspot shape` → get recommendation → apply via `--preset <name>` to other commands.
+
 ## Key Design Patterns
 
 - **I/O Caching**: Results and analysis are cached using pluggable backends (SQLite, MySQL, PostgreSQL) to dramatically speed up repeated analyses. See `internal/iocache/`.

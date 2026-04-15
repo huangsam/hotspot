@@ -44,6 +44,9 @@ Visit the [latest release](https://github.com/huangsam/hotspot/releases/latest) 
 ## Quick start
 
 ```bash
+# Characterize your repository shape and get a recommended preset
+hotspot shape
+
 # Analyze files for immediate, tactical risk
 hotspot files
 

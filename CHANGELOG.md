@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.0] - 2026-04-15
+
+### Added
+- `hotspot shape` command for lightweight repository characterization and preset recommendation
+- `get_repo_shape` MCP tool to expose shape analysis as JSON for AI agents
+- Preset system (small, large, infra) with embedded configuration templates
+- Preset parameter support on all MCP analysis tools (`get_files_hotspots`, `get_folders_hotspots`, `compare_hotspots`, `get_timeseries`)
+
+### Changed
+- MCP preset handling now treats presets as optional convenience (silent fallback to defaults for invalid names)
+
+### Fixed
+- Help text alignment for `--mode` flag across CLI and documentation
+
 ## [1.14.0] - 2026-04-14
 
 ### Added
