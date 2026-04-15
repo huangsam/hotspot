@@ -18,7 +18,7 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// ShapeFileName is the default filename written by hotspot shape --save.
+// ShapeFileName is the default filename written by hotspot shape --init.
 const ShapeFileName = ".hotspot.yml"
 
 // iacExtensions are file extensions strongly associated with IaC tooling.
