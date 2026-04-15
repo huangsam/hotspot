@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	clipresets "github.com/huangsam/hotspot/examples/cli"
 	"github.com/huangsam/hotspot/core/agg"
+	clipresets "github.com/huangsam/hotspot/examples/cli"
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
@@ -183,7 +183,7 @@ func ExecuteHotspotShape(ctx context.Context, cfg *config.Config, client git.Cli
 	if save {
 		savePath := filepath.Join(cfg.Git.RepoPath, ShapeFileName)
 		data := clipresets.PresetYAML(shape.RecommendedPreset)
-		if err := os.WriteFile(savePath, data, 0644); err != nil { //nolint:gosec
+		if err := os.WriteFile(savePath, data, 0o644); err != nil { //nolint:gosec
 			return fmt.Errorf("failed to save config to %s: %w", savePath, err)
 		}
 		logger.Info(fmt.Sprintf("Saved %s preset config to %s", shape.RecommendedPreset, savePath))

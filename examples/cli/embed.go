@@ -1,3 +1,4 @@
+// Package clipresets contains embedded CLI preset configurations.
 package clipresets
 
 import (
