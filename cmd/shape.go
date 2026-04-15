@@ -25,7 +25,7 @@ Examples:
   # Print repo shape as JSON
   hotspot shape
 
-  # Save repo shape to .hotspot.shape.json in the repo root
+  # Save the recommended preset config as .hotspot.yml in the repo root
   hotspot shape --save`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
@@ -38,5 +38,5 @@ Examples:
 
 func init() {
 	rootCmd.AddCommand(shapeCmd)
-	shapeCmd.Flags().BoolVar(&saveShape, "save", false, "Save shape to .hotspot.shape.json in the repo root")
+	shapeCmd.Flags().BoolVar(&saveShape, "save", false, "Save recommended preset config as .hotspot.yml in the repo root")
 }

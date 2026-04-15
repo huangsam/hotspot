@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	clipresets "github.com/huangsam/hotspot/examples/cli"
 	"github.com/huangsam/hotspot/core/agg"
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/git"
@@ -17,8 +18,8 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// ShapeFileName is the default filename for saving repo shape data.
-const ShapeFileName = ".hotspot.shape.json"
+// ShapeFileName is the default filename written by hotspot shape --save.
+const ShapeFileName = ".hotspot.yml"
 
 // iacExtensions are file extensions strongly associated with IaC tooling.
 var iacExtensions = map[string]struct{}{
@@ -168,8 +169,9 @@ func GetHotspotShapeResults(ctx context.Context, cfg *config.Config, client git.
 }
 
 // ExecuteHotspotShape runs shape analysis and writes the result.
-// When save is true the result is written to ShapeFileName in the repo root;
-// otherwise it is printed to stdout.
+// When save is true the recommended preset YAML config is written to
+// ShapeFileName in the repo root so Viper picks it up on the next run;
+// otherwise the full shape metrics are printed as JSON to stdout.
 func ExecuteHotspotShape(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager, save bool) error {
 	shape, duration, err := GetHotspotShapeResults(ctx, cfg, client, mgr)
 	if err != nil {
@@ -178,20 +180,20 @@ func ExecuteHotspotShape(ctx context.Context, cfg *config.Config, client git.Cli
 
 	logger.Info(fmt.Sprintf("Shape analysis complete in %s", duration))
 
+	if save {
+		savePath := filepath.Join(cfg.Git.RepoPath, ShapeFileName)
+		data := clipresets.PresetYAML(shape.RecommendedPreset)
+		if err := os.WriteFile(savePath, data, 0644); err != nil { //nolint:gosec
+			return fmt.Errorf("failed to save config to %s: %w", savePath, err)
+		}
+		logger.Info(fmt.Sprintf("Saved %s preset config to %s", shape.RecommendedPreset, savePath))
+		return nil
+	}
+
 	data, err := json.MarshalIndent(shape, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal shape: %w", err)
 	}
-
-	if save {
-		savePath := filepath.Join(cfg.Git.RepoPath, ShapeFileName)
-		if err := os.WriteFile(savePath, data, 0644); err != nil { //nolint:gosec
-			return fmt.Errorf("failed to save shape to %s: %w", savePath, err)
-		}
-		logger.Info(fmt.Sprintf("Saved shape to %s", savePath))
-		return nil
-	}
-
 	_, err = fmt.Fprintln(os.Stdout, string(data))
 	return err
 }
