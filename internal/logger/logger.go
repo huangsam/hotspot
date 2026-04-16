@@ -11,6 +11,11 @@ import (
 // Level is the dynamic logging level for the global logger.
 var Level = new(slog.LevelVar)
 
+// InitLogger with a default level on package load
+func init() {
+	InitLogger("warn")
+}
+
 // InitLogger initializes the global default logger to write to os.Stderr
 // according to the provided log level. Accepted values: warn, info, debug
 // (case-insensitive). Any unrecognized value defaults to warn.
