@@ -129,26 +129,6 @@ func ComputeRepoShape(files []string, output *schema.AggregateOutput) schema.Rep
 	}
 }
 
-// ApplyPreset applies the settings of a named preset to the provided config.
-// Explicit parameters should be applied after this call to allow user overrides.
-func ApplyPreset(cfg *config.Config, presetName schema.PresetName) error {
-	if presetName == "" {
-		return nil
-	}
-	p := schema.GetPreset(presetName)
-	cfg.Scoring.Mode = p.Mode
-	cfg.Output.ResultLimit = p.Limit
-	cfg.Runtime.Workers = p.Workers
-	cfg.Git.Follow = p.Follow
-	cfg.Output.Detail = p.Detail
-	if p.Start != "" {
-		if err := config.RevalidateTimeRange(cfg, p.Start, ""); err != nil {
-			return fmt.Errorf("preset start time: %w", err)
-		}
-	}
-	return nil
-}
-
 // GetHotspotShapeResults runs an aggregation pass and computes the repo shape.
 func GetHotspotShapeResults(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) (schema.RepoShape, time.Duration, error) {
 	start := time.Now()

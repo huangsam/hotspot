@@ -303,6 +303,9 @@ type RawInput struct {
 
 	// --- Risk thresholds from config file ---
 	Thresholds ThresholdsRawInput `mapstructure:"thresholds"`
+
+	// --- Preset override ---
+	Preset string `mapstructure:"preset"`
 }
 
 // Clone returns a deep copy of the Config struct.
@@ -357,6 +360,9 @@ func (c *Config) GetAnalysisEndTime() time.Time {
 // and updates the final Config struct.
 func ProcessAndValidate(ctx context.Context, cfg *Config, client git.Client, input *RawInput) error {
 	// All validation functions now read from 'input' and populate 'cfg'.
+	if err := ApplyPreset(cfg, schema.PresetName(input.Preset)); err != nil {
+		return err
+	}
 	if err := validateSimpleInputs(cfg, input); err != nil {
 		return err
 	}
@@ -415,6 +421,9 @@ func ValidateDatabaseConnectionString(backend schema.DatabaseBackend, connStr st
 func validateBackendConfigs(cfg *Config, input *RawInput) error {
 	// --- Cache Backend Validation ---
 	cfg.Runtime.CacheBackend = schema.DatabaseBackend(strings.ToLower(input.CacheBackend))
+	if cfg.Runtime.CacheBackend == "" {
+		cfg.Runtime.CacheBackend = schema.SQLiteBackend
+	}
 	if _, ok := schema.ValidDatabaseBackends[cfg.Runtime.CacheBackend]; !ok {
 		return fmt.Errorf("invalid cache backend '%s'. Must be one of: sqlite (default), mysql, postgresql, none", input.CacheBackend)
 	}
@@ -468,39 +477,63 @@ func validateSimpleInputs(cfg *Config, input *RawInput) error {
 	cfg.Output.Width = input.Width
 
 	// Parse color flag
-	colors, err := schema.ParseBoolString(input.Color)
-	if err != nil {
-		return fmt.Errorf("invalid --color value: %w", err)
+	if input.Color != "" {
+		colors, err := schema.ParseBoolString(input.Color)
+		if err != nil {
+			return fmt.Errorf("invalid --color value: %w", err)
+		}
+		cfg.Output.UseColors = colors
+	} else if input.Preset == "" {
+		cfg.Output.UseColors = true // Hardcoded default when no preset
 	}
-	cfg.Output.UseColors = colors
 
 	// --- 1. ResultLimit Validation ---
-	if input.Limit <= 0 || input.Limit > MaxResultLimit {
-		return fmt.Errorf("--limit (%d) must be between 1 and %d. Limit controls how many results to display", input.Limit, MaxResultLimit)
+	if input.Limit != 0 {
+		if input.Limit < 0 || input.Limit > MaxResultLimit {
+			return fmt.Errorf("--limit (%d) must be between 1 and %d. Limit controls how many results to display", input.Limit, MaxResultLimit)
+		}
+		cfg.Output.ResultLimit = input.Limit
+	} else if cfg.Output.ResultLimit == 0 {
+		cfg.Output.ResultLimit = DefaultResultLimit
 	}
-	cfg.Output.ResultLimit = input.Limit
 
 	// --- 2. Workers Validation ---
-	if input.Workers <= 0 {
-		return fmt.Errorf("--workers (%d) must be greater than 0. Recommend 1-%d based on your CPU cores", input.Workers, runtime.NumCPU())
+	if input.Workers != 0 {
+		if input.Workers < 0 {
+			return fmt.Errorf("--workers (%d) must be greater than 0. Recommend 1-%d based on your CPU cores", input.Workers, runtime.NumCPU())
+		}
+		cfg.Runtime.Workers = input.Workers
+	} else if cfg.Runtime.Workers == 0 {
+		cfg.Runtime.Workers = DefaultWorkers
 	}
-	cfg.Runtime.Workers = input.Workers
 
 	// --- 3. Mode Validation ---
-	cfg.Scoring.Mode = schema.ScoringMode(strings.ToLower(input.Mode))
-	if _, ok := schema.ValidScoringModes[cfg.Scoring.Mode]; !ok {
-		return fmt.Errorf("invalid mode '%s'. Must be one of: hot (activity), risk (knowledge distribution), complexity (technical debt), stale (maintenance debt)", input.Mode)
+	if input.Mode != "" {
+		cfg.Scoring.Mode = schema.ScoringMode(strings.ToLower(input.Mode))
+		if _, ok := schema.ValidScoringModes[cfg.Scoring.Mode]; !ok {
+			return fmt.Errorf("invalid mode '%s'. Must be one of: hot (activity), risk (knowledge distribution), complexity (technical debt), stale (maintenance debt)", input.Mode)
+		}
+	} else if cfg.Scoring.Mode == "" {
+		cfg.Scoring.Mode = schema.HotMode
 	}
 
 	// --- 4. Precision and Output Validation ---
-	if input.Precision < 1 || input.Precision > 2 {
-		return fmt.Errorf("--precision (%d) must be 1 or 2 (controls decimal places in output)", input.Precision)
+	if input.Precision != 0 {
+		if input.Precision < 1 || input.Precision > 2 {
+			return fmt.Errorf("--precision (%d) must be 1 or 2 (controls decimal places in output)", input.Precision)
+		}
+		cfg.Output.Precision = input.Precision
+	} else if cfg.Output.Precision == 0 {
+		cfg.Output.Precision = DefaultPrecision
 	}
-	cfg.Output.Precision = input.Precision
 
-	cfg.Output.Format = schema.OutputMode(strings.ToLower(input.Output))
-	if _, ok := schema.ValidOutputModes[cfg.Output.Format]; !ok {
-		return fmt.Errorf("invalid output format '%s'. Must be one of: text (pretty table), csv (comma-separated), json (structured), parquet (analytics), markdown (github-flavored), describe (executive summary)", cfg.Output.Format)
+	if input.Output != "" {
+		cfg.Output.Format = schema.OutputMode(strings.ToLower(input.Output))
+		if _, ok := schema.ValidOutputModes[cfg.Output.Format]; !ok {
+			return fmt.Errorf("invalid output format '%s'. Must be one of: text (pretty table), csv (comma-separated), json (structured), parquet (analytics), markdown (github-flavored), describe (executive summary)", cfg.Output.Format)
+		}
+	} else if cfg.Output.Format == "" {
+		cfg.Output.Format = schema.TextOut
 	}
 
 	// --- 5. Backend Validation ---
@@ -536,8 +569,12 @@ func validateSimpleInputs(cfg *Config, input *RawInput) error {
 // processTimeRange handles the complex date parsing and time range validation.
 func processTimeRange(cfg *Config, input *RawInput) error {
 	now := time.Now()
-	cfg.Git.EndTime = now
-	cfg.Git.StartTime = cfg.Git.EndTime.Add(-DefaultLookbackDays * 24 * time.Hour)
+	if cfg.Git.EndTime.IsZero() {
+		cfg.Git.EndTime = now
+	}
+	if cfg.Git.StartTime.IsZero() {
+		cfg.Git.StartTime = cfg.Git.EndTime.Add(-DefaultLookbackDays * 24 * time.Hour)
+	}
 
 	parseAbsolute := func(s string) (time.Time, error) {
 		return time.Parse(schema.DateTimeFormat, s)
@@ -649,6 +686,26 @@ func RevalidateTimeRange(cfg *Config, startStr, endStr string) error {
 	return nil
 }
 
+// ApplyPreset applies the settings of a named preset to the provided config.
+// Explicit parameters should be applied after this call to allow user overrides.
+func ApplyPreset(cfg *Config, presetName schema.PresetName) error {
+	if presetName == "" {
+		return nil
+	}
+	p := schema.GetPreset(presetName)
+	cfg.Scoring.Mode = p.Mode
+	cfg.Output.ResultLimit = p.Limit
+	cfg.Runtime.Workers = p.Workers
+	cfg.Git.Follow = p.Follow
+	cfg.Output.Detail = p.Detail
+	if p.Start != "" {
+		if err := RevalidateTimeRange(cfg, p.Start, ""); err != nil {
+			return fmt.Errorf("preset start time: %w", err)
+		}
+	}
+	return nil
+}
+
 // processCompareMode handles the comparison references and lookback.
 func processCompareMode(cfg *Config, input *RawInput) error {
 	cfg.Compare.BaseRef = strings.TrimSpace(input.BaseRef)
@@ -667,7 +724,11 @@ func processCompareMode(cfg *Config, input *RawInput) error {
 		cfg.Compare.TargetRef = "HEAD"
 	}
 
-	lookback, err := schema.ParseLookbackDuration(input.Lookback)
+	lookbackStr := input.Lookback
+	if lookbackStr == "" {
+		lookbackStr = "6 months"
+	}
+	lookback, err := schema.ParseLookbackDuration(lookbackStr)
 	if err != nil {
 		return err
 	}
@@ -680,14 +741,19 @@ func processCompareMode(cfg *Config, input *RawInput) error {
 func processTimeseriesMode(cfg *Config, input *RawInput) error {
 	cfg.Timeseries.Path = strings.TrimSpace(input.Path)
 	cfg.Timeseries.Points = input.Points
-
-	if input.Interval != "" {
-		interval, err := schema.ParseLookbackDuration(input.Interval)
-		if err != nil {
-			return fmt.Errorf("invalid interval: %w", err)
-		}
-		cfg.Timeseries.Interval = interval
+	if cfg.Timeseries.Points == 0 {
+		cfg.Timeseries.Points = 3
 	}
+
+	intervalStr := input.Interval
+	if intervalStr == "" {
+		intervalStr = "3 months"
+	}
+	interval, err := schema.ParseLookbackDuration(intervalStr)
+	if err != nil {
+		return fmt.Errorf("invalid interval: %w", err)
+	}
+	cfg.Timeseries.Interval = interval
 
 	// Basic validation
 	if cfg.Timeseries.Points < 1 && cfg.Timeseries.Points != 0 {

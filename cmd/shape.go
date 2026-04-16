@@ -38,5 +38,6 @@ Examples:
 
 func init() {
 	rootCmd.AddCommand(shapeCmd)
-	shapeCmd.Flags().BoolVar(&initShape, "init", false, "Write recommended preset config as .hotspot.yml in the repo root")
+	shapeCmd.Flags().BoolVar(&initShape, "init", false, "Write recommended preset config as .hotspot.yml in the repo root (DEPRECATED: use 'hotspot init' instead)")
+	_ = shapeCmd.Flags().MarkDeprecated("init", "use 'hotspot init' instead")
 }

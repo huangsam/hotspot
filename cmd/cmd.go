@@ -2,9 +2,7 @@
 package cmd
 
 import (
-	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/logger"
-	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -43,22 +41,22 @@ func init() {
 	rootCmd.PersistentFlags().String("end", "", "End date in ISO8601 or time ago")
 	rootCmd.PersistentFlags().String("exclude", "", "Comma-separated list of path prefixes or patterns to ignore")
 	rootCmd.PersistentFlags().StringP("filter", "f", "", "Filter targets by path prefix")
-	rootCmd.PersistentFlags().IntP("limit", "l", config.DefaultResultLimit, "Number of results to display")
-	rootCmd.PersistentFlags().String("mode", string(schema.HotMode), "Scoring mode: hot or risk or complexity or stale or roi")
-	rootCmd.PersistentFlags().String("output", string(schema.TextOut), "Output format: text or csv or json or parquet or markdown or describe")
+	rootCmd.PersistentFlags().IntP("limit", "l", 0, "Number of results to display")
+	rootCmd.PersistentFlags().String("mode", "", "Scoring mode: hot or risk or complexity or stale or roi")
+	rootCmd.PersistentFlags().String("output", "", "Output format: text or csv or json or parquet or markdown or describe")
 	rootCmd.PersistentFlags().String("output-file", "", "Optional path to write output to")
 	rootCmd.PersistentFlags().Bool("owner", false, "Print per-target owner")
-	rootCmd.PersistentFlags().Int("precision", config.DefaultPrecision, "Decimal precision for numeric columns")
+	rootCmd.PersistentFlags().Int("precision", 0, "Decimal precision for numeric columns")
 	rootCmd.PersistentFlags().String("profile", "", "Enable profiling and write profiles to files with this prefix")
 	rootCmd.PersistentFlags().String("start", "", "Start date in ISO8601 or time ago")
-	rootCmd.PersistentFlags().Int("workers", config.DefaultWorkers, "Number of concurrent workers")
+	rootCmd.PersistentFlags().Int("workers", 0, "Number of concurrent workers")
 	rootCmd.PersistentFlags().Int("width", 0, "Terminal width override (0 = auto-detect)")
-	rootCmd.PersistentFlags().String("cache-backend", string(schema.SQLiteBackend), "Cache backend: sqlite or mysql or postgresql or none")
+	rootCmd.PersistentFlags().String("cache-backend", "", "Cache backend: sqlite or mysql or postgresql or none")
 	rootCmd.PersistentFlags().String("cache-db-connect", "", "Database connection string for mysql/postgresql (e.g., user:pass@tcp(host:port)/dbname)")
 	rootCmd.PersistentFlags().String("analysis-backend", "", "Analysis tracking backend: sqlite or mysql or postgresql or none")
 	rootCmd.PersistentFlags().String("analysis-db-connect", "", "Database connection string for analysis tracking (must differ from cache-db-connect)")
-	rootCmd.PersistentFlags().String("color", "yes", "Enable colored labels in output (yes/no/true/false/1/0)")
-	rootCmd.PersistentFlags().String("lookback", "6 months", "Time duration to look back from Base/Target ref commit time")
+	rootCmd.PersistentFlags().String("color", "", "Enable colored labels in output (yes/no/true/false/1/0)")
+	rootCmd.PersistentFlags().String("lookback", "", "Time duration to look back from Base/Target ref commit time")
 	rootCmd.PersistentFlags().String("base-ref", "", "Base Git reference for the BEFORE state")
 	rootCmd.PersistentFlags().String("target-ref", "", "Target Git reference for the AFTER state")
 	rootCmd.PersistentFlags().String("config", "", "Path to config file")

@@ -63,7 +63,7 @@ func applyPresetToConfig(cfg *config.Config, presetName string) {
 	if presetName == "" {
 		return
 	}
-	_ = core.ApplyPreset(cfg, schema.PresetName(presetName))
+	_ = config.ApplyPreset(cfg, schema.PresetName(presetName))
 }
 
 // handleGetRepoShape handles the get_repo_shape tool.

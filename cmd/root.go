@@ -12,7 +12,6 @@ import (
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/huangsam/hotspot/internal/outwriter"
-	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -120,19 +119,6 @@ func initConfig() {
 	viper.SetEnvPrefix("HOTSPOT")
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	viper.AutomaticEnv() // Read in environment variables that match
-
-	// Set defaults in Viper
-	viper.SetDefault("limit", config.DefaultResultLimit)
-	viper.SetDefault("workers", config.DefaultWorkers)
-	viper.SetDefault("mode", schema.HotMode)
-	viper.SetDefault("precision", config.DefaultPrecision)
-	viper.SetDefault("output", schema.TextOut)
-	viper.SetDefault("lookback", "6 months")
-	viper.SetDefault("cache-backend", schema.SQLiteBackend)
-	viper.SetDefault("cache-db-connect", "")
-	viper.SetDefault("analysis-backend", "")
-	viper.SetDefault("analysis-db-connect", "")
-	viper.SetDefault("color", "yes")
 }
 
 // sharedSetup unmarshals config and runs validation.

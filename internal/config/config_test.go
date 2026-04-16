@@ -116,7 +116,7 @@ func TestProcessAndValidate(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid limit (zero)",
+			name: "default limit (zero)",
 			input: &RawInput{
 				Limit:       0,
 				Workers:     4,
@@ -127,8 +127,11 @@ func TestProcessAndValidate(t *testing.T) {
 				RepoPathStr: ".",
 				Color:       "yes",
 			},
-			expectError: true,
-			setupMock:   nil,
+			expectError: false,
+			setupMock: func(mock *git.MockGitClient, workDir string) {
+				ctx := context.Background()
+				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
+			},
 		},
 		{
 			name: "invalid limit (negative)",
@@ -161,7 +164,7 @@ func TestProcessAndValidate(t *testing.T) {
 			setupMock:   nil,
 		},
 		{
-			name: "invalid workers (zero)",
+			name: "default workers (zero)",
 			input: &RawInput{
 				Limit:       10,
 				Workers:     0,
@@ -172,8 +175,11 @@ func TestProcessAndValidate(t *testing.T) {
 				RepoPathStr: ".",
 				Color:       "yes",
 			},
-			expectError: true,
-			setupMock:   nil,
+			expectError: false,
+			setupMock: func(mock *git.MockGitClient, workDir string) {
+				ctx := context.Background()
+				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
+			},
 		},
 		{
 			name: "invalid workers (negative)",
@@ -191,7 +197,7 @@ func TestProcessAndValidate(t *testing.T) {
 			setupMock:   nil,
 		},
 		{
-			name: "invalid precision (zero)",
+			name: "default precision (zero)",
 			input: &RawInput{
 				Limit:       10,
 				Workers:     4,
@@ -202,8 +208,11 @@ func TestProcessAndValidate(t *testing.T) {
 				RepoPathStr: ".",
 				Color:       "yes",
 			},
-			expectError: true,
-			setupMock:   nil,
+			expectError: false,
+			setupMock: func(mock *git.MockGitClient, workDir string) {
+				ctx := context.Background()
+				mock.On("GetRepoRoot", ctx, workDir).Return("/mock/repo/root", nil)
+			},
 		},
 		{
 			name: "invalid precision (too high)",
@@ -473,8 +482,17 @@ func TestProcessAndValidate(t *testing.T) {
 			} else {
 				assert.NoError(t, err, "contract.ProcessAndValidate should not return an error for %s", tt.name)
 				// Basic validation that config was populated
-				assert.Equal(t, tt.input.Limit, cfg.Output.ResultLimit)
-				assert.Equal(t, schema.ScoringMode(tt.input.Mode), cfg.Scoring.Mode)
+				if tt.input.Limit > 0 {
+					assert.Equal(t, tt.input.Limit, cfg.Output.ResultLimit)
+				} else {
+					assert.NotZero(t, cfg.Output.ResultLimit)
+				}
+
+				if tt.input.Mode != "" {
+					assert.Equal(t, schema.ScoringMode(tt.input.Mode), cfg.Scoring.Mode)
+				} else {
+					assert.Equal(t, schema.HotMode, cfg.Scoring.Mode)
+				}
 			}
 
 			if tt.setupMock != nil {
