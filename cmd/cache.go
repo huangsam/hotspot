@@ -21,8 +21,21 @@ func cacheSetup() error {
 	}
 
 	// Get cache-related config values
-	backend := schema.DatabaseBackend(viper.GetString("cache-backend"))
+	backendStr := viper.GetString("cache-backend")
 	connStr := viper.GetString("cache-db-connect")
+
+	// Default to SQLite if backend is empty
+	var backend schema.DatabaseBackend
+	if backendStr == "" {
+		backend = schema.SQLiteBackend
+	} else {
+		backend = schema.DatabaseBackend(backendStr)
+	}
+
+	// For SQLite with no connection string, use the default path
+	if backend == schema.SQLiteBackend && connStr == "" {
+		connStr = iocache.GetDBFilePath()
+	}
 
 	// Basic validation for database backends
 	if err := config.ValidateDatabaseConnectionString(backend, connStr); err != nil {
