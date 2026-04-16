@@ -1,4 +1,4 @@
-package mcp_test
+package mcp
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
-	mcp_internal "github.com/huangsam/hotspot/internal/mcp"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,7 +25,7 @@ func TestMCPServerHandlers_ValidationErrors(t *testing.T) {
 	// Create a dummy manager and mock client
 	var mgr iocache.CacheManager
 	client := &git.MockGitClient{}
-	s := mcp_internal.NewMCPServer(baseCfg, mgr, client, "")
+	s := NewMCPServer(baseCfg, mgr, client, "")
 
 	ctx := context.Background()
 
@@ -90,4 +89,29 @@ func TestMCPServerHandlers_ValidationErrors(t *testing.T) {
 		assert.True(t, res.IsError)
 		assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "--points must be at least 1")
 	})
+}
+
+func TestMCPServer_ToolRegistration(t *testing.T) {
+	s := NewMCPServer(&config.Config{}, nil, &git.MockGitClient{}, "")
+	tools := s.ListTools()
+
+	expectedTools := []string{
+		"get_repo_shape",
+		"get_files_hotspots",
+		"get_folders_hotspots",
+		"compare_hotspots",
+		"get_timeseries",
+		"get_release_journey",
+		"get_blast_radius",
+	}
+
+	// Verify the count matches to ensure the test list is updated when new tools are added.
+	assert.Equal(t, len(expectedTools), len(tools), "Tool count mismatch! If you added a tool, update TestMCPServer_ToolRegistration.")
+
+	for _, name := range expectedTools {
+		t.Run(name, func(t *testing.T) {
+			_, ok := tools[name]
+			assert.True(t, ok, "Tool %s should be registered", name)
+		})
+	}
 }

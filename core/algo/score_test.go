@@ -433,3 +433,59 @@ func FuzzGini(f *testing.F) {
 		_ = Gini(values)
 	})
 }
+
+// TestComputeScore_EdgeCases tests boundary conditions and extreme metric values.
+func TestComputeScore_EdgeCases(t *testing.T) {
+	defaultWeights := schema.GetDefaultWeights(schema.HotMode)
+
+	tests := []struct {
+		name     string
+		metrics  *schema.FileResult
+		mode     schema.ScoringMode
+		weights  map[schema.BreakdownKey]float64
+		expected float64
+	}{
+		{
+			name: "zero byte file always scores zero",
+			metrics: &schema.FileResult{
+				SizeBytes: 0,
+				Commits:   100, // Should be ignored
+				Churn:     1000,
+			},
+			mode:     schema.HotMode,
+			weights:  defaultWeights,
+			expected: 0.0,
+		},
+		{
+			name: "extreme saturation - commits",
+			metrics: &schema.FileResult{
+				SizeBytes: 1000,
+				Commits:   schema.Metric(1000000), // Far exceeds maxCommits
+				AgeDays:   schema.Metric(10),
+			},
+			mode:    schema.HotMode,
+			weights: defaultWeights,
+		},
+		{
+			name: "roi mode with zero lines of code",
+			metrics: &schema.FileResult{
+				SizeBytes:   1000,
+				LinesOfCode: 0, // Potential division by zero check
+				Churn:       1000,
+			},
+			mode:    schema.ROIMode,
+			weights: schema.GetDefaultWeights(schema.ROIMode),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			score := ComputeScore(tt.metrics, tt.mode, tt.weights)
+			if tt.name == "zero byte file always scores zero" {
+				assert.Equal(t, tt.expected, score)
+			} else {
+				assert.True(t, score >= 0 && score <= 100)
+			}
+		})
+	}
+}
