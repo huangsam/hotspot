@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"testing"
 	"time"
 
@@ -55,23 +54,23 @@ func TestHotspotWithMySQL(t *testing.T) {
 	defer func() { _ = os.Unsetenv("HOTSPOT_ANALYSIS_DB_CONNECT") }()
 
 	// Run hotspot cache clear
-	err = runHotspotCommand(t, "cache", "clear")
+	_, err = runHotspotCommand(t, "cache", "clear")
 	require.NoError(t, err)
 
 	// Run hotspot analysis clear
-	err = runHotspotCommand(t, "analysis", "clear")
+	_, err = runHotspotCommand(t, "analysis", "clear")
 	require.NoError(t, err)
 
 	// Run hotspot files (on current dir)
-	err = runHotspotCommand(t, "files", "--limit", "5")
+	_, err = runHotspotCommand(t, "files", "--limit", "5")
 	require.NoError(t, err)
 
 	// Run hotspot cache status
-	err = runHotspotCommand(t, "cache", "status")
+	_, err = runHotspotCommand(t, "cache", "status")
 	require.NoError(t, err)
 
 	// Run hotspot analysis status
-	err = runHotspotCommand(t, "analysis", "status")
+	_, err = runHotspotCommand(t, "analysis", "status")
 	require.NoError(t, err)
 }
 
@@ -115,34 +114,22 @@ func TestHotspotWithPostgres(t *testing.T) {
 	defer func() { _ = os.Unsetenv("HOTSPOT_ANALYSIS_DB_CONNECT") }()
 
 	// Run hotspot cache clear
-	err = runHotspotCommand(t, "cache", "clear")
+	_, err = runHotspotCommand(t, "cache", "clear")
 	require.NoError(t, err)
 
 	// Run hotspot analysis clear
-	err = runHotspotCommand(t, "analysis", "clear")
+	_, err = runHotspotCommand(t, "analysis", "clear")
 	require.NoError(t, err)
 
 	// Run hotspot files (on current dir)
-	err = runHotspotCommand(t, "files", "--limit", "5")
+	_, err = runHotspotCommand(t, "files", "--limit", "5")
 	require.NoError(t, err)
 
 	// Run hotspot cache status
-	err = runHotspotCommand(t, "cache", "status")
+	_, err = runHotspotCommand(t, "cache", "status")
 	require.NoError(t, err)
 
 	// Run hotspot analysis status
-	err = runHotspotCommand(t, "analysis", "status")
+	_, err = runHotspotCommand(t, "analysis", "status")
 	require.NoError(t, err)
-}
-
-func runHotspotCommand(t *testing.T, args ...string) error {
-	hotspotPath := getHotspotBinary()
-	cmd := exec.Command(hotspotPath, args...)
-	cmd.Dir = "../" // Run from project root
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Logf("Command failed: %s\nOutput: %s", cmd.String(), string(output))
-		return err
-	}
-	return nil
 }

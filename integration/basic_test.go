@@ -40,24 +40,17 @@ func TestFilesVerification(t *testing.T) {
 	require.NoError(t, err)
 	repoDir := strings.TrimSpace(string(repoPath))
 
-	// Get hotspot binary (built once and shared)
-	hotspotPath := getHotspotBinary()
-
 	// Use a fixed time range for consistent testing (last 365 days)
 	startTime := time.Now().AddDate(0, 0, -365).Format(schema.DateTimeFormat)
 	endTime := time.Now().Format(schema.DateTimeFormat)
 
 	// Run hotspot files --output json --detail --start <start> --end <end> --limit 50
 	// Limit to top 50 files to keep runtime reasonable while still testing core functionality
-	cmd := exec.Command(hotspotPath, "files", "--output", "json", "--detail", "--start", startTime, "--end", endTime, "--limit", "50")
-	cmd.Dir = repoDir
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-	err = cmd.Run()
+	output, err := runHotspotCommand(t, "files", "--output", "json", "--detail", "--start", startTime, "--end", endTime, "--limit", "50")
 	require.NoError(t, err)
 
 	// Parse output to extract file details
-	fileDetails := parseHotspotDetailOutput(stdout.String())
+	fileDetails := parseHotspotDetailOutput(string(output))
 
 	// Sample a subset of files to verify (first 10, last 5, and some random ones)
 	// This keeps the test thorough but not exhaustive
@@ -161,28 +154,16 @@ func TestFoldersVerification(t *testing.T) {
 		t.Skip("git not available")
 	}
 
-	// Get current repo path
-	repoPath, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
-	require.NoError(t, err)
-	repoDir := strings.TrimSpace(string(repoPath))
-
-	// Get hotspot binary (built once and shared)
-	hotspotPath := getHotspotBinary()
-
 	// Use a fixed time range for consistent testing (last 365 days)
 	startTime := time.Now().AddDate(0, 0, -365).Format(schema.DateTimeFormat)
 	endTime := time.Now().Format(schema.DateTimeFormat)
 
 	// Run hotspot folders --output json --detail --start <start> --end <end> --limit 1000
-	cmd := exec.Command(hotspotPath, "folders", "--output", "json", "--detail", "--start", startTime, "--end", endTime, "--limit", "1000")
-	cmd.Dir = repoDir
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-	err = cmd.Run()
+	output, err := runHotspotCommand(t, "folders", "--output", "json", "--detail", "--start", startTime, "--end", endTime, "--limit", "1000")
 	require.NoError(t, err)
 
 	// Parse output to extract folder details
-	folderDetails := parseHotspotFolderOutput(stdout.String())
+	folderDetails := parseHotspotFolderOutput(string(output))
 
 	// Verify folder aggregation for each folder
 	for folderPath, folder := range folderDetails {
@@ -205,34 +186,21 @@ func TestCompareFilesVerification(t *testing.T) {
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not available")
 	}
-
-	// Get current repo path
-	repoPath, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
-	require.NoError(t, err)
-	repoDir := strings.TrimSpace(string(repoPath))
-
-	// Get hotspot binary (built once and shared)
-	hotspotPath := getHotspotBinary()
-
 	// Use stable tags for consistent testing
 	baseRef := "v1.1.4"
 	targetRef := "v1.1.5"
 
 	// Run hotspot compare files --output json --base-ref v1.1.4 --target-ref v1.1.5 --limit 10
-	cmd := exec.Command(hotspotPath, "compare", "files", "--output", "json", "--base-ref", baseRef, "--target-ref", targetRef, "--limit", "10")
-	cmd.Dir = repoDir
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-	err = cmd.Run()
+	output, err := runHotspotCommand(t, "compare", "files", "--output", "json", "--base-ref", baseRef, "--target-ref", targetRef, "--limit", "10")
 	require.NoError(t, err)
 
 	// Parse the comparison JSON output
-	jsonPart := extractJSONFromOutput(stdout.String())
-	var output schema.ComparisonResultsOutput
-	err = json.Unmarshal([]byte(jsonPart), &output)
+	jsonPart := extractJSONFromOutput(string(output))
+	var comparisonOutput schema.ComparisonResultsOutput
+	err = json.Unmarshal([]byte(jsonPart), &comparisonOutput)
 	require.NoError(t, err)
 
-	result := output.Results
+	result := comparisonOutput.Results
 
 	// Verify basic structure
 	require.NotEmpty(t, result.Details, "should have comparison results")
@@ -272,33 +240,21 @@ func TestCompareFoldersVerification(t *testing.T) {
 		t.Skip("git not available")
 	}
 
-	// Get current repo path
-	repoPath, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
-	require.NoError(t, err)
-	repoDir := strings.TrimSpace(string(repoPath))
-
-	// Get hotspot binary (built once and shared)
-	hotspotPath := getHotspotBinary()
-
 	// Use stable tags for consistent testing
 	baseRef := "v1.1.4"
 	targetRef := "v1.1.5"
 
 	// Run hotspot compare folders --output json --base-ref v1.1.4 --target-ref v1.1.5 --limit 10
-	cmd := exec.Command(hotspotPath, "compare", "folders", "--output", "json", "--base-ref", baseRef, "--target-ref", targetRef, "--limit", "10")
-	cmd.Dir = repoDir
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-	err = cmd.Run()
+	output, err := runHotspotCommand(t, "compare", "folders", "--output", "json", "--base-ref", baseRef, "--target-ref", targetRef, "--limit", "10")
 	require.NoError(t, err)
 
 	// Parse the comparison JSON output
-	jsonPart := extractJSONFromOutput(stdout.String())
-	var output schema.ComparisonResultsOutput
-	err = json.Unmarshal([]byte(jsonPart), &output)
+	jsonPart := extractJSONFromOutput(string(output))
+	var comparisonOutput schema.ComparisonResultsOutput
+	err = json.Unmarshal([]byte(jsonPart), &comparisonOutput)
 	require.NoError(t, err)
 
-	result := output.Results
+	result := comparisonOutput.Results
 
 	// Verify basic structure
 	require.NotEmpty(t, result.Details, "should have comparison results")
@@ -416,35 +372,23 @@ func TestTimeseriesVerification(t *testing.T) {
 		t.Skip("git not available")
 	}
 
-	// Get current repo path
-	repoPath, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
-	require.NoError(t, err)
-	repoDir := strings.TrimSpace(string(repoPath))
-
-	// Get hotspot binary (built once and shared)
-	hotspotPath := getHotspotBinary()
-
 	// Test timeseries on main.go
 	t.Run("main.go", func(t *testing.T) {
-		cmd := exec.Command(hotspotPath, "timeseries", "--path", "main.go", "--interval", "30 days", "--points", "3", "--output", "json")
-		cmd.Dir = repoDir
-		var stdout bytes.Buffer
-		cmd.Stdout = &stdout
-		err := cmd.Run()
+		output, err := runHotspotCommand(t, "timeseries", "--path", "main.go", "--interval", "30 days", "--points", "3", "--output", "json")
 		require.NoError(t, err)
 
 		// Extract JSON from output (skip log lines)
-		jsonOutput := extractJSONFromOutput(stdout.String())
+		jsonOutput := extractJSONFromOutput(string(output))
 
 		// Parse JSON output
-		var output struct {
+		var tsOutput struct {
 			Points   []map[string]any `json:"points"`
 			Metadata any              `json:"metadata"`
 		}
-		err = json.Unmarshal([]byte(jsonOutput), &output)
+		err = json.Unmarshal([]byte(jsonOutput), &tsOutput)
 		require.NoError(t, err)
 
-		points := output.Points
+		points := tsOutput.Points
 		require.Len(t, points, 3, "should have 3 data points")
 
 		// Verify each point has required fields
@@ -470,25 +414,21 @@ func TestTimeseriesVerification(t *testing.T) {
 	})
 
 	t.Run("core_folder", func(t *testing.T) {
-		cmd := exec.Command(hotspotPath, "timeseries", "--path", "core", "--interval", "30 days", "--points", "3", "--output", "json", "--mode", string(schema.RiskMode))
-		cmd.Dir = repoDir
-		var stdout bytes.Buffer
-		cmd.Stdout = &stdout
-		err := cmd.Run()
+		output, err := runHotspotCommand(t, "timeseries", "--path", "core", "--interval", "30 days", "--points", "3", "--output", "json", "--mode", string(schema.RiskMode))
 		require.NoError(t, err)
 
 		// Extract JSON from output
-		jsonOutput := extractJSONFromOutput(stdout.String())
+		jsonOutput := extractJSONFromOutput(string(output))
 
 		// Parse JSON output
-		var output struct {
+		var tsOutput struct {
 			Points   []map[string]any `json:"points"`
 			Metadata any              `json:"metadata"`
 		}
-		err = json.Unmarshal([]byte(jsonOutput), &output)
+		err = json.Unmarshal([]byte(jsonOutput), &tsOutput)
 		require.NoError(t, err)
 
-		points := output.Points
+		points := tsOutput.Points
 		require.Len(t, points, 3, "should have 3 data points")
 
 		// Verify each point
@@ -507,16 +447,12 @@ func TestTimeseriesVerification(t *testing.T) {
 
 	// Test error cases
 	t.Run("invalid_path", func(t *testing.T) {
-		cmd := exec.Command(hotspotPath, "timeseries", "--path", "nonexistent.go", "--interval", "30 days", "--points", "3")
-		cmd.Dir = repoDir
-		err := cmd.Run()
+		_, err := runHotspotCommand(t, "timeseries", "--path", "nonexistent.go", "--interval", "30 days", "--points", "3")
 		assert.Error(t, err, "should error on nonexistent path")
 	})
 
 	t.Run("missing_required_flags", func(t *testing.T) {
-		cmd := exec.Command(hotspotPath, "timeseries")
-		cmd.Dir = repoDir
-		err := cmd.Run()
+		_, err := runHotspotCommand(t, "timeseries")
 		assert.Error(t, err, "should error when --path is missing")
 	})
 }
