@@ -5,31 +5,26 @@
 [![License](https://img.shields.io/github/license/huangsam/hotspot)](https://github.com/huangsam/hotspot/blob/main/LICENSE)
 [![GitHub Release](https://img.shields.io/github/v/release/huangsam/hotspot)](https://github.com/huangsam/hotspot/releases/latest)
 
-Hotspot is a CLI tool that analyzes Git history to diagnose technical debt and bus factor risk based on developer activity, ownership, and churn patterns.
+Hotspot is an agentic intelligence layer and CLI that analyzes Git history to diagnose technical debt and bus factor risk based on developer activity, ownership, and churn patterns.
 
 <img src="./images/demo.gif" alt="Hotspot Demo" width="800px" />
 
-This tool operates as a **data-driven development intelligence.** While traditional [SCA] tools focus on code structure and style, and [DORA] metrics track team performance, Hotspot analyzes **actual development behavior** - commit patterns, ownership distribution, churn trends, and maintenance activity - to diagnose **technical debt** and **bus factor risk** within **your code** at the file and folder level.
-
-[DORA]: https://en.wikipedia.org/wiki/DevOps_Research_and_Assessment
-[SCA]: https://en.wikipedia.org/wiki/Static_program_analysis
+Unlike traditional linters or team-velocity metrics, Hotspot analyzes **development behavior**. It turns Git metadata into high-fidelity signals for technical debt, knowledge silos, and refactoring ROI—empowering both humans and AI agents to make data-driven architecture decisions.
 
 ## Features
 
-- 🔍 **See what matters** - rank files and folders by activity, complexity, etc.
-- ⚡ **Fast results** - analyze thousands of files in seconds
-- 🧮 **Rich insights** - contributors, churn, size, age, and risk metrics
-- 🎯 **Actionable filters** - narrow down by path or track trends over time
-- 🕓 **Robust time windows** - support for human-readable time
-- 📊 **Export results** - save to CSV/JSON/Parquet/Markdown to track trends and progress
-- 🔄 **CI/CD integration** - enforce risk thresholds in pipelines
+- 🤖 **Agent-First Intelligence** - Native MCP server for autonomous AI auditing and refactoring.
+- 🔍 **Tactical CLI** - Rapid file/folder ranking by activity, complexity, and ownership.
+- 🧮 **Deep Metrics** - High-fidelity signals for churn, Ginni coefficients, and bus factor risk.
+- 🕓 **Trend Tracking** - Time-anchored analysis and delta tracking across Git references.
+- 📊 **Polyglot Exports** - Professional CSV/JSON/Parquet/Markdown reporting.
 
 ## Installation
 
 ### Requirements
 
 - **Go 1.25+** for building from source
-- **Git 2.2.0+** for repository analysis
+- **Git 2.2+** for repository analysis
 
 ### Install from source
 
@@ -41,32 +36,35 @@ go install github.com/huangsam/hotspot@latest
 
 Visit the [latest release](https://github.com/huangsam/hotspot/releases/latest) and download the `tar` archive for your system (supports **Windows**, **macOS**, and **Linux**), then extract the binary to your `$PATH`.
 
-## Quick start
+## Quick start: Choose your path
 
-```bash
-# Characterize your repository shape and get a recommended preset
-hotspot shape
+Hotspot is designed for both human-driven tactical analysis and AI-driven strategic auditing.
 
-# Analyze files for immediate, tactical risk
-hotspot files
+### 🤖 Path A: AI Agent
 
-# Analyze folders for strategic, subsystem risk
-hotspot folders
-
-# For an explicit path
-hotspot files /path/to/repo/pkg
-```
-
-### MCP server
-
-Hotspot includes a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server. This allows AI agents (like Claude Desktop or Cursor) to analyze your repositories directly with full support for filtering and time-anchored trends!
+Hotspot includes a **Self-Documenting Agentic Hub** via the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/). This allows AI agents to autonomously explore your repository.
 
 ```bash
 # Start the MCP server (stdio)
 hotspot mcp
 ```
 
-The MCP tools (`get_files_hotspots`, `compare_hotspots`, etc.) support the same parameters as the CLI, and the server exposes native resources via `hotspot://docs/*` for autonomous agent discovery.
+The server exposes native resources via `hotspot://docs/*` for autonomous agent discovery and supports guided playbooks like `repository-audit`.
+
+### 🔍 Path B: Tactical CLI
+
+For immediate terminal-based checks and CI/CD integration.
+
+```bash
+# Initialize hotspot with sensible defaults
+hotspot init
+
+# Analyze files for tactical risk
+hotspot files
+
+# Analyze folders for strategic subsystems
+hotspot folders
+```
 
 ### Documentation
 
@@ -75,23 +73,12 @@ The MCP tools (`get_files_hotspots`, `compare_hotspots`, etc.) support the same 
 
 ## Performance
 
-All measurements are done using 14 concurrent workers on a Macbook Pro with the M3 Max chip.
+Hotspot is optimized for speed, even on massive repositories, by caching Git analysis results and using concurrent workers.
 
 [csv-parser]: https://github.com/vincentlaucsb/csv-parser
 [fd]: https://github.com/sharkdp/fd
 [git]: https://github.com/git/git
 [kubernetes]: https://github.com/kubernetes/kubernetes
-
-### Test repositories
-
-The benchmarks use repositories of varying scales to demonstrate performance characteristics:
-
-| Repository | Language | Scale | Description |
-|------------|----------|-------|-------------|
-| [csv-parser] | C++ | Small | Focused single-purpose CSV parsing library |
-| [fd] | Rust | Medium | Actively maintained CLI file search utility |
-| [git] | C | Large | Complex version control system |
-| [kubernetes] | Go | Massive | Distributed container orchestration platform |
 
 ### Benchmark results
 
