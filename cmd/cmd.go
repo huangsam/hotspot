@@ -55,7 +55,7 @@ func init() {
 	rootCmd.PersistentFlags().String("cache-db-connect", "", "Database connection string for mysql/postgresql (e.g., user:pass@tcp(host:port)/dbname)")
 	rootCmd.PersistentFlags().String("analysis-backend", "sqlite", "Analysis tracking backend: sqlite or mysql or postgresql or none")
 	rootCmd.PersistentFlags().String("analysis-db-connect", "", "Database connection string for analysis tracking (must differ from cache-db-connect)")
-	rootCmd.PersistentFlags().String("color", "", "Enable colored labels in output (yes/no/true/false/1/0)")
+	rootCmd.PersistentFlags().String("color", "yes", "Enable colored labels in output (yes/no/true/false/1/0)")
 	rootCmd.PersistentFlags().String("lookback", "", "Time duration to look back from Base/Target ref commit time")
 	rootCmd.PersistentFlags().String("base-ref", "", "Base Git reference for the BEFORE state")
 	rootCmd.PersistentFlags().String("target-ref", "", "Target Git reference for the AFTER state")
