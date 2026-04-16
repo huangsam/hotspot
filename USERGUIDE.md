@@ -134,6 +134,7 @@ The server exposes the following tools to the AI agent:
 - `get_folders_hotspots`: Same as above, but aggregated at the folder level.
 - `compare_hotspots`: Compare changes in technical debt between two Git references.
 - `get_timeseries`: Track the trend of a specific file or folder over time.
+- `get_blast_radius`: Identify files that historically change together.
 
 All analysis tools support an optional `preset` parameter to auto-configure scoring mode, worker count, result limit, and time window based on the recommended preset family. Tools are annotated with `ReadOnly` and `Idempotent` hints to assist agent reasoning.
 
