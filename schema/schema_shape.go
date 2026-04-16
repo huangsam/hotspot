@@ -23,6 +23,7 @@ type Preset struct {
 	Follow      bool        `json:"follow"`
 	Detail      bool        `json:"detail"`
 	Start       string      `json:"start,omitempty"` // relative time string, e.g. "2 years ago"
+	Transitions int         `json:"transitions"`     // Suggested value for get_release_journey
 }
 
 // RepoShape captures key metrics from the first aggregation pass to characterize a repository.
@@ -51,6 +52,7 @@ func GetPreset(name PresetName) Preset {
 			Follow:      true,
 			Detail:      true,
 			Start:       "1 year ago",
+			Transitions: 6, // Need more history to see architectural shifts
 		}
 	case PresetInfra:
 		return Preset{
@@ -62,6 +64,7 @@ func GetPreset(name PresetName) Preset {
 			Follow:      true,
 			Detail:      true,
 			Start:       "2 years ago",
+			Transitions: 4, // Moderate cadence; risk drift is the key signal
 		}
 	default: // PresetSmall
 		return Preset{
@@ -72,6 +75,7 @@ func GetPreset(name PresetName) Preset {
 			Workers:     4,
 			Follow:      false,
 			Detail:      false,
+			Transitions: 3, // Tight sprint cadence; 3 recent transitions capture the trend
 		}
 	}
 }

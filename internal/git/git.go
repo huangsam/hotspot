@@ -51,6 +51,10 @@ type Client interface {
 
 	// GetRemoteURL returns the URL of the 'origin' remote for the repository.
 	GetRemoteURL(ctx context.Context, repoPath string) (string, error)
+
+	// GetTags returns a list of version tags sorted by descending semantic version order.
+	// limit controls the maximum number of tags returned (0 = no limit).
+	GetTags(ctx context.Context, repoPath string, limit int) ([]string, error)
 }
 
 // ResolveURN returns a canonical repository identifier.

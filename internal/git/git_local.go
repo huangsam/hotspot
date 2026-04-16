@@ -193,6 +193,25 @@ func (c *LocalGitClient) GetOldestCommitDateForPath(ctx context.Context, repoPat
 	return time.Parse(time.RFC3339, oldestDateStr)
 }
 
+// GetTags implements the GitClient interface.
+// Returns tags sorted by descending semantic version (newest first).
+func (c *LocalGitClient) GetTags(ctx context.Context, repoPath string, limit int) ([]string, error) {
+	args := []string{"tag", "--sort=-v:refname"}
+	out, err := c.Run(ctx, repoPath, args...)
+	if err != nil {
+		return nil, err
+	}
+	raw := strings.TrimSpace(string(out))
+	if raw == "" {
+		return []string{}, nil
+	}
+	tags := strings.Split(raw, "\n")
+	if limit > 0 && len(tags) > limit {
+		tags = tags[:limit]
+	}
+	return tags, nil
+}
+
 // GetRemoteURL implements the GitClient interface.
 func (c *LocalGitClient) GetRemoteURL(ctx context.Context, repoPath string) (string, error) {
 	out, err := c.Run(ctx, repoPath, "remote", "get-url", "origin")

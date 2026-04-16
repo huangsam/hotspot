@@ -95,3 +95,10 @@ func (m *MockGitClient) GetRemoteURL(ctx context.Context, repoPath string) (stri
 	url, _ := ret.Get(0).(string)
 	return url, ret.Error(1)
 }
+
+// GetTags implements the GitClient interface.
+func (m *MockGitClient) GetTags(ctx context.Context, repoPath string, limit int) ([]string, error) {
+	ret := m.Called(ctx, repoPath, limit)
+	tags, _ := ret.Get(0).([]string)
+	return tags, ret.Error(1)
+}

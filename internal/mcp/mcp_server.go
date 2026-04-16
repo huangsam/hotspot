@@ -123,7 +123,21 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("end", mcp.Description("End date for the entire timeseries window.")),
 	), h.handleGetTimeseries)
 
-	// --- Resources ---
+	// --- 5. Tool: get_release_journey ---
+	s.AddTool(mcp.NewTool("get_release_journey",
+		mcp.WithDescription("Automatically discovers the most recent release tags and computes successive hotspot comparisons between each pair, producing a 'State of the Union' for the repository's technical trajectory."),
+		mcp.WithToolAnnotation(mcp.ToolAnnotation{
+			Title:          "Get Release Journey",
+			ReadOnlyHint:   &readOnly,
+			IdempotentHint: &idempotent,
+		}),
+		mcp.WithString("preset", mcp.Description("Apply a named configuration preset (small, large, infra). It is recommended to run 'get_repo_shape' first to identify the correct preset for this repository."), mcp.Enum("small", "large", "infra")),
+		mcp.WithString("urn", mcp.Description(urnDesc)),
+		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
+		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "stale", "roi"), mcp.DefaultString("hot")),
+		mcp.WithNumber("transitions", mcp.Description("Number of successive tag transitions to analyze (e.g. 3 = last 4 tags). Defaults to 3."), mcp.DefaultNumber(3)),
+	), h.handleGetReleaseJourney)
+
 	s.AddResource(mcp.NewResource("hotspot://config", "Local Configuration", mcp.WithResourceDescription("The content of .hotspot.yml if available."), mcp.WithMIMEType("application/x-yaml")), h.handleReadResource)
 	s.AddResource(mcp.NewResource("hotspot://docs/agents", "Agent Documentation", mcp.WithResourceDescription("High-level architectural context and domain concepts for AI agents."), mcp.WithMIMEType("text/markdown")), h.handleReadResource)
 	s.AddResource(mcp.NewResource("hotspot://docs/user-guide", "User Guide", mcp.WithResourceDescription("Detailed user guide for Hotspot CLI."), mcp.WithMIMEType("text/markdown")), h.handleReadResource)

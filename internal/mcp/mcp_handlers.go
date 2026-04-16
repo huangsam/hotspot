@@ -230,6 +230,36 @@ func (h *toolHandler) handleGetTimeseries(ctx context.Context, request mcp.CallT
 	return mcp.NewToolResultText(string(jsonData)), nil
 }
 
+// handleGetReleaseJourney handles the get_release_journey tool.
+func (h *toolHandler) handleGetReleaseJourney(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	cfg := h.baseCfg.Clone()
+	urn := request.GetString("urn", "")
+	repoPath := request.GetString("repo_path", "")
+
+	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
+	}
+
+	applyPresetToConfig(cfg, request.GetString("preset", ""))
+
+	if m := request.GetString("mode", ""); m != "" {
+		cfg.Scoring.Mode = schema.ScoringMode(m)
+	}
+
+	transitions := request.GetInt("transitions", 3)
+	if transitions < 1 {
+		transitions = 3
+	}
+
+	result, err := core.GetHotspotJourneyResults(ctx, cfg, h.client, h.mgr, transitions)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("journey analysis failed: %v", err)), nil
+	}
+
+	jsonData, _ := json.MarshalIndent(result, "", "  ")
+	return mcp.NewToolResultText(string(jsonData)), nil
+}
+
 // handleReadResource handles the reading of registered resources.
 func (h *toolHandler) handleReadResource(_ context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
 	switch request.Params.URI {
