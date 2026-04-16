@@ -12,13 +12,9 @@ import (
 //go:embed AGENTS.md
 var agentsDoc string
 
-//go:embed USERGUIDE.md
-var userGuideDoc string
-
 // main starts the execution of the logic.
 func main() {
 	cmd.AgentsDoc = agentsDoc
-	cmd.UserGuideDoc = userGuideDoc
 
 	// Set the global caching manager (will be initialized in sharedSetup)
 	cmd.SetCacheManager(iocache.Manager)

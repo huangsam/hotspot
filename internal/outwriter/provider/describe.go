@@ -101,6 +101,12 @@ func (p *DescribeProvider) WriteTimeseries(w io.Writer, _ schema.TimeseriesResul
 	return err
 }
 
+// WriteBlastRadius is not specifically implemented for describe mode.
+func (p *DescribeProvider) WriteBlastRadius(w io.Writer, _ schema.BlastRadiusResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+	_, err := fmt.Fprintln(w, "Describe mode is not supported for blast radius analysis.")
+	return err
+}
+
 // WriteMetrics is not specifically implemented for describe mode.
 func (p *DescribeProvider) WriteMetrics(w io.Writer, _ map[schema.ScoringMode]map[schema.BreakdownKey]float64, _ config.OutputSettings) error {
 	_, err := fmt.Fprintln(w, "Describe mode is not supported for metrics definitions.")

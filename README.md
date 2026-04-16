@@ -49,8 +49,6 @@ Hotspot includes a **Self-Documenting Agentic Hub** via the [Model Context Proto
 hotspot mcp
 ```
 
-The server exposes native resources via `hotspot://docs/*` for autonomous agent discovery and supports guided playbooks like `repository-audit`.
-
 ### 🔍 Path B: Tactical CLI
 
 For immediate terminal-based checks and CI/CD integration.

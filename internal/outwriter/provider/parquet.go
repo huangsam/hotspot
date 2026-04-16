@@ -89,6 +89,12 @@ func (p *ParquetProvider) WriteTimeseries(w io.Writer, _ schema.TimeseriesResult
 	return err
 }
 
+// WriteBlastRadius is not specifically implemented for Parquet.
+func (p *ParquetProvider) WriteBlastRadius(w io.Writer, _ schema.BlastRadiusResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+	_, err := fmt.Fprintln(w, "Parquet output is not supported for blast radius analysis.")
+	return err
+}
+
 // WriteMetrics is not specifically implemented for Parquet.
 func (p *ParquetProvider) WriteMetrics(w io.Writer, _ map[schema.ScoringMode]map[schema.BreakdownKey]float64, _ config.OutputSettings) error {
 	_, err := fmt.Fprintln(w, "Parquet output is not supported for metrics definitions.")

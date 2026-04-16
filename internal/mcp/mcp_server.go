@@ -13,7 +13,7 @@ import (
 
 // NewMCPServer initializes and configures the Hotspot MCP server without starting it.
 // This is exposed for unit testing.
-func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.Client, agentsDoc, userGuideDoc string) *server.MCPServer {
+func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.Client, agentsDoc string) *server.MCPServer {
 	s := server.NewMCPServer(
 		"Hotspot Analysis Server",
 		"1.0.0",
@@ -21,11 +21,10 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 	)
 
 	h := &toolHandler{
-		baseCfg:      baseCfg,
-		mgr:          mgr,
-		client:       client,
-		agentsDoc:    agentsDoc,
-		userGuideDoc: userGuideDoc,
+		baseCfg:   baseCfg,
+		mgr:       mgr,
+		client:    client,
+		agentsDoc: agentsDoc,
 	}
 
 	// Shared hints for analytical tools
@@ -123,24 +122,23 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("end", mcp.Description("End date for the entire timeseries window.")),
 	), h.handleGetTimeseries)
 
-	// --- 5. Tool: get_release_journey ---
-	s.AddTool(mcp.NewTool("get_release_journey",
-		mcp.WithDescription("Automatically discovers the most recent release tags and computes successive hotspot comparisons between each pair, producing a 'State of the Union' for the repository's technical trajectory."),
+	// --- 6. Tool: get_blast_radius ---
+	s.AddTool(mcp.NewTool("get_blast_radius",
+		mcp.WithDescription("Identifies files that historically change together (co-change coupling). Reveals 'married' files that may lack proper abstraction."),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
-			Title:          "Get Release Journey",
+			Title:          "Get Blast Radius",
 			ReadOnlyHint:   &readOnly,
 			IdempotentHint: &idempotent,
 		}),
-		mcp.WithString("preset", mcp.Description("Apply a named configuration preset (small, large, infra). It is recommended to run 'get_repo_shape' first to identify the correct preset for this repository."), mcp.Enum("small", "large", "infra")),
 		mcp.WithString("urn", mcp.Description(urnDesc)),
 		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
-		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "stale", "roi"), mcp.DefaultString("hot")),
-		mcp.WithNumber("transitions", mcp.Description("Number of successive tag transitions to analyze (e.g. 3 = last 4 tags). Defaults to 3."), mcp.DefaultNumber(3)),
-	), h.handleGetReleaseJourney)
+		mcp.WithNumber("limit", mcp.Description("Limit the number of results."), mcp.DefaultNumber(10)),
+		mcp.WithNumber("threshold", mcp.Description("Minimum coupling score (Jaccard Index, 0.0 to 1.0) to include a pair in the results."), mcp.DefaultNumber(0.3)),
+		mcp.WithString("start", mcp.Description(startDesc)),
+		mcp.WithString("end", mcp.Description(endDesc)),
+	), h.handleGetBlastRadius)
 
-	s.AddResource(mcp.NewResource("hotspot://config", "Local Configuration", mcp.WithResourceDescription("The content of .hotspot.yml if available."), mcp.WithMIMEType("application/x-yaml")), h.handleReadResource)
 	s.AddResource(mcp.NewResource("hotspot://docs/agents", "Agent Documentation", mcp.WithResourceDescription("High-level architectural context and domain concepts for AI agents."), mcp.WithMIMEType("text/markdown")), h.handleReadResource)
-	s.AddResource(mcp.NewResource("hotspot://docs/user-guide", "User Guide", mcp.WithResourceDescription("Detailed user guide for Hotspot CLI."), mcp.WithMIMEType("text/markdown")), h.handleReadResource)
 
 	// --- Prompts ---
 	s.AddPrompt(mcp.NewPrompt("refactor-prioritization", mcp.WithPromptDescription("Guided workflow for prioritizing refactoring targets using ROI mode.")), h.handleGetPrompt)
@@ -150,7 +148,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 }
 
 // StartMCPServer starts the Hotspot MCP server.
-func StartMCPServer(_ context.Context, baseCfg *config.Config, mgr iocache.CacheManager, client git.Client, agentsDoc, userGuideDoc string) error {
-	s := NewMCPServer(baseCfg, mgr, client, agentsDoc, userGuideDoc)
+func StartMCPServer(_ context.Context, baseCfg *config.Config, mgr iocache.CacheManager, client git.Client, agentsDoc string) error {
+	s := NewMCPServer(baseCfg, mgr, client, agentsDoc)
 	return server.ServeStdio(s)
 }

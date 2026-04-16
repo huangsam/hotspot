@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/huangsam/hotspot/core"
 	"github.com/huangsam/hotspot/internal/config"
@@ -16,11 +15,10 @@ import (
 
 // toolHandler holds common dependencies for MCP tool handlers.
 type toolHandler struct {
-	baseCfg      *config.Config
-	mgr          iocache.CacheManager
-	client       git.Client
-	agentsDoc    string
-	userGuideDoc string
+	baseCfg   *config.Config
+	mgr       iocache.CacheManager
+	client    git.Client
+	agentsDoc string
 }
 
 // resolveRepositoryPath handles URN-based or repo_path-based resolution.
@@ -230,8 +228,8 @@ func (h *toolHandler) handleGetTimeseries(ctx context.Context, request mcp.CallT
 	return mcp.NewToolResultText(string(jsonData)), nil
 }
 
-// handleGetReleaseJourney handles the get_release_journey tool.
-func (h *toolHandler) handleGetReleaseJourney(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+// handleGetBlastRadius handles the get_blast_radius tool.
+func (h *toolHandler) handleGetBlastRadius(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	cfg := h.baseCfg.Clone()
 	urn := request.GetString("urn", "")
 	repoPath := request.GetString("repo_path", "")
@@ -240,20 +238,16 @@ func (h *toolHandler) handleGetReleaseJourney(ctx context.Context, request mcp.C
 		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
 	}
 
-	applyPresetToConfig(cfg, request.GetString("preset", ""))
+	limit := request.GetInt("limit", 10)
+	threshold := request.GetFloat("threshold", 0.3)
 
-	if m := request.GetString("mode", ""); m != "" {
-		cfg.Scoring.Mode = schema.ScoringMode(m)
+	if err := config.RevalidateTimeRange(cfg, request.GetString("start", ""), request.GetString("end", "")); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid time range: %v", err)), nil
 	}
 
-	transitions := request.GetInt("transitions", 3)
-	if transitions < 1 {
-		transitions = 3
-	}
-
-	result, err := core.GetHotspotJourneyResults(ctx, cfg, h.client, h.mgr, transitions)
+	result, err := core.GetHotspotBlastRadiusResults(ctx, cfg, h.client, limit, threshold)
 	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("journey analysis failed: %v", err)), nil
+		return mcp.NewToolResultError(fmt.Sprintf("blast radius analysis failed: %v", err)), nil
 	}
 
 	jsonData, _ := json.MarshalIndent(result, "", "  ")
@@ -263,36 +257,12 @@ func (h *toolHandler) handleGetReleaseJourney(ctx context.Context, request mcp.C
 // handleReadResource handles the reading of registered resources.
 func (h *toolHandler) handleReadResource(_ context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
 	switch request.Params.URI {
-	case "hotspot://config":
-		filePath := ".hotspot.yml"
-		data, err := os.ReadFile(filePath)
-		if err != nil {
-			if os.IsNotExist(err) {
-				return nil, fmt.Errorf("resource file %s not found", filePath)
-			}
-			return nil, fmt.Errorf("failed to read resource: %v", err)
-		}
-		return []mcp.ResourceContents{
-			mcp.TextResourceContents{
-				URI:      request.Params.URI,
-				MIMEType: "application/x-yaml",
-				Text:     string(data),
-			},
-		}, nil
 	case "hotspot://docs/agents":
 		return []mcp.ResourceContents{
 			mcp.TextResourceContents{
 				URI:      request.Params.URI,
 				MIMEType: "text/markdown",
 				Text:     h.agentsDoc,
-			},
-		}, nil
-	case "hotspot://docs/user-guide":
-		return []mcp.ResourceContents{
-			mcp.TextResourceContents{
-				URI:      request.Params.URI,
-				MIMEType: "text/markdown",
-				Text:     h.userGuideDoc,
 			},
 		}, nil
 	default:

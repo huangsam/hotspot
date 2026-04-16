@@ -51,6 +51,11 @@ func (p *JSONProvider) WriteTimeseries(w io.Writer, result schema.TimeseriesResu
 	return p.encode(w, result)
 }
 
+// WriteBlastRadius serializes blast radius results to JSON.
+func (p *JSONProvider) WriteBlastRadius(w io.Writer, result schema.BlastRadiusResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+	return p.encode(w, result)
+}
+
 // WriteMetrics serializes metrics definitions to JSON.
 func (p *JSONProvider) WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, _ config.OutputSettings) error {
 	model := schema.BuildMetricsRenderModel(activeWeights)

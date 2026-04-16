@@ -16,6 +16,7 @@ type FormatProvider interface {
 	WriteFolders(w io.Writer, results []schema.FolderResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error
 	WriteComparison(w io.Writer, results schema.ComparisonResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error
 	WriteTimeseries(w io.Writer, result schema.TimeseriesResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error
+	WriteBlastRadius(w io.Writer, result schema.BlastRadiusResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error
 	WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, output config.OutputSettings) error
 }
 
@@ -59,6 +60,11 @@ func (ow *OutWriter) WriteComparison(w io.Writer, results schema.ComparisonResul
 // WriteTimeseries writes timeseries analysis results using the configured output format.
 func (ow *OutWriter) WriteTimeseries(w io.Writer, result schema.TimeseriesResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
 	return ow.providers[output.GetFormat()].WriteTimeseries(w, result, output, runtime, duration)
+}
+
+// WriteBlastRadius writes blast radius analysis results using the configured output format.
+func (ow *OutWriter) WriteBlastRadius(w io.Writer, result schema.BlastRadiusResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
+	return ow.providers[output.GetFormat()].WriteBlastRadius(w, result, output, runtime, duration)
 }
 
 // WriteMetrics writes metrics definitions using the configured output format.

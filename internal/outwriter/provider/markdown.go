@@ -221,6 +221,43 @@ func (p *MarkdownProvider) WriteTimeseries(w io.Writer, result schema.Timeseries
 	return nil
 }
 
+// WriteBlastRadius writes blast radius analysis results in Markdown format.
+func (p *MarkdownProvider) WriteBlastRadius(w io.Writer, result schema.BlastRadiusResult, output config.OutputSettings, _ config.RuntimeSettings, duration time.Duration) error {
+	fmtFloat := CreateFormatters(output.GetPrecision())
+
+	if _, err := fmt.Fprintln(w, "## Blast Radius Analysis"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "Found **%d** coupled pairs above threshold **%v**.\n\n", result.Summary.TotalPairs, result.Summary.Threshold); err != nil {
+		return err
+	}
+
+	headers := []string{"Rank", "File A", "File B", "Score", "Co-Change"}
+	p.writeMarkdownTable(w, headers)
+
+	for i, pair := range result.Pairs {
+		row := []string{
+			strconv.Itoa(i + 1),
+			pair.Source,
+			pair.Target,
+			fmtFloat(pair.Score),
+			strconv.Itoa(pair.CoChange),
+		}
+		p.writeMarkdownRow(w, row)
+	}
+
+	if _, err := fmt.Fprintln(w); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "*Blast radius analysis completed in %v. Total commits analyzed: %d.*\n", duration, result.Summary.TotalCommits); err != nil {
+		return err
+	}
+	return nil
+}
+
 // WriteMetrics writes metrics definitions in Markdown format.
 func (p *MarkdownProvider) WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, _ config.OutputSettings) error {
 	renderModel := schema.BuildMetricsRenderModel(activeWeights)

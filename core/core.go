@@ -183,6 +183,20 @@ func GetHotspotTimeseriesResults(ctx context.Context, cfg *config.Config, client
 	return result, time.Since(start), nil
 }
 
+// ExecuteHotspotBlastRadius runs the blast radius analysis and prints results to stdout.
+func ExecuteHotspotBlastRadius(ctx context.Context, cfg *config.Config, client git.Client, writer outwriter.FormatProvider) error {
+	start := time.Now()
+	result, err := GetHotspotBlastRadiusResults(ctx, cfg, client, cfg.Output.ResultLimit, 0.3) // Default threshold
+	if err != nil {
+		return err
+	}
+	duration := time.Since(start)
+
+	return outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
+		return writer.WriteBlastRadius(w, result, cfg.Output, cfg.Runtime, duration)
+	}, "Wrote blast radius table")
+}
+
 // ExecuteHotspotMetrics displays the formal definitions of all scoring modes.
 // This is a static display that does not require Git analysis.
 func ExecuteHotspotMetrics(_ context.Context, cfg *config.Config, _ git.Client, _ iocache.CacheManager, writer outwriter.FormatProvider) error {

@@ -173,6 +173,34 @@ func (p *CSVProvider) WriteTimeseries(w io.Writer, result schema.TimeseriesResul
 	})
 }
 
+// WriteBlastRadius writes blast radius analysis results in CSV format.
+func (p *CSVProvider) WriteBlastRadius(w io.Writer, result schema.BlastRadiusResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+	fmtFloat := CreateFormatters(output.GetPrecision())
+	header := []string{
+		"rank",
+		"file_a",
+		"file_b",
+		"score",
+		"co_change",
+	}
+
+	return WriteCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {
+		for i, pair := range result.Pairs {
+			row := []string{
+				strconv.Itoa(i + 1),
+				pair.Source,
+				pair.Target,
+				fmtFloat(pair.Score),
+				strconv.Itoa(pair.CoChange),
+			}
+			if err := csvWriter.Write(row); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
 // WriteMetrics writes metrics definitions in CSV format.
 func (p *CSVProvider) WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, _ config.OutputSettings) error {
 	renderModel := schema.BuildMetricsRenderModel(activeWeights)

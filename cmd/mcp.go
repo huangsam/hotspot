@@ -8,8 +8,7 @@ import (
 
 // mcpCmd represents the mcp command.
 var (
-	AgentsDoc    string
-	UserGuideDoc string
+	AgentsDoc string
 )
 
 var mcpCmd = &cobra.Command{
@@ -23,7 +22,7 @@ var mcpCmd = &cobra.Command{
 	},
 	RunE: func(_ *cobra.Command, _ []string) error {
 		client := git.NewLocalGitClient()
-		return mcp.StartMCPServer(rootCtx, cfg, cacheManager, client, AgentsDoc, UserGuideDoc)
+		return mcp.StartMCPServer(rootCtx, cfg, cacheManager, client, AgentsDoc)
 	},
 }
 

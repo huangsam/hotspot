@@ -275,6 +275,47 @@ func (p *TextProvider) WriteTimeseries(w io.Writer, result schema.TimeseriesResu
 	return nil
 }
 
+// WriteBlastRadius writes blast radius analysis results in a human-readable table.
+func (p *TextProvider) WriteBlastRadius(w io.Writer, result schema.BlastRadiusResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
+	fmtFloat := CreateFormatters(output.GetPrecision())
+	table := tablewriter.NewWriter(w)
+	defer func() { _ = table.Close() }()
+
+	headers := []string{"Rank", "File A", "File B", "Score", "Co-Change"}
+	table.Header(headers)
+
+	table.Configure(func(cfg *tablewriter.Config) {
+		cfg.Row.Alignment.Global = tw.AlignRight
+	})
+
+	var data [][]string
+	for i, pair := range result.Pairs {
+		row := []string{
+			strconv.Itoa(i + 1),
+			TruncatePath(pair.Source, GetMaxTablePathWidth(output)),
+			TruncatePath(pair.Target, GetMaxTablePathWidth(output)),
+			fmtFloat(pair.Score),
+			strconv.Itoa(pair.CoChange),
+		}
+		data = append(data, row)
+	}
+
+	if err := table.Bulk(data); err != nil {
+		return err
+	}
+	if err := table.Render(); err != nil {
+		return err
+	}
+
+	if _, err := fmt.Fprintf(w, "Found %d coupled pairs above threshold %v (total commits analyzed: %d)\n", result.Summary.TotalPairs, result.Summary.Threshold, result.Summary.TotalCommits); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "Blast radius analysis completed in %v with %d workers. Cache backend: %s\n", duration, runtime.GetWorkers(), runtime.GetCacheBackend()); err != nil {
+		return err
+	}
+	return nil
+}
+
 // WriteMetrics writes metrics definitions in a human-readable text format.
 func (p *TextProvider) WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, _ config.OutputSettings) error {
 	renderModel := schema.BuildMetricsRenderModel(activeWeights)
