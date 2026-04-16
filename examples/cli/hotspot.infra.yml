@@ -10,11 +10,6 @@
 #     from actual infrastructure state silently.
 #   - Churn in environment-specific overlays (prod vs. staging) signals risk
 #     without necessarily indicating technical debt in the traditional sense.
-#
-# Recommended workflow:
-#   1. Run with 'risk' mode to find under-owned modules and playbooks.
-#   2. Run with 'stale' mode to detect configs that may have drifted.
-#   3. Use --filter to scope analysis to a specific environment or module group.
 
 # --- Global Settings ---
 # limit: Show top 20 results; IaC repos often have many environmental variants.
@@ -26,8 +21,7 @@ workers: 8
 mode: risk
 # precision: One decimal is sufficient for IaC risk scoring.
 precision: 1
-# start: Extend the lookback window; IaC files change infrequently by design,
-#        so a narrow window can make healthy files appear falsely stale.
+# start: Extend the lookback window; IaC files change infrequently by design.
 start: "2 years ago"
 
 # --- Command-Specific Settings ---
@@ -55,10 +49,3 @@ weights:
     inv_contrib: 0.40 # Increased: few-owner modules are highest operational risk
     loc: 0.06
     size: 0.06
-
-  stale:
-    age: 0.25         # Increased: old, untouched IaC is a drift warning
-    commits: 0.10
-    contrib: 0.05
-    inv_recent: 0.45  # Increased: IaC that hasn't been touched is a red flag
-    size: 0.15

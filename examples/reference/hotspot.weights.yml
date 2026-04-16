@@ -11,9 +11,7 @@ mode: hot
 # --- Custom Scoring Weights ---
 # Each mode can have custom weights that override the defaults.
 # Weights must sum to 1.0 (or 100%) for each mode.
-# Available weight components vary by mode:
-# - stale: age, commits, contrib, inv_recent, size
-# - roi: age, churn, gini, loc
+# Available weight components vary by mode.
 
 weights:
   hot:
@@ -42,14 +40,6 @@ weights:
     loc: 0.20
     low_recent: 0.05
     size: 0.05
-
-  stale:
-    # Emphasize lack of recent activity
-    age: 0.15
-    commits: 0.10
-    contrib: 0.03
-    inv_recent: 0.50  # Increased from default 0.35
-    size: 0.22
 
   roi:
     # Blend maintenance waste with knowledge concentration

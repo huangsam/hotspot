@@ -25,7 +25,7 @@
 # precision: 1
 
 # mode: The scoring method to use.
-# Valid values: hot, risk, complexity, stale, roi
+# Valid values: hot, risk, complexity, roi
 # Corresponds to: --mode
 # mode: hot
 
@@ -125,12 +125,6 @@
 #     loc: 0.20
 #     low_recent: 0.05
 #     size: 0.05
-#   stale:
-#     age: 0.20
-#     commits: 0.15
-#     contrib: 0.05
-#     inv_recent: 0.35
-#     size: 0.25
 #   roi:
 #     churn: 0.35
 #     loc: 0.25
@@ -201,5 +195,4 @@
 #   hot: 60.0         # Activity hotspots threshold
 #   risk: 55.0        # Knowledge risk/bus factor threshold
 #   complexity: 70.0  # Technical debt threshold
-#   stale: 65.0       # Maintenance debt threshold
 #   roi: 60.0         # Refactoring ROI threshold

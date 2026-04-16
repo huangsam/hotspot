@@ -969,7 +969,7 @@ func ResolveGitPathAndFilter(ctx context.Context, cfg *Config, client git.Client
 	return nil
 }
 
-// parseRiskThresholdsString parses a string like "hot:50,risk:60,complexity:70,stale:80"
+// parseRiskThresholdsString parses a string like "hot:50,risk:60,complexity:70,roi:80"
 // into a map of ScoringMode to float64.
 func parseRiskThresholdsString(s string) (map[schema.ScoringMode]float64, error) {
 	thresholds := make(map[schema.ScoringMode]float64)
