@@ -279,7 +279,8 @@ func TestAnalysisStore_GetAllAnalysisRuns(t *testing.T) {
 	for i, run := range runs {
 		assert.Equal(t, analysisIDs[i], run.AnalysisID)
 		// ConfigParams is stored as JSON string, so we can't directly compare
-		assert.Equal(t, int32(1), run.TotalFilesAnalyzed)
+		require.NotNil(t, run.TotalFilesAnalyzed)
+		assert.Equal(t, int32(1), *run.TotalFilesAnalyzed)
 		assert.NotNil(t, run.RunDurationMs)
 		assert.Greater(t, *run.RunDurationMs, int32(0))
 	}
@@ -367,7 +368,8 @@ func TestAnalysisStore_BeginEndAnalysis(t *testing.T) {
 
 	run := runs[0]
 	assert.Equal(t, analysisID, run.AnalysisID)
-	assert.Equal(t, int32(totalFiles), run.TotalFilesAnalyzed)
+	require.NotNil(t, run.TotalFilesAnalyzed)
+	assert.Equal(t, int32(totalFiles), *run.TotalFilesAnalyzed)
 	assert.NotNil(t, run.RunDurationMs)
 }
 
@@ -501,7 +503,8 @@ func TestAnalysisStoreConcurrentOperations(t *testing.T) {
 			t.Errorf("Duplicate analysis ID: %d", run.AnalysisID)
 		}
 		uniqueAnalysisIDs[run.AnalysisID] = true
-		assert.Equal(t, int32(filesPerGoroutine), run.TotalFilesAnalyzed)
+		require.NotNil(t, run.TotalFilesAnalyzed)
+		assert.Equal(t, int32(filesPerGoroutine), *run.TotalFilesAnalyzed)
 	}
 }
 

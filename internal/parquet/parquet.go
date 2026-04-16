@@ -30,7 +30,7 @@ type AnalysisRun struct {
 	RunDurationMs *int32 `parquet:"run_duration_ms,optional,snappy"`
 
 	// TotalFilesAnalyzed is the number of files analyzed in this run
-	TotalFilesAnalyzed int32 `parquet:"total_files_analyzed,snappy"`
+	TotalFilesAnalyzed *int32 `parquet:"total_files_analyzed,optional,snappy"`
 
 	// ConfigParams contains the JSON-encoded configuration parameters (nullable)
 	ConfigParams *string `parquet:"config_params,optional,snappy"`
@@ -153,6 +153,9 @@ func MockFetchAnalysisRuns() []AnalysisRun {
 	urn1 := "git:github.com/example/hotspot"
 	urn2 := "git:github.com/example/analytics"
 
+	fileCount1 := int32(150)
+	fileCount2 := int32(75)
+
 	return []AnalysisRun{
 		{
 			AnalysisID:         1,
@@ -160,7 +163,7 @@ func MockFetchAnalysisRuns() []AnalysisRun {
 			StartTime:          startTime1,
 			EndTime:            &endTime1,
 			RunDurationMs:      &durationMs1,
-			TotalFilesAnalyzed: 150,
+			TotalFilesAnalyzed: &fileCount1,
 			ConfigParams:       &configParams1,
 		},
 		{
@@ -169,7 +172,7 @@ func MockFetchAnalysisRuns() []AnalysisRun {
 			StartTime:          startTime2,
 			EndTime:            &endTime2,
 			RunDurationMs:      &durationMs2,
-			TotalFilesAnalyzed: 75,
+			TotalFilesAnalyzed: &fileCount2,
 			ConfigParams:       &configParams2,
 		},
 		{
@@ -178,7 +181,7 @@ func MockFetchAnalysisRuns() []AnalysisRun {
 			StartTime:          startTime3,
 			EndTime:            nil, // Still running - nullable field
 			RunDurationMs:      nil, // Not yet calculated - nullable field
-			TotalFilesAnalyzed: 0,
+			TotalFilesAnalyzed: nil,
 			ConfigParams:       nil, // No config stored - nullable field
 		},
 	}

@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
+	"github.com/huangsam/hotspot/internal/outwriter/provider"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/mark3labs/mcp-go/mcp"
 )
@@ -296,13 +298,16 @@ func (h *toolHandler) handleReadResource(_ context.Context, request mcp.ReadReso
 			},
 		}, nil
 	case "hotspot://docs/metrics":
-		model := schema.BuildMetricsRenderModel(nil) // Use default weights
-		jsonData, _ := json.MarshalIndent(model, "", "  ")
+		var buf bytes.Buffer
+		p := provider.NewMarkdownProvider()
+		if err := p.WriteMetrics(&buf, h.baseCfg.Scoring.CustomWeights, h.baseCfg.Output); err != nil {
+			return nil, fmt.Errorf("failed to render metrics documentation: %w", err)
+		}
 		return []mcp.ResourceContents{
 			mcp.TextResourceContents{
 				URI:      request.Params.URI,
-				MIMEType: "application/json",
-				Text:     string(jsonData),
+				MIMEType: "text/markdown",
+				Text:     buf.String(),
 			},
 		}, nil
 	default:

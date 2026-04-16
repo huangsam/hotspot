@@ -12,6 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func ptrInt32(v int32) *int32 {
+	return &v
+}
+
 func TestAnalysisRunStructTags(t *testing.T) {
 	// Verify struct tags are properly defined for parquet schema inference
 	schema := parquet.SchemaOf(new(AnalysisRun))
@@ -285,7 +289,7 @@ func TestNullableFieldHandling(t *testing.T) {
 			StartTime:          now,
 			EndTime:            &endTime,
 			RunDurationMs:      &durationMs,
-			TotalFilesAnalyzed: 100,
+			TotalFilesAnalyzed: ptrInt32(100),
 			ConfigParams:       &config,
 		},
 		// All nullable fields are nil
@@ -294,7 +298,7 @@ func TestNullableFieldHandling(t *testing.T) {
 			StartTime:          now,
 			EndTime:            nil,
 			RunDurationMs:      nil,
-			TotalFilesAnalyzed: 0,
+			TotalFilesAnalyzed: nil,
 			ConfigParams:       nil,
 		},
 	}
@@ -344,7 +348,7 @@ func TestTimestampPrecision(t *testing.T) {
 			StartTime:          now,
 			EndTime:            &now,
 			RunDurationMs:      nil,
-			TotalFilesAnalyzed: 0,
+			TotalFilesAnalyzed: nil,
 			ConfigParams:       nil,
 		},
 	}

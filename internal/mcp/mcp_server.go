@@ -154,7 +154,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 	), h.handleGetBlastRadius)
 
 	s.AddResource(mcp.NewResource("hotspot://docs/agents", "Agent Documentation", mcp.WithResourceDescription("High-level architectural context and domain concepts for AI agents."), mcp.WithMIMEType("text/markdown")), h.handleReadResource)
-	s.AddResource(mcp.NewResource("hotspot://docs/metrics", "Scoring Metrics Definition", mcp.WithResourceDescription("Machine-readable JSON definition of scoring modes, factors, and formulas."), mcp.WithMIMEType("application/json")), h.handleReadResource)
+	s.AddResource(mcp.NewResource("hotspot://docs/metrics", "Scoring Metrics Definition", mcp.WithResourceDescription("Markdown definition of scoring modes, factors, and formulas."), mcp.WithMIMEType("text/markdown")), h.handleReadResource)
 
 	// --- Prompts ---
 	s.AddPrompt(mcp.NewPrompt("refactor-prioritization", mcp.WithPromptDescription("Guided workflow for prioritizing refactoring targets using ROI mode.")), h.handleGetPrompt)

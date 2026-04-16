@@ -61,7 +61,7 @@ type AnalysisRunRecord struct {
 	StartTime          time.Time
 	EndTime            *time.Time
 	RunDurationMs      *int32
-	TotalFilesAnalyzed int32
+	TotalFilesAnalyzed *int32
 	ConfigParams       *string
 }
 
