@@ -105,6 +105,12 @@ func NewAnalysisStore(backend schema.DatabaseBackend, connStr string, client git
 		// Don't fail store creation, but log the issue for debugging
 	}
 
+	// Periodically prune orphaned runs (runs that started but never completed)
+	// that are older than 24 hours. This cleans up crashed or interrupted analyses.
+	if err := store.PruneOrphanedRuns(24 * time.Hour); err != nil {
+		logger.Warn("Failed to prune orphaned runs", err)
+	}
+
 	return store, nil
 }
 
@@ -252,6 +258,31 @@ func (as *AnalysisStoreImpl) GetStatus() (schema.AnalysisStatus, error) {
 	}
 
 	return status, nil
+}
+
+// PruneOrphanedRuns removes analysis runs that started but never completed.
+func (as *AnalysisStoreImpl) PruneOrphanedRuns(maxAge time.Duration) error {
+	if as.db == nil || as.dialect == nil {
+		return nil
+	}
+
+	cutoff := time.Now().Add(-maxAge)
+	query := fmt.Sprintf(
+		"DELETE FROM %s WHERE total_files_analyzed IS NULL AND start_time < ?",
+		as.dialect.QuoteIdentifier(analysisRunsTable),
+	)
+
+	result, err := as.db.Exec(query, as.dialect.FormatTime(cutoff))
+	if err != nil {
+		return fmt.Errorf("failed to prune orphaned runs: %w", err)
+	}
+
+	count, _ := result.RowsAffected()
+	if count > 0 {
+		logger.Info("Pruned orphaned analysis runs", "count", count)
+	}
+
+	return nil
 }
 
 // GetAllAnalysisRuns retrieves all analysis runs from the store.

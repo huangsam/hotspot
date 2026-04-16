@@ -611,3 +611,47 @@ func TestAnalysisStore_GetFileScoresMetrics_FilterByURN(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, allMetrics, 2)
 }
+
+func TestAnalysisStore_PruneOrphanedRuns(t *testing.T) {
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:", nil)
+	require.NoError(t, err)
+	defer func() { _ = store.Close() }()
+
+	now := time.Now()
+
+	// 1. Create a recent completed run (should stay)
+	id1, _ := store.BeginAnalysis("run1", now, nil)
+	_ = store.EndAnalysis(id1, now, 100)
+
+	// 2. Create a recent orphaned run (should stay, maybe still in progress)
+	id2, _ := store.BeginAnalysis("run2", now, nil)
+
+	// 3. Create an old completed run (should stay)
+	oldTime := now.Add(-48 * time.Hour)
+	id3, _ := store.BeginAnalysis("run3", oldTime, nil)
+	_ = store.EndAnalysis(id3, oldTime, 200)
+
+	// 4. Create an old orphaned run (should be pruned)
+	id4, _ := store.BeginAnalysis("run4", oldTime, nil)
+
+	// Verify we have 4 runs
+	runs, _ := store.GetAllAnalysisRuns()
+	assert.Len(t, runs, 4)
+
+	// Prune runs older than 24 hours
+	err = store.PruneOrphanedRuns(24 * time.Hour)
+	assert.NoError(t, err)
+
+	// Verify only 3 runs remain (id4 should be gone)
+	runs, _ = store.GetAllAnalysisRuns()
+	assert.Len(t, runs, 3)
+
+	ids := make(map[int64]bool)
+	for _, r := range runs {
+		ids[r.AnalysisID] = true
+	}
+	assert.True(t, ids[id1])
+	assert.True(t, ids[id2])
+	assert.True(t, ids[id3])
+	assert.False(t, ids[id4])
+}

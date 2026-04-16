@@ -119,3 +119,9 @@ func (m *MockAnalysisStore) GetFileScoresMetrics(filter schema.AnalysisQueryFilt
 	args := m.Called(filter)
 	return args.Get(0).([]schema.FileScoresMetricsRecord), args.Error(1)
 }
+
+// PruneOrphanedRuns implements the AnalysisStore interface.
+func (m *MockAnalysisStore) PruneOrphanedRuns(maxAge time.Duration) error {
+	args := m.Called(maxAge)
+	return args.Error(0)
+}

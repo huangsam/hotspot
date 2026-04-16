@@ -50,6 +50,10 @@ type AnalysisStore interface {
 	// GetStatus returns status information about the analysis store
 	GetStatus() (schema.AnalysisStatus, error)
 
+	// PruneOrphanedRuns removes analysis runs that never completed (total_files_analyzed is NULL)
+	// and are older than the specified duration.
+	PruneOrphanedRuns(maxAge time.Duration) error
+
 	// Close closes the underlying connection
 	Close() error
 }
