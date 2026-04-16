@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Standardized parameter descriptions and explicit default mappings across all tools
 
 ### Changed
+- Disabled analysis tracking by default to reduce overhead for local use
 - Removed "stale" mode from the entire codebase
 - Hardened scoring engine with edge-case tests for Git boundaries
 - Added strict MCP tool registration verification to ensure API schema stability
