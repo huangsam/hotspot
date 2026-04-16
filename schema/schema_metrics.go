@@ -76,8 +76,8 @@ func BuildMetricsRenderModel(activeWeights map[ScoringMode]map[BreakdownKey]floa
 		Description: "All scores = weighted sum of normalized factors",
 		Modes:       modesWithData,
 		SpecialRelationship: map[string]string{
-			"description": "RISK Score = HOT Score / Ownership Diversity Factor",
-			"note":        "(Factor ↓ when few contributors → RISK Score ↑)",
+			"description": "RISK Score = Weighted balance of Ownership concentration and Staleness",
+			"note":        "(Focuses on Gini Index, Contributor diversity, and Knowledge decay)",
 		},
 	}
 }

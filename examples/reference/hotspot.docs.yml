@@ -111,13 +111,13 @@
 #     contrib: 0.05
 #     size: 0.05
 #   risk:
-#     age: 0.16
-#     churn: 0.06
-#     commits: 0.04
-#     gini: 0.26
-#     inv_contrib: 0.30
-#     loc: 0.06
-#     size: 0.12
+#     age: 0.15
+#     churn: 0.05
+#     low_recent: 0.15
+#     gini: 0.25
+#     inv_contrib: 0.25
+#     loc: 0.05
+#     size: 0.10
 #   complexity:
 #     age: 0.30
 #     churn: 0.30

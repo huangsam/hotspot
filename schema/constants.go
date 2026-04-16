@@ -29,7 +29,6 @@ const (
 
 	BreakdownGini       BreakdownKey = "gini"        // nGiniRaw
 	BreakdownInvContrib BreakdownKey = "inv_contrib" // nInvContrib
-	BreakdownInvRecent  BreakdownKey = "inv_recent"  // nInvRecentCommits [legacy name]
 	BreakdownLowRecent  BreakdownKey = "low_recent"  // nInvRecentCommits (Staleness / Decay)
 )
 

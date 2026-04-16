@@ -42,9 +42,9 @@ exclude: ".terraform.lock.hcl,**/.terraform/,**/examples/,**/tests/,**/fixtures/
 # from size/churn, which are less meaningful signals in declarative IaC files.
 weights:
   risk:
-    age: 0.10
+    age: 0.11         # Adjusted to maintain sum of 1.0
     churn: 0.04
-    commits: 0.04
+    low_recent: 0.03  # Replaced commits with low_recent
     gini: 0.30        # Increased: unequal contributor distribution is critical
     inv_contrib: 0.40 # Increased: few-owner modules are highest operational risk
     loc: 0.06

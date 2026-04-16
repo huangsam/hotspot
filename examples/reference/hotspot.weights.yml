@@ -23,14 +23,14 @@ weights:
     size: 0.02     # Reduced from default 0.05
 
   risk:
-    # Focus more on contributor concentration
+    # Focus more on contributor concentration and staleness
     age: 0.10
     churn: 0.05
-    commits: 0.03
-    gini: 0.35      # Increased from default 0.26
-    inv_contrib: 0.35  # Increased from default 0.30
+    low_recent: 0.10
+    gini: 0.35         # Increased from default 0.25
+    inv_contrib: 0.30  # Increased from default 0.25
     loc: 0.05
-    size: 0.07
+    size: 0.05
 
   complexity:
     # Prioritize technical debt indicators
