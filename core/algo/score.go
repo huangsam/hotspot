@@ -58,7 +58,7 @@ func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, weights map[sch
 	nGiniRaw := clamp01(m.Gini)            // Gini (raw: high is bad)
 	nInvContrib := clamp01(1.0 - nContrib) // Inverse Contributors (high is bad/risky)
 	nRecentCommits := clamp01(m.RecentCommits.Float64() / maxRecent)
-	nInvRecentCommits := clamp01(1.0 - nRecentCommits) // Inverse Recent Activity (high is stale)
+	nInvRecentCommits := clamp01(1.0 - nRecentCommits) // Inverse Recent Activity (high indicates low activity)
 
 	// --------------------------------
 

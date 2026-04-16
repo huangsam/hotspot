@@ -26,7 +26,7 @@ type FileResult struct {
 	FirstCommit        time.Time `json:"first_commit"`         // Timestamp of the file's first commit
 	Owners             []string  `json:"owners"`               // Top 2 owners by commit count
 
-	Mode          ScoringMode                              `json:"mode"`                 // Scoring mode used (hot, risk, complexity, stale)
+	Mode          ScoringMode                              `json:"mode"`                 // Scoring mode used (hot, risk, complexity, roi)
 	ModeScore     float64                                  `json:"score"`                // Computed score for the current mode (0-100)
 	Reasoning     []string                                 `json:"reasoning,omitempty"`  // Human-and-AI-readable justifications for the score
 	ModeBreakdown map[BreakdownKey]float64                 `json:"breakdown"`            // Normalized contribution of each metric to the score
@@ -74,7 +74,7 @@ type FolderResult struct {
 
 	TotalLOC         Metric      `json:"total_loc"`          // Sum of LOC of all contained files (used for weighted average)
 	WeightedScoreSum float64     `json:"weighted_score_sum"` // Sum of (FileScore * FileLOC)
-	Mode             ScoringMode `json:"mode"`               // Scoring mode used (hot, risk, complexity, stale)
+	Mode             ScoringMode `json:"mode"`               // Scoring mode used (hot, risk, complexity, roi)
 }
 
 // GetPath returns the folder path.
