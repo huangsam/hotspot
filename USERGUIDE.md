@@ -146,12 +146,10 @@ As of v1.16.0, the MCP server is self-documenting and provides guided workflows:
 Agents can read core documentation directly from the tool using standard URIs:
 - `hotspot://docs/agents`: Architectural context and scoring mode principles.
 - `hotspot://docs/metrics`: Machine-readable JSON definition of scoring modes and weights.
-- `hotspot://docs/user-guide`: The complete user guide (this document).
-- `hotspot://config`: The local `.hotspot.yml` configuration if available.
 
 **2. Guided Playbooks (Prompts)**:
 The server provides pre-defined analysis workflows via the `prompts/list` capability:
-- `repository-audit`: A multi-step audit for activity and knowledge risk.
+- `release-readiness`: A specialized workflow for assessing release safety by comparing HEAD against the last tag.
 - `refactor-prioritization`: A specialized workflow using ROI mode to identify high-return targets.
 
 ## Configuration

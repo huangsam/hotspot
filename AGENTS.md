@@ -22,8 +22,8 @@ Agents should provide a `urn` to ensure analysis runs for the same repository ar
 
 Agents can autonomously discover context and workflows via MCP:
 
-- **Resources**: `hotspot://docs/agents`, `hotspot://docs/user-guide`, `hotspot://config`.
-- **Prompts**: `repository-audit` (Audit), `refactor-prioritization` (ROI).
+- **Resources**: `hotspot://docs/agents`, `hotspot://docs/metrics`.
+- **Prompts**: `release-readiness` (Audit), `refactor-prioritization` (ROI).
 
 ## Core Domain Concepts
 
@@ -68,7 +68,7 @@ Hotspot includes **shape analysis** (lightweight single-pass aggregation) to cha
 
 - **I/O Caching**: Results and analysis are cached using pluggable backends (SQLite, MySQL, PostgreSQL) to dramatically speed up repeated analyses. See `internal/iocache/`.
 
-- **Repository URN (Portable Identity)**: Every analysis run is tagged with a canonical repository identifier (`RepoURN`) of the form `git:host/owner/repo` (resolved from remote origin URL), `local:rootHash` (for local-only repos), or `local:absPath` (fallback). This ensures cache keys and DB records are path-independent and stable across checkout locations, solving multi-machine fragmentation. All MCP tools (`get_files_hotspots`, `get_folders_hotspots`, `compare_hotspots`, `get_timeseries`) now accept an optional `urn` parameter, enabling agents to query by URN alone for fleet-wide querying and enterprise RAG without local path dependencies.
+- **Repository URN (Portable Identity)**: Every analysis run is tagged with a canonical repository identifier (`RepoURN`) of the form `git:host/owner/repo` (resolved from remote origin URL), `local:rootHash` (for local-only repos), or `local:absPath` (fallback). This ensures cache keys and DB records are path-independent and stable across checkout locations, solving multi-machine fragmentation. ALL MCP tools (including `get_repo_shape`, `get_files_hotspots`, `get_folders_hotspots`, `compare_hotspots`, `get_timeseries`, `get_release_journey`, and `get_blast_radius`) now accept an optional `urn` parameter, enabling agents to query by URN alone for fleet-wide querying and enterprise RAG without local path dependencies.
 
 - **Per-Dialect Migrations**: `internal/iocache/migrations/` contains three subdirectories (`sqlite/`, `mysql/`, `postgres/`) with backend-specific SQL files. `MigrateAnalysis` selects the correct subdirectory via `buildSource()`. DDL differs meaningfully across backends (e.g. `AUTOINCREMENT` vs `AUTO_INCREMENT` vs `BIGSERIAL`, `TEXT` vs `DATETIME(6)` vs `TIMESTAMPTZ`). Do not write dialect-agnostic SQL for schema changes — add a file per dialect.
 
