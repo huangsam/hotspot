@@ -9,12 +9,12 @@ type JourneyStep struct {
 
 // JourneySummary provides an aggregated overview across all steps.
 type JourneySummary struct {
-	TotalSteps        int     `json:"total_steps"`         // Number of transitions analyzed
-	TotalNewFiles     int     `json:"total_new_files"`     // Cumulative new files across all steps
-	TotalInactiveFiles int    `json:"total_inactive_files"` // Cumulative retired files
-	NetScoreDelta     float64 `json:"net_score_delta"`     // Sum of all step score deltas
-	PeakDeltaStep     string  `json:"peak_delta_step"`     // Transition with the largest net score delta
-	Mode              string  `json:"mode"`                // Scoring mode used
+	TotalSteps         int     `json:"total_steps"`          // Number of transitions analyzed
+	TotalNewFiles      int     `json:"total_new_files"`      // Cumulative new files across all steps
+	TotalInactiveFiles int     `json:"total_inactive_files"` // Cumulative retired files
+	NetScoreDelta      float64 `json:"net_score_delta"`      // Sum of all step score deltas
+	PeakDeltaStep      string  `json:"peak_delta_step"`      // Transition with the largest net score delta
+	Mode               string  `json:"mode"`                 // Scoring mode used
 }
 
 // JourneyResult is the top-level response for the get_release_journey MCP tool.

@@ -333,6 +333,21 @@ func (h *toolHandler) handleGetPrompt(_ context.Context, request mcp.GetPromptRe
 				},
 			},
 		}
+	case "release-readiness":
+		messages = []mcp.PromptMessage{
+			{
+				Role: mcp.RoleUser,
+				Content: mcp.TextContent{
+					Type: "text",
+					Text: `Assess whether this repository is ready for a release cut by following this workflow:
+1. Run 'get_repo_shape' to identify the preset and recommended scoring mode.
+2. Use 'compare_hotspots' with base_ref set to the most recent tag and target_ref='HEAD', mode='hot' to identify files that have spiked in activity since the last release.
+3. Re-run 'compare_hotspots' with the same refs but mode='risk' to surface any newly-introduced knowledge silos or ownership concentration.
+4. If any files appear in BOTH the hot and risk results, flag them as release blockers — they are simultaneously volatile and fragile.
+5. Provide a clear go/no-go recommendation with a short list of specific files and the reason each one is a concern, or confirm the release looks clean.`,
+				},
+			},
+		}
 	default:
 		return nil, fmt.Errorf("unknown prompt: %s", request.Params.Name)
 	}

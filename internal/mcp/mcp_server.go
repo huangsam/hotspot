@@ -145,6 +145,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 	// --- Prompts ---
 	s.AddPrompt(mcp.NewPrompt("repository-audit", mcp.WithPromptDescription("Guided workflow for performing a comprehensive hotspots audit.")), h.handleGetPrompt)
 	s.AddPrompt(mcp.NewPrompt("refactor-prioritization", mcp.WithPromptDescription("Guided workflow for prioritizing refactoring targets using ROI mode.")), h.handleGetPrompt)
+	s.AddPrompt(mcp.NewPrompt("release-readiness", mcp.WithPromptDescription("Guided workflow for assessing release readiness by comparing HEAD against the last tag and surfacing new risk patterns.")), h.handleGetPrompt)
 
 	return s
 }
