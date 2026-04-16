@@ -53,7 +53,7 @@ func init() {
 	rootCmd.PersistentFlags().Int("width", 0, "Terminal width override (0 = auto-detect)")
 	rootCmd.PersistentFlags().String("cache-backend", "sqlite", "Cache backend: sqlite or mysql or postgresql or none")
 	rootCmd.PersistentFlags().String("cache-db-connect", "", "Database connection string for mysql/postgresql (e.g., user:pass@tcp(host:port)/dbname)")
-	rootCmd.PersistentFlags().String("analysis-backend", "sqlite", "Analysis tracking backend: sqlite or mysql or postgresql or none")
+	rootCmd.PersistentFlags().String("analysis-backend", "none", "Analysis tracking backend: sqlite or mysql or postgresql or none")
 	rootCmd.PersistentFlags().String("analysis-db-connect", "", "Database connection string for analysis tracking (must differ from cache-db-connect)")
 	rootCmd.PersistentFlags().String("color", "yes", "Enable colored labels in output (yes/no/true/false/1/0)")
 	rootCmd.PersistentFlags().String("lookback", "", "Time duration to look back from Base/Target ref commit time")
