@@ -232,38 +232,42 @@ func (h *toolHandler) handleGetTimeseries(ctx context.Context, request mcp.CallT
 
 // handleReadResource handles the reading of registered resources.
 func (h *toolHandler) handleReadResource(_ context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
-	var filePath string
-	var mimeType string
-
 	switch request.Params.URI {
 	case "hotspot://config":
-		filePath = ".hotspot.yml"
-		mimeType = "application/x-yaml"
+		filePath := ".hotspot.yml"
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return nil, fmt.Errorf("resource file %s not found", filePath)
+			}
+			return nil, fmt.Errorf("failed to read resource: %v", err)
+		}
+		return []mcp.ResourceContents{
+			mcp.TextResourceContents{
+				URI:      request.Params.URI,
+				MIMEType: "application/x-yaml",
+				Text:     string(data),
+			},
+		}, nil
 	case "hotspot://docs/agents":
-		filePath = "AGENTS.md"
-		mimeType = "text/markdown"
+		return []mcp.ResourceContents{
+			mcp.TextResourceContents{
+				URI:      request.Params.URI,
+				MIMEType: "text/markdown",
+				Text:     h.agentsDoc,
+			},
+		}, nil
 	case "hotspot://docs/user-guide":
-		filePath = "USERGUIDE.md"
-		mimeType = "text/markdown"
+		return []mcp.ResourceContents{
+			mcp.TextResourceContents{
+				URI:      request.Params.URI,
+				MIMEType: "text/markdown",
+				Text:     h.userGuideDoc,
+			},
+		}, nil
 	default:
 		return nil, fmt.Errorf("unknown resource: %s", request.Params.URI)
 	}
-
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("resource file %s not found", filePath)
-		}
-		return nil, fmt.Errorf("failed to read resource: %v", err)
-	}
-
-	return []mcp.ResourceContents{
-		mcp.TextResourceContents{
-			URI:      request.Params.URI,
-			MIMEType: mimeType,
-			Text:     string(data),
-		},
-	}, nil
 }
 
 // handleGetPrompt handles the retrieval of analytical playbooks.
