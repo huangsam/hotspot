@@ -612,6 +612,8 @@ Initial development covered core functionality including:
 - Code quality and maintainability refactoring
 - Proper package structure architecture
 
+[1.16.0]: https://github.com/huangsam/hotspot/compare/v1.15.0...v1.16.0
+[1.15.0]: https://github.com/huangsam/hotspot/compare/v1.14.0...v1.15.0
 [1.14.0]: https://github.com/huangsam/hotspot/compare/v1.13.0...v1.14.0
 [1.13.0]: https://github.com/huangsam/hotspot/compare/v1.12.1...v1.13.0
 [1.12.1]: https://github.com/huangsam/hotspot/compare/v1.12.0...v1.12.1
