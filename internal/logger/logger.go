@@ -11,7 +11,7 @@ import (
 // Level is the dynamic logging level for the global logger.
 var Level = new(slog.LevelVar)
 
-// InitLogger with a default level on package load
+// InitLogger with a default level on package load.
 func init() {
 	InitLogger("warn")
 }

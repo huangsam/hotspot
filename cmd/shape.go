@@ -6,9 +6,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var initShape bool
-
-// shapeCmd analyzes the repository shape to recommend a configuration preset.
 var shapeCmd = &cobra.Command{
 	Use:   "shape [repo-path]",
 	Short: "Analyze repository shape and recommend a configuration preset.",
@@ -22,15 +19,15 @@ Use the recommended preset with 'hotspot files --preset <name>' or pass it to
 any MCP tool as the 'preset' parameter.
 
 Examples:
-  # Print repo shape as JSON
+  # Analyze current repo shape
   hotspot shape
 
-  # Write recommended preset config as .hotspot.yml in the repo root
-  hotspot shape --init`,
+  # Analyze a different repo by path
+  hotspot shape /path/to/repo`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
-		if err := core.ExecuteHotspotShape(rootCtx, cfg, gitClient, cacheManager, initShape); err != nil {
+		if err := core.ExecuteHotspotShape(rootCtx, cfg, gitClient, cacheManager); err != nil {
 			logger.Fatal("Cannot run shape analysis", err)
 		}
 	},
@@ -38,6 +35,4 @@ Examples:
 
 func init() {
 	rootCmd.AddCommand(shapeCmd)
-	shapeCmd.Flags().BoolVar(&initShape, "init", false, "Write recommended preset config as .hotspot.yml in the repo root (DEPRECATED: use 'hotspot init' instead)")
-	_ = shapeCmd.Flags().MarkDeprecated("init", "use 'hotspot init' instead")
 }
