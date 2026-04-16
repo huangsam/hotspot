@@ -181,5 +181,4 @@ func TestOutWriter_WriteMetrics(t *testing.T) {
 	assert.Contains(t, output, "Activity hotspots")
 	assert.Contains(t, output, "Knowledge risk")
 	assert.Contains(t, output, "Technical debt")
-	assert.Contains(t, output, "Maintenance debt")
 }

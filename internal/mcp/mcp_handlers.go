@@ -295,6 +295,16 @@ func (h *toolHandler) handleReadResource(_ context.Context, request mcp.ReadReso
 				Text:     h.agentsDoc,
 			},
 		}, nil
+	case "hotspot://docs/metrics":
+		model := schema.BuildMetricsRenderModel(nil) // Use default weights
+		jsonData, _ := json.MarshalIndent(model, "", "  ")
+		return []mcp.ResourceContents{
+			mcp.TextResourceContents{
+				URI:      request.Params.URI,
+				MIMEType: "application/json",
+				Text:     string(jsonData),
+			},
+		}, nil
 	default:
 		return nil, fmt.Errorf("unknown resource: %s", request.Params.URI)
 	}

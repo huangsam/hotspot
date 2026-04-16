@@ -15,7 +15,7 @@ var checkCmd = &cobra.Command{
 Designed specifically for CI/CD integration - fails with non-zero exit code when files
 exceed acceptable risk levels. Analyzes only the changed files, making it fast and focused.
 
-Default thresholds: 50.0 for all modes (hot, risk, complexity, stale)
+Default thresholds: 50.0 for all modes (hot, risk, complexity)
 
 Use cases:
 - Pull request gates - block merges with high-risk changes
@@ -28,7 +28,7 @@ Examples:
   hotspot check --base-ref origin/main --target-ref HEAD
 
   # Custom thresholds per mode
-  hotspot check --base-ref main --target-ref feature --thresholds-override "hot:75,risk:60,complexity:80,stale:70"
+  hotspot check --base-ref main --target-ref feature --thresholds-override "hot:75,risk:60,complexity:80"
 
   # Check release candidate
   hotspot check --base-ref v1.0.0 --target-ref v1.1.0-rc1

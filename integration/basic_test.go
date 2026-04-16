@@ -192,7 +192,7 @@ func TestFoldersVerification(t *testing.T) {
 			assert.GreaterOrEqual(t, folder.Churn, schema.Metric(0), "folder should have non-negative churn")
 			assert.GreaterOrEqual(t, folder.Score, 0.0, "folder should have non-negative score")
 			assert.NotEmpty(t, folder.Path, "folder should have a path")
-			assert.Contains(t, []string{"hot", "risk", "complexity", "stale"}, string(folder.Mode), "folder should have valid mode")
+			assert.Contains(t, []string{"hot", "risk", "complexity"}, string(folder.Mode), "folder should have valid mode")
 		})
 	}
 }
@@ -245,7 +245,7 @@ func TestCompareFilesVerification(t *testing.T) {
 			assert.NotEmpty(t, detail.Path, "path should not be empty")
 			assert.GreaterOrEqual(t, detail.BeforeScore, 0.0, "before score should be non-negative")
 			assert.GreaterOrEqual(t, detail.AfterScore, 0.0, "after score should be non-negative")
-			assert.Contains(t, []string{"hot", "risk", "complexity", "stale"}, string(detail.Mode), "should have valid mode")
+			assert.Contains(t, []string{"hot", "risk", "complexity"}, string(detail.Mode), "should have valid mode")
 
 			// Delta can be positive or negative, just verify it's a valid number
 			assert.True(t, detail.Delta >= -100.0 && detail.Delta <= 100.0, "delta should be reasonable")
@@ -311,7 +311,7 @@ func TestCompareFoldersVerification(t *testing.T) {
 			assert.NotEmpty(t, detail.Path, "path should not be empty")
 			assert.GreaterOrEqual(t, detail.BeforeScore, 0.0, "before score should be non-negative")
 			assert.GreaterOrEqual(t, detail.AfterScore, 0.0, "after score should be non-negative")
-			assert.Contains(t, []string{"hot", "risk", "complexity", "stale"}, string(detail.Mode), "should have valid mode")
+			assert.Contains(t, []string{"hot", "risk", "complexity"}, string(detail.Mode), "should have valid mode")
 
 			// Delta can be positive or negative, just verify it's a valid number
 			assert.True(t, detail.Delta >= -100.0 && detail.Delta <= 100.0, "delta should be reasonable")
@@ -469,9 +469,8 @@ func TestTimeseriesVerification(t *testing.T) {
 		}
 	})
 
-	// Test timeseries on core folder
 	t.Run("core_folder", func(t *testing.T) {
-		cmd := exec.Command(hotspotPath, "timeseries", "--path", "core", "--interval", "30 days", "--points", "3", "--output", "json", "--mode", string(schema.StaleMode))
+		cmd := exec.Command(hotspotPath, "timeseries", "--path", "core", "--interval", "30 days", "--points", "3", "--output", "json", "--mode", string(schema.RiskMode))
 		cmd.Dir = repoDir
 		var stdout bytes.Buffer
 		cmd.Stdout = &stdout
@@ -501,7 +500,7 @@ func TestTimeseriesVerification(t *testing.T) {
 
 				mode, ok := point["mode"].(string)
 				require.True(t, ok, "point should have 'mode' field")
-				assert.Equal(t, schema.StaleMode, schema.ScoringMode(mode), "mode should be 'stale'")
+				assert.Equal(t, schema.RiskMode, schema.ScoringMode(mode), "mode should be 'risk'")
 			})
 		}
 	})
@@ -554,7 +553,7 @@ func TestCheckVerification(t *testing.T) {
 	// Test check command with very high thresholds (should pass)
 	t.Run("check_with_high_thresholds", func(t *testing.T) {
 		cmd := exec.Command(hotspotPath, "check", "--base-ref", "v1.1.4", "--target-ref", "v1.1.5",
-			"--thresholds-override", "hot:100,risk:100,complexity:100,stale:100")
+			"--thresholds-override", "hot:100,risk:100,complexity:100")
 		cmd.Dir = repoDir
 		var stdout bytes.Buffer
 		var stderr bytes.Buffer
@@ -579,7 +578,7 @@ func TestCheckVerification(t *testing.T) {
 	// Test check command with very low thresholds (should fail)
 	t.Run("check_with_low_thresholds", func(t *testing.T) {
 		cmd := exec.Command(hotspotPath, "check", "--base-ref", "v1.1.4", "--target-ref", "v1.1.5",
-			"--thresholds-override", "hot:10,risk:10,complexity:10,stale:10")
+			"--thresholds-override", "hot:10,risk:10,complexity:10")
 		cmd.Dir = repoDir
 		var stdout bytes.Buffer
 		var stderr bytes.Buffer

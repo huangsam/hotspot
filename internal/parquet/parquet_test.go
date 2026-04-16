@@ -53,7 +53,6 @@ func TestFileScoresMetricsStructTags(t *testing.T) {
 		"score_hot",
 		"score_risk",
 		"score_complexity",
-		"score_stale",
 		"score_label",
 	}
 
@@ -180,7 +179,6 @@ func TestWriteFileScoresMetricsParquet(t *testing.T) {
 		assert.InDelta(t, data[i].ScoreHot, readData[i].ScoreHot, 0.01, "ScoreHot should match")
 		assert.InDelta(t, data[i].ScoreRisk, readData[i].ScoreRisk, 0.01, "ScoreRisk should match")
 		assert.InDelta(t, data[i].ScoreComplexity, readData[i].ScoreComplexity, 0.01, "ScoreComplexity should match")
-		assert.InDelta(t, data[i].ScoreStale, readData[i].ScoreStale, 0.01, "ScoreStale should match")
 		assert.Equal(t, data[i].ScoreLabel, readData[i].ScoreLabel, "ScoreLabel should match")
 
 		// Check nullable FileOwner field

@@ -11,10 +11,10 @@ import (
 
 // ComputeScore calculates a file's importance score (0-100) based on its metrics.
 // Supports four core scoring modes:
-// - hot: Activity hotspots (high commits, churn, contributors)
-// - risk: Knowledge risk/bus factor (few contributors, high inequality)
+// - hot: Activity hotspots (high recent activity & volatility)
+// - risk: Knowledge risk/bus factor (few contributors, high inequality, knowledge decay)
 // - complexity: Technical debt candidates (large, old, high total churn)
-// - stale: Maintenance debt (important but untouched).
+// - roi: Refactoring ROI (high churn on large files).
 func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, weights map[schema.BreakdownKey]float64) float64 {
 	// DEFENSIVE CHECK: If the file has no content, its score should be 0.
 	if m.SizeBytes == 0 {
@@ -98,11 +98,10 @@ func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, weights map[sch
 		breakdown[schema.BreakdownGini] = weights[schema.BreakdownGini] * nGiniRaw
 		breakdown[schema.BreakdownInvContrib] = weights[schema.BreakdownInvContrib] * nInvContrib
 		breakdown[schema.BreakdownLOC] = weights[schema.BreakdownLOC] * nLOC
+		breakdown[schema.BreakdownLowRecent] = weights[schema.BreakdownLowRecent] * nInvRecentCommits
 	case schema.ComplexityMode:
 		breakdown[schema.BreakdownLOC] = weights[schema.BreakdownLOC] * nLOC
 		breakdown[schema.BreakdownLowRecent] = weights[schema.BreakdownLowRecent] * nInvRecentCommits
-	case schema.StaleMode:
-		breakdown[schema.BreakdownInvRecent] = weights[schema.BreakdownInvRecent] * nInvRecentCommits
 	case schema.ROIMode:
 		breakdown[schema.BreakdownGini] = weights[schema.BreakdownGini] * nGiniRaw
 		breakdown[schema.BreakdownLOC] = weights[schema.BreakdownLOC] * nLOC
@@ -157,13 +156,12 @@ func computeReasoning(m *schema.FileResult, mode schema.ScoringMode) []string {
 	// 1. Core Synthesis Patterns (Cross-metric logic)
 	gini, hasGini := b[schema.BreakdownGini]
 	age, hasAge := b[schema.BreakdownAge]
-	invRecent, hasInvRecent := b[schema.BreakdownInvRecent]
 	lowRecent, hasLowRecent := b[schema.BreakdownLowRecent]
 	loc, hasLoc := b[schema.BreakdownLOC]
 	churn, hasChurn := b[schema.BreakdownChurn]
 
-	// Pattern: Institutional Amnesia (High Gini + High Age + Low Activity)
-	if hasGini && gini > significant && hasAge && age > significant && (hasInvRecent && invRecent > significant || hasLowRecent && lowRecent > significant) {
+	// Pattern: Institutional Amnesia (High Gini/Risk + High Age + Low Activity)
+	if hasGini && gini > significant && hasAge && age > significant && hasLowRecent && lowRecent > significant {
 		results = append(results, "Institutional Amnesia: Vital logic is concentrated in inactive authors with high maintenance decay.")
 	}
 
@@ -182,8 +180,8 @@ func computeReasoning(m *schema.FileResult, mode schema.ScoringMode) []string {
 		if b[schema.BreakdownChurn] > significant {
 			results = append(results, "High Churn: Recent volatility indicates this file is currently a development bottleneck.")
 		}
-		if hasInvRecent && invRecent > significant {
-			results = append(results, "Maintenance Debt: File is stale and has not been updated in the recent analysis window.")
+		if hasLowRecent && lowRecent > significant {
+			results = append(results, "Knowledge Decay: File has not been updated recently, increasing the risk of institutional amnesia.")
 		}
 		if hasLoc && loc > significant {
 			results = append(results, "Structural Complexity: High lines of code count increases cognitive load for maintainers.")

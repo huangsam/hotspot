@@ -7,7 +7,7 @@ This guide provides detailed documentation for using Hotspot's analysis features
 Hotspot is built on the premise that **System Resilience** and **Team Sustainability** are just as critical as code correctness. While traditional QA tools (linters, unit tests, SCA) catch syntax errors and logic bugs, production outages and development bottlenecks often stem from:
 - **High Complexity**: Fragile code that is expensive and risky to modify.
 - **Knowledge Silos**: Critical subsystems owned by too few people (low bus factor).
-- **Maintenance Neglect**: Historically important files that have been abandoned.
+- **Knowledge Decay**: Historically important files that have been abandoned or lost context.
 
 Hotspot provides the data-driven signal needed to identify these risks and start the conversations required to fix them.
 
@@ -34,9 +34,8 @@ The core power of Hotspot lies in its `--mode` flag, which selects the ranking a
 | Mode | Focus | Description |
 |------|-------|-------------|
 | **hot** | Activity hotspots | Identify files and subsystems with the most activity. |
-| **risk** | Knowledge risk | Find areas with unequal contribution and few owners. |
+| **risk** | Knowledge risk | Find areas with unequal ownership and knowledge decay. |
 | **complexity** | Technical debt | Triage files with high churn, large size, and high complexity. |
-| **stale** | Maintenance debt | Highlight critical files that are large, old, but rarely touched. |
 | **roi** | Refactoring ROI | Prioritize refactoring targets that offer the highest technical return. |
 
 ### Scoring transparency & customization
@@ -72,13 +71,13 @@ The `timeseries` subcommand tracks how hotspot scores change over time for a spe
 | Flags | Description |
 |-------|-------------|
 | `--path` | The file or folder path to analyze (required). |
-| `--mode` | Scoring mode (hot, risk, complexity, stale, roi; default: hot). |
+| `--mode` | Scoring mode (hot, risk, complexity, roi; default: hot). |
 | `--interval` | Total time window (e.g., `6 months`, `1 year`). |
 | `--points` | Number of data points to generate (default: 3). |
 
 ## CI/CD Policy Enforcement
 
-The `check` command allows you to enforce risk thresholds in CI/CD pipelines, failing builds when files exceed acceptable risk levels. If no thresholds are specified, it defaults to 50.0 for all scoring modes.
+The `check` command allows you to enforce risk thresholds in CI/CD pipelines, failing builds when files exceed acceptable risk levels. If no thresholds are specified, it defaults to 50.0 for all scoring modes (hot, risk, complexity).
 
 **Example:** Use CI configuration for policy enforcement.
 
@@ -86,14 +85,14 @@ The `check` command allows you to enforce risk thresholds in CI/CD pipelines, fa
 
 **Example:** Use CLI overrides for policy enforcement.
 
-`hotspot check --base-ref v1.9.0 --target-ref v1.10.0 --thresholds-override "hot:75,risk:60,complexity:80,stale:70"`
+`hotspot check --base-ref v1.9.0 --target-ref v1.10.0 --thresholds-override "hot:75,risk:60,complexity:80"`
 
 | Flags | Description |
 |-------|-------------|
 | `--base-ref` | The BEFORE Git reference (e.g., `main`, `v1.0.0`, a commit hash). |
 | `--target-ref` | The AFTER Git reference (defaults to `HEAD`). |
 | `--lookback` | Time window (e.g. `6 months`) used for base and target. |
-| `--thresholds-override` | Custom risk thresholds per scoring mode (format: `hot:50,risk:50,complexity:50,stale:50,roi:50`). |
+| `--thresholds-override` | Custom risk thresholds per scoring mode (format: `hot:50,risk:50,complexity:50,roi:50`). |
 
 The [example CI config](./examples/cli/hotspot.ci.yml) shows how custom thresholds can be configured for each scoring mode and is useful for maintaining code quality standards specific to your team.
 
@@ -130,7 +129,7 @@ To use Hotspot with Claude Desktop, add it to your `claude_desktop_config.json`:
 
 The server exposes the following tools to the AI agent:
 - `get_repo_shape`: Characterize the repository and get a recommended preset (lightweight aggregation pass).
-- `get_files_hotspots`: Rank files by hot, risk, complexity, stale, or roi modes.
+- `get_files_hotspots`: Rank files by hot, risk, complexity, or roi modes.
 - `get_folders_hotspots`: Same as above, but aggregated at the folder level.
 - `compare_hotspots`: Compare changes in technical debt between two Git references.
 - `get_timeseries`: Track the trend of a specific file or folder over time.
@@ -146,6 +145,7 @@ As of v1.16.0, the MCP server is self-documenting and provides guided workflows:
 **1. Documentation Resources**:
 Agents can read core documentation directly from the tool using standard URIs:
 - `hotspot://docs/agents`: Architectural context and scoring mode principles.
+- `hotspot://docs/metrics`: Machine-readable JSON definition of scoring modes and weights.
 - `hotspot://docs/user-guide`: The complete user guide (this document).
 - `hotspot://config`: The local `.hotspot.yml` configuration if available.
 
@@ -331,8 +331,8 @@ hotspot files --mode hot ./path/from/folder/hot --start "2 weeks ago"
 # Bus Factor Audit (subsystems with few owners)
 hotspot folders --mode risk --start "1 year ago"
 
-# Maintenance Debt Audit (old, neglected modules)
-hotspot folders --mode stale --start "5 years ago" --exclude "test/,vendor/"
+# Knowledge Decay Audit (old, neglected modules)
+hotspot folders --mode risk --start "5 years ago" --exclude "test/,vendor/"
 ```
 
 ### Change & release auditing
@@ -351,8 +351,8 @@ hotspot compare files --mode risk --base-ref main --target-ref feature/new-modul
 # Track file complexity over time
 hotspot timeseries --path src/main/java/App.java --mode complexity --interval "1 month" --points 6
 
-# Identify when risk started increasing
-hotspot timeseries --path lib/legacy.js --mode stale --interval "3 months" --points 8
+# Identify when knowledge risk started increasing
+hotspot timeseries --path lib/legacy.js --mode risk --interval "3 months" --points 8
 ```
 
 ### Power user workflows

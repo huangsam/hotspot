@@ -20,7 +20,6 @@ CREATE TABLE hotspot_file_scores_metrics_down (
     score_hot REAL NOT NULL,
     score_risk REAL NOT NULL,
     score_complexity REAL NOT NULL,
-    score_stale REAL NOT NULL,
     score_label TEXT NOT NULL,
     PRIMARY KEY (analysis_id, file_path)
 );
@@ -47,7 +46,6 @@ SELECT
     score_hot,
     score_risk,
     score_complexity,
-    score_stale,
     score_label
 FROM hotspot_file_scores_metrics;
 

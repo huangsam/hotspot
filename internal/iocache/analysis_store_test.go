@@ -64,7 +64,6 @@ func TestAnalysisStore_SQLite(t *testing.T) {
 		HotScore:        75.5,
 		RiskScore:       80.2,
 		ComplexityScore: 65.3,
-		StaleScore:      70.1,
 		ScoreLabel:      "hot",
 	}
 	err = store.RecordFileMetricsAndScores(analysisID, "test/file.go", metrics, scores)
@@ -103,7 +102,6 @@ func TestAnalysisStore_MultipleFiles(t *testing.T) {
 			HotScore:        75.5,
 			RiskScore:       80.2,
 			ComplexityScore: 65.3,
-			StaleScore:      70.1,
 			ScoreLabel:      "hot",
 		}
 		err = store.RecordFileMetricsAndScores(analysisID, file, metrics, scores)
@@ -143,7 +141,6 @@ func TestAnalysisStore_MultipleRuns(t *testing.T) {
 			HotScore:        75.5 + float64(i),
 			RiskScore:       80.2 + float64(i),
 			ComplexityScore: 65.3 + float64(i),
-			StaleScore:      70.1 + float64(i),
 			ScoreLabel:      "hot",
 		}
 		err = store.RecordFileMetricsAndScores(id, "test.go", metrics, scores)
@@ -317,7 +314,6 @@ func TestAnalysisStore_GetAllFileScoresMetrics(t *testing.T) {
 		HotScore:        75.5,
 		RiskScore:       80.2,
 		ComplexityScore: 65.3,
-		StaleScore:      70.1,
 		ScoreLabel:      "hot",
 	}
 
@@ -401,7 +397,6 @@ func TestAnalysisStore_RecordFileMetricsAndScores(t *testing.T) {
 		HotScore:        85.2,
 		RiskScore:       72.1,
 		ComplexityScore: 90.5,
-		StaleScore:      45.3,
 		ScoreLabel:      "complexity",
 	}
 
@@ -465,7 +460,6 @@ func TestAnalysisStoreConcurrentOperations(t *testing.T) {
 					HotScore:        float64(50 + workerID + j),
 					RiskScore:       float64(40 + workerID + j),
 					ComplexityScore: float64(60 + workerID + j),
-					StaleScore:      float64(30 + workerID + j),
 					ScoreLabel:      "hot",
 				}
 
@@ -586,7 +580,7 @@ func TestAnalysisStore_GetFileScoresMetrics_FilterByURN(t *testing.T) {
 	err = store.RecordFileMetricsAndScores(idA, "main.go", schema.FileMetrics{
 		AnalysisTime: time.Now(), TotalCommits: schema.Metric(10), TotalChurn: schema.Metric(100),
 		ContributorCount: schema.Metric(3), AgeDays: schema.Metric(30), GiniCoefficient: 0.5, FileOwner: "alice",
-	}, schema.FileScores{HotScore: 80, RiskScore: 60, ComplexityScore: 50, StaleScore: 20, ScoreLabel: "hot"})
+	}, schema.FileScores{HotScore: 80, RiskScore: 60, ComplexityScore: 50, ScoreLabel: "hot"})
 	require.NoError(t, err)
 
 	idB, err := store.BeginAnalysis("git:github.com/org/repo-b", time.Now(), map[string]any{"test": "b"})
@@ -594,7 +588,7 @@ func TestAnalysisStore_GetFileScoresMetrics_FilterByURN(t *testing.T) {
 	err = store.RecordFileMetricsAndScores(idB, "lib.go", schema.FileMetrics{
 		AnalysisTime: time.Now(), TotalCommits: schema.Metric(5), TotalChurn: schema.Metric(50),
 		ContributorCount: schema.Metric(1), AgeDays: schema.Metric(60), GiniCoefficient: 0.8, FileOwner: "bob",
-	}, schema.FileScores{HotScore: 40, RiskScore: 70, ComplexityScore: 30, StaleScore: 50, ScoreLabel: "risk"})
+	}, schema.FileScores{HotScore: 40, RiskScore: 70, ComplexityScore: 30, ScoreLabel: "risk"})
 	require.NoError(t, err)
 
 	// Filter by URN for repo-a

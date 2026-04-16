@@ -144,7 +144,6 @@ func TestCheckResultBuilder_ComputeMetrics(t *testing.T) {
 				schema.HotMode:        60.0,
 				schema.RiskMode:       40.0,
 				schema.ComplexityMode: 30.0,
-				schema.StaleMode:      20.0,
 			},
 			Owners: []string{"alice"},
 		},
@@ -154,7 +153,6 @@ func TestCheckResultBuilder_ComputeMetrics(t *testing.T) {
 				schema.HotMode:        50.0,
 				schema.RiskMode:       70.0,
 				schema.ComplexityMode: 25.0,
-				schema.StaleMode:      15.0,
 			},
 			Owners: []string{"bob"},
 		},
@@ -166,7 +164,6 @@ func TestCheckResultBuilder_ComputeMetrics(t *testing.T) {
 				schema.HotMode:        55.0,
 				schema.RiskMode:       45.0,
 				schema.ComplexityMode: 35.0,
-				schema.StaleMode:      25.0,
 			},
 		},
 	}
@@ -180,13 +177,11 @@ func TestCheckResultBuilder_ComputeMetrics(t *testing.T) {
 	assert.Equal(t, 60.0, builder.maxScores[schema.HotMode])
 	assert.Equal(t, 70.0, builder.maxScores[schema.RiskMode])
 	assert.Equal(t, 30.0, builder.maxScores[schema.ComplexityMode])
-	assert.Equal(t, 20.0, builder.maxScores[schema.StaleMode])
 
 	// Check avg scores
 	assert.Equal(t, 55.0, builder.avgScores[schema.HotMode])        // (60+50)/2
 	assert.Equal(t, 55.0, builder.avgScores[schema.RiskMode])       // (40+70)/2
 	assert.Equal(t, 27.5, builder.avgScores[schema.ComplexityMode]) // (30+25)/2
-	assert.Equal(t, 17.5, builder.avgScores[schema.StaleMode])      // (20+15)/2
 
 	// Check max score files
 	assert.Equal(t, "file1.go", builder.maxScoreFiles[schema.HotMode][0].Path)
@@ -226,7 +221,6 @@ func TestCheckResultBuilder_BuildResult_Success(t *testing.T) {
 				schema.HotMode:        50.0,
 				schema.RiskMode:       50.0,
 				schema.ComplexityMode: 50.0,
-				schema.StaleMode:      50.0,
 			},
 		},
 	}
@@ -239,7 +233,6 @@ func TestCheckResultBuilder_BuildResult_Success(t *testing.T) {
 			schema.HotMode:        40.0,
 			schema.RiskMode:       30.0,
 			schema.ComplexityMode: 20.0,
-			schema.StaleMode:      10.0,
 		},
 		maxScoreFiles: map[schema.ScoringMode][]schema.CheckMaxScoreFile{
 			schema.HotMode: {{Path: "file1.go", Owners: []string{"alice"}}},
@@ -248,7 +241,6 @@ func TestCheckResultBuilder_BuildResult_Success(t *testing.T) {
 			schema.HotMode:        35.0,
 			schema.RiskMode:       25.0,
 			schema.ComplexityMode: 15.0,
-			schema.StaleMode:      5.0,
 		},
 	}
 

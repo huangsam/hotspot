@@ -46,7 +46,7 @@ func recordFileAnalysis(ctx context.Context, scoringSettings config.ScoringSetti
 		FileOwner:              getOwnerString(result.Owners),
 	}
 
-	// Compute all four scoring modes
+	// Compute scores
 	allScores := result.AllScores
 
 	// Record final scores
@@ -55,7 +55,6 @@ func recordFileAnalysis(ctx context.Context, scoringSettings config.ScoringSetti
 		HotScore:        allScores[schema.HotMode],
 		RiskScore:       allScores[schema.RiskMode],
 		ComplexityScore: allScores[schema.ComplexityMode],
-		StaleScore:      allScores[schema.StaleMode],
 		ScoreLabel:      string(scoringSettings.GetMode()),
 	}
 

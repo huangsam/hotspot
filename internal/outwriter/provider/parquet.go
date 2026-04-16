@@ -63,8 +63,6 @@ func (p *ParquetProvider) WriteFiles(_ io.Writer, files []schema.FileResult, out
 			records[i].ScoreRisk = f.ModeScore
 		case schema.ComplexityMode:
 			records[i].ScoreComplexity = f.ModeScore
-		case schema.StaleMode:
-			records[i].ScoreStale = f.ModeScore
 		}
 	}
 

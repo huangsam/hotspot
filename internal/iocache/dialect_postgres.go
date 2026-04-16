@@ -49,15 +49,15 @@ func (d *PostgresDialect) RecordFileMetricsAndScores(db *sql.DB, tableName strin
 		INSERT INTO %s (analysis_id, file_path, analysis_time, total_commits, total_churn, lines_added, lines_deleted, decayed_commits, decayed_churn, lines_of_code,
 						 contributor_count, recent_commits, recent_churn, recent_lines_added, recent_lines_deleted, recent_contributor_count,
 						 age_days, gini_coefficient, file_owner,
-						 score_hot, score_risk, score_complexity, score_stale, score_label)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+						 score_hot, score_risk, score_complexity, score_label)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
 	`, d.QuoteIdentifier(tableName))
 
 	_, err := db.Exec(query,
 		analysisID, filePath, d.FormatTime(metrics.AnalysisTime), metrics.TotalCommits, metrics.TotalChurn, metrics.LinesAdded, metrics.LinesDeleted, metrics.DecayedCommits, metrics.DecayedChurn, metrics.LinesOfCode,
 		metrics.ContributorCount, metrics.RecentCommits, metrics.RecentChurn, metrics.RecentLinesAdded, metrics.RecentLinesDeleted, metrics.RecentContributorCount,
 		metrics.AgeDays, metrics.GiniCoefficient, metrics.FileOwner,
-		scores.HotScore, scores.RiskScore, scores.ComplexityScore, scores.StaleScore, scores.ScoreLabel,
+		scores.HotScore, scores.RiskScore, scores.ComplexityScore, scores.ScoreLabel,
 	)
 	return err
 }
@@ -100,7 +100,7 @@ func (d *PostgresDialect) ScanFileScoresMetricsRecord(rows *sql.Rows, record *sc
 		&record.RecentCommits, &record.RecentChurn, &record.RecentLinesAdded, &record.RecentLinesDeleted, &record.RecentContributorCount,
 		&record.AgeDays, &record.GiniCoefficient,
 		&record.FileOwner, &record.ScoreHot, &record.ScoreRisk, &record.ScoreComplexity,
-		&record.ScoreStale, &record.ScoreLabel)
+		&record.ScoreLabel)
 }
 
 // FormatTime converts a time.Time to a PostgreSQL-compatible format (passing native time.Time works).

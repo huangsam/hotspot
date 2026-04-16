@@ -41,21 +41,15 @@ func BuildMetricsRenderModel(activeWeights map[ScoringMode]map[BreakdownKey]floa
 		},
 		{
 			Name:       "risk",
-			Purpose:    "Knowledge risk/bus factor - concentrated ownership",
-			Factors:    []string{"InvContributors", "Gini", "Age", "Churn", "Commits", "LOC", "Size"},
-			FactorKeys: []string{string(BreakdownInvContrib), string(BreakdownGini), string(BreakdownAge), string(BreakdownChurn), string(BreakdownCommits), string(BreakdownLOC), string(BreakdownSize)},
+			Purpose:    "Knowledge risk/bus factor - concentrated ownership & knowledge decay",
+			Factors:    []string{"InvContributors", "Gini", "LowRecent", "Age", "Size", "Churn", "LOC"},
+			FactorKeys: []string{string(BreakdownInvContrib), string(BreakdownGini), string(BreakdownLowRecent), string(BreakdownAge), string(BreakdownSize), string(BreakdownChurn), string(BreakdownLOC)},
 		},
 		{
 			Name:       "complexity",
 			Purpose:    "Technical debt - large, old files with high maintenance burden",
 			Factors:    []string{"Age", "Churn", "Commits", "LOC", "LowRecent", "Size"},
 			FactorKeys: []string{string(BreakdownAge), string(BreakdownChurn), string(BreakdownCommits), string(BreakdownLOC), string(BreakdownLowRecent), string(BreakdownSize)},
-		},
-		{
-			Name:       "stale",
-			Purpose:    "Maintenance debt - important files untouched recently",
-			Factors:    []string{"InvRecent", "Age", "Size", "Commits", "Contributors"},
-			FactorKeys: []string{string(BreakdownInvRecent), string(BreakdownAge), string(BreakdownSize), string(BreakdownCommits), string(BreakdownContrib)},
 		},
 		{
 			Name:       "roi",
@@ -97,8 +91,6 @@ func GetDisplayNameForMode(modeName string) string {
 		return "Risk"
 	case "complexity":
 		return "Complexity"
-	case "stale":
-		return "Stale"
 	default:
 		return strings.ToUpper(modeName)
 	}

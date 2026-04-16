@@ -51,15 +51,15 @@ func (d *MySQLDialect) RecordFileMetricsAndScores(db *sql.DB, tableName string, 
 		INSERT INTO %s (analysis_id, file_path, analysis_time, total_commits, total_churn, lines_added, lines_deleted, decayed_commits, decayed_churn, lines_of_code,
 						 contributor_count, recent_commits, recent_churn, recent_lines_added, recent_lines_deleted, recent_contributor_count,
 						 age_days, gini_coefficient, file_owner,
-						 score_hot, score_risk, score_complexity, score_stale, score_label)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+						 score_hot, score_risk, score_complexity, score_label)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, d.QuoteIdentifier(tableName))
 
 	_, err := db.Exec(query,
 		analysisID, filePath, d.FormatTime(metrics.AnalysisTime), metrics.TotalCommits, metrics.TotalChurn, metrics.LinesAdded, metrics.LinesDeleted, metrics.DecayedCommits, metrics.DecayedChurn, metrics.LinesOfCode,
 		metrics.ContributorCount, metrics.RecentCommits, metrics.RecentChurn, metrics.RecentLinesAdded, metrics.RecentLinesDeleted, metrics.RecentContributorCount,
 		metrics.AgeDays, metrics.GiniCoefficient, metrics.FileOwner,
-		scores.HotScore, scores.RiskScore, scores.ComplexityScore, scores.StaleScore, scores.ScoreLabel,
+		scores.HotScore, scores.RiskScore, scores.ComplexityScore, scores.ScoreLabel,
 	)
 	return err
 }
@@ -102,7 +102,7 @@ func (d *MySQLDialect) ScanFileScoresMetricsRecord(rows *sql.Rows, record *schem
 		&record.RecentCommits, &record.RecentChurn, &record.RecentLinesAdded, &record.RecentLinesDeleted, &record.RecentContributorCount,
 		&record.AgeDays, &record.GiniCoefficient,
 		&record.FileOwner, &record.ScoreHot, &record.ScoreRisk, &record.ScoreComplexity,
-		&record.ScoreStale, &record.ScoreLabel)
+		&record.ScoreLabel)
 }
 
 // FormatTime converts a time.Time to a MySQL-compatible format (passing native time.Time works).

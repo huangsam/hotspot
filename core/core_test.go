@@ -240,7 +240,6 @@ func TestExecuteHotspotCheck(t *testing.T) {
 				schema.HotMode:        50.0,
 				schema.RiskMode:       50.0,
 				schema.ComplexityMode: 50.0,
-				schema.StaleMode:      50.0,
 			},
 		},
 	}

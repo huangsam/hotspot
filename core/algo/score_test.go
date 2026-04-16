@@ -88,7 +88,7 @@ func TestGini(t *testing.T) {
 
 // TestComputeScoreAllModes ensures all modes produce valid scores.
 func TestComputeScoreAllModes(t *testing.T) {
-	modes := []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode}
+	modes := []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.ROIMode}
 
 	metrics := schema.FileResult{
 		Path:               "test.go",
@@ -188,7 +188,7 @@ func TestComputeScoreWithCustomWeights(t *testing.T) {
 
 // TestComputeScoreCustomWeightsAllModes tests custom weights for all scoring modes.
 func TestComputeScoreCustomWeightsAllModes(t *testing.T) {
-	modes := []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode}
+	modes := []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.ROIMode}
 
 	metrics := schema.FileResult{
 		Path:               "test.go",
@@ -221,16 +221,13 @@ func TestComputeScoreCustomWeightsAllModes(t *testing.T) {
 			case schema.HotMode:
 				customWeights[mode][schema.BreakdownCommits] = 0.6
 				customWeights[mode][schema.BreakdownChurn] = 0.4
-			case schema.RiskMode:
-				customWeights[mode][schema.BreakdownInvContrib] = 0.5
-				customWeights[mode][schema.BreakdownGini] = 0.5
-			case schema.StaleMode:
-				customWeights[mode][schema.BreakdownInvRecent] = 0.5
-				customWeights[mode][schema.BreakdownAge] = 0.5
 			case schema.ComplexityMode:
 				customWeights[mode][schema.BreakdownSize] = 0.4
 				customWeights[mode][schema.BreakdownLOC] = 0.4
 				customWeights[mode][schema.BreakdownAge] = 0.2
+			case schema.ROIMode:
+				customWeights[mode][schema.BreakdownChurn] = 0.5
+				customWeights[mode][schema.BreakdownLOC] = 0.5
 			}
 
 			customModeWeights := getWeightsForMode(mode, customWeights)
@@ -246,6 +243,38 @@ func TestComputeScoreCustomWeightsAllModes(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestComputeScoreRiskKnowledgeDecay verifies that staleness (LowRecent) impacts the Risk mode score.
+func TestComputeScoreRiskKnowledgeDecay(t *testing.T) {
+	// Case 1: Active file (RecentCommits = 50, max)
+	activeFile := &schema.FileResult{
+		Path:               "active.go",
+		UniqueContributors: 1, // High base risk
+		RecentCommits:      50,
+		Gini:               1.0,
+		SizeBytes:          1000,
+	}
+
+	// Case 2: Stale file (RecentCommits = 0)
+	staleFile := &schema.FileResult{
+		Path:               "stale.go",
+		UniqueContributors: 1, // Same base risk
+		RecentCommits:      0,
+		Gini:               1.0,
+		SizeBytes:          1000,
+	}
+
+	weights := getWeightsForMode(schema.RiskMode, nil)
+	activeScore := ComputeScore(activeFile, schema.RiskMode, weights)
+	staleScore := ComputeScore(staleFile, schema.RiskMode, weights)
+
+	// Stale file should have a higher risk score due to LowRecent factor (15%)
+	assert.Greater(t, staleScore, activeScore, "Stale file should have higher RISK score than active file with same ownership")
+
+	// Verify breakdown contains low_recent
+	assert.Greater(t, staleFile.ModeBreakdown[schema.BreakdownLowRecent], 0.0)
+	assert.Equal(t, 0.0, activeFile.ModeBreakdown[schema.BreakdownLowRecent])
 }
 
 // TestComputeScoreInvalidCustomWeights tests behavior with invalid custom weights.

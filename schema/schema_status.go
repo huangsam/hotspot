@@ -48,6 +48,5 @@ type FileScoresMetricsRecord struct {
 	ScoreHot               float64
 	ScoreRisk              float64
 	ScoreComplexity        float64
-	ScoreStale             float64
 	ScoreLabel             string
 }

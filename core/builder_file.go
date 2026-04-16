@@ -264,7 +264,7 @@ func (b *FileResultBuilder) CalculateScore() *FileResultBuilder {
 	b.result.AllBreakdowns = make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
 
 	computedWeights := b.scoringSettings.GetComputedWeights()
-	for _, m := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode, schema.ROIMode} {
+	for _, m := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.ROIMode} {
 		if m == mode {
 			// Already computed
 			b.result.AllScores[m] = b.result.ModeScore

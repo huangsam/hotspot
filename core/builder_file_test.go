@@ -72,7 +72,6 @@ func TestFileResultBuilder_BasicChaining(t *testing.T) {
 	assert.Contains(t, fileResult.AllScores, schema.HotMode)
 	assert.Contains(t, fileResult.AllScores, schema.RiskMode)
 	assert.Contains(t, fileResult.AllScores, schema.ComplexityMode)
-	assert.Contains(t, fileResult.AllScores, schema.StaleMode)
 }
 
 func TestFileResultBuilder_EmptyContribMap(t *testing.T) {

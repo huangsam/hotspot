@@ -254,7 +254,6 @@ func TestRecordFileAnalysis(t *testing.T) {
 			schema.HotMode:        75.5,
 			schema.RiskMode:       80.2,
 			schema.ComplexityMode: 65.3,
-			schema.StaleMode:      70.1,
 		},
 	}
 

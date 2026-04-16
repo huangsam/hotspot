@@ -105,7 +105,6 @@ func TestGetDefaultWeights(t *testing.T) {
 		{"HotMode", HotMode},
 		{"RiskMode", RiskMode},
 		{"ComplexityMode", ComplexityMode},
-		{"StaleMode", StaleMode},
 		{"InvalidMode defaults to HotMode", ScoringMode("invalid")},
 	}
 

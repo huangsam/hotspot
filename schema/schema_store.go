@@ -51,7 +51,6 @@ type FileScores struct {
 	HotScore        float64 // hot mode score
 	RiskScore       float64 // risk mode score
 	ComplexityScore float64 // complexity mode score
-	StaleScore      float64 // stale mode score
 	ScoreLabel      string  // current mode name
 }
 

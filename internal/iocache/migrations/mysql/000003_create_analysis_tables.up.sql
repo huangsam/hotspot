@@ -25,7 +25,6 @@ CREATE TABLE IF NOT EXISTS hotspot_file_scores_metrics (
     score_hot DOUBLE NOT NULL,
     score_risk DOUBLE NOT NULL,
     score_complexity DOUBLE NOT NULL,
-    score_stale DOUBLE NOT NULL,
     score_label VARCHAR(50) NOT NULL,
     PRIMARY KEY (analysis_id, file_path)
 );

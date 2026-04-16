@@ -29,8 +29,8 @@ const (
 
 	BreakdownGini       BreakdownKey = "gini"        // nGiniRaw
 	BreakdownInvContrib BreakdownKey = "inv_contrib" // nInvContrib
-	BreakdownInvRecent  BreakdownKey = "inv_recent"  // nInvRecentCommits (used in stale)
-	BreakdownLowRecent  BreakdownKey = "low_recent"  // nInvRecentCommits (used in complexity)
+	BreakdownInvRecent  BreakdownKey = "inv_recent"  // nInvRecentCommits [legacy name]
+	BreakdownLowRecent  BreakdownKey = "low_recent"  // nInvRecentCommits (Staleness / Decay)
 )
 
 // All output modes supported.
@@ -56,7 +56,6 @@ const (
 	HotMode        ScoringMode = "hot" // default
 	RiskMode       ScoringMode = "risk"
 	ComplexityMode ScoringMode = "complexity"
-	StaleMode      ScoringMode = "stale"
 	ROIMode        ScoringMode = "roi"
 )
 
@@ -77,7 +76,7 @@ const (
 )
 
 // AllScoringModes returns a list of all supported scoring modes.
-var AllScoringModes = []ScoringMode{HotMode, RiskMode, ComplexityMode, StaleMode, ROIMode}
+var AllScoringModes = []ScoringMode{HotMode, RiskMode, ComplexityMode, ROIMode}
 
 // ValidOutputModes lists all valid output modes.
 var ValidOutputModes = map[OutputMode]struct{}{
@@ -94,7 +93,6 @@ var ValidScoringModes = map[ScoringMode]struct{}{
 	HotMode:        {},
 	RiskMode:       {},
 	ComplexityMode: {},
-	StaleMode:      {},
 	ROIMode:        {},
 }
 
@@ -111,13 +109,13 @@ func GetDefaultWeights(mode ScoringMode) map[BreakdownKey]float64 {
 	switch mode {
 	case RiskMode:
 		return map[BreakdownKey]float64{
-			BreakdownAge:        0.16,
-			BreakdownChurn:      0.06,
-			BreakdownCommits:    0.04,
-			BreakdownGini:       0.26,
-			BreakdownInvContrib: 0.30,
-			BreakdownLOC:        0.06,
-			BreakdownSize:       0.12,
+			BreakdownAge:        0.15,
+			BreakdownChurn:      0.05,
+			BreakdownGini:       0.25,
+			BreakdownInvContrib: 0.25,
+			BreakdownLOC:        0.05,
+			BreakdownLowRecent:  0.15,
+			BreakdownSize:       0.10,
 		}
 	case ComplexityMode:
 		return map[BreakdownKey]float64{
@@ -127,14 +125,6 @@ func GetDefaultWeights(mode ScoringMode) map[BreakdownKey]float64 {
 			BreakdownLOC:       0.20,
 			BreakdownLowRecent: 0.05,
 			BreakdownSize:      0.05,
-		}
-	case StaleMode:
-		return map[BreakdownKey]float64{
-			BreakdownAge:       0.20,
-			BreakdownCommits:   0.15,
-			BreakdownContrib:   0.05,
-			BreakdownInvRecent: 0.35,
-			BreakdownSize:      0.25,
 		}
 	case ROIMode:
 		return map[BreakdownKey]float64{

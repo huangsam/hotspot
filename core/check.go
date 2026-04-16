@@ -30,11 +30,10 @@ func printCheckHeader(result *schema.CheckResult, duration time.Duration) {
 		result.BaseRef,
 		result.TargetRef,
 		result.Lookback,
-		fmt.Sprintf("hot=%.1f, risk=%.1f, complexity=%.1f, stale=%.1f",
+		fmt.Sprintf("hot=%.1f, risk=%.1f, complexity=%.1f",
 			result.Thresholds[schema.HotMode],
 			result.Thresholds[schema.RiskMode],
-			result.Thresholds[schema.ComplexityMode],
-			result.Thresholds[schema.StaleMode]),
+			result.Thresholds[schema.ComplexityMode]),
 	}
 
 	// Find the longest label for consistent padding

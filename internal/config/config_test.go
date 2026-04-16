@@ -638,15 +638,8 @@ func TestProcessCustomWeights(t *testing.T) {
 						Age:             &[]float64{0.16}[0],
 						Size:            &[]float64{0.12}[0],
 						Churn:           &[]float64{0.06}[0],
-						Commits:         &[]float64{0.04}[0],
+						LowRecent:       &[]float64{0.04}[0],
 						LOC:             &[]float64{0.06}[0],
-					},
-					Stale: &ModeWeightsRaw{
-						InvRecent:    &[]float64{0.35}[0],
-						Size:         &[]float64{0.25}[0],
-						Age:          &[]float64{0.20}[0],
-						Commits:      &[]float64{0.15}[0],
-						Contributors: &[]float64{0.05}[0],
 					},
 					Complexity: &ModeWeightsRaw{
 						Age:             &[]float64{0.30}[0],
@@ -673,15 +666,8 @@ func TestProcessCustomWeights(t *testing.T) {
 					schema.BreakdownAge:        0.16,
 					schema.BreakdownSize:       0.12,
 					schema.BreakdownChurn:      0.06,
-					schema.BreakdownCommits:    0.04,
+					schema.BreakdownLowRecent:  0.04,
 					schema.BreakdownLOC:        0.06,
-				},
-				schema.StaleMode: {
-					schema.BreakdownInvRecent: 0.35,
-					schema.BreakdownSize:      0.25,
-					schema.BreakdownAge:       0.20,
-					schema.BreakdownCommits:   0.15,
-					schema.BreakdownContrib:   0.05,
 				},
 				schema.ComplexityMode: {
 					schema.BreakdownAge:        0.30,

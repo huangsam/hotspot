@@ -84,9 +84,6 @@ type FileScoresMetrics struct {
 	// ScoreComplexity is the hotspot score in complexity mode
 	ScoreComplexity float64 `parquet:"score_complexity,snappy"`
 
-	// ScoreStale is the hotspot score in stale mode
-	ScoreStale float64 `parquet:"score_stale,snappy"`
-
 	// ScoreLabel indicates which scoring mode was used
 	ScoreLabel string `parquet:"score_label,snappy"`
 }
@@ -207,7 +204,6 @@ func MockFetchFileScoresMetrics() []FileScoresMetrics {
 			ScoreHot:         85.3,
 			ScoreRisk:        62.1,
 			ScoreComplexity:  71.8,
-			ScoreStale:       15.2,
 			ScoreLabel:       "hot",
 		},
 		{
@@ -223,7 +219,6 @@ func MockFetchFileScoresMetrics() []FileScoresMetrics {
 			ScoreHot:         45.7,
 			ScoreRisk:        38.9,
 			ScoreComplexity:  52.3,
-			ScoreStale:       25.6,
 			ScoreLabel:       "hot",
 		},
 		{
@@ -239,7 +234,6 @@ func MockFetchFileScoresMetrics() []FileScoresMetrics {
 			ScoreHot:         12.3,
 			ScoreRisk:        8.5,
 			ScoreComplexity:  10.2,
-			ScoreStale:       5.7,
 			ScoreLabel:       "risk",
 		},
 	}
@@ -286,7 +280,6 @@ func ConvertFileScoresMetricsRecords(records []schema.FileScoresMetricsRecord) [
 			ScoreHot:           record.ScoreHot,
 			ScoreRisk:          record.ScoreRisk,
 			ScoreComplexity:    record.ScoreComplexity,
-			ScoreStale:         record.ScoreStale,
 			ScoreLabel:         record.ScoreLabel,
 		}
 	}

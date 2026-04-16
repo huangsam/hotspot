@@ -511,7 +511,7 @@ func validateSimpleInputs(cfg *Config, input *RawInput) error {
 	if input.Mode != "" {
 		cfg.Scoring.Mode = schema.ScoringMode(strings.ToLower(input.Mode))
 		if _, ok := schema.ValidScoringModes[cfg.Scoring.Mode]; !ok {
-			return fmt.Errorf("invalid mode '%s'. Must be one of: hot (activity), risk (knowledge distribution), complexity (technical debt), stale (maintenance debt)", input.Mode)
+			return fmt.Errorf("invalid mode '%s'. Must be one of: hot (activity), risk (knowledge distribution), complexity (technical debt)", input.Mode)
 		}
 	} else if cfg.Scoring.Mode == "" {
 		cfg.Scoring.Mode = schema.HotMode
@@ -768,9 +768,8 @@ func processTimeseriesMode(cfg *Config, input *RawInput) error {
 func ProcessWeightsRawInput(weights WeightsRawInput, validateSum bool) (map[schema.ScoringMode]map[schema.BreakdownKey]float64, error) {
 	result := make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
 
-	modes := []schema.ScoringMode{schema.StaleMode, schema.RiskMode, schema.HotMode, schema.ComplexityMode, schema.ROIMode}
+	modes := []schema.ScoringMode{schema.RiskMode, schema.HotMode, schema.ComplexityMode, schema.ROIMode}
 	modeWeights := map[schema.ScoringMode]*ModeWeightsRaw{
-		schema.StaleMode:      weights.Stale,
 		schema.RiskMode:       weights.Risk,
 		schema.HotMode:        weights.Hot,
 		schema.ComplexityMode: weights.Complexity,
@@ -788,10 +787,6 @@ func ProcessWeightsRawInput(weights WeightsRawInput, validateSum bool) (map[sche
 		modeMap := make(map[schema.BreakdownKey]float64)
 		sum := 0.0
 
-		if rawMode.InvRecent != nil {
-			modeMap[schema.BreakdownInvRecent] = *rawMode.InvRecent
-			sum += *rawMode.InvRecent
-		}
 		if rawMode.Size != nil {
 			modeMap[schema.BreakdownSize] = *rawMode.Size
 			sum += *rawMode.Size
@@ -853,7 +848,7 @@ func processCustomWeights(cfg *Config, input *RawInput) error {
 
 	// Compute final weights for each mode
 	cfg.Scoring.ComputedWeights = make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
-	for _, mode := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.StaleMode, schema.ROIMode} {
+	for _, mode := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.ROIMode} {
 		// Start with default weights
 		defaultWeights := schema.GetDefaultWeights(mode)
 
@@ -883,7 +878,6 @@ func processRiskThresholds(cfg *Config, input *RawInput) error {
 	thresholds[schema.HotMode] = 50.0
 	thresholds[schema.RiskMode] = 50.0
 	thresholds[schema.ComplexityMode] = 50.0
-	thresholds[schema.StaleMode] = 50.0
 	thresholds[schema.ROIMode] = 50.0
 
 	// Override with config file values if provided
@@ -895,9 +889,6 @@ func processRiskThresholds(cfg *Config, input *RawInput) error {
 	}
 	if input.Thresholds.Complexity != nil {
 		thresholds[schema.ComplexityMode] = *input.Thresholds.Complexity
-	}
-	if input.Thresholds.Stale != nil {
-		thresholds[schema.StaleMode] = *input.Thresholds.Stale
 	}
 	if input.Thresholds.ROI != nil {
 		thresholds[schema.ROIMode] = *input.Thresholds.ROI
@@ -1010,12 +1001,10 @@ func parseRiskThresholdsString(s string) (map[schema.ScoringMode]float64, error)
 			mode = schema.RiskMode
 		case "complexity":
 			mode = schema.ComplexityMode
-		case "stale":
-			mode = schema.StaleMode
 		case "roi":
 			mode = schema.ROIMode
 		default:
-			return nil, fmt.Errorf("invalid mode '%s', must be hot, risk, complexity, stale or roi", modeStr)
+			return nil, fmt.Errorf("invalid mode '%s', must be hot, risk, complexity or roi", modeStr)
 		}
 
 		value, err := strconv.ParseFloat(valueStr, 64)
@@ -1040,13 +1029,11 @@ type WeightsRawInput struct {
 	Hot        *ModeWeightsRaw `mapstructure:"hot"`
 	Risk       *ModeWeightsRaw `mapstructure:"risk"`
 	Complexity *ModeWeightsRaw `mapstructure:"complexity"`
-	Stale      *ModeWeightsRaw `mapstructure:"stale"`
 	ROI        *ModeWeightsRaw `mapstructure:"roi"`
 }
 
 // ModeWeightsRaw holds the raw factor weights for a single mode.
 type ModeWeightsRaw struct {
-	InvRecent       *float64 `mapstructure:"inv_recent"`
 	Size            *float64 `mapstructure:"size"`
 	Age             *float64 `mapstructure:"age"`
 	Commits         *float64 `mapstructure:"commits"`
@@ -1063,6 +1050,5 @@ type ThresholdsRawInput struct {
 	Hot        *float64 `mapstructure:"hot"`
 	Risk       *float64 `mapstructure:"risk"`
 	Complexity *float64 `mapstructure:"complexity"`
-	Stale      *float64 `mapstructure:"stale"`
 	ROI        *float64 `mapstructure:"roi"`
 }
