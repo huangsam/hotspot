@@ -15,12 +15,12 @@ Hotspot provides the data-driven signal needed to identify these risks and start
 
 ### Repository shape & preset recommendation
 
-The `shape` command characterizes your repo in a single aggregation pass:
+The `init` command analyzes your repository and creates a recommended configuration:
 
 ```bash
+hotspot init            # Run shape analysis and write .hotspot.yml
+hotspot init --style full  # Write all settings from the preset
 hotspot shape           # Print shape metrics as JSON
-hotspot shape --init    # Write recommended preset to .hotspot.yml
-hotspot files --preset large  # Use preset to configure analysis
 ```
 
 ### Scoring modes

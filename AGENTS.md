@@ -74,7 +74,7 @@ Hotspot includes **shape analysis** (lightweight single-pass aggregation) to cha
 | **large** | roi | Large monorepos with deep histories |
 | **infra** | risk | Infrastructure-as-code repositories |
 
-**Workflow:** `hotspot shape` → get recommendation → apply via `--preset <name>` to other commands.
+**Workflow:** `hotspot init` (or `hotspot shape`) → review recommendation → apply preset to analysis.
 
 ## Key Design Patterns
 
