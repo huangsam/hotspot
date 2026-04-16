@@ -24,9 +24,26 @@ follow: true
 threads: 4
 
 # --- Database / Backend Settings ---
-# By default, local SQLite works well, but if you have a team, you might configure
-# a centralized database here so the LLM pulls from the same cache and analysis runs
-# as the rest of your engineering team.
+# Local SQLite works for individual use. For enterprise/teams, use PostgreSQL or MySQL
+# for shared analysis databases, better concurrency, and enterprise features.
+#
+# PostgreSQL example:
+# cache:
+#   backend: postgresql
+#   db_connect: "host=hotspot-db.company.com port=5432 user=hotspot dbname=hotspot_cache sslmode=require"
+# analysis:
+#   backend: postgresql
+#   db_connect: "host=hotspot-db.company.com port=5432 user=hotspot dbname=hotspot_analysis sslmode=require"
+#
+# MySQL example:
+# cache:
+#   backend: mysql
+#   db_connect: "hotspot@tcp(hotspot-db.company.com:3306)/hotspot_cache"
+# analysis:
+#   backend: mysql
+#   db_connect: "hotspot@tcp(hotspot-db.company.com:3306)/hotspot_analysis"
+#
+# Local SQLite (default):
 cache:
   backend: sqlite
   db_connect: ".hotspot_cache.db"
