@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/huangsam/hotspot/core"
 	"github.com/huangsam/hotspot/internal/config"
@@ -225,4 +226,83 @@ func (h *toolHandler) handleGetTimeseries(ctx context.Context, request mcp.CallT
 
 	jsonData, _ := json.MarshalIndent(result, "", "  ")
 	return mcp.NewToolResultText(string(jsonData)), nil
+}
+
+// handleReadResource handles the reading of registered resources.
+func (h *toolHandler) handleReadResource(_ context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
+	var filePath string
+	var mimeType string
+
+	switch request.Params.URI {
+	case "hotspot://config":
+		filePath = ".hotspot.yml"
+		mimeType = "application/x-yaml"
+	case "hotspot://docs/agents":
+		filePath = "AGENTS.md"
+		mimeType = "text/markdown"
+	case "hotspot://docs/user-guide":
+		filePath = "USERGUIDE.md"
+		mimeType = "text/markdown"
+	default:
+		return nil, fmt.Errorf("unknown resource: %s", request.Params.URI)
+	}
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("resource file %s not found", filePath)
+		}
+		return nil, fmt.Errorf("failed to read resource: %v", err)
+	}
+
+	return []mcp.ResourceContents{
+		mcp.TextResourceContents{
+			URI:      request.Params.URI,
+			MIMEType: mimeType,
+			Text:     string(data),
+		},
+	}, nil
+}
+
+// handleGetPrompt handles the retrieval of analytical playbooks.
+func (h *toolHandler) handleGetPrompt(_ context.Context, request mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+	var messages []mcp.PromptMessage
+
+	switch request.Params.Name {
+	case "repository-audit":
+		messages = []mcp.PromptMessage{
+			{
+				Role: mcp.RoleUser,
+				Content: mcp.TextContent{
+					Type: "text",
+					Text: `Please perform a comprehensive audit of this repository using the following steps:
+1. Run 'get_repo_shape' to identify the project scale and the recommended preset.
+2. Use 'get_files_hotspots' with the recommended preset and mode='hot' to find the most active files.
+3. Use 'get_files_hotspots' with mode='risk' to identify files with high ownership concentration (bus factor risk).
+4. Summarize the overall health of the project, highlighting any files that appear in both the 'hot' and 'risk' top results.`,
+				},
+			},
+		}
+	case "refactor-prioritization":
+		messages = []mcp.PromptMessage{
+			{
+				Role: mcp.RoleUser,
+				Content: mcp.TextContent{
+					Type: "text",
+					Text: `Help me prioritize refactoring targets by following this workflow:
+1. Run 'get_repo_shape' to ensure we are using the correct preset for this codebase.
+2. Use 'get_files_hotspots' with the recommended preset and mode='roi' to identify files with the highest return on refactoring investment.
+3. For the top 3 files identified, use 'get_timeseries' to see if their risk profile is improving or worsening over the last 6 months.
+4. Provide a prioritized list of refactoring candidates with justifications based on churn, complexity, and historical trends.`,
+				},
+			},
+		}
+	default:
+		return nil, fmt.Errorf("unknown prompt: %s", request.Params.Name)
+	}
+
+	return &mcp.GetPromptResult{
+		Description: fmt.Sprintf("Workflow for %s", request.Params.Name),
+		Messages:    messages,
+	}, nil
 }

@@ -60,8 +60,8 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("preset", mcp.Description("Apply a named configuration preset (small, large, infra). It is recommended to run 'get_repo_shape' first to identify the correct preset for this repository."), mcp.Enum("small", "large", "infra")),
 		mcp.WithString("urn", mcp.Description(urnDesc)),
 		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
-		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "stale", "roi")),
-		mcp.WithNumber("limit", mcp.Description("Limit the number of results returned.")),
+		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "stale", "roi"), mcp.DefaultString("hot")),
+		mcp.WithNumber("limit", mcp.Description("Limit the number of results returned."), mcp.DefaultNumber(10)),
 		mcp.WithString("start", mcp.Description(startDesc)),
 		mcp.WithString("end", mcp.Description(endDesc)),
 	), h.handleGetFilesHotspots)
@@ -77,8 +77,8 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("preset", mcp.Description("Apply a named configuration preset (small, large, infra). It is recommended to run 'get_repo_shape' first to identify the correct preset for this repository."), mcp.Enum("small", "large", "infra")),
 		mcp.WithString("urn", mcp.Description(urnDesc)),
 		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
-		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "stale", "roi")),
-		mcp.WithNumber("limit", mcp.Description("Limit the number of results.")),
+		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "stale", "roi"), mcp.DefaultString("hot")),
+		mcp.WithNumber("limit", mcp.Description("Limit the number of results."), mcp.DefaultNumber(10)),
 		mcp.WithString("start", mcp.Description(startDesc)),
 		mcp.WithString("end", mcp.Description(endDesc)),
 	), h.handleGetFoldersHotspots)
@@ -97,7 +97,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("urn", mcp.Description(urnDesc)),
 		mcp.WithString("lookback", mcp.Description("Time window for analysis (e.g., '6 months', '30d').")),
 		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
-		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "stale", "roi")),
+		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "stale", "roi"), mcp.DefaultString("hot")),
 		mcp.WithString("start", mcp.Description(startDesc)),
 		mcp.WithString("end", mcp.Description(endDesc)),
 	), h.handleCompareHotspots)
@@ -116,10 +116,19 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("preset", mcp.Description("Apply a named configuration preset (small, large, infra). It is recommended to run 'get_repo_shape' first to identify the correct preset for this repository."), mcp.Enum("small", "large", "infra")),
 		mcp.WithString("urn", mcp.Description(urnDesc)),
 		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
-		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "stale", "roi")),
+		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "stale", "roi"), mcp.DefaultString("hot")),
 		mcp.WithString("start", mcp.Description("Start date for the entire timeseries window (anchors the first point).")),
 		mcp.WithString("end", mcp.Description("End date for the entire timeseries window.")),
 	), h.handleGetTimeseries)
+
+	// --- Resources ---
+	s.AddResource(mcp.NewResource("hotspot://config", "Local Configuration", mcp.WithResourceDescription("The content of .hotspot.yml if available."), mcp.WithMIMEType("application/x-yaml")), h.handleReadResource)
+	s.AddResource(mcp.NewResource("hotspot://docs/agents", "Agent Documentation", mcp.WithResourceDescription("High-level architectural context and domain concepts for AI agents."), mcp.WithMIMEType("text/markdown")), h.handleReadResource)
+	s.AddResource(mcp.NewResource("hotspot://docs/user-guide", "User Guide", mcp.WithResourceDescription("Detailed user guide for Hotspot CLI."), mcp.WithMIMEType("text/markdown")), h.handleReadResource)
+
+	// --- Prompts ---
+	s.AddPrompt(mcp.NewPrompt("repository-audit", mcp.WithPromptDescription("Guided workflow for performing a comprehensive hotspots audit.")), h.handleGetPrompt)
+	s.AddPrompt(mcp.NewPrompt("refactor-prioritization", mcp.WithPromptDescription("Guided workflow for prioritizing refactoring targets using ROI mode.")), h.handleGetPrompt)
 
 	return s
 }
