@@ -26,7 +26,7 @@ func TestMCPServerHandlers_ValidationErrors(t *testing.T) {
 	// Create a dummy manager and mock client
 	var mgr iocache.CacheManager
 	client := &git.MockGitClient{}
-	s := mcp_internal.NewMCPServer(baseCfg, mgr, client)
+	s := mcp_internal.NewMCPServer(baseCfg, mgr, client, "", "")
 
 	ctx := context.Background()
 

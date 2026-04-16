@@ -16,9 +16,11 @@ import (
 
 // toolHandler holds common dependencies for MCP tool handlers.
 type toolHandler struct {
-	baseCfg *config.Config
-	mgr     iocache.CacheManager
-	client  git.Client
+	baseCfg      *config.Config
+	mgr          iocache.CacheManager
+	client       git.Client
+	agentsDoc    string
+	userGuideDoc string
 }
 
 // resolveRepositoryPath handles URN-based or repo_path-based resolution.

@@ -7,6 +7,11 @@ import (
 )
 
 // mcpCmd represents the mcp command.
+var (
+	AgentsDoc    string
+	UserGuideDoc string
+)
+
 var mcpCmd = &cobra.Command{
 	Use:   "mcp",
 	Short: "Start the Hotspot MCP server",
@@ -18,7 +23,7 @@ var mcpCmd = &cobra.Command{
 	},
 	RunE: func(_ *cobra.Command, _ []string) error {
 		client := git.NewLocalGitClient()
-		return mcp.StartMCPServer(rootCtx, cfg, cacheManager, client)
+		return mcp.StartMCPServer(rootCtx, cfg, cacheManager, client, AgentsDoc, UserGuideDoc)
 	},
 }
 

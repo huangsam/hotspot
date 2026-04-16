@@ -13,7 +13,7 @@ import (
 
 // NewMCPServer initializes and configures the Hotspot MCP server without starting it.
 // This is exposed for unit testing.
-func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.Client) *server.MCPServer {
+func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.Client, agentsDoc, userGuideDoc string) *server.MCPServer {
 	s := server.NewMCPServer(
 		"Hotspot Analysis Server",
 		"1.0.0",
@@ -21,9 +21,11 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 	)
 
 	h := &toolHandler{
-		baseCfg: baseCfg,
-		mgr:     mgr,
-		client:  client,
+		baseCfg:      baseCfg,
+		mgr:          mgr,
+		client:       client,
+		agentsDoc:    agentsDoc,
+		userGuideDoc: userGuideDoc,
 	}
 
 	// Shared hints for analytical tools
@@ -134,7 +136,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 }
 
 // StartMCPServer starts the Hotspot MCP server.
-func StartMCPServer(_ context.Context, baseCfg *config.Config, mgr iocache.CacheManager, client git.Client) error {
-	s := NewMCPServer(baseCfg, mgr, client)
+func StartMCPServer(_ context.Context, baseCfg *config.Config, mgr iocache.CacheManager, client git.Client, agentsDoc, userGuideDoc string) error {
+	s := NewMCPServer(baseCfg, mgr, client, agentsDoc, userGuideDoc)
 	return server.ServeStdio(s)
 }
