@@ -305,20 +305,6 @@ func (h *toolHandler) handleGetPrompt(_ context.Context, request mcp.GetPromptRe
 	var messages []mcp.PromptMessage
 
 	switch request.Params.Name {
-	case "repository-audit":
-		messages = []mcp.PromptMessage{
-			{
-				Role: mcp.RoleUser,
-				Content: mcp.TextContent{
-					Type: "text",
-					Text: `Please perform a comprehensive audit of this repository using the following steps:
-1. Run 'get_repo_shape' to identify the project scale and the recommended preset.
-2. Use 'get_files_hotspots' with the recommended preset and mode='hot' to find the most active files.
-3. Use 'get_files_hotspots' with mode='risk' to identify files with high ownership concentration (bus factor risk).
-4. Summarize the overall health of the project, highlighting any files that appear in both the 'hot' and 'risk' top results.`,
-				},
-			},
-		}
 	case "refactor-prioritization":
 		messages = []mcp.PromptMessage{
 			{
