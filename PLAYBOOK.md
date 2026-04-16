@@ -28,15 +28,7 @@ If you use Hotspot to ask "Why did you write such complex code?" or "Why are you
     - **Rotation**: Temporarily rotate the owner out of that module to force knowledge transfer.
     - **Documentation**: Ask the owner to record "Architecture Decision Records" (ADRs) for that area.
 
-### Area 3: High Stale Score (The "Lurking Dragon")
-
-**The Signal**: Large, old files with high historical importance that haven't been touched recently.
-- **The Risk**: These are often "load-bearing" legacy files that no one dares to touch. When they eventually *must* change, they cause outages.
-- **Supportive Action**:
-    - **Modernization Spike**: Dedicate a spike to analyze if the logic is still needed or can be ported to a newer service.
-    - **Verification Loop**: Ensure unit tests still run and pass against current dependencies.
-
-### Area 4: High Hot Score (The "Active Volcano")
+### Area 3: High Hot Score (The "Active Volcano")
 
 **The Signal**: Extreme recent activity and churn.
 - **The Context**: This is normal during a feature launch, but dangerous if it persists for months.
@@ -44,7 +36,7 @@ If you use Hotspot to ask "Why did you write such complex code?" or "Why are you
     - **Complexity Check**: Run `hotspot files --mode complexity` on the same path. If both are high, the file is likely a "God Object" that needs splitting.
     - **Cool-down Period**: If the churn is driven by bug-fix loops, pause feature work to stabilize the architecture.
 
-### Area 5: High ROI Score (The "Refactoring Goldmine")
+### Area 4: High ROI Score (The "Refactoring Goldmine")
 
 **The Signal**: High maintenance burden on complex files where investment will yield the most impact.
 - **Supportive Action**:

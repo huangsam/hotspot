@@ -17,7 +17,6 @@ Aggregates file-level analysis to folder level. Helps you:
 - Assess team/module boundaries
 - Find areas that need architectural attention
 - Plan refactoring efforts strategically
-- Allocate maintenance resources effectively
 
 Each folder's score is weighted by file size and activity.
 
@@ -31,8 +30,8 @@ Examples:
   # Identify complex subsystems worth refactoring
   hotspot folders --mode complexity
 
-  # Find neglected important modules
-  hotspot folders --mode stale
+  # Prioritize large refactoring targets by ROI
+  hotspot folders --mode roi
 
   # Include metrics and owner information
   hotspot folders --detail --owner`,

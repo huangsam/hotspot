@@ -23,12 +23,17 @@ func analysisSetup() error {
 	backendStr := viper.GetString("analysis-backend")
 	connStr := viper.GetString("analysis-db-connect")
 
-	// Handle empty backend as NoneBackend
+	// Default to SQLite if backend is empty
 	var backend schema.DatabaseBackend
 	if backendStr == "" {
-		backend = schema.NoneBackend
+		backend = schema.SQLiteBackend
 	} else {
 		backend = schema.DatabaseBackend(backendStr)
+	}
+
+	// For SQLite with no connection string, use the default path
+	if backend == schema.SQLiteBackend && connStr == "" {
+		connStr = iocache.GetAnalysisDBFilePath()
 	}
 
 	// Basic validation for database backends
@@ -109,7 +114,7 @@ var analysisCmd = &cobra.Command{
 
 When enabled, Hotspot tracks every analysis run, storing:
 - Run metadata (timestamp, configuration, duration)
-- File scores across all modes (hot, risk, complexity, stale)
+- File scores across all modes (hot, risk, complexity, roi)
 - Raw Git metrics (commits, churn, contributors, etc.)
 
 This enables longitudinal analysis, trend detection, and data export for BI tools.
@@ -156,7 +161,7 @@ Examples:
 
   # Clear and start fresh
   hotspot analysis clear`,
-	PreRunE: analysisSetupWrapper,
+	PreRunE: analysisMigrateSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := iocache.ClearAnalysis(cfg.Runtime.AnalysisBackend, iocache.GetAnalysisDBFilePath(), cfg.Runtime.AnalysisDBConnect); err != nil {
 			logger.Fatal("Failed to clear analysis data", err)
@@ -228,7 +233,7 @@ Examples:
   # Use with DuckDB for analysis
   hotspot analysis export --output-file data.parquet
   duckdb -c "SELECT * FROM read_parquet('data.parquet/runs.parquet') LIMIT 10"`,
-	PreRunE: analysisSetupWrapper,
+	PreRunE: analysisMigrateSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := iocache.ExecuteAnalysisExport(cfg.Output.OutputFile); err != nil {
 			logger.Fatal("Failed to export analysis data", err)
@@ -262,7 +267,8 @@ Examples:
 	PreRunE: analysisMigrateSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {
 		targetVersion := viper.GetInt("target-version")
-		if err := iocache.MigrateAnalysis(cfg.Runtime.AnalysisBackend, cfg.Runtime.AnalysisDBConnect, targetVersion); err != nil {
+		force := viper.GetBool("force")
+		if err := iocache.MigrateAnalysis(cfg.Runtime.AnalysisBackend, cfg.Runtime.AnalysisDBConnect, targetVersion, force); err != nil {
 			logger.Fatal("Failed to run migrations", err)
 		}
 	},

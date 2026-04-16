@@ -29,7 +29,7 @@ Agents can autonomously discover context and workflows via MCP:
 
 ### Scoring Modes
 
-The `core` package implements five distinct scoring algorithms based on different risk assessment principles. This is the most critical domain knowledge:
+The `core` package implements four distinct scoring algorithms based on different risk assessment principles. This is the most critical domain knowledge:
 
 1. **Hot Mode** (Activity hotspots)
    - **Principle**: Identifies files with high recent activity and volatility.
@@ -46,11 +46,7 @@ The `core` package implements five distinct scoring algorithms based on differen
    - **Focus**: File size, age, complexity, and historical churn.
    - **Use Case**: Find files that are expensive to modify or maintain.
 
-4. **Stale Mode** (Maintenance debt)
-   - **Principle**: Identifies important files that haven't been touched recently.
-   - **Use Case**: Find files that may have accumulated technical debt due to neglect.
-
-5. **ROI Mode** (Refactoring priority)
+4. **ROI Mode** (Refactoring priority)
    - **Principle**: Identifies files where refactoring effort provides the highest technical return.
    - **Focus**: High churn on complex/large legacy files (Technical impact vs. Effort).
    - **Use Case**: Prioritize refactoring targets in a large codebase with limited resources.

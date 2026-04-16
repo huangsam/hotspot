@@ -153,7 +153,7 @@ func (b *MigrationBuilder) buildMigrate() error {
 }
 
 // executeMigration performs the migration based on the target version.
-func executeMigration(m *migrate.Migrate, targetVersion int) error {
+func executeMigration(m *migrate.Migrate, targetVersion int, force bool) error {
 	// Get current version
 	currentVersion, dirty, err := m.Version()
 	// Track if this is a new database with no migrations applied yet
@@ -162,8 +162,24 @@ func executeMigration(m *migrate.Migrate, targetVersion int) error {
 		return fmt.Errorf("failed to get current migration version: %w", err)
 	}
 
+	if force {
+		// Calculate what version to force
+		forceVersion := targetVersion
+		if targetVersion == targetLatestVersion {
+			// If forcing to latest, we still need a numeric version.
+			// However, golang-migrate Force usually needs the current version to clear dirty.
+			forceVersion = int(currentVersion)
+		}
+		logger.Info("Forcefully clearing dirty flag and setting version", "version", forceVersion)
+		if err := m.Force(forceVersion); err != nil {
+			return fmt.Errorf("failed to force version %d: %w", forceVersion, err)
+		}
+		// Refresh state after force
+		currentVersion, dirty, _ = m.Version()
+	}
+
 	if dirty {
-		return fmt.Errorf("database is in a dirty state at version %d. Please fix manually or force version", currentVersion)
+		return fmt.Errorf("database is in a dirty state at version %d. Fix manually or run 'hotspot analysis migrate --force'", currentVersion)
 	}
 
 	// Perform migration
@@ -253,10 +269,7 @@ func migrateSQLiteWithDB(backend schema.DatabaseBackend, db *sql.DB) error {
 	// sqlite driver's Close() closes the underlying *sql.DB owned by the caller.
 	defer func() { _ = builder.source.Close() }()
 
-	if err := builder.m.Up(); err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("failed to run analysis migrations: %w", err)
-	}
-	return nil
+	return executeMigration(builder.m, targetLatestVersion, false)
 }
 
 // migrateServerDBUp opens a dedicated connection for MySQL/PostgreSQL migrations.
@@ -287,10 +300,7 @@ func migrateServerDBUp(backend schema.DatabaseBackend, connStr string) error {
 	}
 	defer func() { _, _ = builder.m.Close() }()
 
-	if err := builder.m.Up(); err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("failed to run analysis migrations: %w", err)
-	}
-	return nil
+	return executeMigration(builder.m, targetLatestVersion, false)
 }
 
 // ensureMySQLMultiStatements appends multiStatements=true to a MySQL DSN
@@ -309,8 +319,8 @@ func ensureMySQLMultiStatements(dsn string) string {
 // If targetVersion == -1, it migrates to the latest version.
 // If targetVersion == 0, it rolls back all migrations (to initial state).
 // If targetVersion > 0, it migrates to the specified version.
-// If targetVersion is invalid, it returns an error.
-func MigrateAnalysis(backend schema.DatabaseBackend, connStr string, targetVersion int) error {
+// If force is true, it clears the dirty flag for the target version before migrating.
+func MigrateAnalysis(backend schema.DatabaseBackend, connStr string, targetVersion int, force bool) error {
 	if backend == schema.NoneBackend {
 		return fmt.Errorf("migrations are not supported for 'none' backend")
 	}
@@ -334,5 +344,5 @@ func MigrateAnalysis(backend schema.DatabaseBackend, connStr string, targetVersi
 	}
 	defer func() { _, _ = builder.m.Close() }()
 
-	return executeMigration(builder.m, targetVersion)
+	return executeMigration(builder.m, targetVersion, force)
 }

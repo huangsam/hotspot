@@ -42,7 +42,7 @@ func init() {
 	rootCmd.PersistentFlags().String("exclude", "", "Comma-separated list of path prefixes or patterns to ignore")
 	rootCmd.PersistentFlags().StringP("filter", "f", "", "Filter targets by path prefix")
 	rootCmd.PersistentFlags().IntP("limit", "l", 0, "Number of results to display")
-	rootCmd.PersistentFlags().String("mode", "", "Scoring mode: hot or risk or complexity or stale or roi")
+	rootCmd.PersistentFlags().String("mode", "", "Scoring mode: hot or risk or complexity or roi")
 	rootCmd.PersistentFlags().String("output", "", "Output format: text or csv or json or parquet or markdown or describe")
 	rootCmd.PersistentFlags().String("output-file", "", "Optional path to write output to")
 	rootCmd.PersistentFlags().Bool("owner", false, "Print per-target owner")
@@ -81,13 +81,14 @@ func init() {
 	}
 
 	// Bind all flags of checkCmd to Viper
-	checkCmd.Flags().String("thresholds-override", "", "Risk thresholds for CI/CD gating (format: 'hot:50,risk:50,complexity:50,stale:50')")
+	checkCmd.Flags().String("thresholds-override", "", "Risk thresholds for CI/CD gating (format: 'hot:50,risk:50,complexity:50,roi:50')")
 	if err := viper.BindPFlags(checkCmd.Flags()); err != nil {
 		logger.Fatal("Error binding check flags", err)
 	}
 
 	// Bind all flags of analysisMigrateCmd to Viper
 	analysisMigrateCmd.Flags().Int("target-version", -1, "Target migration version (-1 means latest, 0 means rollback to initial state)")
+	analysisMigrateCmd.Flags().Bool("force", false, "Forcefully clear the dirty flag and set the version (use with caution)")
 	if err := viper.BindPFlags(analysisMigrateCmd.Flags()); err != nil {
 		logger.Fatal("Error binding analysis migrate flags", err)
 	}

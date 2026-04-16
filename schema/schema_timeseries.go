@@ -10,7 +10,7 @@ type TimeseriesPoint struct {
 	Score    float64       `json:"score"`
 	Path     string        `json:"path"`
 	Owners   []string      `json:"owners"`   // Top owners for this time period
-	Mode     ScoringMode   `json:"mode"`     // Scoring mode used (hot, risk, complexity, stale)
+	Mode     ScoringMode   `json:"mode"`     // Scoring mode (hot, risk, complexity, roi)
 	Lookback time.Duration `json:"lookback"` // Dynamic lookback duration for this point
 }
 

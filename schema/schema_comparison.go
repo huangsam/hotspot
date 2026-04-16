@@ -11,7 +11,7 @@ type ComparisonDetail struct {
 	Status       Status      `json:"status"`        // Intrinsic status of the file as of now
 	BeforeOwners []string    `json:"before_owners"` // Owners from the base analysis
 	AfterOwners  []string    `json:"after_owners"`  // Owners from the target analysis
-	Mode         ScoringMode `json:"mode"`          // Scoring mode used (hot, risk, complexity, stale)
+	Mode         ScoringMode `json:"mode"`          // Scoring mode (hot, risk, complexity, roi)
 
 	*FileComparison   `json:"file_compare,omitempty"`
 	*FolderComparison `json:"folder_compare,omitempty"`

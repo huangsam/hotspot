@@ -15,7 +15,6 @@ var timeseriesCmd = &cobra.Command{
 Shows score evolution across multiple time periods, helping you:
 - Identify when risk started increasing
 - Validate that refactoring reduced risk over time
-- Track maintenance debt accumulation
 - Understand long-term file health trends
 
 The analysis divides your specified interval into equal time windows and computes
@@ -28,8 +27,8 @@ Examples:
   # See how core/ folder risk evolved over a year
   hotspot timeseries --path core/ --mode risk --interval "1 year" --points 4
 
-  # Monitor stale score changes recently
-  hotspot timeseries --path src/api.go --mode stale --interval "90 days" --points 6
+  # Track ROI of refactoring main.go over 90 days
+  hotspot timeseries --path main.go --mode roi --interval "90 days" --points 6
 
   # Check if refactoring improved utils/ folder
   hotspot timeseries --path internal/utils/ --interval "120 days" --points 4`,

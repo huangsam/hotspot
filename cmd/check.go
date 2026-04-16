@@ -15,7 +15,7 @@ var checkCmd = &cobra.Command{
 Designed specifically for CI/CD integration - fails with non-zero exit code when files
 exceed acceptable risk levels. Analyzes only the changed files, making it fast and focused.
 
-Default thresholds: 50.0 for all modes (hot, risk, complexity)
+Default thresholds: 50.0 for all modes (hot, risk, complexity, roi)
 
 Use cases:
 - Pull request gates - block merges with high-risk changes

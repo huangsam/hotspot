@@ -26,7 +26,28 @@ CREATE TABLE hotspot_file_scores_metrics_new (
 );
 
 INSERT INTO hotspot_file_scores_metrics_new 
-SELECT * FROM hotspot_file_scores_metrics;
+SELECT 
+    analysis_id,
+    file_path,
+    analysis_time,
+    total_commits,
+    total_churn,
+    lines_added,
+    lines_deleted,
+    contributor_count,
+    recent_commits,
+    recent_churn,
+    recent_lines_added,
+    recent_lines_deleted,
+    recent_contributor_count,
+    age_days,
+    gini_coefficient,
+    file_owner,
+    score_hot,
+    score_risk,
+    score_complexity,
+    score_label
+FROM hotspot_file_scores_metrics;
 
 DROP TABLE hotspot_file_scores_metrics;
 

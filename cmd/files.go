@@ -17,9 +17,8 @@ Analyzes the entire history of each file to compute risk metrics, helping you:
 - Find files that are changing too frequently (churn hotspots)
 - Spot files with uneven ownership and knowledge silos
 - Locate large, complex files that are difficult to maintain
-- Discover important files that haven't been maintained recently
 
-Scores files based on your selected mode (hot, risk, complexity, stale),
+Scores files based on your selected mode (hot, risk, complexity, roi),
 ranking them from highest to lowest risk.
 
 Examples:
@@ -32,8 +31,8 @@ Examples:
   # Find complex files by age and size
   hotspot files --mode complexity
 
-  # Show stale but important files
-  hotspot files --mode stale
+  # Prioritize refactoring targets by ROI
+  hotspot files --mode roi
 
   # Include detailed metrics and component breakdown
   hotspot files --detail --explain --owner

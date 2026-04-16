@@ -11,7 +11,7 @@ import (
 )
 
 func TestMigrateAnalysis_NoneBackend(t *testing.T) {
-	err := MigrateAnalysis(schema.NoneBackend, "", targetLatestVersion)
+	err := MigrateAnalysis(schema.NoneBackend, "", targetLatestVersion, false)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "migrations are not supported for 'none' backend")
 }
@@ -22,7 +22,7 @@ func TestMigrateAnalysis_SQLite(t *testing.T) {
 	dbPath := filepath.Join(tmpDir, "test_migration.db")
 
 	// Run migration to latest version
-	err := MigrateAnalysis(schema.SQLiteBackend, dbPath, targetLatestVersion)
+	err := MigrateAnalysis(schema.SQLiteBackend, dbPath, targetLatestVersion, false)
 	require.NoError(t, err)
 
 	// Verify migration was successful by checking the database file exists
@@ -30,26 +30,26 @@ func TestMigrateAnalysis_SQLite(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Run migration again (should be a no-op)
-	err = MigrateAnalysis(schema.SQLiteBackend, dbPath, targetLatestVersion)
+	err = MigrateAnalysis(schema.SQLiteBackend, dbPath, targetLatestVersion, false)
 	assert.NoError(t, err)
 
 	// Run migration to a specific version (version 1)
-	err = MigrateAnalysis(schema.SQLiteBackend, dbPath, 1)
+	err = MigrateAnalysis(schema.SQLiteBackend, dbPath, 1, false)
 	assert.NoError(t, err)
 
 	// Rollback to version 0
-	err = MigrateAnalysis(schema.SQLiteBackend, dbPath, targetInitialVersion)
+	err = MigrateAnalysis(schema.SQLiteBackend, dbPath, targetInitialVersion, false)
 	assert.NoError(t, err)
 
 	// Migrate back up to version 1
-	err = MigrateAnalysis(schema.SQLiteBackend, dbPath, 1)
+	err = MigrateAnalysis(schema.SQLiteBackend, dbPath, 1, false)
 	assert.NoError(t, err)
 }
 
 func TestMigrateAnalysis_SQLiteInvalidPath(t *testing.T) {
 	// Test with an invalid database path
 	invalidPath := "/invalid/path/to/db.sqlite"
-	err := MigrateAnalysis(schema.SQLiteBackend, invalidPath, targetLatestVersion)
+	err := MigrateAnalysis(schema.SQLiteBackend, invalidPath, targetLatestVersion, false)
 	assert.Error(t, err)
 }
 
@@ -59,13 +59,13 @@ func TestMigrateAnalysis_InvalidVersion(t *testing.T) {
 	dbPath := filepath.Join(tmpDir, "test_invalid_version.db")
 
 	// Run migration with an invalid version number
-	err := MigrateAnalysis(schema.SQLiteBackend, dbPath, -2)
+	err := MigrateAnalysis(schema.SQLiteBackend, dbPath, -2, false)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid target version")
 }
 
 func TestMigrateAnalysis_SQLiteInMemory(t *testing.T) {
 	// Test with in-memory database
-	err := MigrateAnalysis(schema.SQLiteBackend, ":memory:", targetLatestVersion)
+	err := MigrateAnalysis(schema.SQLiteBackend, ":memory:", targetLatestVersion, false)
 	require.NoError(t, err)
 }

@@ -7,7 +7,7 @@ This guide provides detailed documentation for using Hotspot's analysis features
 Hotspot is built on the premise that **System Resilience** and **Team Sustainability** are just as critical as code correctness. While traditional QA tools (linters, unit tests, SCA) catch syntax errors and logic bugs, production outages and development bottlenecks often stem from:
 - **High Complexity**: Fragile code that is expensive and risky to modify.
 - **Knowledge Silos**: Critical subsystems owned by too few people (low bus factor).
-- **Knowledge Decay**: Historically important files that have been abandoned or lost context.
+- **Knowledge Decay**: Historically important files that have been abandoned (monitored via **Risk Mode**).
 
 Hotspot provides the data-driven signal needed to identify these risks and start the conversations required to fix them.
 
@@ -77,7 +77,7 @@ The `timeseries` subcommand tracks how hotspot scores change over time for a spe
 
 ## CI/CD Policy Enforcement
 
-The `check` command allows you to enforce risk thresholds in CI/CD pipelines, failing builds when files exceed acceptable risk levels. If no thresholds are specified, it defaults to 50.0 for all scoring modes (hot, risk, complexity).
+The `check` command allows you to enforce risk thresholds in CI/CD pipelines, failing builds when files exceed acceptable risk levels. Default thresholds: 50.0 for all scoring modes (hot, risk, complexity, roi).
 
 **Example:** Use CI configuration for policy enforcement.
 
@@ -165,7 +165,7 @@ This allows you to manage settings without long command-line strings. Flags alwa
 **CLI Use Cases** (for repository analysis):
 - [hotspot.large.yml](./examples/cli/hotspot.large.yml): Optimized for large monorepos with many contributors and long histories
 - [hotspot.small.yml](./examples/cli/hotspot.small.yml): Lightweight setup for small tools, services, or single-purpose modules
-- [hotspot.infra.yml](./examples/cli/hotspot.infra.yml): Tuned for IaC repos (Ansible, Terraform, Helm) with risk/stale focus
+- [hotspot.infra.yml](./examples/cli/hotspot.infra.yml): Tuned for IaC repos (Ansible, Terraform, Helm) with risk focus
 - [hotspot.ci.yml](./examples/cli/hotspot.ci.yml): Optimized settings for CI/CD policy enforcement
 
 **AI Agent / MCP**:
