@@ -8,15 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.16.0] - 2026-04-16
 
 ### Added
-- "Self-Documenting Agentic Hub": Native MCP resources for accessing core documentation (`hotspot://docs/*`) directly from the binary.
-- Embedded documentation system (Top-down Injection) ensuring `AGENTS.md` and `USERGUIDE.md` are always portable and available.
-- Guided analysis playbooks (MCP Prompts) for automated repository audits and refactor prioritization.
-- Enhanced MCP tool intelligence with semantic annotations (`ReadOnly`, `Idempotent`) and synchronized parameter descriptions.
-- Explicit default values for all MCP tools using `mcp.DefaultString` and `mcp.DefaultNumber`.
+- Native MCP documentation resources (`hotspot://docs/*`) served directly from binary
+- Embedded system (Top-down Injection) for portable `AGENTS.md` and `USERGUIDE.md`
+- Guided analysis playbooks (Prompts) for repository audits and refactor prioritization
+- Enhanced MCP tool intelligence with semantic annotations and synchronized defaults
+- Standardized parameter descriptions and explicit default mappings across all tools
 
 ### Fixed
-- Linter violations (`revive`, `staticcheck`) regarding unused context parameters across all MCP handlers.
-- Synchronization of CLI help strings and documentation for all supported output formats.
+- Linter violations (`revive`, `staticcheck`) for unused context parameters
+- Synchronization of CLI help strings and documentation across all guides
 
 ## [1.15.0] - 2026-04-15
 
