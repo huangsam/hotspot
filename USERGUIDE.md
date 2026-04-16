@@ -130,12 +130,27 @@ To use Hotspot with Claude Desktop, add it to your `claude_desktop_config.json`:
 
 The server exposes the following tools to the AI agent:
 - `get_repo_shape`: Characterize the repository and get a recommended preset (lightweight aggregation pass).
-- `get_files_hotspots`: Rank files by hot, risk, complexity, or stale modes.
+- `get_files_hotspots`: Rank files by hot, risk, complexity, stale, or roi modes.
 - `get_folders_hotspots`: Same as above, but aggregated at the folder level.
 - `compare_hotspots`: Compare changes in technical debt between two Git references.
 - `get_timeseries`: Track the trend of a specific file or folder over time.
 
-All analysis tools support an optional `preset` parameter to auto-configure scoring mode, worker count, result limit, and time window based on the recommended preset family.
+All analysis tools support an optional `preset` parameter to auto-configure scoring mode, worker count, result limit, and time window based on the recommended preset family. Tools are annotated with `ReadOnly` and `Idempotent` hints to assist agent reasoning.
+
+### Native Resources & Prompts
+
+As of v1.16.0, the MCP server is self-documenting and provides guided workflows:
+
+**1. Documentation Resources**:
+Agents can read core documentation directly from the tool using standard URIs:
+- `hotspot://docs/agents`: Architectural context and scoring mode principles.
+- `hotspot://docs/user-guide`: The complete user guide (this document).
+- `hotspot://config`: The local `.hotspot.yml` configuration if available.
+
+**2. Guided Playbooks (Prompts)**:
+The server provides pre-defined analysis workflows via the `prompts/list` capability:
+- `repository-audit`: A multi-step audit for activity and knowledge risk.
+- `refactor-prioritization`: A specialized workflow using ROI mode to identify high-return targets.
 
 ## Configuration
 

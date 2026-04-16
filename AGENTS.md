@@ -18,6 +18,21 @@ Hotspot can run as an MCP server (`hotspot mcp`) to expose its analysis capabili
 
 Agents should provide a `urn` to ensure analysis runs for the same repository are unified in the database, regardless of the local clone path. Note that `repo_path` (defaulting to `.`) is still required to perform fresh Git analysis.
 
+## Self-Discovery & Guided Playbooks
+
+Hotspot is designed to be a "Zero-Config" agentic hub. Agents can autonomously discover documentation and workflows using native MCP capabilities:
+
+**1. Documentation Resources**:
+Agents should first read the following resources to understand the repository's context and tool capabilities:
+- `hotspot://docs/agents`: This architectural guide (embedded in binary).
+- `hotspot://docs/user-guide`: Comprehensive CLI usage and examples (embedded in binary).
+- `hotspot://config`: The current repository's `.hotspot.yml` configuration (if present).
+
+**2. Guided Playbooks (Prompts)**:
+Agents can use the following standard prompts to execute pre-defined analysis workflows:
+- `repository-audit`: A comprehensive health check identifying activity hotspots and knowledge risks.
+- `refactor-prioritization`: A specialized guide for using ROI mode to identify high-return refactoring targets.
+
 ## Core Domain Concepts
 
 ### Scoring Modes

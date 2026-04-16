@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0] - 2026-04-16
+
+### Added
+- "Self-Documenting Agentic Hub": Native MCP resources for accessing core documentation (`hotspot://docs/*`) directly from the binary.
+- Embedded documentation system (Top-down Injection) ensuring `AGENTS.md` and `USERGUIDE.md` are always portable and available.
+- Guided analysis playbooks (MCP Prompts) for automated repository audits and refactor prioritization.
+- Enhanced MCP tool intelligence with semantic annotations (`ReadOnly`, `Idempotent`) and synchronized parameter descriptions.
+- Explicit default values for all MCP tools using `mcp.DefaultString` and `mcp.DefaultNumber`.
+
+### Fixed
+- Linter violations (`revive`, `staticcheck`) regarding unused context parameters across all MCP handlers.
+- Synchronization of CLI help strings and documentation for all supported output formats.
+
 ## [1.15.0] - 2026-04-15
 
 ### Added

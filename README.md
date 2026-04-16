@@ -66,7 +66,7 @@ Hotspot includes a [Model Context Protocol (MCP)](https://modelcontextprotocol.i
 hotspot mcp
 ```
 
-The MCP tools (`get_files_hotspots`, `compare_hotspots`, etc.) support the same parameters as the CLI, including `repo_path`, `mode`, `limit`, `start`, and `end`.
+The MCP tools (`get_files_hotspots`, `compare_hotspots`, etc.) support the same parameters as the CLI, and the server exposes native resources via `hotspot://docs/*` for autonomous agent discovery.
 
 ### Documentation
 
