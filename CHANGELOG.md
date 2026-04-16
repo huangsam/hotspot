@@ -8,8 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.16.0] - 2026-04-16
 
 ### Added
+- `hotspot init` command for automated repository configuration and preset selection
+- `get_release_journey` and `get_blast_radius` MCP tools for architectural analysis
 - Native MCP documentation resources (`hotspot://docs/*`) served directly from binary
-- Embedded system (Top-down Injection) for portable `AGENTS.md` and `USERGUIDE.md`
 - Guided analysis playbooks (Prompts) for repository audits and refactor prioritization
 - Enhanced MCP tool intelligence with semantic annotations and synchronized defaults
 - Standardized parameter descriptions and explicit default mappings across all tools
@@ -20,7 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added strict MCP tool registration verification to ensure API schema stability
 
 ### Fixed
-- Linter violations (`revive`, `staticcheck`) for unused context parameters
+- SQLite/PostgreSQL scanning warnings for nullable integer fields
+- Default database backend selection logic for consistent persistence
+- Descriptive error logging and reporting for early command failures
 - Synchronization of CLI help strings and documentation across all guides
 
 ## [1.15.0] - 2026-04-15
