@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced MCP tool intelligence with semantic annotations and synchronized defaults
 - Standardized parameter descriptions and explicit default mappings across all tools
 
+### Changed
+- Removed "stale" mode from the entire codebase
+- Hardened scoring engine with edge-case tests for Git boundaries
+- Added strict MCP tool registration verification to ensure API schema stability
+
 ### Fixed
 - Linter violations (`revive`, `staticcheck`) for unused context parameters
 - Synchronization of CLI help strings and documentation across all guides
