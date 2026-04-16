@@ -122,6 +122,21 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("end", mcp.Description("End date for the entire timeseries window.")),
 	), h.handleGetTimeseries)
 
+	// --- 5. Tool: get_release_journey ---
+	s.AddTool(mcp.NewTool("get_release_journey",
+		mcp.WithDescription("Automatically discovers the most recent release tags and computes successive hotspot comparisons between each pair, producing a 'State of the Union' for the repository's technical trajectory."),
+		mcp.WithToolAnnotation(mcp.ToolAnnotation{
+			Title:          "Get Release Journey",
+			ReadOnlyHint:   &readOnly,
+			IdempotentHint: &idempotent,
+		}),
+		mcp.WithString("preset", mcp.Description("Apply a named configuration preset (small, large, infra). It is recommended to run 'get_repo_shape' first to identify the correct preset for this repository."), mcp.Enum("small", "large", "infra")),
+		mcp.WithString("urn", mcp.Description(urnDesc)),
+		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
+		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "stale", "roi"), mcp.DefaultString("hot")),
+		mcp.WithNumber("transitions", mcp.Description("Number of successive tag transitions to analyze (e.g. 3 = last 4 tags). Defaults to 3."), mcp.DefaultNumber(3)),
+	), h.handleGetReleaseJourney)
+
 	// --- 6. Tool: get_blast_radius ---
 	s.AddTool(mcp.NewTool("get_blast_radius",
 		mcp.WithDescription("Identifies files that historically change together (co-change coupling). Reveals 'married' files that may lack proper abstraction."),
