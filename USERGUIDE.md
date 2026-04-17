@@ -370,5 +370,5 @@ hotspot files \
   --end 2025-01-01T00:00:00Z \
   --workers 16 \
   --follow \
-  --exclude 'vendor/,*.pb.go,**/*.generated.go'
+  --exclude 'vendor/,*.pb.go,**/*.generated.go'  # Supports recursive globbing (**/)
 ```
