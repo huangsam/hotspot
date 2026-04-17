@@ -1,33 +1,28 @@
 # Hotspot User Guide
 
-This guide provides detailed documentation for using Hotspot's analysis features, configuration options, and common workflows.
+This guide provides the essential documentation for using Hotspot's analysis features and common workflows.
 
 ## Core Philosophy
 
 Hotspot is built on the premise that **System Resilience** and **Team Sustainability** are just as critical as code correctness. While traditional QA tools (linters, unit tests, SCA) catch syntax errors and logic bugs, production outages and development bottlenecks often stem from:
 - **High Complexity**: Fragile code that is expensive and risky to modify.
 - **Knowledge Silos**: Critical subsystems owned by too few people (low bus factor).
-- **Knowledge Decay**: Historically important files that have been abandoned (monitored via **Risk Mode**).
+- **Knowledge Decay**: Historically important files that have been abandoned.
 
 Hotspot provides the data-driven signal needed to identify these risks and start the conversations required to fix them.
 
-## Analysis features
+## Analysis Features
 
-### Repository shape & preset recommendation
-
+### 1. Repository Shape & Preset Recommendation
 The `init` command analyzes your repository and creates a recommended configuration:
 
 ```bash
 hotspot init            # Run shape analysis and write .hotspot.yml
-hotspot init --style full  # Write all settings from the preset
 hotspot shape           # Print shape metrics as JSON
 ```
 
-### Scoring modes
-
-The core power of Hotspot lies in its `--mode` flag, which selects the ranking algorithm used to identify different types of risk.
-
-**Example:** Identify owners of high-risk files.
+### 2. Scoring Modes
+The core power of Hotspot lies in its `--mode` flag, which selects the ranking algorithm:
 
 `hotspot files --mode risk --owner`
 
@@ -38,365 +33,42 @@ The core power of Hotspot lies in its `--mode` flag, which selects the ranking a
 | **complexity** | Technical debt | Triage files with high churn, large size, and high complexity. |
 | **roi** | Refactoring ROI | Prioritize refactoring targets that offer the highest technical return. |
 
-### Scoring transparency & customization
-
-The `metrics` command displays the formal mathematical formulas for all scoring modes, showing exactly how files are ranked. When using custom weights from a `.hotspot.yaml` config file, it shows your active configuration.
-
-**Example:** View scoring formulas in action.
-
-`hotspot metrics`
-
-### Risk comparison & delta tracking
-
-The `compare` subcommand allows you to measure the change in metrics between two different points in your repository's history. This is the most effective way to audit the impact of a new change set across multiple dimensions.
-
-**Example:** Compare between releases, using the default 6-month lookback.
+### 3. Risk Comparison & Delta Tracking
+Measure the change in metrics between two different points in history.
 
 `hotspot compare files --mode complexity --base-ref v0.15.0 --target-ref v0.16.0`
 
-| Flags | Description |
-|-------|-------------|
-| `--base-ref` | The BEFORE Git reference (e.g., `main`, `v1.0.0`, a commit hash). |
-| `--target-ref` | The AFTER Git reference (defaults to `HEAD`). |
-| `--lookback` | Time window (e.g. `6 months`) used for base and target. |
-
-### Timeseries analysis
-
-The `timeseries` subcommand tracks how hotspot scores change over time for a specific file or folder path. This helps you understand trends and identify when risk started increasing or decreasing.
-
-**Example:** Track complexity score for a specific file over the past 3 months.
+### 4. Timeseries Analysis
+Track how hotspot scores change over time for a specific file or folder path.
 
 `hotspot timeseries --path main.go --mode complexity --interval "30 days" --points 3`
 
-| Flags | Description |
-|-------|-------------|
-| `--path` | The file or folder path to analyze (required). |
-| `--mode` | Scoring mode (hot, risk, complexity, roi; default: hot). |
-| `--interval` | Total time window (e.g., `6 months`, `1 year`). |
-| `--points` | Number of data points to generate (default: 3). |
+---
 
-## CI/CD Policy Enforcement
+## Next Steps & Deep Dives
 
-The `check` command allows you to enforce risk thresholds in CI/CD pipelines, failing builds when files exceed acceptable risk levels. Default thresholds: 50.0 for all scoring modes (hot, risk, complexity, roi).
+For specialized use cases, please refer to the following guides:
 
-**Example:** Use CI configuration for policy enforcement.
-
-`hotspot check --base-ref v1.9.0 --target-ref v1.10.0`
-
-**Example:** Use CLI overrides for policy enforcement.
-
-`hotspot check --base-ref v1.9.0 --target-ref v1.10.0 --thresholds-override "hot:75,risk:60,complexity:80"`
-
-| Flags | Description |
-|-------|-------------|
-| `--base-ref` | The BEFORE Git reference (e.g., `main`, `v1.0.0`, a commit hash). |
-| `--target-ref` | The AFTER Git reference (defaults to `HEAD`). |
-| `--lookback` | Time window (e.g. `6 months`) used for base and target. |
-| `--thresholds-override` | Custom risk thresholds per scoring mode (format: `hot:50,risk:50,complexity:50,roi:50`). |
-
-The [example CI config](./examples/cli/hotspot.ci.yml) shows how custom thresholds can be configured for each scoring mode and is useful for maintaining code quality standards specific to your team.
-
-## Model Context Protocol (MCP) Server
-
-Hotspot can run as an [MCP](https://modelcontextprotocol.io/) server, exposing its diagnostic capabilities via `mcp-go` to compatible AI agents (like Claude Desktop, Cursor, or Zed). This allows an LLM to automatically explore technical debt and risk without you having to manually run CLI commands.
-
-### Starting the Server
-
-The server communicates via standard input/output (stdio), which is standard for local MCP clients.
-
-```bash
-hotspot mcp
-```
-
-### Example: Claude Desktop Configuration
-
-To use Hotspot with Claude Desktop, add it to your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "hotspot": {
-      "command": "hotspot",
-      "args": ["mcp"]
-    }
-  }
-}
-```
-
-*Note: Ensure `hotspot` is in your system `$PATH`, or provide the absolute path to the binary in the `command` field.*
-
-### Supported MCP Tools
-
-The server exposes the following tools to the AI agent:
-- `get_repo_shape`: Characterize the repository and get a recommended preset (lightweight aggregation pass).
-- `get_files_hotspots`: Rank files by hot, risk, complexity, or roi modes.
-- `get_folders_hotspots`: Same as above, but aggregated at the folder level.
-- `compare_hotspots`: Compare changes in technical debt between two Git references.
-- `get_timeseries`: Track the trend of a specific file or folder over time.
-- `get_release_journey`: Compute repository trajectory by analyzing successive release tags.
-- `get_blast_radius`: Identify files that historically change together.
-
-All analysis tools support an optional `preset` parameter to auto-configure scoring mode, worker count, result limit, and time window based on the recommended preset family. Tools are annotated with `ReadOnly` and `Idempotent` hints to assist agent reasoning.
-
-### Native Resources & Prompts
-
-As of v1.16.0, the MCP server is self-documenting and provides guided workflows:
-
-**1. Documentation Resources**:
-Agents can read core documentation directly from the tool using standard URIs:
-- `hotspot://docs/agents`: Architectural context and scoring mode principles.
-- `hotspot://docs/metrics`: Machine-readable JSON definition of scoring modes and weights.
-
-**2. Guided Playbooks (Prompts)**:
-The server provides pre-defined analysis workflows via the `prompts/list` capability:
-- `release-readiness`: A specialized workflow for assessing release safety by comparing HEAD against the last tag.
-- `refactor-prioritization`: A specialized workflow using ROI mode to identify high-return targets.
+- **[Operations Guide](docs/OPERATIONS.md)**: Database backends, migration, and analysis history tracking.
+- **[CI/CD Enforcement](docs/CI.md)**: Using Hotspot to gate builds in your pipeline.
+- **[AI & MCP Server](docs/MCP.md)**: Connecting Hotspot to AI agents like Claude or Cursor.
+- **[Strategic Playbook](PLAYBOOK.md)**: In-depth recipes for risk auditing and refactoring prioritization.
 
 ## Configuration
 
-### Configuration file
+### Configuration File
+Manage settings without long command-line strings by using a `.hotspot.yaml` file. We provide documented configuration templates in the `examples/cli` directory, organized by use case:
 
-For complex or repetitive commands, Hotspot can read all flags from a configuration file named **`.hotspot.yaml`** or **`.hotspot.yml`** placed in your repository root or home directory.
+- [Large Monorepos](./examples/cli/hotspot.large.yml)
+- [Small Tools/Services](./examples/cli/hotspot.small.yml)
+- [Infrastructure/IaC](./examples/cli/hotspot.infra.yml)
 
-This allows you to manage settings without long command-line strings. Flags always override file settings. We provide documented examples organized by use case in the `examples/` directory:
+---
 
-**CLI Use Cases** (for repository analysis):
-- [hotspot.large.yml](./examples/cli/hotspot.large.yml): Optimized for large monorepos with many contributors and long histories
-- [hotspot.small.yml](./examples/cli/hotspot.small.yml): Lightweight setup for small tools, services, or single-purpose modules
-- [hotspot.infra.yml](./examples/cli/hotspot.infra.yml): Tuned for IaC repos (Ansible, Terraform, Helm) with risk focus
-- [hotspot.ci.yml](./examples/cli/hotspot.ci.yml): Optimized settings for CI/CD policy enforcement
-
-**AI Agent / MCP**:
-- [hotspot.mcp.yml](./examples/mcp/hotspot.mcp.yml): Optimized settings for AI Agent (MCP) server
-
-**Reference & Advanced**:
-- [hotspot.docs.yml](./examples/reference/hotspot.docs.yml): The canonical template listing every available setting
-- [hotspot.weights.yml](./examples/reference/hotspot.weights.yml): Advanced customization of scoring algorithm weights
-
-### Backend configuration
-
-Hotspot supports multiple backends for caching Git analysis results and storing analysis data: **SQLite** (default, local), **MySQL**, **PostgreSQL**, or **None** (in-memory only).
-
-#### Configuration
-
-Set backends via environment variables:
+### Exporting Results
+Hotspot supports multiple export formats to assist in reporting:
 
 ```bash
-export HOTSPOT_CACHE_BACKEND=mysql
-export HOTSPOT_CACHE_DB_CONNECT="user:pass@tcp(localhost:3306)/hotspot"
-export HOTSPOT_ANALYSIS_BACKEND=postgresql
-export HOTSPOT_ANALYSIS_DB_CONNECT="host=localhost port=5432 user=postgres dbname=hotspot"
-```
-
-Or in `.hotspot.yaml`:
-
-```yaml
-cache:
-  backend: mysql
-  db_connect: "user:pass@tcp(localhost:3306)/hotspot"
-analysis:
-  backend: postgresql
-  db_connect: "host=localhost port=5432 user=postgres dbname=hotspot"
-```
-
-#### Management commands
-
-```bash
-hotspot cache status     # Check cache backend status
-hotspot cache clear      # Clear cached data
-hotspot analysis status  # Check analysis backend status
-hotspot analysis history # List historical analysis runs
-hotspot analysis clear   # Clear stored analysis runs
-hotspot analysis migrate # Migrate analysis database schema
-```
-
-### Analysis History
-
-The `analysis history` command provides a chronological audit trail of your repository analysis runs. This is useful for tracking your progress and identifying specific runs for export or comparison.
-
-```bash
-hotspot analysis history --analysis-backend sqlite
-```
-
-| Output Format | Feature |
-|---------------|---------|
-| **Table** | Clean, high-level summary of ID, Time, and URN. |
-| **Markdown** | Standard GitHub-flavored table for documentation. |
-| **CSV** | Stable schema for programmatic analysis. |
-| **JSON** | Full metadata including the exact configuration parameters. |
-
-### Export Parity & Explainability
-
-When exporting results to **CSV** or **Markdown**, you can use the `--explain` flag to include the score reasoning (the "Explain" column) just like in the default terminal output.
-
-```bash
-# Export findings with score reasoning to CSV
-hotspot files --output csv --explain --output-file findings.csv
-
-# Generate a markdown report with score reasoning
 hotspot files --output markdown --explain > report.md
-```
-
-### Database migration
-
-The `analysis migrate` command manages schema updates for analysis backends (SQLite, MySQL, PostgreSQL). Run this after upgrading Hotspot to ensure your database schema is current.
-
-#### Basic migration
-
-```bash
-# Migrate to latest schema version
-hotspot analysis migrate --analysis-backend sqlite
-```
-
-#### Using with different backends
-
-MySQL:
-
-```bash
-hotspot analysis migrate \
-  --analysis-backend mysql \
-  --analysis-db-connect "user:pass@tcp(localhost:3306)/hotspot"
-```
-
-PostgreSQL:
-
-```bash
-hotspot analysis migrate \
-  --analysis-backend postgresql \
-  --analysis-db-connect "host=localhost port=5432 dbname=hotspot"
-```
-
-### Exporting to Parquet
-
-Export analysis data to Parquet files for use with analytics tools like Spark, Pandas, and DuckDB.
-
-#### Basic export
-
-```bash
-# Run analysis with tracking enabled
-hotspot files --analysis-backend sqlite
-
-# Export to Parquet files
-hotspot analysis export --analysis-backend sqlite --output-file mydata
-```
-
-This creates two files:
-
-- `mydata.analysis_runs.parquet` - Analysis run metadata
-- `mydata.file_scores_metrics.parquet` - Per-file metrics and scores
-
-#### Using with different backends
-
-MySQL:
-
-```bash
-hotspot analysis export \
-  --analysis-backend mysql \
-  --analysis-db-connect "user:pass@tcp(localhost:3306)/hotspot" \
-  --output-file export/data
-```
-
-PostgreSQL:
-
-```bash
-hotspot analysis export \
-  --analysis-backend postgresql \
-  --analysis-db-connect "host=localhost port=5432 dbname=hotspot" \
-  --output-file export/data
-```
-
-#### Reading exported data
-
-Python (Pandas):
-
-```python
-import pandas as pd
-
-runs = pd.read_parquet('mydata.analysis_runs.parquet')
-files = pd.read_parquet('mydata.file_scores_metrics.parquet')
-
-# Analyze trends
-print(files.groupby('analysis_id')['score_hot'].mean())
-```
-
-DuckDB:
-
-```sql
--- Query Parquet files directly
-SELECT * FROM 'mydata.analysis_runs.parquet';
-SELECT file_path, score_hot, score_risk
-FROM 'mydata.file_scores_metrics.parquet'
-ORDER BY score_hot DESC
-LIMIT 10;
-```
-
-Apache Spark:
-
-```scala
-val runs = spark.read.parquet("mydata.analysis_runs.parquet")
-val files = spark.read.parquet("mydata.file_scores_metrics.parquet")
-
-files.groupBy("analysis_id").count().show()
-```
-
-## Common use cases
-
-### Daily & sprint workflows
-
-```bash
-# Identify active subsystems for daily standup
-hotspot folders --mode hot --start "2 weeks ago"
-
-# Drill down to active files in a subsystem
-hotspot files --mode hot ./path/from/folder/hot --start "2 weeks ago"
-```
-
-### Strategic risk & debt management
-
-```bash
-# Bus Factor Audit (subsystems with few owners)
-hotspot folders --mode risk --start "1 year ago"
-
-# Knowledge Decay Audit (old, neglected modules)
-hotspot folders --mode risk --start "5 years ago" --exclude "test/,vendor/"
-```
-
-### Change & release auditing
-
-```bash
-# Measure release risk changes
-hotspot compare folders --mode complexity --base-ref v1.0.0 --target-ref HEAD
-
-# Audit file-level risk changes
-hotspot compare files --mode risk --base-ref main --target-ref feature/new-module
-```
-
-### Trend analysis & historical tracking
-
-```bash
-# Track file complexity over time
-hotspot timeseries --path src/main/java/App.java --mode complexity --interval "1 month" --points 6
-
-# Identify when knowledge risk started increasing
-hotspot timeseries --path lib/legacy.js --mode risk --interval "3 months" --points 8
-```
-
-### Power user workflows
-
-For massive repositories or complex historical audits, use parallelization and file-tracking flags.
-
-**Example:** Perform a deep-dive audit of technical debt over a full year, following file renames and excluding generated code.
-
-<img src="./images/ranking.png" alt="Hotspot Ranking" width="800px" />
-
-To get this output, run this command:
-
-```bash
-hotspot files \
-  --mode complexity \
-  --start 2024-01-01T00:00:00Z \
-  --end 2025-01-01T00:00:00Z \
-  --workers 16 \
-  --follow \
-  --exclude 'vendor/,*.pb.go,**/*.generated.go'  # Supports recursive globbing (**/)
+hotspot files --output csv --output-file findings.csv
 ```
