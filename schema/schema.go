@@ -5,27 +5,29 @@ import "time"
 
 // FileResult represents the Git and file system metrics for a single file.
 type FileResult struct {
-	Path               string    `json:"path"`                 // Relative path to the file in the repository
-	UniqueContributors Metric    `json:"unique_contributors"`  // Number of different authors who modified the file
-	Commits            Metric    `json:"commits"`              // Total number of commits affecting this file
-	RecentContributors Metric    `json:"recent_contributors"`  // Recent contributor count within a time window
-	RecentCommits      Metric    `json:"recent_commits"`       // Recent commit count within a time window
-	RecentChurn        Metric    `json:"recent_churn"`         // Recent churn within a time window
-	RecentLinesAdded   Metric    `json:"recent_lines_added"`   // Recent lines added
-	RecentLinesDeleted Metric    `json:"recent_lines_deleted"` // Recent lines deleted
-	DecayedCommits     Metric    `json:"decayed_commits"`      // Time-weighted commit count
-	DecayedChurn       Metric    `json:"decayed_churn"`        // Time-weighted churn count
-	RecentWindowDays   int       `json:"recent_window_days"`   // Number of days defining the 'recent' window
-	SizeBytes          int64     `json:"size_bytes"`           // Current size of the file in bytes (Stay int64 as it's a file property)
-	LinesOfCode        Metric    `json:"lines_of_code"`        // Current lines of code
-	AgeDays            Metric    `json:"age_days"`             // Age of the file in days since first commit
-	Churn              Metric    `json:"churn"`                // Total number of lines added/deleted
-	LinesAdded         Metric    `json:"lines_added"`          // Total lines added
-	LinesDeleted       Metric    `json:"lines_deleted"`        // Total lines deleted
-	Gini               float64   `json:"gini"`                 // Gini coefficient of commit distribution (0-1, lower is more even)
-	FirstCommit        time.Time `json:"first_commit"`         // Timestamp of the file's first commit
-	Owners             []string  `json:"owners"`               // Top 2 owners by commit count
-	RecencySignal      float64   `json:"recency_signal"`       // 0-1 freshness score (recent activity vs lifetime volume)
+	Path                 string    `json:"path"`                 // Relative path to the file in the repository
+	UniqueContributors   Metric    `json:"unique_contributors"`  // Number of different authors who modified the file
+	Commits              Metric    `json:"commits"`              // Total number of commits affecting this file
+	RecentContributors   Metric    `json:"recent_contributors"`  // Recent contributor count within a time window
+	RecentCommits        Metric    `json:"recent_commits"`       // Recent commit count within a time window
+	RecentChurn          Metric    `json:"recent_churn"`         // Recent churn within a time window
+	RecentLinesAdded     Metric    `json:"recent_lines_added"`   // Recent lines added
+	RecentLinesDeleted   Metric    `json:"recent_lines_deleted"` // Recent lines deleted
+	DecayedCommits       Metric    `json:"decayed_commits"`      // Time-weighted commit count
+	DecayedChurn         Metric    `json:"decayed_churn"`        // Time-weighted churn count
+	RecentWindowDays     int       `json:"recent_window_days"`   // Number of days defining the 'recent' window
+	SizeBytes            int64     `json:"size_bytes"`           // Current size of the file in bytes (Stay int64 as it's a file property)
+	LinesOfCode          Metric    `json:"lines_of_code"`        // Current lines of code
+	AgeDays              Metric    `json:"age_days"`             // Age of the file in days since first commit
+	Churn                Metric    `json:"churn"`                // Total number of lines added/deleted
+	LinesAdded           Metric    `json:"lines_added"`          // Total lines added
+	LinesDeleted         Metric    `json:"lines_deleted"`        // Total lines deleted
+	Gini                 float64   `json:"gini"`                 // Gini coefficient of commit distribution (0-1, lower is more even)
+	FirstCommit          time.Time `json:"first_commit"`         // Timestamp of the file's first commit
+	Owners               []string  `json:"owners"`               // Top 2 owners by commit count
+	RecencySignal        float64   `json:"recency_signal"`       // 0-1 freshness score (recent activity vs lifetime volume)
+	RecencyThresholdLow  float64   `json:"recency_threshold_low"`
+	RecencyThresholdHigh float64   `json:"recency_threshold_high"`
 
 	Mode          ScoringMode                              `json:"mode"`                 // Scoring mode used (hot, risk, complexity, roi)
 	ModeScore     float64                                  `json:"score"`                // Computed score for the current mode (0-100)

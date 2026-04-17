@@ -108,7 +108,7 @@ func TestComputeScoreAllModes(t *testing.T) {
 	for _, mode := range modes {
 		t.Run(string(mode), func(t *testing.T) {
 			weights := getWeightsForMode(mode, nil)
-			score := ComputeScore(&metrics, mode, weights)
+			score := ComputeScore(&metrics, mode, weights, 0.1, 0.4)
 			assert.True(t, score >= 0 && score <= 100)
 			assert.NotEmpty(t, metrics.ModeBreakdown)
 		})
@@ -142,7 +142,7 @@ func BenchmarkComputeScore(b *testing.B) {
 	weights := getWeightsForMode(schema.HotMode, nil)
 
 	for b.Loop() {
-		ComputeScore(&metrics, schema.HotMode, weights)
+		ComputeScore(&metrics, schema.HotMode, weights, 0.1, 0.4)
 	}
 }
 
@@ -163,7 +163,7 @@ func TestComputeScoreWithCustomWeights(t *testing.T) {
 
 	// Get default score
 	defaultWeights := getWeightsForMode(schema.HotMode, nil)
-	defaultScore := ComputeScore(&metrics, schema.HotMode, defaultWeights)
+	defaultScore := ComputeScore(&metrics, schema.HotMode, defaultWeights, 0.1, 0.4)
 
 	// Test with custom weights that heavily weight commits
 	customWeights := map[schema.ScoringMode]map[schema.BreakdownKey]float64{
@@ -176,7 +176,7 @@ func TestComputeScoreWithCustomWeights(t *testing.T) {
 		},
 	}
 	customModeWeights := getWeightsForMode(schema.HotMode, customWeights)
-	customScore := ComputeScore(&metrics, schema.HotMode, customModeWeights)
+	customScore := ComputeScore(&metrics, schema.HotMode, customModeWeights, 0.1, 0.4)
 
 	// Scores should be different
 	assert.NotEqual(t, defaultScore, customScore, "Custom weights should produce different score than defaults")
@@ -209,7 +209,7 @@ func TestComputeScoreCustomWeightsAllModes(t *testing.T) {
 		t.Run(string(mode), func(t *testing.T) {
 			// Get default score
 			defaultWeights := getWeightsForMode(mode, nil)
-			defaultScore := ComputeScore(&metrics, mode, defaultWeights)
+			defaultScore := ComputeScore(&metrics, mode, defaultWeights, 0.1, 0.4)
 
 			// Create custom weights that emphasize different aspects
 			customWeights := map[schema.ScoringMode]map[schema.BreakdownKey]float64{
@@ -231,7 +231,7 @@ func TestComputeScoreCustomWeightsAllModes(t *testing.T) {
 			}
 
 			customModeWeights := getWeightsForMode(mode, customWeights)
-			customScore := ComputeScore(&metrics, mode, customModeWeights)
+			customScore := ComputeScore(&metrics, mode, customModeWeights, 0.1, 0.4)
 
 			// Both should be valid scores
 			assert.True(t, defaultScore >= 0 && defaultScore <= 100, "Default score should be valid")
@@ -266,8 +266,8 @@ func TestComputeScoreRiskKnowledgeDecay(t *testing.T) {
 	}
 
 	weights := getWeightsForMode(schema.RiskMode, nil)
-	activeScore := ComputeScore(activeFile, schema.RiskMode, weights)
-	staleScore := ComputeScore(staleFile, schema.RiskMode, weights)
+	activeScore := ComputeScore(activeFile, schema.RiskMode, weights, 0.1, 0.4)
+	staleScore := ComputeScore(staleFile, schema.RiskMode, weights, 0.1, 0.4)
 
 	// Stale file should have a higher risk score due to LowRecent factor (15%)
 	assert.Greater(t, staleScore, activeScore, "Stale file should have higher RISK score than active file with same ownership")
@@ -292,13 +292,13 @@ func TestComputeScoreInvalidCustomWeights(t *testing.T) {
 
 	// Test with nil custom weights (should use defaults)
 	defaultWeights := getWeightsForMode(schema.HotMode, nil)
-	score := ComputeScore(&metrics, schema.HotMode, defaultWeights)
+	score := ComputeScore(&metrics, schema.HotMode, defaultWeights, 0.1, 0.4)
 	assert.True(t, score >= 0 && score <= 100, "Score with nil custom weights should be valid")
 
 	// Test with empty custom weights map (should use defaults)
 	emptyWeights := map[schema.ScoringMode]map[schema.BreakdownKey]float64{}
 	emptyModeWeights := getWeightsForMode(schema.HotMode, emptyWeights)
-	score = ComputeScore(&metrics, schema.HotMode, emptyModeWeights)
+	score = ComputeScore(&metrics, schema.HotMode, emptyModeWeights, 0.1, 0.4)
 	assert.True(t, score >= 0 && score <= 100, "Score with empty custom weights should be valid")
 }
 
@@ -397,7 +397,7 @@ func FuzzComputeScore(f *testing.F) {
 			RecentCommits:      schema.Metric(recentCommits),
 			Mode:               schema.ScoringMode(mode),
 		}
-		_ = ComputeScore(&result, schema.ScoringMode(mode), getWeightsForMode(schema.ScoringMode(mode), nil))
+		_ = ComputeScore(&result, schema.ScoringMode(mode), getWeightsForMode(schema.ScoringMode(mode), nil), 0.1, 0.4)
 	})
 }
 
@@ -480,7 +480,7 @@ func TestComputeScore_EdgeCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			score := ComputeScore(tt.metrics, tt.mode, tt.weights)
+			score := ComputeScore(tt.metrics, tt.mode, tt.weights, 0.1, 0.4)
 			if tt.name == "zero byte file always scores zero" {
 				assert.Equal(t, tt.expected, score)
 			} else {

@@ -257,7 +257,9 @@ func (b *FileResultBuilder) CalculateScore() *FileResultBuilder {
 	// Compute score for current mode
 	mode := b.scoringSettings.GetMode()
 	weights := b.scoringSettings.GetComputedWeights()[mode]
-	b.result.ModeScore = algo.ComputeScore(b.result, mode, weights)
+	thresholdLow := b.scoringSettings.GetRecencyThresholdLow()
+	thresholdHigh := b.scoringSettings.GetRecencyThresholdHigh()
+	b.result.ModeScore = algo.ComputeScore(b.result, mode, weights, thresholdLow, thresholdHigh)
 
 	// Compute scores and breakdowns for all modes
 	b.result.AllScores = make(map[schema.ScoringMode]float64)
@@ -275,7 +277,7 @@ func (b *FileResultBuilder) CalculateScore() *FileResultBuilder {
 			// Crucially re-initialize the breakdown map to avoid stomping on the original
 			mCopy.ModeBreakdown = make(map[schema.BreakdownKey]float64, 8)
 			mCopy.Mode = m
-			score := algo.ComputeScore(&mCopy, m, computedWeights[m])
+			score := algo.ComputeScore(&mCopy, m, computedWeights[m], thresholdLow, thresholdHigh)
 			b.result.AllScores[m] = score
 			b.result.AllBreakdowns[m] = mCopy.ModeBreakdown
 		}

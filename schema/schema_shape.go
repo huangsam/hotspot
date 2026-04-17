@@ -15,15 +15,17 @@ const (
 // Preset is a named collection of recommended configuration defaults derived from
 // the example configuration files in examples/cli/.
 type Preset struct {
-	Name        PresetName  `json:"name"`
-	Description string      `json:"description"`
-	Mode        ScoringMode `json:"mode"`
-	Limit       int         `json:"limit"`
-	Workers     int         `json:"workers"`
-	Follow      bool        `json:"follow"`
-	Detail      bool        `json:"detail"`
-	Start       string      `json:"start,omitempty"` // relative time string, e.g. "2 years ago"
-	Transitions int         `json:"transitions"`     // Suggested value for get_release_journey
+	Name                 PresetName  `json:"name"`
+	Description          string      `json:"description"`
+	Mode                 ScoringMode `json:"mode"`
+	Limit                int         `json:"limit"`
+	Workers              int         `json:"workers"`
+	Follow               bool        `json:"follow"`
+	Detail               bool        `json:"detail"`
+	Start                string      `json:"start,omitempty"` // relative time string, e.g. "2 years ago"
+	Transitions          int         `json:"transitions"`     // Suggested value for get_release_journey
+	RecencyThresholdLow  float64     `json:"recency_threshold_low"`
+	RecencyThresholdHigh float64     `json:"recency_threshold_high"`
 }
 
 // RepoShape captures key metrics from the first aggregation pass to characterize a repository.
@@ -44,38 +46,44 @@ func GetPreset(name PresetName) Preset {
 	switch name {
 	case PresetLarge:
 		return Preset{
-			Name:        PresetLarge,
-			Description: "Optimized for large monorepos with many services and deep Git histories.",
-			Mode:        ROIMode,
-			Limit:       30,
-			Workers:     16,
-			Follow:      true,
-			Detail:      true,
-			Start:       "1 year ago",
-			Transitions: 6, // Need more history to see architectural shifts
+			Name:                 PresetLarge,
+			Description:          "Optimized for large monorepos with many services and deep Git histories.",
+			Mode:                 ROIMode,
+			Limit:                30,
+			Workers:              16,
+			Follow:               true,
+			Detail:               true,
+			Start:                "1 year ago",
+			Transitions:          6, // Need more history to see architectural shifts
+			RecencyThresholdLow:  0.01,
+			RecencyThresholdHigh: 0.05,
 		}
 	case PresetInfra:
 		return Preset{
-			Name:        PresetInfra,
-			Description: "Optimized for infrastructure-as-code repositories (Terraform, Ansible, Helm, etc.).",
-			Mode:        RiskMode,
-			Limit:       20,
-			Workers:     8,
-			Follow:      true,
-			Detail:      true,
-			Start:       "2 years ago",
-			Transitions: 4, // Moderate cadence; risk drift is the key signal
+			Name:                 PresetInfra,
+			Description:          "Optimized for infrastructure-as-code repositories (Terraform, Ansible, Helm, etc.).",
+			Mode:                 RiskMode,
+			Limit:                20,
+			Workers:              8,
+			Follow:               true,
+			Detail:               true,
+			Start:                "2 years ago",
+			Transitions:          4, // Moderate cadence; risk drift is the key signal
+			RecencyThresholdLow:  0.05,
+			RecencyThresholdHigh: 0.20,
 		}
 	default: // PresetSmall
 		return Preset{
-			Name:        PresetSmall,
-			Description: "Optimized for small, focused repositories (CLI tools, microservices, libraries).",
-			Mode:        HotMode,
-			Limit:       10,
-			Workers:     4,
-			Follow:      false,
-			Detail:      false,
-			Transitions: 3, // Tight sprint cadence; 3 recent transitions capture the trend
+			Name:                 PresetSmall,
+			Description:          "Optimized for small, focused repositories (CLI tools, microservices, libraries).",
+			Mode:                 HotMode,
+			Limit:                10,
+			Workers:              4,
+			Follow:               false,
+			Detail:               false,
+			Transitions:          3, // Tight sprint cadence; 3 recent transitions capture the trend
+			RecencyThresholdLow:  0.10,
+			RecencyThresholdHigh: 0.40,
 		}
 	}
 }

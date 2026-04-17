@@ -35,6 +35,8 @@ type ScoringSettings interface {
 	GetCustomWeights() map[schema.ScoringMode]map[schema.BreakdownKey]float64
 	GetComputedWeights() map[schema.ScoringMode]map[schema.BreakdownKey]float64
 	GetRiskThresholds() map[schema.ScoringMode]float64
+	GetRecencyThresholdLow() float64
+	GetRecencyThresholdHigh() float64
 }
 
 // OutputSettings defines requirements for presentation and export configuration.
@@ -120,10 +122,12 @@ func (c GitConfig) IsFollow() bool { return c.Follow }
 
 // ScoringConfig holds algorithm and weight settings.
 type ScoringConfig struct {
-	Mode            schema.ScoringMode
-	CustomWeights   map[schema.ScoringMode]map[schema.BreakdownKey]float64
-	ComputedWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64
-	RiskThresholds  map[schema.ScoringMode]float64
+	Mode                 schema.ScoringMode
+	CustomWeights        map[schema.ScoringMode]map[schema.BreakdownKey]float64
+	ComputedWeights      map[schema.ScoringMode]map[schema.BreakdownKey]float64
+	RiskThresholds       map[schema.ScoringMode]float64
+	RecencyThresholdLow  float64
+	RecencyThresholdHigh float64
 }
 
 // GetMode returns the current scoring mode.
@@ -141,6 +145,12 @@ func (c ScoringConfig) GetComputedWeights() map[schema.ScoringMode]map[schema.Br
 
 // GetRiskThresholds returns the map of risk thresholds for each mode.
 func (c ScoringConfig) GetRiskThresholds() map[schema.ScoringMode]float64 { return c.RiskThresholds }
+
+// GetRecencyThresholdLow returns the lower threshold for recency signaling.
+func (c ScoringConfig) GetRecencyThresholdLow() float64 { return c.RecencyThresholdLow }
+
+// GetRecencyThresholdHigh returns the upper threshold for recency signaling.
+func (c ScoringConfig) GetRecencyThresholdHigh() float64 { return c.RecencyThresholdHigh }
 
 // OutputConfig holds presentation and export settings.
 type OutputConfig struct {
@@ -280,6 +290,10 @@ type RawInput struct {
 	AnalysisBackend   string `mapstructure:"analysis-backend"`
 	AnalysisDBConnect string `mapstructure:"analysis-db-connect"`
 	Color             string `mapstructure:"color"`
+
+	// --- Recency Thresholds ---
+	RecencyThresholdLow  float64 `mapstructure:"recency-threshold-low"`
+	RecencyThresholdHigh float64 `mapstructure:"recency-threshold-high"`
 
 	// --- Fields from filesCmd.Flags() ---
 	Explain bool `mapstructure:"explain"`
@@ -517,6 +531,21 @@ func validateSimpleInputs(cfg *Config, input *RawInput) error {
 		cfg.Scoring.Mode = schema.HotMode
 	}
 
+	// --- 3.5 Recency Thresholds Overrides ---
+	if input.RecencyThresholdLow != 0 {
+		cfg.Scoring.RecencyThresholdLow = input.RecencyThresholdLow
+	}
+	if input.RecencyThresholdHigh != 0 {
+		cfg.Scoring.RecencyThresholdHigh = input.RecencyThresholdHigh
+	}
+	// Final fallback to small repo defaults if still zero
+	if cfg.Scoring.RecencyThresholdLow == 0 {
+		cfg.Scoring.RecencyThresholdLow = 0.10
+	}
+	if cfg.Scoring.RecencyThresholdHigh == 0 {
+		cfg.Scoring.RecencyThresholdHigh = 0.40
+	}
+
 	// --- 4. Precision and Output Validation ---
 	if input.Precision != 0 {
 		if input.Precision < 1 || input.Precision > 2 {
@@ -708,6 +737,8 @@ func ApplyPreset(cfg *Config, presetName schema.PresetName) error {
 			return fmt.Errorf("preset start time: %w", err)
 		}
 	}
+	cfg.Scoring.RecencyThresholdLow = p.RecencyThresholdLow
+	cfg.Scoring.RecencyThresholdHigh = p.RecencyThresholdHigh
 	return nil
 }
 

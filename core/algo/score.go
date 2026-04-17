@@ -15,7 +15,7 @@ import (
 // - risk: Knowledge risk/bus factor (few contributors, high inequality, knowledge decay)
 // - complexity: Technical debt candidates (large, old, high total churn)
 // - roi: Refactoring ROI (high churn on large files).
-func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, weights map[schema.BreakdownKey]float64) float64 {
+func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, weights map[schema.BreakdownKey]float64, thresholdLow, thresholdHigh float64) float64 {
 	// DEFENSIVE CHECK: If the file has no content, its score should be 0.
 	if m.SizeBytes == 0 {
 		return 0.0
@@ -73,6 +73,8 @@ func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, weights map[sch
 		churnRatio = m.RecentChurn.Float64() / m.Churn.Float64()
 	}
 	m.RecencySignal = clamp01((commitRatio * 0.7) + (churnRatio * 0.3))
+	m.RecencyThresholdLow = thresholdLow
+	m.RecencyThresholdHigh = thresholdHigh
 
 	// --------------------------------
 
@@ -193,9 +195,9 @@ func computeReasoning(m *schema.FileResult, mode schema.ScoringMode) []string {
 	if len(results) < 2 {
 		if b[schema.BreakdownChurn] > significant {
 			msg := "High Churn: High cumulative volatility identifies this file as a historical bottleneck."
-			if m.RecencySignal > 0.4 {
+			if m.RecencySignal > m.RecencyThresholdHigh {
 				msg = "High Churn: Recent volatility indicates this file is currently a development bottleneck."
-			} else if m.RecencySignal < 0.1 {
+			} else if m.RecencySignal < m.RecencyThresholdLow {
 				msg = "Historical Hotspot: Massive cumulative churn, but activity has stabilized recently."
 			}
 			results = append(results, msg)
