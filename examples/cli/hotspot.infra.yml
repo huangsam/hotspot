@@ -34,8 +34,14 @@ follow: true
 
 # --- Exclusions ---
 # exclude: Skip lock files, generated provider schemas, and example/test fixtures.
-# Note: This overrides defaults, so we explicitly list what we want to ignore.
-exclude: ".DS_Store,.gitignore,.idea/,.vscode/,LICENSE,*.lock,*.lock.hcl,**/.terraform/,**/.terragrunt-cache/,**/.serverless/,**/.pulumi/,**/.vagrant/,packer_cache/,**/examples/,**/tests/,**/fixtures/,*.retry,.vault_password,.aws/,.kube/,.ssh/,.vault/,terraform.tfstate*,*.tgz,*.pem,*.key,*.po,*.mo,*.xlf,*.xliff,*.zip,*.tar.gz,*.log"
+exclude: >-
+  .DS_Store, .gitignore, .idea/, .vscode/, LICENSE,
+  *.lock, *.lock.hcl, terraform.tfstate*,
+  **/.terraform/, **/.terragrunt-cache/, **/.serverless/, **/.pulumi/, **/.vagrant/,
+  packer_cache/, **/examples/, **/tests/, **/fixtures/,
+  *.retry, .vault_password, .aws/, .kube/, .ssh/, .vault/, *.pem, *.key,
+  *.po, *.mo, *.xlf, *.xliff, *.zip, *.tar.gz, *.log, *.tgz,
+  *.jpg, *.jpeg, *.png, *.gif, *.svg, *.ico, *.webp, *.pdf, *.mp4, *.mov, *.webm
 
 # --- Custom Scoring Weights (Risk Mode) ---
 # Shift weight toward contributor concentration (inv_contrib, gini) and away
