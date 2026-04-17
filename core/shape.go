@@ -19,15 +19,47 @@ import (
 
 // iacExtensions are file extensions strongly associated with IaC tooling.
 var iacExtensions = map[string]struct{}{
-	".tf":     {},
-	".tfvars": {},
-	".hcl":    {},
+	".tf":      {},
+	".tfvars":  {},
+	".hcl":     {},
+	".tfstate": {},
+	".tfplan":  {},
+}
+
+// iacBaseNames are filenames that are strong indicators of IaC or infrastructure configuration.
+var iacBaseNames = map[string]struct{}{
+	"ansible.cfg":         {},
+	"site.yml":            {},
+	"site.yaml":           {},
+	"playbook.yml":        {},
+	"playbook.yaml":       {},
+	"chart.yaml":          {},
+	"values.yaml":         {},
+	"dockerfile":          {},
+	"containerfile":       {},
+	"docker-compose.yml":  {},
+	"docker-compose.yaml": {},
+	"pulumi.yaml":         {},
+	"pulumi.yml":          {},
+	"vagrantfile":         {},
+	"backend.tf":          {},
+	"provider.tf":         {},
+	".terraform.lock.hcl": {},
+	"cloudformation.json": {},
+	"cloudformation.yaml": {},
+	"cloudformation.yml":  {},
 }
 
 // iacPathPatterns are directory substrings whose YAML/JSON children are likely IaC.
 var iacPathPatterns = []string{
+	// Tool-specific patterns
 	"terraform/", "ansible/", "helm/", "k8s/", "kubernetes/",
 	"kustomize/", "playbooks/", "roles/", "charts/",
+	"manifests/", "deploy/", "deployments/", "kube/",
+	"group_vars/", "host_vars/", "inventory/", "molecule/", "vars/",
+	// Generic infrastructure patterns
+	"infra/", "infrastructure/", "ops/", "provision/", "provisioning/",
+	"setup/", "env/", "environments/",
 }
 
 // isIaCFile returns true when the path is likely an infrastructure-as-code file.
@@ -36,22 +68,35 @@ func isIaCFile(path string) bool {
 	ext := strings.ToLower(filepath.Ext(path))
 	base := strings.ToLower(filepath.Base(path))
 
-	// Strong indicators: Terraform / HCL extensions
+	// 1. Strong indicators: Extensions
 	if _, ok := iacExtensions[ext]; ok {
 		return true
 	}
 
-	// Dockerfile (with or without extension)
-	if base == "dockerfile" || strings.HasSuffix(base, ".dockerfile") {
+	// 2. Strong indicators: Specific filenames
+	if _, ok := iacBaseNames[base]; ok {
 		return true
 	}
 
-	// YAML/JSON files inside well-known IaC directories
+	// 3. Container variants (e.g. api.dockerfile, web.containerfile)
+	if strings.HasSuffix(base, ".dockerfile") || strings.HasSuffix(base, ".containerfile") {
+		return true
+	}
+
+	// 4. YAML/JSON files inside well-known IaC or infrastructure directories
 	if ext == ".yml" || ext == ".yaml" || ext == ".json" {
 		for _, pattern := range iacPathPatterns {
 			if strings.Contains(lower, pattern) {
 				return true
 			}
+		}
+
+		// 5. Generic suffixes for YAML/JSON files (e.g., app-deployment.yaml)
+		noExt := strings.TrimSuffix(base, ext)
+		if strings.HasSuffix(noExt, "-deployment") ||
+			strings.HasSuffix(noExt, "-stack") ||
+			strings.HasSuffix(noExt, "-provision") {
+			return true
 		}
 	}
 

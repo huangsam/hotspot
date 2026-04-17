@@ -519,8 +519,9 @@ func TestExcludes(t *testing.T) {
 				".jpg", ".jpeg", ".png", ".gif", ".svg", ".ico", ".mp4", ".mov", ".webm", ".mp3", ".ogg", ".pdf", ".webp",
 				".json", ".csv", ".po",
 				".md", "LICENSE",
-				".DS_Store", ".gitignore",
+				".DS_Store", ".gitignore", ".idea/", ".vscode/",
 				"dist/", "build/", "out/", "target/", "bin/",
+				"*.zip", "*.tar", "*.gz", "*.7z", "*.rar",
 			},
 		},
 		{
