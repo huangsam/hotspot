@@ -546,21 +546,24 @@ func validateSimpleInputs(cfg *Config, input *RawInput) error {
 		"Cargo.lock", "go.sum", "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "composer.lock", "uv.lock",
 		".min.js", ".min.css",
 		".jpg", ".jpeg", ".png", ".gif", ".svg", ".ico", ".mp4", ".mov", ".webm", ".mp3", ".ogg", ".pdf", ".webp",
-		".json", ".csv",
+		".json", ".csv", ".po",
 		".md", "LICENSE",
 		".DS_Store", ".gitignore",
 		"dist/", "build/", "out/", "target/", "bin/",
 	}
-	cfg.Git.Excludes = defaults // Set defaults first
 
 	if input.Exclude != "" {
-		parts := strings.SplitSeq(input.Exclude, ",") // Use simple Split
+		var custom []string
+		parts := strings.SplitSeq(input.Exclude, ",")
 		for p := range parts {
 			trimmedP := strings.TrimSpace(p)
 			if trimmedP != "" {
-				cfg.Git.Excludes = append(cfg.Git.Excludes, trimmedP)
+				custom = append(custom, trimmedP)
 			}
 		}
+		cfg.Git.Excludes = custom
+	} else {
+		cfg.Git.Excludes = defaults
 	}
 
 	return nil

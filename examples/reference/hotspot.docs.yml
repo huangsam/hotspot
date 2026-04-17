@@ -87,7 +87,14 @@
 # Corresponds to: --filter, -f
 # filter: ""
 
-# exclude: Comma-separated list of path prefixes or patterns to ignore (added to defaults).
+# exclude: Comma-separated list of path prefixes or patterns to ignore.
+# IMPORTANT: Providing a custom list overrides the internal defaults.
+# To keep the defaults while adding your own, copy them into this list.
+# Defaults: Cargo.lock, go.sum, package-lock.json, yarn.lock, pnpm-lock.yaml,
+#           composer.lock, uv.lock, .min.js, .min.css, .jpg, .jpeg, .png,
+#           .gif, .svg, .ico, .mp4, .mov, .webm, .mp3, .ogg, .pdf, .webp,
+#           .json, .csv, .po, .md, LICENSE, .DS_Store, .gitignore, dist/,
+#           build/, out/, target/, bin/
 # Corresponds to: --exclude
 # exclude: ""
 

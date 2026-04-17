@@ -43,4 +43,5 @@ follow: true
 # exclude: Skip generated code, vendored dependencies, and build artifacts.
 #          Includes standard patterns for Java (target, build), Go (vendor, pb.go),
 #          and Rust (target) to ensure metrics reflect real source code activity.
-exclude: "vendor/,*.pb.go,**/*.generated.go,dist/,node_modules/,**/*_mock.go,target/,build/,bin/,*.class,*.jar,**/generated-sources/,Cargo.lock"
+# Note: This overrides defaults, so we explicitly list common noise (lock files, assets).
+exclude: ".DS_Store,vendor/,*.pb.go,**/*.generated.go,dist/,node_modules/,**/*_mock.go,target/,build/,bin/,*.class,*.jar,**/generated-sources/,Cargo.lock,package-lock.json,yarn.lock,pnpm-lock.yaml,*.jpg,*.png,*.pdf"

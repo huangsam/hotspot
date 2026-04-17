@@ -502,6 +502,53 @@ func TestProcessAndValidate(t *testing.T) {
 	}
 }
 
+func TestExcludes(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    *RawInput
+		expected []string
+	}{
+		{
+			name: "defaults when no exclude provided",
+			input: &RawInput{
+				Exclude: "",
+			},
+			expected: []string{
+				"Cargo.lock", "go.sum", "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "composer.lock", "uv.lock",
+				".min.js", ".min.css",
+				".jpg", ".jpeg", ".png", ".gif", ".svg", ".ico", ".mp4", ".mov", ".webm", ".mp3", ".ogg", ".pdf", ".webp",
+				".json", ".csv", ".po",
+				".md", "LICENSE",
+				".DS_Store", ".gitignore",
+				"dist/", "build/", "out/", "target/", "bin/",
+			},
+		},
+		{
+			name: "override when exclude provided",
+			input: &RawInput{
+				Exclude: "tmp/, vendor/",
+			},
+			expected: []string{"tmp/", "vendor/"},
+		},
+		{
+			name: "override with single item",
+			input: &RawInput{
+				Exclude: "*.log",
+			},
+			expected: []string{"*.log"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &Config{}
+			err := validateSimpleInputs(cfg, tt.input)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, cfg.Git.Excludes)
+		})
+	}
+}
+
 func TestProcessTimeRange(t *testing.T) {
 	tests := []struct {
 		name        string

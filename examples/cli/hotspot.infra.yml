@@ -33,9 +33,9 @@ detail: true
 follow: true
 
 # --- Exclusions ---
-# exclude: Skip lock files, generated provider schemas, and example/test fixtures
-#          that inflate commit counts without reflecting production risk.
-exclude: ".terraform.lock.hcl,**/.terraform/,**/examples/,**/tests/,**/fixtures/"
+# exclude: Skip lock files, generated provider schemas, and example/test fixtures.
+# Note: This overrides defaults, so we explicitly list what we want to ignore.
+exclude: ".DS_Store,.gitignore,LICENSE,*.lock,*.lock.hcl,**/.terraform/,**/examples/,**/tests/,**/fixtures/"
 
 # --- Custom Scoring Weights (Risk Mode) ---
 # Shift weight toward contributor concentration (inv_contrib, gini) and away
