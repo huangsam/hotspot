@@ -30,3 +30,9 @@ func GetColorLabel(score float64) string {
 		return lowColor.Sprint(text)
 	}
 }
+
+// SetColorMode explicitly enables or disables color output by setting the global fatih/color.NoColor variable.
+// This allows forcing colors in non-TTY environments (like VHS or CI) when explicitly requested.
+func SetColorMode(useColors bool) {
+	color.NoColor = !useColors
+}

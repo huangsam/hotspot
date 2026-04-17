@@ -12,6 +12,7 @@ import (
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/huangsam/hotspot/internal/outwriter"
+	"github.com/huangsam/hotspot/internal/outwriter/provider"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -175,6 +176,9 @@ func sharedSetup(ctx context.Context, cmd *cobra.Command, args []string) error {
 
 	// 6. Initialize output infrastructure
 	resultWriter = outwriter.NewOutWriter()
+
+	// 7. Configure global color mode
+	provider.SetColorMode(cfg.Output.UseColors)
 
 	return nil
 }
