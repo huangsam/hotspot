@@ -25,6 +25,7 @@ type FileResult struct {
 	Gini               float64   `json:"gini"`                 // Gini coefficient of commit distribution (0-1, lower is more even)
 	FirstCommit        time.Time `json:"first_commit"`         // Timestamp of the file's first commit
 	Owners             []string  `json:"owners"`               // Top 2 owners by commit count
+	RecencySignal      float64   `json:"recency_signal"`       // 0-1 freshness score (recent activity vs lifetime volume)
 
 	Mode          ScoringMode                              `json:"mode"`                 // Scoring mode used (hot, risk, complexity, roi)
 	ModeScore     float64                                  `json:"score"`                // Computed score for the current mode (0-100)

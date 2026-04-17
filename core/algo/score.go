@@ -60,6 +60,18 @@ func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, weights map[sch
 	nRecentCommits := clamp01(m.RecentCommits.Float64() / maxRecent)
 	nInvRecentCommits := clamp01(1.0 - nRecentCommits) // Inverse Recent Activity (high indicates low activity)
 
+	// --- Recency Signal Calculation ---
+	// Freshness ratio: how much of the lifetime volume is recent?
+	commitRatio := 0.0
+	if m.Commits > 0 {
+		commitRatio = m.RecentCommits.Float64() / m.Commits.Float64()
+	}
+	churnRatio := 0.0
+	if m.Churn > 0 {
+		churnRatio = m.RecentChurn.Float64() / m.Churn.Float64()
+	}
+	m.RecencySignal = clamp01((commitRatio + churnRatio) / 2.0)
+
 	// --------------------------------
 
 	var raw float64
@@ -178,7 +190,13 @@ func computeReasoning(m *schema.FileResult, mode schema.ScoringMode) []string {
 	// 2. Fallback: Metric-Specific Logic (if no pattern matched or to add detail)
 	if len(results) < 2 {
 		if b[schema.BreakdownChurn] > significant {
-			results = append(results, "High Churn: Recent volatility indicates this file is currently a development bottleneck.")
+			msg := "High Churn: High cumulative volatility identifies this file as a historical bottleneck."
+			if m.RecencySignal > 0.4 {
+				msg = "High Churn: Recent volatility indicates this file is currently a development bottleneck."
+			} else if m.RecencySignal < 0.1 {
+				msg = "Historical Hotspot: Massive cumulative churn, but activity has stabilized recently."
+			}
+			results = append(results, msg)
 		}
 		if hasLowRecent && lowRecent > significant {
 			results = append(results, "Knowledge Decay: File has not been updated recently, increasing the risk of institutional amnesia.")
