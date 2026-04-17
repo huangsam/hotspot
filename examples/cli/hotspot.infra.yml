@@ -35,7 +35,7 @@ follow: true
 # --- Exclusions ---
 # exclude: Skip lock files, generated provider schemas, and example/test fixtures.
 # Note: This overrides defaults, so we explicitly list what we want to ignore.
-exclude: ".DS_Store,.gitignore,LICENSE,*.lock,*.lock.hcl,**/.terraform/,**/.terragrunt-cache/,**/.serverless/,**/examples/,**/tests/,**/fixtures/,*.retry,.vault_password,.aws/,.kube/,.ssh/,.vault/,terraform.tfstate*"
+exclude: ".DS_Store,.gitignore,LICENSE,*.lock,*.lock.hcl,**/.terraform/,**/.terragrunt-cache/,**/.serverless/,**/.pulumi/,**/.vagrant/,packer_cache/,**/examples/,**/tests/,**/fixtures/,*.retry,.vault_password,.aws/,.kube/,.ssh/,.vault/,terraform.tfstate*,*.tgz,*.pem,*.key"
 
 # --- Custom Scoring Weights (Risk Mode) ---
 # Shift weight toward contributor concentration (inv_contrib, gini) and away

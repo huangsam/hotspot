@@ -520,8 +520,9 @@ func TestExcludes(t *testing.T) {
 				".json", ".csv", ".po",
 				".md", "LICENSE",
 				".DS_Store", ".gitignore", ".idea/", ".vscode/",
+				"node_modules/", "vendor/", "__pycache__/",
 				"dist/", "build/", "out/", "target/", "bin/",
-				"*.zip", "*.tar", "*.gz", "*.7z", "*.rar",
+				"*.zip", "*.tar", "*.gz", "*.7z", "*.rar", "*.log",
 			},
 		},
 		{
