@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.1] - 2026-04-16
+
+### Added
+- Standardized `hotspot.small.yml` preset for microservices and libraries
+- Recursive wildcard support (`**/`) for file and directory exclusions
+- Extensive unit testing and fuzzing for path ignore logic
+- Bazel, Buck, and Pants build artifact exclusions for monorepo hardening
+
+### Changed
+- Refined `infra` and `large` presets with modern artifact patterns (Terraform state, Next.js, Vercel)
+- Streamlined `small` preset to leverage built-in system defaults
+
+### Fixed
+- Recursive glob matching for subdirectory exclusions in multi-level repositories
+
 ## [1.16.0] - 2026-04-16
 
 ### Added
@@ -621,6 +636,7 @@ Initial development covered core functionality including:
 - Code quality and maintainability refactoring
 - Proper package structure architecture
 
+[1.16.1]: https://github.com/huangsam/hotspot/compare/v1.16.0...v1.16.1
 [1.16.0]: https://github.com/huangsam/hotspot/compare/v1.15.0...v1.16.0
 [1.15.0]: https://github.com/huangsam/hotspot/compare/v1.14.0...v1.15.0
 [1.14.0]: https://github.com/huangsam/hotspot/compare/v1.13.0...v1.14.0
