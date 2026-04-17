@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bazel, Buck, and Pants build artifact exclusions for monorepo hardening
 
 ### Changed
-- Refined `infra` and `large` presets with modern artifact patterns (Terraform state, Next.js, Vercel)
+- Refined `infra` and `large` presets with modern artifact patterns (Terraform, Next.js, Vercel)
 - Streamlined `small` preset to leverage built-in system defaults
 
 ### Fixed
