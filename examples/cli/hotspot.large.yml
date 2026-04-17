@@ -43,7 +43,9 @@ follow: true
 # exclude: Skip generated code, vendored dependencies, and build artifacts.
 exclude: >-
   .DS_Store, .gitignore, .idea/, .vscode/,
-  vendor/, node_modules/, dist/, bin/, build/, target/, obj/, CMakeFiles/,
+  vendor/, node_modules/, dist/, bin/, build/, target/, obj/, CMakeFiles/, LICENSE,
+  bazel-*/, buck-out/, .pants.d/,
+  **/.next/, **/.vercel/, **/.turbo/, **/coverage/, **/.cache/,
   *.pb.go, **/*.generated.go, **/*_mock.go,
   *.class, *.jar, *.exe, *.so, *.dll, *.pdb, *.o, *.obj,
   Cargo.lock, package-lock.json, yarn.lock, pnpm-lock.yaml, uv.lock,

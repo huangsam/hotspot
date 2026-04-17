@@ -36,7 +36,7 @@ follow: true
 # exclude: Skip lock files, generated provider schemas, and example/test fixtures.
 exclude: >-
   .DS_Store, .gitignore, .idea/, .vscode/, LICENSE,
-  *.lock, *.lock.hcl, terraform.tfstate*,
+  *.lock, *.lock.hcl, terraform.tfstate*, **/*.tfstate*,
   **/.terraform/, **/.terragrunt-cache/, **/.serverless/, **/.pulumi/, **/.vagrant/,
   packer_cache/, **/examples/, **/tests/, **/fixtures/,
   *.retry, .vault_password, .aws/, .kube/, .ssh/, .vault/, *.pem, *.key,
