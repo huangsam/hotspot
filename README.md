@@ -66,7 +66,7 @@ hotspot folders
 
 ### Documentation
 
-- **[USERGUIDE.md](./USERGUIDE.md)**: Detailed commands, configuration options, backend setup, data exports, and common workflows.
+- **[USERGUIDE.md](./USERGUIDE.md)**: Essential guide for analysis features, scoring modes, and core workflows.
 - **[PLAYBOOK.md](./PLAYBOOK.md)**: Actionable guidance on using this data to foster a healthy engineering culture.
 
 ## Performance
