@@ -42,6 +42,5 @@ follow: true
 # --- Exclusions ---
 # exclude: Skip generated code, vendored dependencies, and build artifacts.
 #          Includes standard patterns for Java (target, build), Go (vendor, pb.go),
-#          and Rust (target) to ensure metrics reflect real source code activity.
-# Note: This overrides defaults, so we explicitly list common noise (lock files, assets).
-exclude: ".DS_Store,vendor/,*.pb.go,**/*.generated.go,dist/,node_modules/,**/*_mock.go,target/,build/,bin/,*.class,*.jar,**/generated-sources/,Cargo.lock,package-lock.json,yarn.lock,pnpm-lock.yaml,*.jpg,*.png,*.pdf,*.pyc,__pycache__/,*.exe,*.so,*.dll,coverage/,*.lcov,.gradle/,.m2/"
+#          Rust (target), C++ (CMakeFiles), C# (obj), and Python (venv, __pycache__).
+exclude: ".DS_Store,vendor/,node_modules/,dist/,bin/,build/,target/,obj/,CMakeFiles/,*.pb.go,**/*.generated.go,**/*_mock.go,*.class,*.jar,*.exe,*.so,*.dll,*.pdb,*.o,*.obj,Cargo.lock,package-lock.json,yarn.lock,pnpm-lock.yaml,uv.lock,*.jpg,*.png,*.pdf,*.pyc,__pycache__/,venv/,.venv/,.tox/,.mypy_cache/,.pytest_cache/,coverage/,.gradle/,.m2/"
