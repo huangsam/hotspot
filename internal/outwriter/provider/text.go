@@ -350,3 +350,45 @@ func (p *TextProvider) WriteMetrics(w io.Writer, activeWeights map[schema.Scorin
 	}
 	return nil
 }
+
+// WriteHistory writes analysis history in a human-readable table.
+func (p *TextProvider) WriteHistory(w io.Writer, runs []schema.AnalysisRunRecord, _ config.OutputSettings) error {
+	if len(runs) == 0 {
+		if _, err := fmt.Fprintln(w, "No analysis history found."); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	table := tablewriter.NewWriter(w)
+	defer func() { _ = table.Close() }()
+
+	table.Header([]string{"ID", "Start Time", "Duration", "Files", "URN"})
+	table.Configure(func(cfg *tablewriter.Config) {
+		cfg.Row.Alignment.Global = tw.AlignLeft
+	})
+
+	var data [][]string
+	for _, r := range runs {
+		duration := "running"
+		if r.RunDurationMs != nil {
+			duration = fmt.Sprintf("%dms", *r.RunDurationMs)
+		}
+		files := "0"
+		if r.TotalFilesAnalyzed != nil {
+			files = strconv.Itoa(int(*r.TotalFilesAnalyzed))
+		}
+		data = append(data, []string{
+			strconv.FormatInt(r.AnalysisID, 10),
+			r.StartTime.Format("2006-01-02 15:04:05"),
+			duration,
+			files,
+			r.URN,
+		})
+	}
+
+	if err := table.Bulk(data); err != nil {
+		return err
+	}
+	return table.Render()
+}

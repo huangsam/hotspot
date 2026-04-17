@@ -98,3 +98,9 @@ func (p *ParquetProvider) WriteMetrics(w io.Writer, _ map[schema.ScoringMode]map
 	_, err := fmt.Fprintln(w, "Parquet output is not supported for metrics definitions.")
 	return err
 }
+
+// WriteHistory is not specifically implemented for Parquet.
+func (p *ParquetProvider) WriteHistory(w io.Writer, _ []schema.AnalysisRunRecord, _ config.OutputSettings) error {
+	_, err := fmt.Fprintln(w, "Parquet output is not supported for analysis history. Use 'hotspot analysis export' instead.")
+	return err
+}

@@ -18,6 +18,7 @@ type FormatProvider interface {
 	WriteTimeseries(w io.Writer, result schema.TimeseriesResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error
 	WriteBlastRadius(w io.Writer, result schema.BlastRadiusResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error
 	WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, output config.OutputSettings) error
+	WriteHistory(w io.Writer, runs []schema.AnalysisRunRecord, output config.OutputSettings) error
 }
 
 // OutWriter provides a unified interface for all output operations.
@@ -70,4 +71,9 @@ func (ow *OutWriter) WriteBlastRadius(w io.Writer, result schema.BlastRadiusResu
 // WriteMetrics writes metrics definitions using the configured output format.
 func (ow *OutWriter) WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, output config.OutputSettings) error {
 	return ow.providers[output.GetFormat()].WriteMetrics(w, activeWeights, output)
+}
+
+// WriteHistory writes analysis history using the configured output format.
+func (ow *OutWriter) WriteHistory(w io.Writer, runs []schema.AnalysisRunRecord, output config.OutputSettings) error {
+	return ow.providers[output.GetFormat()].WriteHistory(w, runs, output)
 }

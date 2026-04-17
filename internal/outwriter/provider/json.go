@@ -71,3 +71,8 @@ func (p *JSONProvider) encode(w io.Writer, data any) error {
 	}
 	return nil
 }
+
+// WriteHistory serializes analysis history to JSON.
+func (p *JSONProvider) WriteHistory(w io.Writer, runs []schema.AnalysisRunRecord, _ config.OutputSettings) error {
+	return p.encode(w, runs)
+}

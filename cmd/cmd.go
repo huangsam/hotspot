@@ -35,6 +35,7 @@ func init() {
 	analysisCmd.AddCommand(analysisStatusCmd)
 	analysisCmd.AddCommand(analysisExportCmd)
 	analysisCmd.AddCommand(analysisMigrateCmd)
+	analysisCmd.AddCommand(analysisHistoryCmd)
 
 	// Bind all persistent flags of rootCmd to Viper
 	rootCmd.PersistentFlags().Bool("detail", false, "Print per-target metadata (lines of code, size, age)")

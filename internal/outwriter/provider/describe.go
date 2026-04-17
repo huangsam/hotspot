@@ -83,6 +83,12 @@ func (p *DescribeProvider) WriteFiles(w io.Writer, files []schema.FileResult, _ 
 	return nil
 }
 
+// WriteHistory is not implemented for Describe format.
+func (p *DescribeProvider) WriteHistory(w io.Writer, _ []schema.AnalysisRunRecord, _ config.OutputSettings) error {
+	_, err := fmt.Fprintln(w, "Describe format is not supported for analysis history.")
+	return err
+}
+
 // WriteFolders is not specifically implemented for describe mode, fallback to no-op or message.
 func (p *DescribeProvider) WriteFolders(w io.Writer, _ []schema.FolderResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	_, err := fmt.Fprintln(w, "Describe mode is not supported for folder analysis.")

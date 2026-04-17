@@ -35,6 +35,9 @@ func (p *MarkdownProvider) WriteFiles(w io.Writer, files []schema.FileResult, ou
 	if output.IsDetail() {
 		headers = append(headers, "Contrib", "Commits", "LOC", "Churn", "Age", "Gini")
 	}
+	if output.IsExplain() {
+		headers = append(headers, "Explain")
+	}
 	if output.IsOwner() {
 		headers = append(headers, "Owner")
 	}
@@ -57,6 +60,9 @@ func (p *MarkdownProvider) WriteFiles(w io.Writer, files []schema.FileResult, ou
 				f.AgeDays.Display(),
 				fmtFloat(f.Gini),
 			)
+		}
+		if output.IsExplain() {
+			row = append(row, FormatTopMetricBreakdown(&f))
 		}
 		if output.IsOwner() {
 			row = append(row, strings.Join(f.Owners, ", "))
@@ -282,6 +288,53 @@ func (p *MarkdownProvider) WriteMetrics(w io.Writer, activeWeights map[schema.Sc
 		p.writeMarkdownRow(w, row)
 	}
 
+	return nil
+}
+
+// WriteHistory writes analysis history in Markdown format.
+func (p *MarkdownProvider) WriteHistory(w io.Writer, runs []schema.AnalysisRunRecord, _ config.OutputSettings) error {
+	if _, err := fmt.Fprintln(w, "## Analysis History"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w); err != nil {
+		return err
+	}
+
+	if len(runs) == 0 {
+		if _, err := fmt.Fprintln(w, "No analysis history found."); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	headers := []string{"ID", "Start Time", "Duration", "Files", "URN"}
+	p.writeMarkdownTable(w, headers)
+
+	for _, r := range runs {
+		duration := "running"
+		if r.RunDurationMs != nil {
+			duration = fmt.Sprintf("%dms", *r.RunDurationMs)
+		}
+		files := "0"
+		if r.TotalFilesAnalyzed != nil {
+			files = strconv.Itoa(int(*r.TotalFilesAnalyzed))
+		}
+		row := []string{
+			strconv.FormatInt(r.AnalysisID, 10),
+			r.StartTime.Format("2006-01-02 15:04:05"),
+			duration,
+			files,
+			r.URN,
+		}
+		p.writeMarkdownRow(w, row)
+	}
+
+	if _, err := fmt.Fprintln(w); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "*Showing %d historical runs.*\n", len(runs)); err != nil {
+		return err
+	}
 	return nil
 }
 

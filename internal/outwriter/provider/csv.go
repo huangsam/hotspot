@@ -37,6 +37,7 @@ func (p *CSVProvider) WriteFiles(w io.Writer, files []schema.FileResult, output 
 		"first_commit",
 		"owner",
 		"mode",
+		"explain",
 	}
 
 	return WriteCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {
@@ -56,6 +57,7 @@ func (p *CSVProvider) WriteFiles(w io.Writer, files []schema.FileResult, output 
 				f.FirstCommit.Format(schema.DateTimeFormat), // First Commit Date
 				strings.Join(f.Owners, "|"),                 // Owners
 				string(f.Mode),                              // Mode
+				FormatTopMetricBreakdown(&f),                // Explain
 			}
 			if err := csvWriter.Write(rec); err != nil {
 				return err
@@ -218,6 +220,41 @@ func (p *CSVProvider) WriteMetrics(w io.Writer, activeWeights map[schema.Scoring
 				m.Purpose,
 				strings.Join(m.Factors, "|"),
 				m.Formula,
+			}
+			if err := csvWriter.Write(row); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// WriteHistory writes analysis history in CSV format.
+func (p *CSVProvider) WriteHistory(w io.Writer, runs []schema.AnalysisRunRecord, _ config.OutputSettings) error {
+	header := []string{"analysis_id", "start_time", "end_time", "duration_ms", "total_files", "urn"}
+
+	return WriteCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {
+		for _, r := range runs {
+			endTime := ""
+			if r.EndTime != nil {
+				endTime = r.EndTime.Format(schema.DateTimeFormat)
+			}
+			duration := ""
+			if r.RunDurationMs != nil {
+				duration = strconv.Itoa(int(*r.RunDurationMs))
+			}
+			files := ""
+			if r.TotalFilesAnalyzed != nil {
+				files = strconv.Itoa(int(*r.TotalFilesAnalyzed))
+			}
+
+			row := []string{
+				strconv.FormatInt(r.AnalysisID, 10),
+				r.StartTime.Format(schema.DateTimeFormat),
+				endTime,
+				duration,
+				files,
+				r.URN,
 			}
 			if err := csvWriter.Write(row); err != nil {
 				return err

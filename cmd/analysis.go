@@ -7,6 +7,7 @@ import (
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/internal/logger"
+	"github.com/huangsam/hotspot/internal/outwriter"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -43,6 +44,7 @@ func analysisSetup() error {
 
 	// Get output-related config values (used by export command)
 	outputFile := viper.GetString("output-file")
+	outputFormat := viper.GetString("output")
 
 	// Initialize stores with the loaded config (no cache tracking for analysis commands)
 	if err := iocache.InitStores(schema.NoneBackend, "", backend, connStr, git.NewLocalGitClient()); err != nil {
@@ -52,6 +54,14 @@ func analysisSetup() error {
 	cfg.Runtime.AnalysisBackend = backend
 	cfg.Runtime.AnalysisDBConnect = connStr
 	cfg.Output.OutputFile = outputFile
+	if outputFormat != "" {
+		cfg.Output.Format = schema.OutputMode(outputFormat)
+	} else {
+		cfg.Output.Format = schema.TextOut // Default
+	}
+
+	// Initialize output infrastructure
+	resultWriter = outwriter.NewOutWriter()
 
 	return nil
 }
@@ -131,8 +141,45 @@ Examples:
   # Check tracking status
   hotspot analysis status
 
+  # View recent history
+  hotspot analysis history --limit 10
+
   # Export for analysis in pandas/DuckDB
   hotspot analysis export --output-file analysis-data.parquet`,
+}
+
+// analysisHistoryCmd shows the analysis history.
+var analysisHistoryCmd = &cobra.Command{
+	Use:   "history",
+	Short: "Show chronological history of analysis runs",
+	Long: `Display a list of past analysis executions stored in the tracking database.
+
+Displays:
+- Analysis ID
+- Start time
+- Run duration
+- Total files analyzed
+- Repository URN
+- Configuration parameters
+
+Use this to:
+- Verify that your analysis runs are being recorded
+- Look up IDs for specific runs
+- Compare run durations across different configurations
+- Confirm which repositories have been analyzed`,
+	PreRunE: analysisSetupWrapper,
+	Run: func(cmd *cobra.Command, _ []string) {
+		limit := viper.GetInt("limit")
+		runs, err := iocache.Manager.GetAnalysisStore().GetAnalysisRuns(schema.AnalysisQueryFilter{
+			Limit: limit,
+		})
+		if err != nil {
+			logger.Fatal("Failed to get analysis history", err)
+		}
+		if err := resultWriter.WriteHistory(cmd.OutOrStdout(), runs, cfg.Output); err != nil {
+			logger.Fatal("Failed to write analysis history", err)
+		}
+	},
 }
 
 // analysisClearCmd clears the analysis data.
