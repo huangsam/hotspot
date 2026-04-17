@@ -63,6 +63,15 @@ make test FORCE=1
 
 Integration tests are tagged with `//go:build integration` and are excluded from the default test suite to prevent them from running in CI or during normal development. They verify that hotspot's output matches `git log` exactly for both internal and external repositories.
 
+### Benchmarking
+
+Measure performance against real-world repositories (e.g., Kubernetes, Git):
+
+```bash
+# Requires BENCH_REPOS_DIR to be set to the directory containing clones
+make bench-repos
+```
+
 ### Code Quality
 
 ```bash
