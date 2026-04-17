@@ -43,4 +43,4 @@ follow: true
 # exclude: Skip generated code, vendored dependencies, and build artifacts.
 #          Includes standard patterns for Java (target, build), Go (vendor, pb.go),
 #          Rust (target), C++ (CMakeFiles), C# (obj), and Python (venv, __pycache__).
-exclude: ".DS_Store,vendor/,node_modules/,dist/,bin/,build/,target/,obj/,CMakeFiles/,*.pb.go,**/*.generated.go,**/*_mock.go,*.class,*.jar,*.exe,*.so,*.dll,*.pdb,*.o,*.obj,Cargo.lock,package-lock.json,yarn.lock,pnpm-lock.yaml,uv.lock,*.jpg,*.png,*.pdf,*.pyc,__pycache__/,venv/,.venv/,.tox/,.mypy_cache/,.pytest_cache/,coverage/,.gradle/,.m2/"
+exclude: ".DS_Store,.gitignore,.idea/,.vscode/,vendor/,node_modules/,dist/,bin/,build/,target/,obj/,CMakeFiles/,*.pb.go,**/*.generated.go,**/*_mock.go,*.class,*.jar,*.exe,*.so,*.dll,*.pdb,*.o,*.obj,Cargo.lock,package-lock.json,yarn.lock,pnpm-lock.yaml,uv.lock,*.jpg,*.png,*.pdf,*.pyc,__pycache__/,venv/,.venv/,.tox/,.mypy_cache/,.pytest_cache/,coverage/,.gradle/,.m2/,*.po,*.mo,*.xlf,*.xliff,*.zip,*.tar.gz,*.log"

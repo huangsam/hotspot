@@ -546,7 +546,7 @@ func validateSimpleInputs(cfg *Config, input *RawInput) error {
 		"Cargo.lock", "go.sum", "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "composer.lock", "uv.lock",
 		".min.js", ".min.css",
 		".jpg", ".jpeg", ".png", ".gif", ".svg", ".ico", ".mp4", ".mov", ".webm", ".mp3", ".ogg", ".pdf", ".webp",
-		".json", ".csv", ".po",
+		".json", ".csv", ".po", ".mo", ".xlf", ".xliff",
 		".md", "LICENSE",
 		".DS_Store", ".gitignore", ".idea/", ".vscode/",
 		"node_modules/", "vendor/", "__pycache__/",
