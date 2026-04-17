@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactored output orchestration layer for consistent cross-format reporting
 - Improved CSV stability by standardizing columns regardless of filtering flags
 - Sanitized history views by moving raw JSON parameters to metadata-only fields
+- Reorganized user documentation into `docs/` directory for better maintainability
 
 ## [1.16.1] - 2026-04-16
 
