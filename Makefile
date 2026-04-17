@@ -23,7 +23,7 @@ INTEGRATION   ?= 0
 # Build and install targets
 .PHONY: all build clean install reinstall
 # Test targets
-.PHONY: test test-all bench coverage
+.PHONY: test test-all bench bench-repos coverage
 # Code quality targets
 .PHONY: format lint check
 # Development tools
@@ -90,6 +90,23 @@ test-race: test
 bench:
 	@echo "Running benchmarks..."
 	@$(GO) test -bench=. ./...
+
+# Run macro benchmarks (requires external repos)
+# Usage: make bench-repos BENCH_REPOS_DIR=/path/to/repos
+BENCH_REPOS_DIR ?=
+bench-repos: build
+	@if [ -z "$(BENCH_REPOS_DIR)" ]; then \
+		echo "Error: BENCH_REPOS_DIR is not set."; \
+		echo "Usage: make bench-repos BENCH_REPOS_DIR=/path/to/your/repos"; \
+		echo "Note: The directory must contain the test repositories: csv-parser, fd, git, kubernetes"; \
+		exit 1; \
+	fi
+	@if [ ! -d "$(BENCH_REPOS_DIR)" ]; then \
+		echo "Error: Directory '$(BENCH_REPOS_DIR)' does not exist."; \
+		exit 1; \
+	fi
+	@echo "Running macro benchmarks on $(BENCH_REPOS_DIR)..."
+	@$(GO) run benchmark/main.go $(BENCH_REPOS_DIR)
 
 # Run unit tests with coverage and generate output file
 coverage:
@@ -187,6 +204,7 @@ help:
 	@echo "  make test                - Runs unit tests (use FORCE=1 to bypass cache)."
 	@echo "  make test-all            - Runs unit + integration tests (use FORCE=1 to bypass cache)."
 	@echo "  make bench               - Runs Go benchmarks."
+	@echo "  make bench-repos         - Runs comprehensive macro benchmarks (requires BENCH_REPOS_DIR)."
 	@echo "  make coverage            - Runs unit tests with coverage."
 
 	@echo "  make format              - Runs code formatting."

@@ -5,12 +5,12 @@
 //
 // Prerequisites:
 // - hotspot binary installed and available in PATH
-// - Test repositories cloned to the specified base directory
+// - Test repositories cloned to the specified benchmark directory
 // - Git repositories: csv-parser, fd, git, kubernetes
 //
-// Usage: go run benchmark/main.go [repo-base-dir]
+// Usage: go run benchmark/main.go [bench-repos-dir]
 //
-//	repo-base-dir: Directory containing test repositories
+//	bench-repos-dir: Directory containing test repositories
 package main
 
 import (
@@ -46,7 +46,7 @@ type BenchmarkConfig struct {
 func main() {
 	// Parse command line arguments
 	if len(os.Args) != 2 {
-		fmt.Printf("Usage: %s [repo-base-dir]\n", os.Args[0])
+		fmt.Printf("Usage: %s [bench-repos-dir]\n", os.Args[0])
 		os.Exit(1)
 	}
 	repoBase := os.Args[1]
