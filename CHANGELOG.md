@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Standardized `hotspot.small.yml` preset for microservices and libraries
+- Shape-aware recency intelligence with dynamic thresholds
 - Recursive wildcard support (`**/`) for file and directory exclusions
 - Extensive unit testing and fuzzing for path ignore logic
 - Bazel, Buck, and Pants build artifact exclusions for monorepo hardening
