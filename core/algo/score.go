@@ -61,7 +61,9 @@ func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, weights map[sch
 	nInvRecentCommits := clamp01(1.0 - nRecentCommits) // Inverse Recent Activity (high indicates low activity)
 
 	// --- Recency Signal Calculation ---
-	// Freshness ratio: how much of the lifetime volume is recent?
+	// Freshness ratio: how much of the lifetime volume is recent (fixed window)?
+	// We weight commits more heavily (0.7) than churn (0.3) to avoid
+	// single massive 'reformatting' commits from over-inflating the signal.
 	commitRatio := 0.0
 	if m.Commits > 0 {
 		commitRatio = m.RecentCommits.Float64() / m.Commits.Float64()
@@ -70,7 +72,7 @@ func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, weights map[sch
 	if m.Churn > 0 {
 		churnRatio = m.RecentChurn.Float64() / m.Churn.Float64()
 	}
-	m.RecencySignal = clamp01((commitRatio + churnRatio) / 2.0)
+	m.RecencySignal = clamp01((commitRatio * 0.7) + (churnRatio * 0.3))
 
 	// --------------------------------
 
