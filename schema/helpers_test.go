@@ -258,6 +258,78 @@ func TestShouldIgnore(t *testing.T) {
 			excludes:   []string{"vendor/", "node_modules/", "third_party/"},
 			wantIgnore: true,
 		},
+		{
+			name:       "recursive directory match anywhere",
+			path:       "infra/vpc/.terraform/config",
+			excludes:   []string{"**/.terraform/"},
+			wantIgnore: true,
+		},
+		{
+			name:       "recursive directory match root",
+			path:       ".terraform/config",
+			excludes:   []string{"**/.terraform/"},
+			wantIgnore: true,
+		},
+		{
+			name:       "recursive directory match component",
+			path:       "modules/storage/examples/basic/main.tf",
+			excludes:   []string{"**/examples/"},
+			wantIgnore: true,
+		},
+		{
+			name:       "recursive glob match basename anywhere",
+			path:       "cmd/api/main.generated.go",
+			excludes:   []string{"**/*.generated.go"},
+			wantIgnore: true,
+		},
+		{
+			name:       "recursive glob match deeper basename",
+			path:       "pkg/utils/helpers.generated.go",
+			excludes:   []string{"**/*.generated.go"},
+			wantIgnore: true,
+		},
+		{
+			name:       "recursive suffix match",
+			path:       "vendor/github.com/pkg/errors/errors.go",
+			excludes:   []string{"vendor/**"},
+			wantIgnore: true,
+		},
+		{
+			name:       "globstar matches everything",
+			path:       "any/path/file.go",
+			excludes:   []string{"**"},
+			wantIgnore: true,
+		},
+		{
+			name:       "directory component anywhere without glob",
+			path:       "src/lib/test/helper.go",
+			excludes:   []string{"test/"},
+			wantIgnore: true,
+		},
+		{
+			name:       "exact file match",
+			path:       "LICENSE",
+			excludes:   []string{"LICENSE"},
+			wantIgnore: true,
+		},
+		{
+			name:       "substring match in filename",
+			path:       "src/main_old.go",
+			excludes:   []string{"_old"},
+			wantIgnore: true,
+		},
+		{
+			name:       "leading and trailing spaces in exclude",
+			path:       "vendor/file.go",
+			excludes:   []string{"  vendor/  "},
+			wantIgnore: true,
+		},
+		{
+			name:       "empty path",
+			path:       "",
+			excludes:   []string{"vendor/"},
+			wantIgnore: false,
+		},
 	}
 
 	for _, tt := range tests {
