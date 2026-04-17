@@ -205,8 +205,36 @@ analysis:
 hotspot cache status     # Check cache backend status
 hotspot cache clear      # Clear cached data
 hotspot analysis status  # Check analysis backend status
+hotspot analysis history # List historical analysis runs
 hotspot analysis clear   # Clear stored analysis runs
 hotspot analysis migrate # Migrate analysis database schema
+```
+
+### Analysis History
+
+The `analysis history` command provides a chronological audit trail of your repository analysis runs. This is useful for tracking your progress and identifying specific runs for export or comparison.
+
+```bash
+hotspot analysis history --analysis-backend sqlite
+```
+
+| Output Format | Feature |
+|---------------|---------|
+| **Table** | Clean, high-level summary of ID, Time, and URN. |
+| **Markdown** | Standard GitHub-flavored table for documentation. |
+| **CSV** | Stable schema for programmatic analysis. |
+| **JSON** | Full metadata including the exact configuration parameters. |
+
+### Export Parity & Explainability
+
+When exporting results to **CSV** or **Markdown**, you can use the `--explain` flag to include the score reasoning (the "Explain" column) just like in the default terminal output.
+
+```bash
+# Export findings with score reasoning to CSV
+hotspot files --output csv --explain --output-file findings.csv
+
+# Generate a markdown report with score reasoning
+hotspot files --output markdown --explain > report.md
 ```
 
 ### Database migration
