@@ -3,6 +3,7 @@ package iocache
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/huangsam/hotspot/schema"
 )
@@ -34,4 +35,14 @@ func quoteTableName(name string, backend schema.DatabaseBackend) string {
 	default: // SQLite
 		return fmt.Sprintf("\"%s\"", name)
 	}
+}
+
+// ensureSQLitePragmas appends recommended SQLite pragmas to the connection string.
+// Currently it adds busy_timeout(5000) to ensure concurrent processes wait
+// rather than failing immediately with SQLITE_BUSY.
+func ensureSQLitePragmas(connStr string) string {
+	if strings.Contains(connStr, "?") {
+		return connStr + "&_pragma=busy_timeout(5000)"
+	}
+	return connStr + "?_pragma=busy_timeout(5000)"
 }

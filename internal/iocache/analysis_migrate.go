@@ -57,6 +57,7 @@ func (b *MigrationBuilder) buildDatabase() error {
 		if dbPath == "" {
 			dbPath = GetAnalysisDBFilePath()
 		}
+		dbPath = ensureSQLitePragmas(dbPath)
 		b.db, err = sql.Open(driverName, dbPath)
 		if err != nil {
 			return fmt.Errorf("failed to open SQLite database: %w", err)

@@ -4,7 +4,6 @@ package iocache
 import (
 	"database/sql"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/go-sql-driver/mysql" // MySQL driver
@@ -44,11 +43,7 @@ func NewCacheStore(tableName string, backend schema.DatabaseBackend, connStr str
 		}
 		// Add busy timeout so concurrent processes wait instead of failing immediately
 		// with SQLITE_BUSY when racing to initialize the schema.
-		if strings.Contains(dbPath, "?") {
-			dbPath += "&_pragma=busy_timeout(5000)"
-		} else {
-			dbPath += "?_pragma=busy_timeout(5000)"
-		}
+		dbPath = ensureSQLitePragmas(dbPath)
 		db, err = sql.Open(driverName, dbPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize SQLite cache at %q: %w. Ensure the directory is writable", dbPath, err)

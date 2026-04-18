@@ -39,6 +39,9 @@ func NewAnalysisStore(backend schema.DatabaseBackend, connStr string, client git
 		if dbPath == "" {
 			dbPath = GetAnalysisDBFilePath()
 		}
+		// Add busy timeout so concurrent processes wait instead of failing immediately
+		// with SQLITE_BUSY when racing to record analysis data.
+		dbPath = ensureSQLitePragmas(dbPath)
 		db, err = sql.Open(dialect.DriverName(), dbPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open SQLite database at %q: %w. Check that the directory is writable", dbPath, err)
