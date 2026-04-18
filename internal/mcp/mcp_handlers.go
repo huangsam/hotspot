@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/huangsam/hotspot/core"
 	"github.com/huangsam/hotspot/internal/config"
@@ -69,6 +70,25 @@ func applyPresetToConfig(cfg *config.Config, presetName string) {
 	_ = config.ApplyPreset(cfg, schema.PresetName(presetName))
 }
 
+// applyDynamicFilters applies ad-hoc filter and exclude parameters from the MCP request.
+// It overrides any preset or default exclusions/filters if explicitly provided.
+func applyDynamicFilters(cfg *config.Config, request mcp.CallToolRequest) {
+	if filter := request.GetString("filter", ""); filter != "" {
+		cfg.Git.PathFilter = filter
+	}
+	if exclude := request.GetString("exclude", ""); exclude != "" {
+		var custom []string
+		parts := strings.SplitSeq(exclude, ",")
+		for p := range parts {
+			trimmed := strings.TrimSpace(p)
+			if trimmed != "" {
+				custom = append(custom, trimmed)
+			}
+		}
+		cfg.Git.Excludes = custom
+	}
+}
+
 // handleGetRepoShape handles the get_repo_shape tool.
 func (h *toolHandler) handleGetRepoShape(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	cfg := h.baseCfg.Clone()
@@ -102,6 +122,7 @@ func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.Ca
 	}
 
 	applyPresetToConfig(cfg, request.GetString("preset", ""))
+	applyDynamicFilters(cfg, request)
 
 	if m := request.GetString("mode", ""); m != "" {
 		cfg.Scoring.Mode = schema.ScoringMode(m)
@@ -135,6 +156,7 @@ func (h *toolHandler) handleGetFoldersHotspots(ctx context.Context, request mcp.
 	}
 
 	applyPresetToConfig(cfg, request.GetString("preset", ""))
+	applyDynamicFilters(cfg, request)
 
 	if m := request.GetString("mode", ""); m != "" {
 		cfg.Scoring.Mode = schema.ScoringMode(m)
@@ -171,6 +193,7 @@ func (h *toolHandler) handleCompareHotspots(ctx context.Context, request mcp.Cal
 	}
 
 	applyPresetToConfig(cfg, request.GetString("preset", ""))
+	applyDynamicFilters(cfg, request)
 
 	if m := request.GetString("mode", ""); m != "" {
 		cfg.Scoring.Mode = schema.ScoringMode(m)
@@ -207,6 +230,7 @@ func (h *toolHandler) handleGetTimeseries(ctx context.Context, request mcp.CallT
 	}
 
 	applyPresetToConfig(cfg, request.GetString("preset", ""))
+	applyDynamicFilters(cfg, request)
 
 	if m := request.GetString("mode", ""); m != "" {
 		cfg.Scoring.Mode = schema.ScoringMode(m)
@@ -241,6 +265,7 @@ func (h *toolHandler) handleGetReleaseJourney(ctx context.Context, request mcp.C
 	}
 
 	applyPresetToConfig(cfg, request.GetString("preset", ""))
+	applyDynamicFilters(cfg, request)
 
 	if m := request.GetString("mode", ""); m != "" {
 		cfg.Scoring.Mode = schema.ScoringMode(m)
@@ -269,6 +294,8 @@ func (h *toolHandler) handleGetBlastRadius(ctx context.Context, request mcp.Call
 	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
 	}
+
+	applyDynamicFilters(cfg, request)
 
 	limit := request.GetInt("limit", 10)
 	threshold := request.GetFloat("threshold", 0.3)

@@ -65,6 +65,8 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithNumber("limit", mcp.Description("Limit the number of results returned."), mcp.DefaultNumber(10)),
 		mcp.WithString("start", mcp.Description(startDesc)),
 		mcp.WithString("end", mcp.Description(endDesc)),
+		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go').")),
+		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
 	), h.handleGetFilesHotspots)
 
 	// --- 2. Tool: get_folders_hotspots ---
@@ -82,6 +84,8 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithNumber("limit", mcp.Description("Limit the number of results."), mcp.DefaultNumber(10)),
 		mcp.WithString("start", mcp.Description(startDesc)),
 		mcp.WithString("end", mcp.Description(endDesc)),
+		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go').")),
+		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
 	), h.handleGetFoldersHotspots)
 
 	// --- 3. Tool: compare_hotspots ---
@@ -101,6 +105,8 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi"), mcp.DefaultString("hot")),
 		mcp.WithString("start", mcp.Description(startDesc)),
 		mcp.WithString("end", mcp.Description(endDesc)),
+		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go').")),
+		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
 	), h.handleCompareHotspots)
 
 	// --- 4. Tool: get_timeseries ---
@@ -120,6 +126,8 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi"), mcp.DefaultString("hot")),
 		mcp.WithString("start", mcp.Description("Start date for the entire timeseries window (anchors the first point).")),
 		mcp.WithString("end", mcp.Description("End date for the entire timeseries window.")),
+		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go').")),
+		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
 	), h.handleGetTimeseries)
 
 	// --- 5. Tool: get_release_journey ---
@@ -135,6 +143,8 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
 		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi"), mcp.DefaultString("hot")),
 		mcp.WithNumber("transitions", mcp.Description("Number of successive tag transitions to analyze (e.g. 3 = last 4 tags). Defaults to 3."), mcp.DefaultNumber(3)),
+		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go').")),
+		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
 	), h.handleGetReleaseJourney)
 
 	// --- 6. Tool: get_blast_radius ---
@@ -151,6 +161,8 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithNumber("threshold", mcp.Description("Minimum coupling score (Jaccard Index, 0.0 to 1.0) to include a pair in the results."), mcp.DefaultNumber(0.3)),
 		mcp.WithString("start", mcp.Description(startDesc)),
 		mcp.WithString("end", mcp.Description(endDesc)),
+		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go').")),
+		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
 	), h.handleGetBlastRadius)
 
 	s.AddResource(mcp.NewResource("hotspot://docs/agents", "Agent Documentation", mcp.WithResourceDescription("High-level architectural context and domain concepts for AI agents."), mcp.WithMIMEType("text/markdown")), h.handleReadResource)

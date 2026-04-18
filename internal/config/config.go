@@ -12,9 +12,11 @@ import (
 	"strings"
 	"time"
 
+	clipresets "github.com/huangsam/hotspot/examples/cli"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
+	"gopkg.in/yaml.v3"
 )
 
 // --- Settings Interfaces (Strangler Fig Pattern) ---
@@ -593,7 +595,8 @@ func validateSimpleInputs(cfg *Config, input *RawInput) error {
 			}
 		}
 		cfg.Git.Excludes = custom
-	} else {
+	} else if len(cfg.Git.Excludes) == 0 {
+		// Only apply defaults if not already populated by a preset
 		cfg.Git.Excludes = defaults
 	}
 
@@ -739,6 +742,27 @@ func ApplyPreset(cfg *Config, presetName schema.PresetName) error {
 	}
 	cfg.Scoring.RecencyThresholdLow = p.RecencyThresholdLow
 	cfg.Scoring.RecencyThresholdHigh = p.RecencyThresholdHigh
+
+	// Dynamically parse the embedded YAML to extract the exclusions,
+	// avoiding duplication of the complex exclusion patterns.
+	yamlBytes := clipresets.PresetYAML(presetName)
+	if len(yamlBytes) > 0 {
+		var partial struct {
+			Exclude string `yaml:"exclude"`
+		}
+		if err := yaml.Unmarshal(yamlBytes, &partial); err == nil && partial.Exclude != "" {
+			var custom []string
+			parts := strings.SplitSeq(partial.Exclude, ",")
+			for p := range parts {
+				trimmed := strings.TrimSpace(p)
+				if trimmed != "" {
+					custom = append(custom, trimmed)
+				}
+			}
+			cfg.Git.Excludes = custom
+		}
+	}
+
 	return nil
 }
 
