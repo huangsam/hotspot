@@ -38,13 +38,16 @@ func TestAnalyzeFileCommon(t *testing.T) {
 
 	// Create aggregate output
 	aggOutput := &schema.AggregateOutput{
-		CommitMap: map[string]schema.Metric{"main.go": schema.Metric(5)},
-		ChurnMap:  map[string]schema.Metric{"main.go": schema.Metric(15)},
-		ContribMap: map[string]map[string]schema.Metric{
-			"main.go": {"alice": schema.Metric(3), "bob": schema.Metric(2)},
-		},
-		FirstCommitMap: map[string]time.Time{
-			"main.go": time.Date(2023, 1, 15, 10, 30, 0, 0, time.UTC),
+		FileStats: map[string]*schema.FileAggregation{
+			"main.go": {
+				Commits:     5,
+				Churn:       15,
+				FirstCommit: time.Date(2023, 1, 15, 10, 30, 0, 0, time.UTC),
+				Contributors: map[string]schema.Metric{
+					"alice": 3,
+					"bob":   2,
+				},
+			},
 		},
 	}
 
@@ -86,21 +89,23 @@ func TestAnalyzeRepo(t *testing.T) {
 
 	// Create aggregate output
 	aggOutput := &schema.AggregateOutput{
-		CommitMap: map[string]schema.Metric{
-			"main.go":     schema.Metric(1),
-			"core/agg.go": schema.Metric(1),
-		},
-		ChurnMap: map[string]schema.Metric{
-			"main.go":     schema.Metric(3),
-			"core/agg.go": schema.Metric(4),
-		},
-		ContribMap: map[string]map[string]schema.Metric{
-			"main.go":     {"alice": schema.Metric(1)},
-			"core/agg.go": {"bob": schema.Metric(1)},
-		},
-		FirstCommitMap: map[string]time.Time{
-			"main.go":     time.Date(2023, 1, 15, 10, 30, 0, 0, time.UTC),
-			"core/agg.go": time.Date(2023, 1, 15, 10, 30, 0, 0, time.UTC),
+		FileStats: map[string]*schema.FileAggregation{
+			"main.go": {
+				Commits:     1,
+				Churn:       3,
+				FirstCommit: time.Date(2023, 1, 15, 10, 30, 0, 0, time.UTC),
+				Contributors: map[string]schema.Metric{
+					"alice": 1,
+				},
+			},
+			"core/agg.go": {
+				Commits:     1,
+				Churn:       4,
+				FirstCommit: time.Date(2023, 1, 15, 10, 30, 0, 0, time.UTC),
+				Contributors: map[string]schema.Metric{
+					"bob": 1,
+				},
+			},
 		},
 	}
 
@@ -152,26 +157,22 @@ func TestAnalyzeRepo_ConcurrentWorkers(t *testing.T) {
 	}
 
 	// Create aggregate output with many files to test concurrency
-	commitMap := make(map[string]schema.Metric)
-	churnMap := make(map[string]schema.Metric)
-	contribMap := make(map[string]map[string]schema.Metric)
-	firstCommitMap := make(map[string]time.Time)
+	fileStats := make(map[string]*schema.FileAggregation)
 
 	files := make([]string, 20) // Test with 20 files
 	for i := range 20 {
 		fileName := fmt.Sprintf("file%d.go", i)
 		files[i] = fileName
-		commitMap[fileName] = schema.Metric(i + 1)
-		churnMap[fileName] = schema.Metric((i + 1) * 2)
-		contribMap[fileName] = map[string]schema.Metric{"alice": schema.Metric(i + 1)}
-		firstCommitMap[fileName] = time.Date(2023, 1, 15, 10, 30, 0, 0, time.UTC)
+		fileStats[fileName] = &schema.FileAggregation{
+			Commits:      schema.Metric(i + 1),
+			Churn:        schema.Metric((i + 1) * 2),
+			Contributors: map[string]schema.Metric{"alice": schema.Metric(i + 1)},
+			FirstCommit:  time.Date(2023, 1, 15, 10, 30, 0, 0, time.UTC),
+		}
 	}
 
 	aggOutput := &schema.AggregateOutput{
-		CommitMap:      commitMap,
-		ChurnMap:       churnMap,
-		ContribMap:     contribMap,
-		FirstCommitMap: firstCommitMap,
+		FileStats: fileStats,
 	}
 
 	// Execute with multiple workers

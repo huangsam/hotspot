@@ -119,26 +119,23 @@ func ComputeRepoShape(files []string, output *schema.AggregateOutput) schema.Rep
 	fileCount := len(files)
 
 	// Total commits across all active files
-	var totalCommits float64
-	for _, c := range output.CommitMap {
-		totalCommits += float64(c)
-	}
-
 	// Unique contributors across all files
+	// Total churn for average calculation
+	var totalCommits float64
+	var totalChurn float64
 	allContribs := make(map[string]struct{})
-	for _, contribs := range output.ContribMap {
-		for author := range contribs {
+	activeFiles := 0
+
+	for _, stat := range output.FileStats {
+		totalCommits += float64(stat.Commits)
+		totalChurn += float64(stat.Churn)
+		activeFiles++
+
+		for author := range stat.Contributors {
 			allContribs[author] = struct{}{}
 		}
 	}
 
-	// Average churn per active file
-	var totalChurn float64
-	activeFiles := 0
-	for _, c := range output.ChurnMap {
-		totalChurn += float64(c)
-		activeFiles++
-	}
 	avgChurnPerFile := 0.0
 	if activeFiles > 0 {
 		avgChurnPerFile = totalChurn / float64(activeFiles)

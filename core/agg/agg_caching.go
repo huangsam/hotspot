@@ -14,7 +14,7 @@ import (
 )
 
 // currentCacheVersion defines the version of the cache schema.
-const currentCacheVersion = 2
+const currentCacheVersion = 3
 
 // CachedAggregateActivity - Simplified and validated using DB columns.
 func CachedAggregateActivity(

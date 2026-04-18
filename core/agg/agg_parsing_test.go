@@ -22,27 +22,29 @@ func TestParseAndAggregateGitLog_Comprehensive(t *testing.T) {
 	// Check that all expected files have been processed
 	expectedFiles := []string{"core/analysis.go", "core/core.go", "core/builder.go"}
 	for _, file := range expectedFiles {
-		assert.Contains(t, output.CommitMap, file, "File %s should be in commits map", file)
-		assert.Greater(t, output.CommitMap[file].Float64(), 0.0, "File %s should have at least 1 commit", file)
-		assert.GreaterOrEqual(t, output.ChurnMap[file].Float64(), 0.0, "File %s should have non-negative churn", file)
+		stat, ok := output.FileStats[file]
+		assert.True(t, ok, "File %s should be in FileStats map", file)
+		assert.Greater(t, stat.Commits.Float64(), 0.0, "File %s should have at least 1 commit", file)
+		assert.GreaterOrEqual(t, stat.Churn.Float64(), 0.0, "File %s should have non-negative churn", file)
 	}
 
 	// Check that contributors are tracked
-	assert.NotEmpty(t, output.ContribMap["core/analysis.go"], "analysis.go should have contributors")
-	assert.NotEmpty(t, output.ContribMap["core/core.go"], "core.go should have contributors")
+	assert.NotEmpty(t, output.FileStats["core/analysis.go"].Contributors, "analysis.go should have contributors")
+	assert.NotEmpty(t, output.FileStats["core/core.go"].Contributors, "core.go should have contributors")
 
 	// Check that first commit dates are reasonable
 	for _, file := range expectedFiles {
-		if output.CommitMap[file] > 0 {
-			assert.NotZero(t, output.FirstCommitMap[file], "File %s should have a first commit date", file)
-			assert.True(t, output.FirstCommitMap[file].Before(time.Now()), "First commit date should be in the past")
+		stat := output.FileStats[file]
+		if stat.Commits > 0 {
+			assert.NotZero(t, stat.FirstCommit, "File %s should have a first commit date", file)
+			assert.True(t, stat.FirstCommit.Before(time.Now()), "First commit date should be in the past")
 		}
 	}
 
 	// Verify that total commits across all files is reasonable
 	var totalCommits schema.Metric
-	for _, count := range output.CommitMap {
-		totalCommits += count
+	for _, stat := range output.FileStats {
+		totalCommits += stat.Commits
 	}
 	assert.Greater(t, totalCommits.Float64(), 0.0, "Should have processed at least some commits")
 	assert.LessOrEqual(t, totalCommits.Float64(), 10.0, "Should not have processed too many commits")
@@ -59,18 +61,19 @@ func TestParseAndAggregateGitLog_WithRenames(t *testing.T) {
 	// Property-based checks for rename handling
 	expectedFiles := []string{"src/utils/helper.go", "src/helpers/utility.go", "src/main.go"}
 	for _, file := range expectedFiles {
-		assert.Contains(t, output.CommitMap, file, "File %s should be processed", file)
-		assert.Greater(t, output.CommitMap[file].Float64(), 0.0, "File %s should have commits", file)
-		assert.GreaterOrEqual(t, output.ChurnMap[file].Float64(), 0.0, "File %s should have valid churn", file)
+		stat, ok := output.FileStats[file]
+		assert.True(t, ok, "File %s should be processed", file)
+		assert.Greater(t, stat.Commits.Float64(), 0.0, "File %s should have commits", file)
+		assert.GreaterOrEqual(t, stat.Churn.Float64(), 0.0, "File %s should have valid churn", file)
 	}
 
 	// Check that rename contributions are properly attributed
-	assert.NotEmpty(t, output.ContribMap["src/utils/helper.go"], "helper.go should have contributors")
-	assert.NotEmpty(t, output.ContribMap["src/helpers/utility.go"], "utility.go should have contributors")
+	assert.NotEmpty(t, output.FileStats["src/utils/helper.go"].Contributors, "helper.go should have contributors")
+	assert.NotEmpty(t, output.FileStats["src/helpers/utility.go"].Contributors, "utility.go should have contributors")
 
 	// Verify first commit dates are set appropriately
 	for _, file := range expectedFiles {
-		assert.NotZero(t, output.FirstCommitMap[file], "File %s should have first commit date", file)
+		assert.NotZero(t, output.FileStats[file].FirstCommit, "File %s should have first commit date", file)
 	}
 }
 
@@ -85,17 +88,18 @@ func TestParseAndAggregateGitLog_EdgeCases(t *testing.T) {
 	// Property-based checks for edge cases
 	expectedFiles := []string{"src/main.go", "src/logo.png", "src/empty.txt"}
 	for _, file := range expectedFiles {
-		assert.Contains(t, output.CommitMap, file, "File %s should be processed", file)
-		assert.Greater(t, output.CommitMap[file].Float64(), 0.0, "File %s should have at least 1 commit", file)
-		assert.GreaterOrEqual(t, output.ChurnMap[file].Float64(), 0.0, "File %s should have valid churn", file)
+		stat, ok := output.FileStats[file]
+		assert.True(t, ok, "File %s should be processed", file)
+		assert.Greater(t, stat.Commits.Float64(), 0.0, "File %s should have at least 1 commit", file)
+		assert.GreaterOrEqual(t, stat.Churn.Float64(), 0.0, "File %s should have valid churn", file)
 	}
 
 	// Binary and empty files should have 0 churn
-	assert.Equal(t, schema.Metric(0), output.ChurnMap["src/logo.png"], "Binary file should have 0 churn")
-	assert.Equal(t, schema.Metric(0), output.ChurnMap["src/empty.txt"], "Empty file should have 0 churn")
+	assert.Equal(t, schema.Metric(0), output.FileStats["src/logo.png"].Churn, "Binary file should have 0 churn")
+	assert.Equal(t, schema.Metric(0), output.FileStats["src/empty.txt"].Churn, "Empty file should have 0 churn")
 
 	// Normal files should have positive churn
-	assert.Greater(t, output.ChurnMap["src/main.go"].Float64(), 0.0, "Normal file should have positive churn")
+	assert.Greater(t, output.FileStats["src/main.go"].Churn.Float64(), 0.0, "Normal file should have positive churn")
 }
 
 func TestParseCommitHeader(t *testing.T) {
@@ -247,12 +251,13 @@ func TestAggregateForPath(t *testing.T) {
 
 		aggregateForPath("src/main.go", 10, 5, "Alice", testTime, output, time.Time{})
 
-		assert.Equal(t, schema.Metric(1), output.CommitMap["src/main.go"])
-		assert.Equal(t, schema.Metric(15), output.ChurnMap["src/main.go"])
-		assert.Equal(t, schema.Metric(10), output.LinesAddedMap["src/main.go"])
-		assert.Equal(t, schema.Metric(5), output.LinesDeletedMap["src/main.go"])
-		assert.Equal(t, map[string]schema.Metric{"Alice": 1}, output.ContribMap["src/main.go"])
-		assert.Equal(t, testTime, output.FirstCommitMap["src/main.go"])
+		stat := output.FileStats["src/main.go"]
+		assert.Equal(t, schema.Metric(1), stat.Commits)
+		assert.Equal(t, schema.Metric(15), stat.Churn)
+		assert.Equal(t, schema.Metric(10), stat.LinesAdded)
+		assert.Equal(t, schema.Metric(5), stat.LinesDeleted)
+		assert.Equal(t, map[string]schema.Metric{"Alice": 1}, stat.Contributors)
+		assert.Equal(t, testTime, stat.FirstCommit)
 	})
 
 	t.Run("multiple aggregations same file", func(t *testing.T) {
@@ -263,16 +268,17 @@ func TestAggregateForPath(t *testing.T) {
 		// Second aggregation
 		aggregateForPath("src/main.go", 8, 2, "Alice", laterTime, output, time.Time{})
 
-		assert.Equal(t, schema.Metric(2), output.CommitMap["src/main.go"])
-		assert.Equal(t, schema.Metric(25), output.ChurnMap["src/main.go"])
-		assert.Equal(t, map[string]schema.Metric{"Alice": 2}, output.ContribMap["src/main.go"])
-		assert.Equal(t, testTime, output.FirstCommitMap["src/main.go"]) // Should keep earliest time
-		assert.Equal(t, schema.Metric(18), output.LinesAddedMap["src/main.go"])
-		assert.Equal(t, schema.Metric(7), output.LinesDeletedMap["src/main.go"])
-		assert.Equal(t, schema.Metric(2), output.RecentCommitMap["src/main.go"])
-		assert.Equal(t, schema.Metric(25), output.RecentChurnMap["src/main.go"])
-		assert.Equal(t, schema.Metric(18), output.RecentLinesAddedMap["src/main.go"])
-		assert.Equal(t, schema.Metric(7), output.RecentLinesDeletedMap["src/main.go"])
+		stat := output.FileStats["src/main.go"]
+		assert.Equal(t, schema.Metric(2), stat.Commits)
+		assert.Equal(t, schema.Metric(25), stat.Churn)
+		assert.Equal(t, map[string]schema.Metric{"Alice": 2}, stat.Contributors)
+		assert.Equal(t, testTime, stat.FirstCommit) // Should keep earliest time
+		assert.Equal(t, schema.Metric(18), stat.LinesAdded)
+		assert.Equal(t, schema.Metric(7), stat.LinesDeleted)
+		assert.Equal(t, schema.Metric(2), stat.RecentCommits)
+		assert.Equal(t, schema.Metric(25), stat.RecentChurn)
+		assert.Equal(t, schema.Metric(18), stat.RecentLinesAdded)
+		assert.Equal(t, schema.Metric(7), stat.RecentLinesDeleted)
 	})
 
 	t.Run("multiple authors", func(t *testing.T) {
@@ -281,9 +287,10 @@ func TestAggregateForPath(t *testing.T) {
 		aggregateForPath("src/main.go", 10, 5, "Alice", testTime, output, time.Time{})
 		aggregateForPath("src/main.go", 5, 5, "Bob", laterTime, output, time.Time{})
 
-		assert.Equal(t, schema.Metric(2), output.CommitMap["src/main.go"])
-		assert.Equal(t, schema.Metric(25), output.ChurnMap["src/main.go"])
-		assert.Equal(t, map[string]schema.Metric{"Alice": 1, "Bob": 1}, output.ContribMap["src/main.go"])
+		stat := output.FileStats["src/main.go"]
+		assert.Equal(t, schema.Metric(2), stat.Commits)
+		assert.Equal(t, schema.Metric(25), stat.Churn)
+		assert.Equal(t, map[string]schema.Metric{"Alice": 1, "Bob": 1}, stat.Contributors)
 	})
 
 	t.Run("empty author", func(t *testing.T) {
@@ -291,9 +298,10 @@ func TestAggregateForPath(t *testing.T) {
 
 		aggregateForPath("src/utils.go", 4, 4, "", laterTime, output, time.Time{})
 
-		assert.Equal(t, schema.Metric(1), output.CommitMap["src/utils.go"])
-		assert.Equal(t, schema.Metric(8), output.ChurnMap["src/utils.go"])
-		assert.NotContains(t, output.ContribMap, "src/utils.go") // No contributors added
+		stat := output.FileStats["src/utils.go"]
+		assert.Equal(t, schema.Metric(1), stat.Commits)
+		assert.Equal(t, schema.Metric(8), stat.Churn)
+		assert.Empty(t, stat.Contributors) // No contributors added
 	})
 
 	t.Run("zero time", func(t *testing.T) {
@@ -301,9 +309,10 @@ func TestAggregateForPath(t *testing.T) {
 
 		aggregateForPath("src/zero.go", 1, 2, "Charlie", time.Time{}, output, time.Time{})
 
-		assert.Equal(t, schema.Metric(1), output.CommitMap["src/zero.go"])
-		assert.Equal(t, schema.Metric(3), output.ChurnMap["src/zero.go"])
-		assert.Equal(t, map[string]schema.Metric{"Charlie": 1}, output.ContribMap["src/zero.go"])
-		assert.NotContains(t, output.FirstCommitMap, "src/zero.go") // No time recorded
+		stat := output.FileStats["src/zero.go"]
+		assert.Equal(t, schema.Metric(1), stat.Commits)
+		assert.Equal(t, schema.Metric(3), stat.Churn)
+		assert.Equal(t, map[string]schema.Metric{"Charlie": 1}, stat.Contributors)
+		assert.True(t, stat.FirstCommit.IsZero()) // No time recorded
 	})
 }

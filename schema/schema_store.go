@@ -2,26 +2,29 @@ package schema
 
 import "time"
 
-// AggregateOutput is the aggregation of all things from the one-pass Git operation.
-type AggregateOutput struct {
-	CommitMap        map[string]Metric            // Maps file path to its commit count
-	ChurnMap         map[string]Metric            // Maps file path to its churn (lines added/deleted) count
-	ContribMap       map[string]map[string]Metric // Maps file path to an inner map of AuthorName:CommitCount
-	FirstCommitMap   map[string]time.Time         // Maps file path to its first commit time in the analysis window
-	DecayedCommitMap map[string]Metric            // Maps file path to time-weighted commit count
-	DecayedChurnMap  map[string]Metric            // Maps file path to time-weighted churn count
-	EndTime          time.Time                    // The end time of the analysis window (reference for decay)
-
-	// Decomposed Churn
-	LinesAddedMap   map[string]Metric
-	LinesDeletedMap map[string]Metric
+// FileAggregation consolidates all metrics for a single file during aggregation.
+type FileAggregation struct {
+	Commits        Metric
+	Churn          Metric
+	LinesAdded     Metric
+	LinesDeleted   Metric
+	DecayedCommits Metric
+	DecayedChurn   Metric
+	FirstCommit    time.Time
+	Contributors   map[string]Metric // Author name -> commit count
 
 	// Recent Activity (Fixed window, e.g. 30 days)
-	RecentCommitMap       map[string]Metric
-	RecentChurnMap        map[string]Metric
-	RecentLinesAddedMap   map[string]Metric
-	RecentLinesDeletedMap map[string]Metric
-	RecentContribMap      map[string]map[string]Metric
+	RecentCommits      Metric
+	RecentChurn        Metric
+	RecentLinesAdded   Metric
+	RecentLinesDeleted Metric
+	RecentContributors map[string]Metric
+}
+
+// AggregateOutput is the aggregation of all things from the one-pass Git operation.
+type AggregateOutput struct {
+	FileStats map[string]*FileAggregation
+	EndTime   time.Time // The end time of the analysis window (reference for decay)
 }
 
 // FileMetrics represents raw git metrics for a single file.

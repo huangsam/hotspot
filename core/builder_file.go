@@ -59,32 +59,21 @@ func (b *FileResultBuilder) FetchAllGitMetrics() *FileResultBuilder {
 
 	if !useFollow {
 		// Use aggregated data for initial analysis (no follow needed)
-		if commits, ok := b.output.CommitMap[path]; ok {
-			b.totalCommits = commits
-			b.result.Commits = commits
-		}
-		if churn, ok := b.output.ChurnMap[path]; ok {
-			b.result.Churn = churn
-		}
-		if added, ok := b.output.LinesAddedMap[path]; ok {
-			b.result.LinesAdded = added
-		}
-		if deleted, ok := b.output.LinesDeletedMap[path]; ok {
-			b.result.LinesDeleted = deleted
-		}
-		if decayedCommits, ok := b.output.DecayedCommitMap[path]; ok {
-			b.result.DecayedCommits = decayedCommits
-		}
-		if decayedChurn, ok := b.output.DecayedChurnMap[path]; ok {
-			b.result.DecayedChurn = decayedChurn
-		}
-		if contribMap, ok := b.output.ContribMap[path]; ok {
-			b.contribCount = make(map[string]schema.Metric)
-			maps.Copy(b.contribCount, contribMap)
-			b.result.UniqueContributors = schema.Metric(len(b.contribCount))
-		}
-		if firstCommit, ok := b.output.FirstCommitMap[path]; ok {
-			b.result.FirstCommit = firstCommit
+		if stat, ok := b.output.FileStats[path]; ok {
+			b.totalCommits = stat.Commits
+			b.result.Commits = stat.Commits
+			b.result.Churn = stat.Churn
+			b.result.LinesAdded = stat.LinesAdded
+			b.result.LinesDeleted = stat.LinesDeleted
+			b.result.DecayedCommits = stat.DecayedCommits
+			b.result.DecayedChurn = stat.DecayedChurn
+			b.result.FirstCommit = stat.FirstCommit
+
+			if len(stat.Contributors) > 0 {
+				b.contribCount = make(map[string]schema.Metric)
+				maps.Copy(b.contribCount, stat.Contributors)
+				b.result.UniqueContributors = schema.Metric(len(b.contribCount))
+			}
 		}
 	} else {
 		// For follow analysis, run git log with --follow to get complete history
@@ -201,30 +190,24 @@ func (b *FileResultBuilder) FetchRecentInfo() *FileResultBuilder {
 		return b
 	}
 
-	if v, ok := b.output.RecentCommitMap[b.path]; ok {
-		b.result.RecentCommits = v
-	}
-	if v, ok := b.output.RecentChurnMap[b.path]; ok {
-		b.result.RecentChurn = v
-	}
-	if v, ok := b.output.RecentLinesAddedMap[b.path]; ok {
-		b.result.RecentLinesAdded = v
-	}
-	if v, ok := b.output.RecentLinesDeletedMap[b.path]; ok {
-		b.result.RecentLinesDeleted = v
-	}
-	if m, ok := b.output.RecentContribMap[b.path]; ok {
-		b.result.RecentContributors = schema.Metric(len(m))
+	if stat, ok := b.output.FileStats[b.path]; ok {
+		b.result.RecentCommits = stat.RecentCommits
+		b.result.RecentChurn = stat.RecentChurn
+		b.result.RecentLinesAdded = stat.RecentLinesAdded
+		b.result.RecentLinesDeleted = stat.RecentLinesDeleted
+		b.result.RecentContributors = schema.Metric(len(stat.RecentContributors))
 	}
 	return b
 }
 
 // CalculateOwner identifies the owner based on commit volume.
 func (b *FileResultBuilder) CalculateOwner() *FileResultBuilder {
-	authorMap, ok := b.output.ContribMap[b.path]
-	if !ok || len(authorMap) == 0 {
+	stat, ok := b.output.FileStats[b.path]
+	if !ok || len(stat.Contributors) == 0 {
 		return b
 	}
+
+	authorMap := stat.Contributors
 
 	// Sort authors by commit count descending, then by author name ascending for stable ordering
 	type authorCommits struct {

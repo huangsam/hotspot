@@ -48,43 +48,45 @@ func TestAggregateActivity(t *testing.T) {
 	assert.NotNil(t, output)
 
 	// Verify commit counts (number of commits affecting each file)
-	assert.Equal(t, schema.Metric(1), output.CommitMap["AGENTS.md"])
-	assert.Equal(t, schema.Metric(2), output.CommitMap["integration/verification_test.go"])
-	assert.Equal(t, schema.Metric(2), output.CommitMap["core/core.go"])
-	assert.Equal(t, schema.Metric(2), output.CommitMap["internal/configs.go"])
-	assert.Equal(t, schema.Metric(1), output.CommitMap["internal/output_timeseries.go"])
-	assert.Equal(t, schema.Metric(1), output.CommitMap["internal/time.go"])
-	assert.Equal(t, schema.Metric(1), output.CommitMap["internal/time_fuzz_test.go"])
-	assert.Equal(t, schema.Metric(1), output.CommitMap["internal/time_test.go"])
-	assert.Equal(t, schema.Metric(1), output.CommitMap["internal/writer_timeseries.go"])
-	assert.Equal(t, schema.Metric(1), output.CommitMap["main.go"])
-	assert.Equal(t, schema.Metric(1), output.CommitMap["schema/schema.go"])
+	// Verify commit counts (number of commits affecting each file)
+	assert.Equal(t, schema.Metric(1), output.FileStats["AGENTS.md"].Commits)
+	assert.Equal(t, schema.Metric(2), output.FileStats["integration/verification_test.go"].Commits)
+	assert.Equal(t, schema.Metric(2), output.FileStats["core/core.go"].Commits)
+	assert.Equal(t, schema.Metric(2), output.FileStats["internal/configs.go"].Commits)
+	assert.Equal(t, schema.Metric(1), output.FileStats["internal/output_timeseries.go"].Commits)
+	assert.Equal(t, schema.Metric(1), output.FileStats["internal/time.go"].Commits)
+	assert.Equal(t, schema.Metric(1), output.FileStats["internal/time_fuzz_test.go"].Commits)
+	assert.Equal(t, schema.Metric(1), output.FileStats["internal/time_test.go"].Commits)
+	assert.Equal(t, schema.Metric(1), output.FileStats["internal/writer_timeseries.go"].Commits)
+	assert.Equal(t, schema.Metric(1), output.FileStats["main.go"].Commits)
+	assert.Equal(t, schema.Metric(1), output.FileStats["schema/schema.go"].Commits)
 
 	// Verify contributor counts (all commits are by "Samuel Huang")
-	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.ContribMap["AGENTS.md"])
-	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 2}, output.ContribMap["integration/verification_test.go"])
-	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 2}, output.ContribMap["core/core.go"])
-	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 2}, output.ContribMap["internal/configs.go"])
-	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.ContribMap["internal/output_timeseries.go"])
-	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.ContribMap["internal/time.go"])
-	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.ContribMap["internal/time_fuzz_test.go"])
-	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.ContribMap["internal/time_test.go"])
-	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.ContribMap["internal/writer_timeseries.go"])
-	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.ContribMap["main.go"])
-	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.ContribMap["schema/schema.go"])
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.FileStats["AGENTS.md"].Contributors)
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 2}, output.FileStats["integration/verification_test.go"].Contributors)
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 2}, output.FileStats["core/core.go"].Contributors)
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 2}, output.FileStats["internal/configs.go"].Contributors)
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.FileStats["internal/output_timeseries.go"].Contributors)
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.FileStats["internal/time.go"].Contributors)
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.FileStats["internal/time_fuzz_test.go"].Contributors)
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.FileStats["internal/time_test.go"].Contributors)
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.FileStats["internal/writer_timeseries.go"].Contributors)
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.FileStats["main.go"].Contributors)
+	assert.Equal(t, map[string]schema.Metric{"Samuel Huang": 1}, output.FileStats["schema/schema.go"].Contributors)
 
 	// Verify churn counts (additions + deletions)
-	assert.Equal(t, schema.Metric(272), output.ChurnMap["AGENTS.md"])
-	assert.Equal(t, schema.Metric(125), output.ChurnMap["integration/verification_test.go"])
-	assert.Equal(t, schema.Metric(120), output.ChurnMap["core/core.go"])
-	assert.Equal(t, schema.Metric(31), output.ChurnMap["internal/configs.go"])
-	assert.Equal(t, schema.Metric(116), output.ChurnMap["internal/output_timeseries.go"])
-	assert.Equal(t, schema.Metric(4), output.ChurnMap["internal/time.go"])
-	assert.Equal(t, schema.Metric(2), output.ChurnMap["internal/time_fuzz_test.go"])
-	assert.Equal(t, schema.Metric(2), output.ChurnMap["internal/time_test.go"])
-	assert.Equal(t, schema.Metric(44), output.ChurnMap["internal/writer_timeseries.go"])
-	assert.Equal(t, schema.Metric(27), output.ChurnMap["main.go"])
-	assert.Equal(t, schema.Metric(13), output.ChurnMap["schema/schema.go"])
+	// Verify churn counts (additions + deletions)
+	assert.Equal(t, schema.Metric(272), output.FileStats["AGENTS.md"].Churn)
+	assert.Equal(t, schema.Metric(125), output.FileStats["integration/verification_test.go"].Churn)
+	assert.Equal(t, schema.Metric(120), output.FileStats["core/core.go"].Churn)
+	assert.Equal(t, schema.Metric(31), output.FileStats["internal/configs.go"].Churn)
+	assert.Equal(t, schema.Metric(116), output.FileStats["internal/output_timeseries.go"].Churn)
+	assert.Equal(t, schema.Metric(4), output.FileStats["internal/time.go"].Churn)
+	assert.Equal(t, schema.Metric(2), output.FileStats["internal/time_fuzz_test.go"].Churn)
+	assert.Equal(t, schema.Metric(2), output.FileStats["internal/time_test.go"].Churn)
+	assert.Equal(t, schema.Metric(44), output.FileStats["internal/writer_timeseries.go"].Churn)
+	assert.Equal(t, schema.Metric(27), output.FileStats["main.go"].Churn)
+	assert.Equal(t, schema.Metric(13), output.FileStats["schema/schema.go"].Churn)
 
 	mockClient.AssertExpectations(t)
 }
@@ -92,26 +94,12 @@ func TestAggregateActivity(t *testing.T) {
 func TestBuildFilteredFileList(t *testing.T) {
 	// Create sample aggregate output
 	output := &schema.AggregateOutput{
-		CommitMap: map[string]schema.Metric{
-			"main.go":          10,
-			"core/agg.go":      5,
-			"core/analysis.go": 8,
-			"test_main.go":     3,
-			"README.md":        2,
-		},
-		ChurnMap: map[string]schema.Metric{
-			"main.go":          50,
-			"core/agg.go":      25,
-			"core/analysis.go": 40,
-			"test_main.go":     15,
-			"README.md":        10,
-		},
-		ContribMap: map[string]map[string]schema.Metric{
-			"main.go":          {"alice": 8, "bob": 2},
-			"core/agg.go":      {"alice": 3, "charlie": 2},
-			"core/analysis.go": {"bob": 5, "charlie": 3},
-			"test_main.go":     {"alice": 3},
-			"README.md":        {"alice": 2},
+		FileStats: map[string]*schema.FileAggregation{
+			"main.go":          {Commits: 10, Churn: 50, Contributors: map[string]schema.Metric{"alice": 8, "bob": 2}},
+			"core/agg.go":      {Commits: 5, Churn: 25, Contributors: map[string]schema.Metric{"alice": 3, "charlie": 2}},
+			"core/analysis.go": {Commits: 8, Churn: 40, Contributors: map[string]schema.Metric{"bob": 5, "charlie": 3}},
+			"test_main.go":     {Commits: 3, Churn: 15, Contributors: map[string]schema.Metric{"alice": 3}},
+			"README.md":        {Commits: 2, Churn: 10, Contributors: map[string]schema.Metric{"alice": 2}},
 		},
 	}
 
@@ -137,23 +125,11 @@ func TestBuildFilteredFileList(t *testing.T) {
 func TestBuildFilteredFileList_WithPathFilter(t *testing.T) {
 	// Create sample aggregate output
 	output := &schema.AggregateOutput{
-		CommitMap: map[string]schema.Metric{
-			"main.go":          10,
-			"core/agg.go":      5,
-			"core/analysis.go": 8,
-			"schema/types.go":  3,
-		},
-		ChurnMap: map[string]schema.Metric{
-			"main.go":          50,
-			"core/agg.go":      25,
-			"core/analysis.go": 40,
-			"schema/types.go":  15,
-		},
-		ContribMap: map[string]map[string]schema.Metric{
-			"main.go":          {"alice": 8, "bob": 2},
-			"core/agg.go":      {"alice": 3, "charlie": 2},
-			"core/analysis.go": {"bob": 5, "charlie": 3},
-			"schema/types.go":  {"alice": 3},
+		FileStats: map[string]*schema.FileAggregation{
+			"main.go":          {Commits: 10, Churn: 50, Contributors: map[string]schema.Metric{"alice": 8, "bob": 2}},
+			"core/agg.go":      {Commits: 5, Churn: 25, Contributors: map[string]schema.Metric{"alice": 3, "charlie": 2}},
+			"core/analysis.go": {Commits: 8, Churn: 40, Contributors: map[string]schema.Metric{"bob": 5, "charlie": 3}},
+			"schema/types.go":  {Commits: 3, Churn: 15, Contributors: map[string]schema.Metric{"alice": 3}},
 		},
 	}
 

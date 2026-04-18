@@ -62,20 +62,8 @@ func buildFileExistenceMap(currentFiles []string) map[string]bool {
 // initializeAggregateOutput creates the AggregateOutput and its internal maps.
 func initializeAggregateOutput(endTime time.Time) *schema.AggregateOutput {
 	return &schema.AggregateOutput{
-		EndTime:               endTime,
-		CommitMap:             make(map[string]schema.Metric),
-		ChurnMap:              make(map[string]schema.Metric),
-		ContribMap:            make(map[string]map[string]schema.Metric),
-		FirstCommitMap:        make(map[string]time.Time),
-		LinesAddedMap:         make(map[string]schema.Metric),
-		LinesDeletedMap:       make(map[string]schema.Metric),
-		RecentCommitMap:       make(map[string]schema.Metric),
-		RecentChurnMap:        make(map[string]schema.Metric),
-		RecentLinesAddedMap:   make(map[string]schema.Metric),
-		RecentLinesDeletedMap: make(map[string]schema.Metric),
-		RecentContribMap:      make(map[string]map[string]schema.Metric),
-		DecayedCommitMap:      make(map[string]schema.Metric),
-		DecayedChurnMap:       make(map[string]schema.Metric),
+		EndTime:   endTime,
+		FileStats: make(map[string]*schema.FileAggregation),
 	}
 }
 
@@ -275,38 +263,42 @@ func aggregateForPath(path string, add schema.Metric, del schema.Metric, author 
 		decayFactor = schema.CalculateDecayFactor(ageDays, 180.0)
 	}
 
+	// Get or create the aggregation struct for this path
+	stat, ok := output.FileStats[path]
+	if !ok {
+		stat = &schema.FileAggregation{
+			Contributors:       make(map[string]schema.Metric),
+			RecentContributors: make(map[string]schema.Metric),
+		}
+		output.FileStats[path] = stat
+	}
+
 	// Base metrics
-	output.ChurnMap[path] += churn
-	output.CommitMap[path]++
-	output.DecayedCommitMap[path] += schema.Metric(decayFactor)
-	output.DecayedChurnMap[path] += churn * schema.Metric(decayFactor)
-	output.LinesAddedMap[path] += add
-	output.LinesDeletedMap[path] += del
+	stat.Churn += churn
+	stat.Commits++
+	stat.DecayedCommits += schema.Metric(decayFactor)
+	stat.DecayedChurn += churn * schema.Metric(decayFactor)
+	stat.LinesAdded += add
+	stat.LinesDeleted += del
 
 	if author != "" {
-		if output.ContribMap[path] == nil {
-			output.ContribMap[path] = make(map[string]schema.Metric)
-		}
-		output.ContribMap[path][author]++
+		stat.Contributors[author]++
 	}
 
 	if !date.IsZero() {
-		if existing, ok := output.FirstCommitMap[path]; !ok || date.Before(existing) {
-			output.FirstCommitMap[path] = date
+		if stat.FirstCommit.IsZero() || date.Before(stat.FirstCommit) {
+			stat.FirstCommit = date
 		}
 	}
 
 	// Recent metrics filtering
 	if !date.IsZero() && !date.Before(recentThreshold) {
-		output.RecentChurnMap[path] += churn
-		output.RecentCommitMap[path]++
-		output.RecentLinesAddedMap[path] += add
-		output.RecentLinesDeletedMap[path] += del
+		stat.RecentChurn += churn
+		stat.RecentCommits++
+		stat.RecentLinesAdded += add
+		stat.RecentLinesDeleted += del
 		if author != "" {
-			if output.RecentContribMap[path] == nil {
-				output.RecentContribMap[path] = make(map[string]schema.Metric)
-			}
-			output.RecentContribMap[path][author]++
+			stat.RecentContributors[author]++
 		}
 	}
 }
@@ -314,46 +306,23 @@ func aggregateForPath(path string, add schema.Metric, del schema.Metric, author 
 // BuildFilteredFileList creates a unified list of files from activity maps
 // and filters them based on the configuration.
 func BuildFilteredFileList(gitSettings config.GitSettings, output *schema.AggregateOutput) []string {
-	// 1. Estimate capacity for 'seen'. Use a good guess based on the largest map.
-	capacity := max(
-		len(output.ContribMap), max(
-			len(output.ChurnMap), len(output.CommitMap)))
+	// 1. Initialize result slice with a good guess for capacity
+	files := make([]string, 0, len(output.FileStats))
 
-	// Use struct{} for zero-memory value.
-	seen := make(map[string]struct{}, capacity)
-
-	// 2. Populate 'seen' map from all three sources.
-
-	// a) CommitMap and ChurnMap (Simple Iteration)
-	// We combine this by iterating over the simple maps first.
-	for k := range output.CommitMap {
-		seen[k] = struct{}{}
-	}
-	for k := range output.ChurnMap {
-		seen[k] = struct{}{}
-	}
-
-	// b) ContribMap (Nested Iteration)
-	// We only care about the file path, which is the outer key (k).
-	for k := range output.ContribMap {
-		seen[k] = struct{}{}
-	}
-
-	// 3. Apply filters and build final list
-	files := make([]string, 0, len(seen))
-
+	// 2. Apply filters and build final list
 	// Pre-calculate filter state (only if PathFilter is set)
 	pathFilter := gitSettings.GetPathFilter()
 	pathFilterSet := pathFilter != ""
+	excludes := gitSettings.GetExcludes()
 
-	for f := range seen {
+	for f := range output.FileStats {
 		// Apply path filter check only if the filter is set
 		if pathFilterSet && !strings.HasPrefix(f, pathFilter) {
 			continue
 		}
 
 		// Apply excludes filter
-		if schema.ShouldIgnore(f, gitSettings.GetExcludes()) {
+		if schema.ShouldIgnore(f, excludes) {
 			continue
 		}
 

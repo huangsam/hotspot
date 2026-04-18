@@ -23,20 +23,16 @@ func TestFileResultBuilder_BasicChaining(t *testing.T) {
 
 	// Create a mock output with some basic data
 	output := &schema.AggregateOutput{
-		CommitMap: map[string]schema.Metric{
-			"test.go": schema.Metric(10),
-		},
-		ChurnMap: map[string]schema.Metric{
-			"test.go": schema.Metric(100),
-		},
-		ContribMap: map[string]map[string]schema.Metric{
+		FileStats: map[string]*schema.FileAggregation{
 			"test.go": {
-				"alice": schema.Metric(5),
-				"bob":   schema.Metric(5),
+				Commits:     10,
+				Churn:       100,
+				FirstCommit: time.Now().Add(-30 * 24 * time.Hour),
+				Contributors: map[string]schema.Metric{
+					"alice": 5,
+					"bob":   5,
+				},
 			},
-		},
-		FirstCommitMap: map[string]time.Time{
-			"test.go": time.Now().Add(-30 * 24 * time.Hour),
 		},
 	}
 
@@ -86,7 +82,7 @@ func TestFileResultBuilder_EmptyContribMap(t *testing.T) {
 	}
 
 	output := &schema.AggregateOutput{
-		ContribMap: map[string]map[string]schema.Metric{}, // Empty contrib map
+		FileStats: map[string]*schema.FileAggregation{}, // Empty stats
 	}
 
 	builder := NewFileMetricsBuilder(ctx, cfg.Git, cfg.Scoring, nil, "test.go", output)
@@ -110,7 +106,7 @@ func TestFileResultBuilder_ZeroFirstCommit(t *testing.T) {
 	}
 
 	output := &schema.AggregateOutput{
-		FirstCommitMap: map[string]time.Time{}, // No first commit
+		FileStats: map[string]*schema.FileAggregation{}, // No stats
 	}
 
 	builder := NewFileMetricsBuilder(ctx, cfg.Git, cfg.Scoring, nil, "test.go", output)
