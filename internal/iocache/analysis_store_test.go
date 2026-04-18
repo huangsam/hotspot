@@ -418,6 +418,85 @@ func TestAnalysisStore_RecordFileMetricsAndScores(t *testing.T) {
 	assert.Equal(t, scores.ScoreLabel, record.ScoreLabel)
 }
 
+func TestAnalysisStore_RecordFileResultsBatch(t *testing.T) {
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:", nil)
+	require.NoError(t, err)
+	require.NotNil(t, store)
+	defer func() { _ = store.Close() }()
+
+	// Create analysis run
+	analysisID, err := store.BeginAnalysis("test-batch-urn", time.Now(), map[string]any{"test": "batch"})
+	require.NoError(t, err)
+
+	// Prepare batch results
+	now := time.Now()
+	results := []schema.BatchFileResult{
+		{
+			Path: "file1.go",
+			Metrics: schema.FileMetrics{
+				AnalysisTime: now, TotalCommits: 10, TotalChurn: 100, LinesAdded: 60, LinesDeleted: 40,
+				DecayedCommits: 10, DecayedChurn: 100, LinesOfCode: 200, ContributorCount: 2,
+				AgeDays: 30, GiniCoefficient: 0.1, FileOwner: "alice",
+			},
+			Scores: schema.FileScores{
+				AnalysisTime: now, HotScore: 50, RiskScore: 30, ComplexityScore: 40, ROIScore: 20,
+				ScoreLabel: "hot", Reasoning: []string{"active"},
+			},
+		},
+		{
+			Path: "file2.go",
+			Metrics: schema.FileMetrics{
+				AnalysisTime: now, TotalCommits: 5, TotalChurn: 50, LinesAdded: 30, LinesDeleted: 20,
+				DecayedCommits: 5, DecayedChurn: 50, LinesOfCode: 100, ContributorCount: 1,
+				AgeDays: 60, GiniCoefficient: 0.9, FileOwner: "bob",
+			},
+			Scores: schema.FileScores{
+				AnalysisTime: now, HotScore: 20, RiskScore: 80, ComplexityScore: 20, ROIScore: 10,
+				ScoreLabel: "risk", Reasoning: []string{"bus factor"},
+			},
+		},
+	}
+
+	// Record batch
+	err = store.RecordFileResultsBatch(analysisID, results)
+	assert.NoError(t, err)
+
+	// End analysis
+	err = store.EndAnalysis(analysisID, time.Now(), len(results))
+	assert.NoError(t, err)
+
+	// Verify the data was stored
+	allMetrics, err := store.GetAllFileScoresMetrics()
+	assert.NoError(t, err)
+	assert.Len(t, allMetrics, 2)
+
+	// Verify file1
+	var f1 schema.FileScoresMetricsRecord
+	for _, m := range allMetrics {
+		if m.FilePath == "file1.go" {
+			f1 = m
+			break
+		}
+	}
+	assert.Equal(t, "file1.go", f1.FilePath)
+	assert.Equal(t, schema.Metric(10), f1.TotalCommits)
+	assert.Equal(t, 50.0, f1.ScoreHot)
+	assert.Equal(t, []string{"active"}, f1.Reasoning)
+
+	// Verify file2
+	var f2 schema.FileScoresMetricsRecord
+	for _, m := range allMetrics {
+		if m.FilePath == "file2.go" {
+			f2 = m
+			break
+		}
+	}
+	assert.Equal(t, "file2.go", f2.FilePath)
+	assert.Equal(t, schema.Metric(5), f2.TotalCommits)
+	assert.Equal(t, 20.0, f2.ScoreHot)
+	assert.Equal(t, []string{"bus factor"}, f2.Reasoning)
+}
+
 // TestAnalysisStoreConcurrentOperations tests concurrent database operations
 // to ensure thread safety when multiple workers write analysis data simultaneously.
 func TestAnalysisStoreConcurrentOperations(t *testing.T) {

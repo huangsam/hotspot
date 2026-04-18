@@ -271,6 +271,11 @@ func analyzeRepo(
 		results = append(results, r)
 	}
 
+	// 5. Record metrics and scores to database (if analysis tracking is enabled)
+	if analysisID, ok := getAnalysisID(ctx); ok && analysisID > 0 {
+		BatchRecordFileAnalysis(ctx, scoringSettings, analysisID, results)
+	}
+
 	return results
 }
 
@@ -300,15 +305,7 @@ func analyzeFileCommon(
 		CalculateScore()           // Computes the final composite score
 
 	// 3. Build the final result
-	result := builder.Build()
-
-	// 4. Record metrics and scores to database (if analysis tracking is enabled)
-	if analysisID, ok := getAnalysisID(ctx); ok && analysisID > 0 {
-		// Get the analysis store from the context via the cache manager
-		recordFileAnalysis(ctx, scoringSettings, analysisID, path, &result)
-	}
-
-	return result
+	return builder.Build()
 }
 
 // getAnalysisWindowForRef queries Git for the exact commit time of the given reference

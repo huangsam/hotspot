@@ -45,6 +45,9 @@ type SQLQueryDialect interface {
 
 	// RecordFileMetricsAndScores inserts metrics and scores for a specific file.
 	RecordFileMetricsAndScores(db *sql.DB, tableName string, analysisID int64, filePath string, metrics schema.FileMetrics, scores schema.FileScores) error
+
+	// RecordFileResultsBatch inserts multiple file metrics and scores in a batch.
+	RecordFileResultsBatch(db *sql.DB, tableName string, analysisID int64, results []schema.BatchFileResult) error
 }
 
 // SQLScanner defines logic for mapping database rows and results back to schema structs.

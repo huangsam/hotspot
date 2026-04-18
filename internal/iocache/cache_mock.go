@@ -84,6 +84,12 @@ func (m *MockAnalysisStore) RecordFileMetricsAndScores(analysisID int64, filePat
 	return args.Error(0)
 }
 
+// RecordFileResultsBatch implements the AnalysisStore interface.
+func (m *MockAnalysisStore) RecordFileResultsBatch(analysisID int64, results []schema.BatchFileResult) error {
+	args := m.Called(analysisID, results)
+	return args.Error(0)
+}
+
 // Close implements the AnalysisStore interface.
 func (m *MockAnalysisStore) Close() error {
 	args := m.Called()

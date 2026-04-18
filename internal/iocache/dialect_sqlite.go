@@ -48,7 +48,23 @@ func (d *SQLiteDialect) GetUpdateEndAnalysisQuery(tableName string) string {
 
 // RecordFileMetricsAndScores inserts file-level metrics and scores into SQLite.
 func (d *SQLiteDialect) RecordFileMetricsAndScores(db *sql.DB, tableName string, analysisID int64, filePath string, metrics schema.FileMetrics, scores schema.FileScores) error {
-	reasoningJSON, _ := json.Marshal(scores.Reasoning)
+	return d.RecordFileResultsBatch(db, tableName, analysisID, []schema.BatchFileResult{
+		{
+			Path:    filePath,
+			Metrics: metrics,
+			Scores:  scores,
+		},
+	})
+}
+
+// RecordFileResultsBatch inserts multiple file metrics and scores into SQLite using a single transaction.
+func (d *SQLiteDialect) RecordFileResultsBatch(db *sql.DB, tableName string, analysisID int64, results []schema.BatchFileResult) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
 	query := fmt.Sprintf(`
 		INSERT INTO %s (analysis_id, file_path, analysis_time, total_commits, total_churn, lines_added, lines_deleted, decayed_commits, decayed_churn, lines_of_code,
 						 contributor_count, recent_commits, recent_churn, recent_lines_added, recent_lines_deleted, recent_contributor_count,
@@ -58,14 +74,27 @@ func (d *SQLiteDialect) RecordFileMetricsAndScores(db *sql.DB, tableName string,
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, d.QuoteIdentifier(tableName))
 
-	_, err := db.Exec(query,
-		analysisID, filePath, d.FormatTime(metrics.AnalysisTime), metrics.TotalCommits, metrics.TotalChurn, metrics.LinesAdded, metrics.LinesDeleted, metrics.DecayedCommits, metrics.DecayedChurn, metrics.LinesOfCode,
-		metrics.ContributorCount, metrics.RecentCommits, metrics.RecentChurn, metrics.RecentLinesAdded, metrics.RecentLinesDeleted, metrics.RecentContributorCount,
-		metrics.AgeDays, metrics.GiniCoefficient, metrics.FileOwner,
-		scores.HotScore, scores.RiskScore, scores.ComplexityScore, scores.ROIScore, scores.ScoreLabel, string(reasoningJSON),
-		metrics.RecencySignal, metrics.RecencyThresholdLow, metrics.RecencyThresholdHigh,
-	)
-	return err
+	stmt, err := tx.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = stmt.Close() }()
+
+	for _, res := range results {
+		reasoningJSON, _ := json.Marshal(res.Scores.Reasoning)
+		_, err := stmt.Exec(
+			analysisID, res.Path, d.FormatTime(res.Metrics.AnalysisTime), res.Metrics.TotalCommits, res.Metrics.TotalChurn, res.Metrics.LinesAdded, res.Metrics.LinesDeleted, res.Metrics.DecayedCommits, res.Metrics.DecayedChurn, res.Metrics.LinesOfCode,
+			res.Metrics.ContributorCount, res.Metrics.RecentCommits, res.Metrics.RecentChurn, res.Metrics.RecentLinesAdded, res.Metrics.RecentLinesDeleted, res.Metrics.RecentContributorCount,
+			res.Metrics.AgeDays, res.Metrics.GiniCoefficient, res.Metrics.FileOwner,
+			res.Scores.HotScore, res.Scores.RiskScore, res.Scores.ComplexityScore, res.Scores.ROIScore, res.Scores.ScoreLabel, string(reasoningJSON),
+			res.Metrics.RecencySignal, res.Metrics.RecencyThresholdLow, res.Metrics.RecencyThresholdHigh,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 
 // ScanLastRunInfo parses the latest analysis run metadata from SQLite.

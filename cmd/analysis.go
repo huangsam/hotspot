@@ -21,15 +21,12 @@ func analysisSetup() error {
 	}
 
 	// Get analysis-related config values
-	backendStr := viper.GetString("analysis-backend")
+	backend := schema.DatabaseBackend(viper.GetString("analysis-backend"))
 	connStr := viper.GetString("analysis-db-connect")
 
-	// Default to SQLite if backend is empty
-	var backend schema.DatabaseBackend
-	if backendStr == "" {
+	// If backend is empty (unlikely with flag default), use SQLite
+	if backend == "" {
 		backend = schema.SQLiteBackend
-	} else {
-		backend = schema.DatabaseBackend(backendStr)
 	}
 
 	// For SQLite with no connection string, use the default path
@@ -80,15 +77,12 @@ func analysisMigrateSetup() error {
 	}
 
 	// Get analysis-related config values
-	backendStr := viper.GetString("analysis-backend")
+	backend := schema.DatabaseBackend(viper.GetString("analysis-backend"))
 	connStr := viper.GetString("analysis-db-connect")
 
-	// Handle empty backend as NoneBackend
-	var backend schema.DatabaseBackend
-	if backendStr == "" {
-		backend = schema.NoneBackend
-	} else {
-		backend = schema.DatabaseBackend(backendStr)
+	// If backend is empty (unlikely with flag default), use SQLite
+	if backend == "" {
+		backend = schema.SQLiteBackend
 	}
 
 	// Basic validation for database backends

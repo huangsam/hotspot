@@ -59,6 +59,13 @@ type FileScores struct {
 	Reasoning       []string // justifications for the current score
 }
 
+// BatchFileResult groups all data for a single file to be stored in the analysis store.
+type BatchFileResult struct {
+	Path    string
+	Metrics FileMetrics
+	Scores  FileScores
+}
+
 // AnalysisRunRecord represents a row from the hotspot_analysis_runs table.
 type AnalysisRunRecord struct {
 	AnalysisID         int64

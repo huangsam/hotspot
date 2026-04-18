@@ -450,9 +450,13 @@ func validateBackendConfigs(cfg *Config, input *RawInput) error {
 
 	// --- Analysis Backend Validation ---
 	cfg.Runtime.AnalysisBackend = schema.DatabaseBackend(strings.ToLower(input.AnalysisBackend))
-	if cfg.Runtime.AnalysisBackend != "" {
+	if cfg.Runtime.AnalysisBackend == "" {
+		cfg.Runtime.AnalysisBackend = schema.SQLiteBackend
+	}
+
+	if cfg.Runtime.AnalysisBackend != schema.NoneBackend {
 		if _, ok := schema.ValidDatabaseBackends[cfg.Runtime.AnalysisBackend]; !ok {
-			return fmt.Errorf("invalid analysis backend '%s'. Must be one of: sqlite, mysql, postgresql, none", input.AnalysisBackend)
+			return fmt.Errorf("invalid analysis backend '%s'. Must be one of: sqlite (default), mysql, postgresql, none", input.AnalysisBackend)
 		}
 		cfg.Runtime.AnalysisDBConnect = input.AnalysisDBConnect
 		if err := ValidateDatabaseConnectionString(cfg.Runtime.AnalysisBackend, cfg.Runtime.AnalysisDBConnect); err != nil {

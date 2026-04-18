@@ -181,12 +181,27 @@ func (as *AnalysisStoreImpl) UpdateAnalysisRunURN(analysisID int64, urn string) 
 
 // RecordFileMetricsAndScores stores both raw git metrics and final scores for a file in one operation.
 func (as *AnalysisStoreImpl) RecordFileMetricsAndScores(analysisID int64, filePath string, metrics schema.FileMetrics, scores schema.FileScores) error {
+	return as.RecordFileResultsBatch(analysisID, []schema.BatchFileResult{
+		{
+			Path:    filePath,
+			Metrics: metrics,
+			Scores:  scores,
+		},
+	})
+}
+
+// RecordFileResultsBatch stores multiple file metrics and scores in a single batch operation.
+func (as *AnalysisStoreImpl) RecordFileResultsBatch(analysisID int64, results []schema.BatchFileResult) error {
 	// Skip for NoneBackend
 	if as.db == nil || as.dialect == nil {
 		return nil
 	}
 
-	return as.dialect.RecordFileMetricsAndScores(as.db, fileScoresMetricsTable, analysisID, filePath, metrics, scores)
+	if len(results) == 0 {
+		return nil
+	}
+
+	return as.dialect.RecordFileResultsBatch(as.db, fileScoresMetricsTable, analysisID, results)
 }
 
 // Close closes the underlying connection.

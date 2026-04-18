@@ -35,6 +35,9 @@ type AnalysisStore interface {
 	// RecordFileMetricsAndScores stores both raw git metrics and final scores for a file in one operation
 	RecordFileMetricsAndScores(analysisID int64, filePath string, metrics schema.FileMetrics, scores schema.FileScores) error
 
+	// RecordFileResultsBatch stores multiple file metrics and scores in a single batch operation
+	RecordFileResultsBatch(analysisID int64, results []schema.BatchFileResult) error
+
 	// GetAllAnalysisRuns retrieves all analysis runs from the store
 	GetAllAnalysisRuns() ([]schema.AnalysisRunRecord, error)
 
