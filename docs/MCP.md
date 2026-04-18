@@ -33,10 +33,12 @@ The server exposes the following tools to the AI agent:
 - `get_repo_shape`: Characterize the repository and get a recommended preset (lightweight aggregation pass).
 - `get_files_hotspots`: Rank files by hot, risk, complexity, or roi modes.
 - `get_folders_hotspots`: Same as above, but aggregated at the folder level.
-- `compare_hotspots`: Compare changes in technical debt between two Git references.
+- `compare_file_hotspots`: Compare changes in technical debt at the file level between two Git references.
+- `compare_folder_hotspots`: Same as above, but aggregated at the folder level.
 - `get_timeseries`: Track the trend of a specific file or folder over time.
 - `get_release_journey`: Compute repository trajectory by analyzing successive release tags.
 - `get_blast_radius`: Identify files that historically change together.
+- `run_check`: Run a policy check for CI/CD gating using risk thresholds.
 
 All analysis tools support an optional `preset` parameter to auto-configure scoring mode, worker count, result limit, and time window based on the recommended preset family. Tools are annotated with `ReadOnly` and `Idempotent` hints to assist agent reasoning.
 

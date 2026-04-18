@@ -179,11 +179,12 @@ func (h *toolHandler) handleGetFoldersHotspots(ctx context.Context, request mcp.
 	return mcp.NewToolResultText(string(jsonData)), nil
 }
 
-// handleCompareHotspots handles the compare_hotspots tool.
-func (h *toolHandler) handleCompareHotspots(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+// handleCompareFileHotspots handles the compare_file_hotspots tool.
+func (h *toolHandler) handleCompareFileHotspots(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	cfg := h.baseCfg.Clone()
 	cfg.Compare.BaseRef = request.GetString("base_ref", "")
 	cfg.Compare.TargetRef = request.GetString("target_ref", "")
+	cfg.Compare.Enabled = true
 	lookbackStr := request.GetString("lookback", "")
 	urn := request.GetString("urn", "")
 	repoPath := request.GetString("repo_path", "")
@@ -208,6 +209,44 @@ func (h *toolHandler) handleCompareHotspots(ctx context.Context, request mcp.Cal
 	}
 
 	comparisonResult, _, err := core.GetHotspotCompareResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("comparison failed: %v", err)), nil
+	}
+
+	jsonData, _ := json.MarshalIndent(comparisonResult, "", "  ")
+	return mcp.NewToolResultText(string(jsonData)), nil
+}
+
+// handleCompareFolderHotspots handles the compare_folder_hotspots tool.
+func (h *toolHandler) handleCompareFolderHotspots(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	cfg := h.baseCfg.Clone()
+	cfg.Compare.BaseRef = request.GetString("base_ref", "")
+	cfg.Compare.TargetRef = request.GetString("target_ref", "")
+	cfg.Compare.Enabled = true
+	lookbackStr := request.GetString("lookback", "")
+	urn := request.GetString("urn", "")
+	repoPath := request.GetString("repo_path", "")
+
+	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
+	}
+
+	applyPresetToConfig(cfg, request.GetString("preset", ""))
+	applyDynamicFilters(cfg, request)
+
+	if m := request.GetString("mode", ""); m != "" {
+		cfg.Scoring.Mode = schema.ScoringMode(m)
+	}
+
+	if err := config.RevalidateTimeRange(cfg, request.GetString("start", ""), request.GetString("end", "")); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid time range: %v", err)), nil
+	}
+
+	if err := config.RevalidateCompare(cfg, lookbackStr); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid comparison parameters: %v", err)), nil
+	}
+
+	comparisonResult, _, err := core.GetHotspotCompareFoldersResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("comparison failed: %v", err)), nil
 	}
@@ -307,6 +346,35 @@ func (h *toolHandler) handleGetBlastRadius(ctx context.Context, request mcp.Call
 	result, err := core.GetHotspotBlastRadiusResults(ctx, cfg, h.client, limit, threshold)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("blast radius analysis failed: %v", err)), nil
+	}
+
+	jsonBytes, _ := json.MarshalIndent(result, "", "  ")
+	return mcp.NewToolResultText(string(jsonBytes)), nil
+}
+
+// handleRunCheck handles the run_check tool.
+func (h *toolHandler) handleRunCheck(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	cfg := h.baseCfg.Clone()
+	cfg.Compare.BaseRef = request.GetString("base_ref", "")
+	cfg.Compare.TargetRef = request.GetString("target_ref", "")
+	cfg.Compare.Enabled = true
+	lookbackStr := request.GetString("lookback", "")
+	urn := request.GetString("urn", "")
+	repoPath := request.GetString("repo_path", "")
+
+	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
+	}
+
+	applyDynamicFilters(cfg, request)
+
+	if err := config.RevalidateCompare(cfg, lookbackStr); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid comparison parameters: %v", err)), nil
+	}
+
+	result, _, err := core.GetHotspotCheckResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("check failed: %v", err)), nil
 	}
 
 	jsonData, _ := json.MarshalIndent(result, "", "  ")

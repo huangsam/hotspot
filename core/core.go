@@ -109,23 +109,32 @@ func GetHotspotCompareResults(ctx context.Context, cfg *config.Config, client gi
 // It follows the same pattern as ExecuteHotspotCompare but aggregates to folders
 // before performing the comparison.
 func ExecuteHotspotCompareFolders(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager, writer outwriter.FormatProvider) error {
-	start := time.Now()
-
 	internal.LogCompareHeader(cfg.Git, cfg.Scoring, cfg.Compare)
+
+	result, duration, err := GetHotspotCompareFoldersResults(ctx, cfg, client, mgr)
+	if err != nil {
+		return err
+	}
+
+	return outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
+		return writer.WriteComparison(w, result, cfg.Output, cfg.Runtime, duration)
+	}, "Wrote folder comparison table")
+}
+
+// GetHotspotCompareFoldersResults runs the folder-level comparison analysis and returns the results.
+func GetHotspotCompareFoldersResults(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) (schema.ComparisonResult, time.Duration, error) {
+	start := time.Now()
 
 	baseOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.Compare.BaseRef, mgr)
 	if err != nil {
-		return err
+		return schema.ComparisonResult{}, 0, err
 	}
 	targetOutput, err := runCompareAnalysisForRef(ctx, cfg, client, cfg.Compare.TargetRef, mgr)
 	if err != nil {
-		return err
+		return schema.ComparisonResult{}, 0, err
 	}
 	comparisonResult := compareFolderMetrics(baseOutput.FolderResults, targetOutput.FolderResults, cfg.Output.ResultLimit, string(cfg.Scoring.Mode))
-	duration := time.Since(start)
-	return outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
-		return writer.WriteComparison(w, comparisonResult, cfg.Output, cfg.Runtime, duration)
-	}, "Wrote folder comparison table")
+	return comparisonResult, time.Since(start), nil
 }
 
 // ExecuteHotspotTimeseries runs multiple analyses over overlapping, dynamic-lookback time windows.
@@ -209,41 +218,13 @@ func ExecuteHotspotMetrics(_ context.Context, cfg *config.Config, _ git.Client, 
 // It analyzes only files changed between base and target refs, checks them against thresholds,
 // and returns a non-zero exit code if any files exceed the thresholds.
 func ExecuteHotspotCheck(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) error {
-	start := time.Now()
-
-	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, client, mgr)
-
-	// Validate prerequisites
-	_, err := builder.ValidatePrerequisites()
-	if err != nil {
-		return err
-	}
-	if result := builder.GetResult(); result != nil {
-		// Early success case
-		printCheckResult(result, time.Since(start))
-		return nil
-	}
-
-	// Prepare analysis config
-	_, err = builder.PrepareAnalysisConfig()
+	result, duration, err := GetHotspotCheckResults(ctx, cfg, client, mgr)
 	if err != nil {
 		return err
 	}
 
-	// Run analysis
-	_, err = builder.RunAnalysis()
-	if err != nil {
-		return err
-	}
-
-	// Compute metrics
-	builder.ComputeMetrics()
-
-	// Build result
-	builder.BuildResult()
-
-	if result := builder.GetResult(); result != nil {
-		printCheckResult(result, time.Since(start))
+	if result != nil {
+		printCheckResult(result, duration)
 
 		// Return error if check failed
 		if !result.Passed {
@@ -252,4 +233,41 @@ func ExecuteHotspotCheck(ctx context.Context, cfg *config.Config, client git.Cli
 		}
 	}
 	return nil
+}
+
+// GetHotspotCheckResults runs the policy check and returns the result object.
+func GetHotspotCheckResults(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) (*schema.CheckResult, time.Duration, error) {
+	start := time.Now()
+
+	builder := NewCheckResultBuilder(ctx, cfg.Git, cfg.Scoring, cfg.Compare, client, mgr)
+
+	// Validate prerequisites
+	_, err := builder.ValidatePrerequisites()
+	if err != nil {
+		return nil, 0, err
+	}
+	if result := builder.GetResult(); result != nil {
+		// Early success case (e.g. no files changed)
+		return result, time.Since(start), nil
+	}
+
+	// Prepare analysis config
+	_, err = builder.PrepareAnalysisConfig()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Run analysis
+	_, err = builder.RunAnalysis()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Compute metrics
+	builder.ComputeMetrics()
+
+	// Build result
+	builder.BuildResult()
+
+	return builder.GetResult(), time.Since(start), nil
 }

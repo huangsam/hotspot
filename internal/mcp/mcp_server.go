@@ -88,11 +88,11 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
 	), h.handleGetFoldersHotspots)
 
-	// --- 3. Tool: compare_hotspots ---
-	s.AddTool(mcp.NewTool("compare_hotspots",
+	// --- 3. Tool: compare_file_hotspots ---
+	s.AddTool(mcp.NewTool("compare_file_hotspots",
 		mcp.WithDescription("Compare hotspots between two Git references (e.g., branches, tags, or commits)."),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
-			Title:          "Compare Hotspots",
+			Title:          "Compare File Hotspots",
 			ReadOnlyHint:   &readOnly,
 			IdempotentHint: &idempotent,
 		}),
@@ -107,9 +107,30 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("end", mcp.Description(endDesc)),
 		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go').")),
 		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
-	), h.handleCompareHotspots)
+	), h.handleCompareFileHotspots)
 
-	// --- 4. Tool: get_timeseries ---
+	// --- 4. Tool: compare_folder_hotspots ---
+	s.AddTool(mcp.NewTool("compare_folder_hotspots",
+		mcp.WithDescription("Compare hotspots between two Git references (e.g., branches, tags, or commits) aggregated by folder."),
+		mcp.WithToolAnnotation(mcp.ToolAnnotation{
+			Title:          "Compare Folder Hotspots",
+			ReadOnlyHint:   &readOnly,
+			IdempotentHint: &idempotent,
+		}),
+		mcp.WithString("base_ref", mcp.Description("The base reference for comparison."), mcp.Required()),
+		mcp.WithString("target_ref", mcp.Description("The target reference for comparison."), mcp.Required()),
+		mcp.WithString("preset", mcp.Description("Apply a named configuration preset (small, large, infra). It is recommended to run 'get_repo_shape' first to identify the correct preset for this repository."), mcp.Enum("small", "large", "infra")),
+		mcp.WithString("urn", mcp.Description(urnDesc)),
+		mcp.WithString("lookback", mcp.Description("Time window for analysis (e.g., '6 months', '30d').")),
+		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
+		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi"), mcp.DefaultString("hot")),
+		mcp.WithString("start", mcp.Description(startDesc)),
+		mcp.WithString("end", mcp.Description(endDesc)),
+		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go').")),
+		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
+	), h.handleCompareFolderHotspots)
+
+	// --- 5. Tool: get_timeseries ---
 	s.AddTool(mcp.NewTool("get_timeseries",
 		mcp.WithDescription("Perform timeseries analysis on a specific file or folder path."),
 		mcp.WithToolAnnotation(mcp.ToolAnnotation{
@@ -164,6 +185,22 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go').")),
 		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
 	), h.handleGetBlastRadius)
+
+	// --- 8. Tool: run_check ---
+	s.AddTool(mcp.NewTool("run_check",
+		mcp.WithDescription("Run a policy check for CI/CD gating. Analyzes files changed between base and target refs against configured thresholds."),
+		mcp.WithToolAnnotation(mcp.ToolAnnotation{
+			Title:          "Run Policy Check",
+			ReadOnlyHint:   &readOnly,
+			IdempotentHint: &idempotent,
+		}),
+		mcp.WithString("base_ref", mcp.Description("The base reference for comparison."), mcp.Required()),
+		mcp.WithString("target_ref", mcp.Description("The target reference for comparison."), mcp.Required()),
+		mcp.WithString("urn", mcp.Description(urnDesc)),
+		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
+		mcp.WithString("lookback", mcp.Description("Time window for analysis.")),
+		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude.")),
+	), h.handleRunCheck)
 
 	s.AddResource(mcp.NewResource("hotspot://docs/agents", "Agent Documentation", mcp.WithResourceDescription("High-level architectural context and domain concepts for AI agents."), mcp.WithMIMEType("text/markdown")), h.handleReadResource)
 	s.AddResource(mcp.NewResource("hotspot://docs/metrics", "Scoring Metrics Definition", mcp.WithResourceDescription("Markdown definition of scoring modes, factors, and formulas."), mcp.WithMIMEType("text/markdown")), h.handleReadResource)

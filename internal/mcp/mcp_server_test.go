@@ -29,13 +29,13 @@ func TestMCPServerHandlers_ValidationErrors(t *testing.T) {
 
 	ctx := context.Background()
 
-	t.Run("compare_hotspots missing base_ref", func(t *testing.T) {
-		tool := s.GetTool("compare_hotspots")
-		require.NotNil(t, tool, "Tool compare_hotspots should exist")
+	t.Run("compare_file_hotspots missing base_ref", func(t *testing.T) {
+		tool := s.GetTool("compare_file_hotspots")
+		require.NotNil(t, tool, "Tool compare_file_hotspots should exist")
 
 		req := mcp.CallToolRequest{
 			Params: mcp.CallToolParams{
-				Name: "compare_hotspots",
+				Name: "compare_file_hotspots",
 				Arguments: map[string]any{
 					"base_ref": "", // Missing required
 				},
@@ -99,10 +99,12 @@ func TestMCPServer_ToolRegistration(t *testing.T) {
 		"get_repo_shape",
 		"get_files_hotspots",
 		"get_folders_hotspots",
-		"compare_hotspots",
+		"compare_file_hotspots",
+		"compare_folder_hotspots",
 		"get_timeseries",
 		"get_release_journey",
 		"get_blast_radius",
+		"run_check",
 	}
 
 	// Verify the count matches to ensure the test list is updated when new tools are added.
