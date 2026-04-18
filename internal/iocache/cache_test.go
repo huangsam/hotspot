@@ -13,13 +13,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// resetGlobals resets all package-level global state between tests.
+// It MUST clear initErr in addition to the sync.Once values, otherwise
+// a failed init in one test will permanently poison subsequent tests.
+func resetGlobals() {
+	initOnce = sync.Once{}
+	closeOnce = sync.Once{}
+	initErr = nil
+}
+
 func TestCaching(t *testing.T) {
 	t.Run("single setup", func(t *testing.T) {
 		// Clean up any existing test database
 		testDBPath := GetDBFilePath()
 		defer func() { _ = os.Remove(testDBPath) }()
-		initOnce = sync.Once{}  // Reset for test
-		closeOnce = sync.Once{} // Reset for test
+		resetGlobals() // Reset all global state for test
 
 		// Test initialization with SQLite backend
 		err := InitStores(schema.SQLiteBackend, "", "", "", nil)
@@ -43,8 +51,7 @@ func TestCaching(t *testing.T) {
 		// Clean up any existing test database
 		testDBPath := GetDBFilePath()
 		defer func() { _ = os.Remove(testDBPath) }()
-		initOnce = sync.Once{}  // Reset for test
-		closeOnce = sync.Once{} // Reset for test
+		resetGlobals() // Reset all global state for test
 
 		// Multiple initializations should be safe (sync.Once)
 		err1 := InitStores(schema.SQLiteBackend, "", "", "", nil)
@@ -62,8 +69,7 @@ func TestCaching(t *testing.T) {
 	})
 
 	t.Run("none backend", func(t *testing.T) {
-		initOnce = sync.Once{}  // Reset for test
-		closeOnce = sync.Once{} // Reset for test
+		resetGlobals() // Reset all global state for test
 
 		// Test initialization with None backend (no database)
 		err := InitStores(schema.NoneBackend, "", "", "", nil)
@@ -540,8 +546,7 @@ func TestClearCache(t *testing.T) {
 
 // TestCacheStoreManagerConcurrency tests concurrent access to CacheStoreManager.
 func TestCacheStoreManagerConcurrency(t *testing.T) {
-	initOnce = sync.Once{}
-	closeOnce = sync.Once{}
+	resetGlobals()
 
 	err := InitStores(schema.SQLiteBackend, ":memory:", "", "", nil)
 	if err != nil {
@@ -585,13 +590,8 @@ func TestInitStoresErrors(t *testing.T) {
 		// but we can test with invalid backend combinations
 
 		// Reset for clean test
-		initOnce = sync.Once{}
-		closeOnce = sync.Once{}
-		defer func() {
-			// Clean up
-			initOnce = sync.Once{}
-			closeOnce = sync.Once{}
-		}()
+		resetGlobals()
+		defer resetGlobals()
 
 		// Try to init with an invalid connection string for MySQL
 		// This should fail during database connection
@@ -658,18 +658,12 @@ func TestCacheStoreImplSetWithNilDB(t *testing.T) {
 // for both cache and analysis stores, creating no-op implementations.
 func TestInitStoresNoneBackend(t *testing.T) {
 	// Reset sync.Once for clean test state
-	initOnce = sync.Once{}
-	closeOnce = sync.Once{}
-	defer func() {
-		// Clean up
-		initOnce = sync.Once{}
-		closeOnce = sync.Once{}
-	}()
+	resetGlobals()
+	defer resetGlobals()
 
 	t.Run("cache backend none", func(t *testing.T) {
 		// Reset for this subtest
-		initOnce = sync.Once{}
-		closeOnce = sync.Once{}
+		resetGlobals()
 
 		// Initialize with NoneBackend for cache, in-memory SQLite for analysis
 		err := InitStores(schema.NoneBackend, "", schema.SQLiteBackend, ":memory:", nil)
@@ -703,8 +697,7 @@ func TestInitStoresNoneBackend(t *testing.T) {
 
 	t.Run("analysis backend none", func(t *testing.T) {
 		// Reset for this subtest
-		initOnce = sync.Once{}
-		closeOnce = sync.Once{}
+		resetGlobals()
 
 		// Initialize with in-memory SQLite for cache, NoneBackend for analysis
 		err := InitStores(schema.SQLiteBackend, ":memory:", schema.NoneBackend, "", nil)
@@ -730,8 +723,7 @@ func TestInitStoresNoneBackend(t *testing.T) {
 
 	t.Run("both backends none", func(t *testing.T) {
 		// Reset for this subtest
-		initOnce = sync.Once{}
-		closeOnce = sync.Once{}
+		resetGlobals()
 
 		// Initialize with NoneBackend for both
 		err := InitStores(schema.NoneBackend, "", schema.NoneBackend, "", nil)

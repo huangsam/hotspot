@@ -19,6 +19,10 @@ var (
 	Manager   = &CacheStoreManager{}
 	initOnce  sync.Once
 	closeOnce sync.Once
+
+	// initErr captures the outcome of the first (and only) InitStores execution
+	// so that any goroutine that loses the sync.Once race can still retrieve the error.
+	initErr error
 )
 
 // GetDBFilePath returns the path to the SQLite DB file for cache storage.
@@ -43,10 +47,11 @@ func GetAnalysisDBFilePath() string {
 // cacheBackend and cacheConnStr can be empty to disable cache initialization.
 // analysisBackend and analysisConnStr can be empty to disable analysis tracking.
 func InitStores(cacheBackend schema.DatabaseBackend, cacheConnStr string, analysisBackend schema.DatabaseBackend, analysisConnStr string, client git.Client) error {
-	var initErr error
-
 	initOnce.Do(func() {
 		// This function body runs exactly once, even with concurrent calls.
+		// 'err' is a local scratch variable for each store-creation call.
+		// On failure we write to the package-level 'initErr' so that every
+		// goroutine that lost the race also sees the error when Do returns.
 		var err error
 
 		// Initialize Activity Cache Store only if backend is configured
@@ -72,12 +77,17 @@ func InitStores(cacheBackend schema.DatabaseBackend, cacheConnStr string, analys
 			}
 		}
 
-		// Assign to global manager
+		// Assign to global manager under a write lock so that concurrent readers
+		// using GetActivityStore / GetAnalysisStore (which acquire RLock) cannot
+		// observe a partially-initialised Manager.
+		Manager.Lock()
 		Manager.activity = activityCacheStore
 		Manager.analysis = analysisStore
+		Manager.Unlock()
 	})
 
-	// After once.Do, initErr will contain any error from the initialization block.
+	// 'initErr' is package-level; all goroutines that lost the sync.Once race
+	// will observe the same outcome (success or failure) when Do unblocks them.
 	return initErr
 }
 
