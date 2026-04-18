@@ -114,7 +114,7 @@ func TestParseCommitHeader(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			auth, date := parseCommitHeader(tc.line)
+			auth, date := parseCommitHeader([]byte(tc.line), make(map[string]string))
 			assert.Equal(t, tc.expectedAuth, auth)
 			if tc.expectZero {
 				assert.True(t, date.IsZero())
@@ -147,7 +147,7 @@ func TestParseFileStatsLine(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			paths, add, del := parseFileStatsLine(tc.line, fileExists)
+			paths, add, del := parseFileStatsLine([]byte(tc.line), fileExists)
 			assert.Equal(t, tc.expectedPaths, paths)
 			assert.Equal(t, tc.expectedAdd, add)
 			assert.Equal(t, tc.expectedDel, del)
@@ -173,7 +173,7 @@ func TestParseChurnValue(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := parseChurnValue(tc.input)
+			result := parseChurnValue([]byte(tc.input))
 			assert.Equal(t, tc.expected, result)
 		})
 	}

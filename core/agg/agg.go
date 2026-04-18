@@ -2,6 +2,8 @@
 package agg
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"path/filepath"
 	"sort"
@@ -79,20 +81,25 @@ func initializeAggregateOutput(endTime time.Time) *schema.AggregateOutput {
 
 // parseAndAggregateGitLog processes the git log output and aggregates data into the output maps.
 func parseAndAggregateGitLog(out []byte, fileExists map[string]bool, output *schema.AggregateOutput, recentThreshold time.Time) {
-	lines := strings.Split(string(out), "\n")
+	scanner := bufio.NewScanner(bytes.NewReader(out))
 	var currentAuthor string
 	var currentDate time.Time
 
-	for _, l := range lines {
-		l = strings.Trim(l, " \t\r\n'")
+	// authorCache interns strings to reuse author names across many commits
+	authorCache := make(map[string]string)
 
-		if strings.HasPrefix(l, "--") {
-			// Commit header line
-			currentAuthor, currentDate = parseCommitHeader(l)
+	for scanner.Scan() {
+		// We must trim whitespace and single quotes because git log format
+		// --pretty=format:'--%H|%an|%ad' wraps the header in quotes.
+		l := bytes.Trim(scanner.Bytes(), " \t\r\n'")
+		if len(l) == 0 {
 			continue
 		}
-		if l == "" {
-			continue // Skip blank lines
+
+		if bytes.HasPrefix(l, []byte("--")) {
+			// Commit header line
+			currentAuthor, currentDate = parseCommitHeader(l, authorCache)
+			continue
 		}
 
 		// File stats line
@@ -109,46 +116,93 @@ func parseAndAggregateGitLog(out []byte, fileExists map[string]bool, output *sch
 }
 
 // parseCommitHeader extracts author and date from a commit header line.
-func parseCommitHeader(line string) (string, time.Time) {
-	if !strings.HasPrefix(line, "--") || len(line) < 5 { // --x|y|z minimum
+func parseCommitHeader(line []byte, authorCache map[string]string) (string, time.Time) {
+	if !bytes.HasPrefix(line, []byte("--")) || len(line) < 5 { // --x|y|z minimum
 		return "", time.Time{}
 	}
-	parts := strings.SplitN(line[2:], "|", 3) // commit|author|date
-	if len(parts) == 3 {
-		author := parts[1]
-		dateStr := parts[2]
-		if date, err := time.Parse(time.RFC3339, dateStr); err == nil {
-			return author, date
-		}
+
+	// Skip the leading "--"
+	line = line[2:]
+
+	// Manually find components to avoid SplitN allocations
+	firstSep := bytes.IndexByte(line, '|')
+	if firstSep == -1 {
+		return "", time.Time{}
 	}
+	secondSep := bytes.IndexByte(line[firstSep+1:], '|')
+	if secondSep == -1 {
+		return "", time.Time{}
+	}
+	secondSep += firstSep + 1
+
+	authorBytes := line[firstSep+1 : secondSep]
+	dateBytes := line[secondSep+1:]
+
+	// Intern the author name
+	author := string(authorBytes)
+	if cached, ok := authorCache[author]; ok {
+		author = cached
+	} else {
+		authorCache[author] = author
+	}
+
+	dateStr := string(dateBytes)
+	if date, err := time.Parse(time.RFC3339, dateStr); err == nil {
+		return author, date
+	}
+
 	return "", time.Time{}
 }
 
 // parseFileStatsLine parses a file stats line and returns paths to aggregate and churn values.
-func parseFileStatsLine(line string, fileExists map[string]bool) ([]string, schema.Metric, schema.Metric) {
-	parts := strings.SplitN(line, "\t", 3)
-	if len(parts) < 3 {
+func parseFileStatsLine(line []byte, fileExists map[string]bool) ([]string, schema.Metric, schema.Metric) {
+	firstTab := bytes.IndexByte(line, '\t')
+	if firstTab == -1 {
 		return nil, 0, 0
 	}
+	secondTab := bytes.IndexByte(line[firstTab+1:], '\t')
+	if secondTab == -1 {
+		return nil, 0, 0
+	}
+	secondTab += firstTab + 1
 
-	addStr, delStr, path := parts[0], parts[1], parts[2]
+	add := parseChurnValue(line[:firstTab])
+	del := parseChurnValue(line[firstTab+1 : secondTab])
+	path := string(line[secondTab+1:])
 
-	add := parseChurnValue(addStr)
-	del := parseChurnValue(delStr)
+	// Optimization: check if it's a simple path first to avoid slice allocation in determinePathsToAggregate
+	if !strings.Contains(path, " => ") {
+		if fileExists[path] {
+			return []string{path}, add, del
+		}
+		return nil, add, del
+	}
 
 	pathsToAggregate := determinePathsToAggregate(path, fileExists)
 	return pathsToAggregate, add, del
 }
 
-// parseChurnValue converts a churn string to Metric, handling "-" as 0.
-func parseChurnValue(s string) schema.Metric {
-	if s == "-" {
+// parseChurnValue converts a churn byte slice to Metric, handling "-" as 0.
+// It uses a zero-allocation fast path for positive integers.
+func parseChurnValue(b []byte) schema.Metric {
+	if len(b) == 0 || (len(b) == 1 && b[0] == '-') {
 		return 0
 	}
-	if val, err := strconv.ParseFloat(s, 64); err == nil && val >= 0 {
-		return schema.Metric(val)
+
+	// Fast path for positive integers (common case in git log)
+	var val float64
+	for _, x := range b {
+		if x < '0' || x > '9' {
+			// Fallback for floats or invalid input
+			v, err := strconv.ParseFloat(string(b), 64)
+			if err != nil || v < 0 {
+				return 0
+			}
+			return schema.Metric(v)
+		}
+		val = val*10 + float64(x-'0')
 	}
-	return 0
+	return schema.Metric(val)
 }
 
 // determinePathsToAggregate handles renames and determines which paths should be aggregated.
