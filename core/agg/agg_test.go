@@ -3,6 +3,7 @@ package agg
 import (
 	"context"
 	_ "embed"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -604,4 +605,39 @@ func TestAggregateAndScoreFolders(t *testing.T) {
 		// Root folder should not be present when PathFilter is empty
 		assert.Nil(t, folderMap["."])
 	})
+}
+
+// BenchmarkParseAndAggregateGitLog measures the performance of the Git log
+// parser, which is the primary CPU bottleneck for large repositories.
+func BenchmarkParseAndAggregateGitLog(b *testing.B) {
+	// 1. Generate synthetic Git log data
+	numCommits := 1000
+	filesPerCommit := 10
+	var sb strings.Builder
+
+	// Mock file existence for all generated files
+	fileExists := make(map[string]bool)
+
+	for i := range numCommits {
+		author := fmt.Sprintf("Author %d", i%10)
+		date := time.Now().AddDate(0, 0, -i).Format(time.RFC3339)
+		fmt.Fprintf(&sb, "--commit%d|%s|%s\n", i, author, date)
+
+		for j := range filesPerCommit {
+			path := fmt.Sprintf("pkg/sub/file_%d.go", j)
+			fileExists[path] = true
+			fmt.Fprintf(&sb, "%d\t%d\t%s\n", j*10, j*5, path)
+		}
+		sb.WriteString("\n")
+	}
+	logData := []byte(sb.String())
+
+	// 2. Prepare output structure
+	endTime := time.Now()
+	recentThreshold := endTime.AddDate(0, 0, -30)
+
+	for b.Loop() {
+		output := initializeAggregateOutput(endTime)
+		parseAndAggregateGitLog(logData, fileExists, output, recentThreshold)
+	}
 }

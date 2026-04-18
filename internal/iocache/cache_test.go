@@ -856,7 +856,7 @@ func BenchmarkAnalysisStore_RecordFileResultsBatch(b *testing.B) {
 	// Prepare a batch of 100 results
 	batchSize := 100
 	results := make([]schema.BatchFileResult, batchSize)
-	for i := 0; i < batchSize; i++ {
+	for i := range batchSize {
 		results[i] = schema.BatchFileResult{
 			Path: fmt.Sprintf("file/%d.go", i),
 			Metrics: schema.FileMetrics{
@@ -870,9 +870,9 @@ func BenchmarkAnalysisStore_RecordFileResultsBatch(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		// Update paths to be unique per iteration to avoid UNIQUE constraint violations
-		for j := 0; j < batchSize; j++ {
+		for j := range batchSize {
 			results[j].Path = fmt.Sprintf("iter/%d/file/%d.go", i, j)
 		}
 		err := store.RecordFileResultsBatch(analysisID, results)
