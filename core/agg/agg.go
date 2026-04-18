@@ -318,6 +318,7 @@ func BuildFilteredFileList(gitSettings config.GitSettings, output *schema.Aggreg
 	pathFilter := gitSettings.GetPathFilter()
 	pathFilterSet := pathFilter != ""
 	excludes := gitSettings.GetExcludes()
+	matcher := schema.NewPathMatcher(excludes)
 
 	for f := range output.FileStats {
 		// Apply path filter check only if the filter is set
@@ -326,7 +327,7 @@ func BuildFilteredFileList(gitSettings config.GitSettings, output *schema.Aggreg
 		}
 
 		// Apply excludes filter
-		if schema.ShouldIgnore(f, excludes) {
+		if matcher.Match(f) {
 			continue
 		}
 

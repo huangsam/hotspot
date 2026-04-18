@@ -470,8 +470,8 @@ func FuzzShouldIgnore(f *testing.F) {
 	})
 }
 
-// BenchmarkShouldIgnore measures the performance of path filtering against a set
-// of realistic exclude patterns.
+// BenchmarkShouldIgnore measures the performance of the one-off path filtering
+// (which now creates a new PathMatcher internally every time).
 func BenchmarkShouldIgnore(b *testing.B) {
 	excludes := []string{
 		"**/vendor/",
@@ -488,6 +488,27 @@ func BenchmarkShouldIgnore(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = ShouldIgnore(path, excludes)
+	}
+}
+
+// BenchmarkPathMatcher measures the performance of the pre-compiled PathMatcher
+// when reused across many files (the common case during aggregation).
+func BenchmarkPathMatcher(b *testing.B) {
+	excludes := []string{
+		"**/vendor/",
+		"node_modules/",
+		"**/*.min.js",
+		"**/test/**",
+		"dist/",
+		"build/",
+		".git/",
+		"*.log",
+	}
+	matcher := NewPathMatcher(excludes)
+	path := "pkg/sub/module/test/internal/vendor/package/file.min.js"
+
+	for b.Loop() {
+		_ = matcher.Match(path)
 	}
 }
 

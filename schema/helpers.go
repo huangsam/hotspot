@@ -120,76 +120,134 @@ func OwnersEqual(a, b []string) bool {
 	return true
 }
 
-// ShouldIgnore returns true if the given path matches any of the exclude patterns.
-// It supports simple glob patterns (using filepath.Match) and recursive wildcards (**).
-// Patterns ending with '/' match directories anywhere in the path.
-// Patterns starting with '.' match file extensions.
-func ShouldIgnore(path string, excludes []string) bool {
+// PathMatcher provides efficient path matching against a set of exclude patterns.
+// It pre-processes patterns to avoid redundant string operations during matching.
+type PathMatcher struct {
+	rules []ignoreRule
+}
+
+type ignoreKind int
+
+const (
+	kindEverything ignoreKind = iota
+	kindPrefix
+	kindSuffix
+	kindSubstring
+	kindDirComponent
+	kindGlob
+)
+
+type ignoreRule struct {
+	pattern string
+	kind    ignoreKind
+}
+
+// NewPathMatcher creates a new PathMatcher from a set of exclude patterns.
+func NewPathMatcher(excludes []string) *PathMatcher {
+	var rules []ignoreRule
 	for _, ex := range excludes {
 		ex = strings.TrimSpace(ex)
 		if ex == "" {
 			continue
 		}
 
-		// Normalize both to use forward slashes for cross-platform consistency
-		path = filepath.ToSlash(path)
+		// Normalize to forward slashes
 		ex = filepath.ToSlash(ex)
 
-		// 1. Handle explicit recursive prefix **/
-		if strings.HasPrefix(ex, "**/") {
-			pattern := ex[3:]
-			if pattern == "" {
-				return true // ** matches everything
-			}
-			// Check if it matches as a direct path or as a component in a subdirectory
-			if ShouldIgnore(path, []string{pattern}) || strings.Contains(path, "/"+pattern) {
-				return true
-			}
-			continue
-		}
-
-		// 2. Handle explicit recursive suffix /**
-		if strings.HasSuffix(ex, "/**") {
-			prefix := ex[:len(ex)-3]
-			if strings.HasPrefix(path, prefix) {
-				return true
-			}
-			continue
-		}
-
-		// 3. Handle patterns with globs
-		if strings.ContainsAny(ex, "*?[") {
-			// Try matching full path
-			if ok, err := filepath.Match(ex, path); err == nil && ok {
-				return true
-			}
-			// Try matching against the base filename (e.g. *.min.js)
-			if ok, err := filepath.Match(ex, filepath.Base(path)); err == nil && ok {
-				return true
-			}
-			continue
-		}
-
-		// 4. Handle non-glob patterns (prefix, suffix, or substring matches)
 		switch {
+		case ex == "**":
+			rules = append(rules, ignoreRule{kind: kindEverything})
+		case strings.HasPrefix(ex, "**/"):
+			// Recursive directory or glob
+			pattern := ex[3:]
+			switch {
+			case pattern == "":
+				rules = append(rules, ignoreRule{kind: kindEverything})
+			case strings.ContainsAny(pattern, "*?["):
+				rules = append(rules, ignoreRule{pattern: pattern, kind: kindGlob})
+			default:
+				rules = append(rules, ignoreRule{pattern: pattern, kind: kindDirComponent})
+			}
+		case strings.HasSuffix(ex, "/**"):
+			rules = append(rules, ignoreRule{pattern: ex[:len(ex)-3], kind: kindPrefix})
+		case strings.ContainsAny(ex, "*?["):
+			rules = append(rules, ignoreRule{pattern: ex, kind: kindGlob})
 		case strings.HasSuffix(ex, "/"):
-			// Directory match: check if path starts with it or contains it as a component
-			if strings.HasPrefix(path, ex) || path == strings.TrimSuffix(ex, "/") || strings.Contains(path, "/"+ex) {
-				return true
-			}
+			rules = append(rules, ignoreRule{pattern: ex, kind: kindDirComponent})
 		case strings.HasPrefix(ex, "."):
-			// Extension match
-			if strings.HasSuffix(path, ex) {
+			rules = append(rules, ignoreRule{pattern: ex, kind: kindSuffix})
+		default:
+			rules = append(rules, ignoreRule{pattern: ex, kind: kindSubstring})
+		}
+	}
+	return &PathMatcher{rules: rules}
+}
+
+// Match returns true if the path matches any of the exclude patterns.
+func (m *PathMatcher) Match(path string) bool {
+	if m == nil || len(m.rules) == 0 {
+		return false
+	}
+
+	// Normalize path once
+	path = filepath.ToSlash(path)
+	if path == "" {
+		return false
+	}
+
+	for _, rule := range m.rules {
+		switch rule.kind {
+		case kindEverything:
+			return true
+		case kindPrefix:
+			if strings.HasPrefix(path, rule.pattern) {
 				return true
 			}
-		default:
-			// Substring match
-			if strings.Contains(path, ex) {
+		case kindSuffix:
+			if strings.HasSuffix(path, rule.pattern) {
 				return true
+			}
+		case kindSubstring:
+			if strings.Contains(path, rule.pattern) {
+				return true
+			}
+		case kindDirComponent:
+			// Match if it's the full path, a prefix, or a component in the middle.
+			// rule.pattern already has a trailing slash if it was "dir/" or "**/dir/".
+			if path == strings.TrimSuffix(rule.pattern, "/") || strings.HasPrefix(path, rule.pattern) || strings.Contains(path, "/"+rule.pattern) {
+				return true
+			}
+		case kindGlob:
+			// Try matching full path
+			if ok, err := filepath.Match(rule.pattern, path); err == nil && ok {
+				return true
+			}
+			// Try matching against the base filename
+			if ok, err := filepath.Match(rule.pattern, filepath.Base(path)); err == nil && ok {
+				return true
+			}
+			// If it's a recursive glob like **/*.go, we also need to match path components
+			if strings.Contains(path, "/") {
+				parts := strings.SplitSeq(path, "/")
+				for part := range parts {
+					if ok, err := filepath.Match(rule.pattern, part); err == nil && ok {
+						return true
+					}
+				}
 			}
 		}
 	}
 	return false
+}
+
+// ShouldIgnore returns true if the given path matches any of the exclude patterns.
+// This is a convenience wrapper around PathMatcher for one-off checks.
+// For repeated checks, create a PathMatcher using NewPathMatcher instead.
+func ShouldIgnore(path string, excludes []string) bool {
+	if len(excludes) == 0 {
+		return false
+	}
+	return NewPathMatcher(excludes).Match(path)
 }
 
 // ParseBoolString parses a string value into a boolean.
