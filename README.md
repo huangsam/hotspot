@@ -13,7 +13,7 @@ Unlike traditional linters or team-velocity metrics, Hotspot analyzes **developm
 
 ## Features
 
-- 🤖 **Agent-First Intelligence** - Native MCP server for autonomous AI auditing and refactoring.
+- 🤖 **Agentic Hub** - Native MCP server with shape-aware "Reasoning" labels for autonomous auditing.
 - 🔍 **Tactical CLI** - Rapid file/folder ranking by activity, complexity, and ownership.
 - 🧮 **Deep Metrics** - High-fidelity signals for churn, Ginni coefficients, and bus factor risk.
 - 🕓 **Trend Tracking** - Time-anchored analysis and delta tracking across Git references.
@@ -84,9 +84,9 @@ Comprehensive performance benchmarks using [this script](./benchmark/main.go). T
 
 | Repository | Files (Cold/Warm) | Compare Files (Cold/Warm) | Timeseries (Cold/Warm) |
 |------------|-------------------|---------------------------|------------------------|
-| [csv-parser] | 0.067s / 0.023s | 0.144s / 0.050s | 0.161s / 0.068s |
-| [fd] | 0.042s / 0.022s | 0.088s / 0.051s | 0.132s / 0.065s |
-| [git] | 0.573s / 0.041s | 1.453s / 0.175s | 2.248s / 0.293s |
-| [kubernetes] | 3.207s / 0.118s | 7.334s / 1.300s | 12.149s / 1.108s |
+| [csv-parser] | 0.081s / 0.025s | 0.146s / 0.053s | 0.179s / 0.075s |
+| [fd] | 0.045s / 0.025s | 0.089s / 0.049s | 0.144s / 0.072s |
+| [git] | 0.587s / 0.049s | 1.582s / 0.177s | 2.262s / 0.319s |
+| [kubernetes] | 3.129s / 0.146s | 7.457s / 1.219s | 12.607s / 1.266s |
 
 The data shows that Hotspot caches Git analysis results to speed up repeated runs.
