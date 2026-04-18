@@ -2,6 +2,7 @@ package iocache
 
 import (
 	"database/sql"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -817,4 +818,66 @@ func TestCacheStoreGetStatus(t *testing.T) {
 		assert.True(t, status.OldestEntryTime.IsZero(), "Oldest entry time should be zero")
 		assert.Equal(t, int64(0), status.TableSizeBytes, "Table size should be 0")
 	})
+}
+
+// BenchmarkManagerContention measures the overhead and contention of the global
+// Manager's RWMutex under high parallel load.
+func BenchmarkManagerContention(b *testing.B) {
+	resetGlobals()
+	// Initialize with None backend to avoid actual DB I/O overhead in this benchmark
+	_ = InitStores(schema.NoneBackend, "", schema.NoneBackend, "", nil)
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			// Repeatedly access the stores through the global manager
+			_ = Manager.GetActivityStore()
+			_ = Manager.GetAnalysisStore()
+		}
+	})
+}
+
+// BenchmarkAnalysisStore_RecordFileResultsBatch measures the performance of
+// batch-recording file results into a memory-backed SQLite AnalysisStore.
+func BenchmarkAnalysisStore_RecordFileResultsBatch(b *testing.B) {
+	// Setup a memory-backed AnalysisStore
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:", nil)
+	if err != nil {
+		b.Fatalf("failed to create analysis store: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+
+	// Create a dummy analysis run
+	analysisID, err := store.BeginAnalysis("git:test", time.Now(), nil)
+	if err != nil {
+		b.Fatalf("failed to begin analysis: %v", err)
+	}
+
+	// Prepare a batch of 100 results
+	batchSize := 100
+	results := make([]schema.BatchFileResult, batchSize)
+	for i := 0; i < batchSize; i++ {
+		results[i] = schema.BatchFileResult{
+			Path: fmt.Sprintf("file/%d.go", i),
+			Metrics: schema.FileMetrics{
+				TotalCommits: 10,
+				TotalChurn:   100,
+			},
+			Scores: schema.FileScores{
+				HotScore: 0.5,
+			},
+		}
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// Update paths to be unique per iteration to avoid UNIQUE constraint violations
+		for j := 0; j < batchSize; j++ {
+			results[j].Path = fmt.Sprintf("iter/%d/file/%d.go", i, j)
+		}
+		err := store.RecordFileResultsBatch(analysisID, results)
+		if err != nil {
+			b.Fatalf("failed to record batch at iteration %d: %v", i, err)
+		}
+	}
 }
