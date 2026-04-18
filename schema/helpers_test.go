@@ -469,3 +469,40 @@ func FuzzShouldIgnore(f *testing.F) {
 		_ = ShouldIgnore(path, excludes)
 	})
 }
+
+// BenchmarkShouldIgnore measures the performance of path filtering against a set
+// of realistic exclude patterns.
+func BenchmarkShouldIgnore(b *testing.B) {
+	excludes := []string{
+		"**/vendor/",
+		"node_modules/",
+		"**/*.min.js",
+		"**/test/**",
+		"dist/",
+		"build/",
+		".git/",
+		"*.log",
+	}
+	path := "pkg/sub/module/test/internal/vendor/package/file.min.js"
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = ShouldIgnore(path, excludes)
+	}
+}
+
+// BenchmarkAbbreviateName measures the performance of name abbreviation.
+func BenchmarkAbbreviateName(b *testing.B) {
+	names := []string{
+		"Samuel Huang",
+		"Ava (Billy) Cathy",
+		"dependabot[bot]",
+		"John D. Smith",
+		"Jean-Pierre Dubois",
+		"张三",
+	}
+
+	for i := range b.N {
+		_ = AbbreviateName(names[i%len(names)])
+	}
+}
