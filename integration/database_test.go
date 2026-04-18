@@ -70,8 +70,10 @@ func TestHotspotWithMySQL(t *testing.T) {
 	require.NoError(t, err)
 
 	// Run hotspot analysis status
-	_, err = runHotspotCommand(t, "analysis", "status")
+	output, err := runHotspotCommand(t, "analysis", "status")
 	require.NoError(t, err)
+	require.Contains(t, string(output), "Total Runs: 1")
+	require.Contains(t, string(output), "Connected: true")
 }
 
 // TestHotspotWithPostgres tests the hotspot CLI with a PostgreSQL backend.
@@ -130,6 +132,8 @@ func TestHotspotWithPostgres(t *testing.T) {
 	require.NoError(t, err)
 
 	// Run hotspot analysis status
-	_, err = runHotspotCommand(t, "analysis", "status")
+	output, err := runHotspotCommand(t, "analysis", "status")
 	require.NoError(t, err)
+	require.Contains(t, string(output), "Total Runs: 1")
+	require.Contains(t, string(output), "Connected: true")
 }
