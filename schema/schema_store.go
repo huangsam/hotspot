@@ -43,15 +43,20 @@ type FileMetrics struct {
 	AgeDays                Metric
 	GiniCoefficient        float64
 	FileOwner              string
+	RecencySignal          float64
+	RecencyThresholdLow    float64
+	RecencyThresholdHigh   float64
 }
 
 // FileScores represents final computed scores for a single file.
 type FileScores struct {
 	AnalysisTime    time.Time
-	HotScore        float64 // hot mode score
-	RiskScore       float64 // risk mode score
-	ComplexityScore float64 // complexity mode score
-	ScoreLabel      string  // current mode name
+	HotScore        float64  // hot mode score
+	RiskScore       float64  // risk mode score
+	ComplexityScore float64  // complexity mode score
+	ROIScore        float64  // roi mode score
+	ScoreLabel      string   // current mode name
+	Reasoning       []string // justifications for the current score
 }
 
 // AnalysisRunRecord represents a row from the hotspot_analysis_runs table.

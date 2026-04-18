@@ -48,5 +48,10 @@ type FileScoresMetricsRecord struct {
 	ScoreHot               float64
 	ScoreRisk              float64
 	ScoreComplexity        float64
+	ScoreROI               float64
 	ScoreLabel             string
+	Reasoning              []string
+	RecencySignal          float64
+	RecencyThresholdLow    float64
+	RecencyThresholdHigh   float64
 }

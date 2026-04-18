@@ -360,7 +360,8 @@ func (as *AnalysisStoreImpl) GetFileScoresMetrics(filter schema.AnalysisQueryFil
 	query := fmt.Sprintf(`SELECT analysis_id, file_path, analysis_time, total_commits, total_churn, lines_added, lines_deleted, decayed_commits, decayed_churn, lines_of_code,
     contributor_count, recent_commits, recent_churn, recent_lines_added, recent_lines_deleted, recent_contributor_count,
     age_days, gini_coefficient, file_owner,
-    score_hot, score_risk, score_complexity, score_label
+    score_hot, score_risk, score_complexity, score_roi, score_label, reasoning,
+    recency_signal, recency_threshold_low, recency_threshold_high
     FROM %s`, quotedTableName)
 
 	var args []any

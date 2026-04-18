@@ -84,8 +84,23 @@ type FileScoresMetrics struct {
 	// ScoreComplexity is the hotspot score in complexity mode
 	ScoreComplexity float64 `parquet:"score_complexity,snappy"`
 
+	// ScoreROI is the hotspot score in ROI mode
+	ScoreROI float64 `parquet:"score_roi,snappy"`
+
 	// ScoreLabel indicates which scoring mode was used
 	ScoreLabel string `parquet:"score_label,snappy"`
+
+	// Reasoning contains human-and-AI-readable justifications for the scores
+	Reasoning []string `parquet:"reasoning,snappy"`
+
+	// RecencySignal is the freshness score for the file
+	RecencySignal float64 `parquet:"recency_signal,snappy"`
+
+	// RecencyThresholdLow is the scale-aware baseline for recency
+	RecencyThresholdLow float64 `parquet:"recency_threshold_low,snappy"`
+
+	// RecencyThresholdHigh is the scale-aware ceiling for recency
+	RecencyThresholdHigh float64 `parquet:"recency_threshold_high,snappy"`
 }
 
 // WriteAnalysisRunsParquet writes a slice of AnalysisRun structs to a Parquet file.
@@ -268,22 +283,27 @@ func ConvertFileScoresMetricsRecords(records []schema.FileScoresMetricsRecord) [
 	result := make([]FileScoresMetrics, len(records))
 	for i, record := range records {
 		result[i] = FileScoresMetrics{
-			AnalysisID:         record.AnalysisID,
-			FilePath:           record.FilePath,
-			AnalysisTime:       record.AnalysisTime,
-			TotalCommits:       record.TotalCommits.Float64(),
-			TotalChurn:         record.TotalChurn.Float64(),
-			LinesOfCode:        record.LinesOfCode.Float64(),
-			ContributorCount:   record.ContributorCount.Float64(),
-			AgeDays:            record.AgeDays.Float64(),
-			RecentLinesAdded:   record.RecentLinesAdded.Float64(),
-			RecentLinesDeleted: record.RecentLinesDeleted.Float64(),
-			GiniCoefficient:    record.GiniCoefficient,
-			FileOwner:          record.FileOwner,
-			ScoreHot:           record.ScoreHot,
-			ScoreRisk:          record.ScoreRisk,
-			ScoreComplexity:    record.ScoreComplexity,
-			ScoreLabel:         record.ScoreLabel,
+			AnalysisID:           record.AnalysisID,
+			FilePath:             record.FilePath,
+			AnalysisTime:         record.AnalysisTime,
+			TotalCommits:         record.TotalCommits.Float64(),
+			TotalChurn:           record.TotalChurn.Float64(),
+			LinesOfCode:          record.LinesOfCode.Float64(),
+			ContributorCount:     record.ContributorCount.Float64(),
+			AgeDays:              record.AgeDays.Float64(),
+			RecentLinesAdded:     record.RecentLinesAdded.Float64(),
+			RecentLinesDeleted:   record.RecentLinesDeleted.Float64(),
+			GiniCoefficient:      record.GiniCoefficient,
+			FileOwner:            record.FileOwner,
+			ScoreHot:             record.ScoreHot,
+			ScoreRisk:            record.ScoreRisk,
+			ScoreComplexity:      record.ScoreComplexity,
+			ScoreROI:             record.ScoreROI,
+			ScoreLabel:           record.ScoreLabel,
+			Reasoning:            record.Reasoning,
+			RecencySignal:        record.RecencySignal,
+			RecencyThresholdLow:  record.RecencyThresholdLow,
+			RecencyThresholdHigh: record.RecencyThresholdHigh,
 		}
 	}
 	return result

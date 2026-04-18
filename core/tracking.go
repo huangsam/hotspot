@@ -44,6 +44,9 @@ func recordFileAnalysis(ctx context.Context, scoringSettings config.ScoringSetti
 		AgeDays:                result.AgeDays, // Convert int to float64 for type compatibility with FileMetrics struct
 		GiniCoefficient:        result.Gini,
 		FileOwner:              getOwnerString(result.Owners),
+		RecencySignal:          result.RecencySignal,
+		RecencyThresholdLow:    result.RecencyThresholdLow,
+		RecencyThresholdHigh:   result.RecencyThresholdHigh,
 	}
 
 	// Compute scores
@@ -55,7 +58,9 @@ func recordFileAnalysis(ctx context.Context, scoringSettings config.ScoringSetti
 		HotScore:        allScores[schema.HotMode],
 		RiskScore:       allScores[schema.RiskMode],
 		ComplexityScore: allScores[schema.ComplexityMode],
+		ROIScore:        allScores[schema.ROIMode],
 		ScoreLabel:      string(scoringSettings.GetMode()),
+		Reasoning:       result.Reasoning,
 	}
 
 	// Record both metrics and scores in one operation
