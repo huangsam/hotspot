@@ -35,7 +35,7 @@ func generateTestGitLog(scenarios []gitLogScenario) []byte {
 }
 
 // generateComprehensiveTestData creates test data that covers various parsing scenarios.
-func generateComprehensiveTestData() ([]byte, map[string]bool) {
+func generateComprehensiveTestData() ([]byte, map[string]string) {
 	baseTime := time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC)
 
 	scenarios := []gitLogScenario{
@@ -68,17 +68,17 @@ func generateComprehensiveTestData() ([]byte, map[string]bool) {
 		},
 	}
 
-	fileExists := map[string]bool{
-		"core/analysis.go": true,
-		"core/core.go":     true,
-		"core/builder.go":  true,
+	fileExists := map[string]string{
+		"core/analysis.go": "core/analysis.go",
+		"core/core.go":     "core/core.go",
+		"core/builder.go":  "core/builder.go",
 	}
 
 	return generateTestGitLog(scenarios), fileExists
 }
 
 // generateRenameTestData creates test data for rename scenarios.
-func generateRenameTestData() ([]byte, map[string]bool) {
+func generateRenameTestData() ([]byte, map[string]string) {
 	baseTime := time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC)
 
 	scenarios := []gitLogScenario{
@@ -116,17 +116,17 @@ func generateRenameTestData() ([]byte, map[string]bool) {
 		},
 	}
 
-	fileExists := map[string]bool{
-		"src/utils/helper.go":    true,
-		"src/helpers/utility.go": true,
-		"src/main.go":            true,
+	fileExists := map[string]string{
+		"src/utils/helper.go":    "src/utils/helper.go",
+		"src/helpers/utility.go": "src/helpers/utility.go",
+		"src/main.go":            "src/main.go",
 	}
 
 	return generateTestGitLog(scenarios), fileExists
 }
 
 // generateEdgeCaseTestData creates test data for edge cases.
-func generateEdgeCaseTestData() ([]byte, map[string]bool) {
+func generateEdgeCaseTestData() ([]byte, map[string]string) {
 	baseTime := time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC)
 
 	scenarios := []gitLogScenario{
@@ -156,20 +156,20 @@ func generateEdgeCaseTestData() ([]byte, map[string]bool) {
 		},
 	}
 
-	fileExists := map[string]bool{
-		"src/main.go":   true,
-		"src/logo.png":  true,
-		"src/empty.txt": true,
+	fileExists := map[string]string{
+		"src/main.go":   "src/main.go",
+		"src/logo.png":  "src/logo.png",
+		"src/empty.txt": "src/empty.txt",
 	}
 
 	return generateTestGitLog(scenarios), fileExists
 }
 
 // createTestFileExistsMap creates a standard file existence map for testing.
-func createTestFileExistsMap(files []string) map[string]bool {
-	result := make(map[string]bool)
+func createTestFileExistsMap(files []string) map[string]string {
+	result := make(map[string]string)
 	for _, file := range files {
-		result[file] = true
+		result[file] = file
 	}
 	return result
 }

@@ -592,7 +592,7 @@ func BenchmarkParseAndAggregateGitLog(b *testing.B) {
 	var sb strings.Builder
 
 	// Mock file existence for all generated files
-	fileExists := make(map[string]bool)
+	fileExists := make(map[string]string)
 
 	for i := range numCommits {
 		author := fmt.Sprintf("Author %d", i%10)
@@ -601,7 +601,7 @@ func BenchmarkParseAndAggregateGitLog(b *testing.B) {
 
 		for j := range filesPerCommit {
 			path := fmt.Sprintf("pkg/sub/file_%d.go", j)
-			fileExists[path] = true
+			fileExists[path] = path
 			fmt.Fprintf(&sb, "%d\t%d\t%s\n", j*10, j*5, path)
 		}
 		sb.WriteString("\n")
@@ -615,5 +615,43 @@ func BenchmarkParseAndAggregateGitLog(b *testing.B) {
 	for b.Loop() {
 		output := initializeAggregateOutput(endTime)
 		parseAndAggregateGitLog(logData, fileExists, output, recentThreshold)
+	}
+}
+
+// BenchmarkAggregateForPath measures the cost of updating the aggregation
+// structure for a single file. This highlights the benefit of "The Big Merge"
+// (single map lookup vs multiple independent maps).
+func BenchmarkAggregateForPath(b *testing.B) {
+	output := initializeAggregateOutput(time.Now())
+	path := "pkg/sub/file.go"
+	author := "Alice"
+	now := time.Now()
+	threshold := now.AddDate(0, 0, -30)
+
+	b.ResetTimer()
+	for b.Loop() {
+		aggregateForPath(path, 10, 5, author, now, output, threshold)
+	}
+}
+
+// BenchmarkParseFileStatsLine measures the cost of parsing a single line
+// from the Git log, which is a frequent source of allocations.
+func BenchmarkParseFileStatsLine(b *testing.B) {
+	line := []byte("10\t5\tcore/agg/agg.go")
+	fileExists := map[string]string{"core/agg/agg.go": "core/agg/agg.go"}
+
+	b.ResetTimer()
+	for b.Loop() {
+		_, _, _, _ = parseFileStatsLine(line, fileExists)
+	}
+}
+
+// BenchmarkParseChurnValue measures the performance of the numeric parser.
+func BenchmarkParseChurnValue(b *testing.B) {
+	input := []byte("12345")
+
+	b.ResetTimer()
+	for b.Loop() {
+		_ = parseChurnValue(input)
 	}
 }

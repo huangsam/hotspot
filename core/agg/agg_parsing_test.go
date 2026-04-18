@@ -151,7 +151,14 @@ func TestParseFileStatsLine(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			paths, add, del := parseFileStatsLine([]byte(tc.line), fileExists)
+			p1, p2, add, del := parseFileStatsLine([]byte(tc.line), fileExists)
+			var paths []string
+			if p1 != "" {
+				paths = append(paths, p1)
+			}
+			if p2 != "" {
+				paths = append(paths, p2)
+			}
 			assert.Equal(t, tc.expectedPaths, paths)
 			assert.Equal(t, tc.expectedAdd, add)
 			assert.Equal(t, tc.expectedDel, del)
@@ -208,8 +215,15 @@ func TestDeterminePathsToAggregate(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := determinePathsToAggregate(tc.path, fileExists)
-			assert.Equal(t, tc.expectedPaths, result)
+			p1, p2 := determinePathsToAggregate(tc.path, fileExists)
+			var paths []string
+			if p1 != "" {
+				paths = append(paths, p1)
+			}
+			if p2 != "" {
+				paths = append(paths, p2)
+			}
+			assert.Equal(t, tc.expectedPaths, paths)
 		})
 	}
 }

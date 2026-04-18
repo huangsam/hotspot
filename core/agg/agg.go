@@ -51,10 +51,12 @@ func aggregateActivity(ctx context.Context, gitSettings config.GitSettings, clie
 }
 
 // buildFileExistenceMap creates a lookup map for O(1) file existence checks.
-func buildFileExistenceMap(currentFiles []string) map[string]bool {
-	fileExists := make(map[string]bool, len(currentFiles))
+// It returns a map where key and value are the same string object, allowing
+// for zero-allocation string interning of paths during parsing.
+func buildFileExistenceMap(currentFiles []string) map[string]string {
+	fileExists := make(map[string]string, len(currentFiles))
 	for _, file := range currentFiles {
-		fileExists[file] = true
+		fileExists[file] = file
 	}
 	return fileExists
 }
@@ -68,7 +70,7 @@ func initializeAggregateOutput(endTime time.Time) *schema.AggregateOutput {
 }
 
 // parseAndAggregateGitLog processes the git log output and aggregates data into the output maps.
-func parseAndAggregateGitLog(out []byte, fileExists map[string]bool, output *schema.AggregateOutput, recentThreshold time.Time) {
+func parseAndAggregateGitLog(out []byte, fileExists map[string]string, output *schema.AggregateOutput, recentThreshold time.Time) {
 	scanner := bufio.NewScanner(bytes.NewReader(out))
 	var currentAuthor string
 	var currentDate time.Time
@@ -91,19 +93,18 @@ func parseAndAggregateGitLog(out []byte, fileExists map[string]bool, output *sch
 		}
 
 		// File stats line
-		pathsToAggregate, add, del := parseFileStatsLine(l, fileExists)
-		if len(pathsToAggregate) == 0 {
-			continue
+		p1, p2, add, del := parseFileStatsLine(l, fileExists)
+		if p1 != "" {
+			aggregateForPath(p1, add, del, currentAuthor, currentDate, output, recentThreshold)
 		}
-
-		// Aggregate for each relevant path
-		for _, p := range pathsToAggregate {
-			aggregateForPath(p, add, del, currentAuthor, currentDate, output, recentThreshold)
+		if p2 != "" {
+			aggregateForPath(p2, add, del, currentAuthor, currentDate, output, recentThreshold)
 		}
 	}
 }
 
 // parseCommitHeader extracts author and date from a commit header line.
+// It uses authorCache for string interning to avoid redundant allocations.
 func parseCommitHeader(line []byte, authorCache map[string]string) (string, time.Time) {
 	if !bytes.HasPrefix(line, []byte("--")) || len(line) < 5 { // --x|y|z minimum
 		return "", time.Time{}
@@ -126,16 +127,17 @@ func parseCommitHeader(line []byte, authorCache map[string]string) (string, time
 	authorBytes := line[firstSep+1 : secondSep]
 	dateBytes := line[secondSep+1:]
 
-	// Intern the author name
-	author := string(authorBytes)
-	if cached, ok := authorCache[author]; ok {
-		author = cached
-	} else {
+	// Optimization: compiler avoids allocation for string(authorBytes) when used as map key
+	author, ok := authorCache[string(authorBytes)]
+	if !ok {
+		// Only allocate if not already in cache
+		author = string(authorBytes)
 		authorCache[author] = author
 	}
 
-	dateStr := string(dateBytes)
-	if date, err := time.Parse(time.RFC3339, dateStr); err == nil {
+	// We still allocate for the date string since time.Parse needs it,
+	// but this is only once per commit header.
+	if date, err := time.Parse(time.RFC3339, string(dateBytes)); err == nil {
 		return author, date
 	}
 
@@ -143,31 +145,33 @@ func parseCommitHeader(line []byte, authorCache map[string]string) (string, time
 }
 
 // parseFileStatsLine parses a file stats line and returns paths to aggregate and churn values.
-func parseFileStatsLine(line []byte, fileExists map[string]bool) ([]string, schema.Metric, schema.Metric) {
+// It returns up to two paths (for renames) to avoid slice allocations.
+func parseFileStatsLine(line []byte, fileExists map[string]string) (string, string, schema.Metric, schema.Metric) {
 	firstTab := bytes.IndexByte(line, '\t')
 	if firstTab == -1 {
-		return nil, 0, 0
+		return "", "", 0, 0
 	}
 	secondTab := bytes.IndexByte(line[firstTab+1:], '\t')
 	if secondTab == -1 {
-		return nil, 0, 0
+		return "", "", 0, 0
 	}
 	secondTab += firstTab + 1
 
 	add := parseChurnValue(line[:firstTab])
 	del := parseChurnValue(line[firstTab+1 : secondTab])
-	path := string(line[secondTab+1:])
+	pathBytes := line[secondTab+1:]
 
-	// Optimization: check if it's a simple path first to avoid slice allocation in determinePathsToAggregate
-	if !strings.Contains(path, " => ") {
-		if fileExists[path] {
-			return []string{path}, add, del
+	// Optimization: check if it's a simple path first to avoid allocations.
+	if !bytes.Contains(pathBytes, []byte(" => ")) {
+		if canonical, ok := fileExists[string(pathBytes)]; ok {
+			return canonical, "", add, del
 		}
-		return nil, add, del
+		return "", "", add, del
 	}
 
-	pathsToAggregate := determinePathsToAggregate(path, fileExists)
-	return pathsToAggregate, add, del
+	// Renames still require string conversion for complex parsing
+	p1, p2 := determinePathsToAggregate(string(pathBytes), fileExists)
+	return p1, p2, add, del
 }
 
 // parseChurnValue converts a churn byte slice to Metric, handling "-" as 0.
@@ -194,24 +198,24 @@ func parseChurnValue(b []byte) schema.Metric {
 }
 
 // determinePathsToAggregate handles renames and determines which paths should be aggregated.
-func determinePathsToAggregate(path string, fileExists map[string]bool) []string {
+func determinePathsToAggregate(path string, fileExists map[string]string) (string, string) {
 	if !strings.Contains(path, " => ") {
-		if fileExists[path] {
-			return []string{path}
+		if canonical, ok := fileExists[path]; ok {
+			return canonical, ""
 		}
-		return nil
+		return "", ""
 	}
 
 	// Handle renames
 	oldPath, newPath := parseRenamePath(path)
-	var paths []string
-	if fileExists[oldPath] {
-		paths = append(paths, oldPath)
+	var p1, p2 string
+	if canonical, ok := fileExists[oldPath]; ok {
+		p1 = canonical
 	}
-	if fileExists[newPath] {
-		paths = append(paths, newPath)
+	if canonical, ok := fileExists[newPath]; ok {
+		p2 = canonical
 	}
-	return paths
+	return p1, p2
 }
 
 // parseRenamePath extracts old and new paths from a rename string.
