@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.17.0] - 2026-04-18
+
+### Added
+- Persisted ROI and Recency metrics across all storage backends (SQLite, MySQL, PostgreSQL)
+- Analytical "Intelligence Layer" in the database schema for high-fidelity reasoning signals
+- Full parity for `compare_file_hotspots` and `compare_folder_hotspots` MCP tools
+- `run_check` MCP tool for automated policy gating in agentic workflows
+- Full metrics parity for Parquet analytical lake exports, including reasoning signals
+
+### Changed
+- Performance optimization for analysis tracking with batched, transactional recording
+- Unified exclusion logic across CLI presets and MCP server invocations
+- Refined `small` preset for tighter microservice analysis defaults
+- Refreshed demo assets and updated performance benchmarks in documentation
+
+### Fixed
+- Transactional safety in database integration tests with dialect-specific assertions
+- Preset handling for MCP to ensure consistent recursive glob filtering
+- Dependency hygiene with Go module updates and `go mod tidy`
+
 ## [1.16.2] - 2026-04-17
 
 ### Added
@@ -651,6 +671,7 @@ Initial development covered core functionality including:
 - Code quality and maintainability refactoring
 - Proper package structure architecture
 
+[1.17.0]: https://github.com/huangsam/hotspot/compare/v1.16.2...v1.17.0
 [1.16.2]: https://github.com/huangsam/hotspot/compare/v1.16.1...v1.16.2
 [1.16.1]: https://github.com/huangsam/hotspot/compare/v1.16.0...v1.16.1
 [1.16.0]: https://github.com/huangsam/hotspot/compare/v1.15.0...v1.16.0
