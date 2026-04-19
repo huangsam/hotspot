@@ -89,7 +89,7 @@ test-race: test
 # Run benchmarks
 bench:
 	@echo "Running benchmarks..."
-	@$(GO) test -bench=. ./...
+	@$(GO) test -run=^$$ -bench=. ./...
 
 # Run macro benchmarks (requires external repos)
 # Usage: make bench-repos BENCH_REPOS_DIR=/path/to/repos
