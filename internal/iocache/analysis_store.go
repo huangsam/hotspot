@@ -286,8 +286,9 @@ func (as *AnalysisStoreImpl) PruneOrphanedRuns(maxAge time.Duration) error {
 
 	cutoff := time.Now().Add(-maxAge)
 	query := fmt.Sprintf(
-		"DELETE FROM %s WHERE total_files_analyzed IS NULL AND start_time < ?",
+		"DELETE FROM %s WHERE total_files_analyzed IS NULL AND start_time < %s",
 		as.dialect.QuoteIdentifier(analysisRunsTable),
+		as.dialect.Placeholder(1),
 	)
 
 	result, err := as.db.Exec(query, as.dialect.FormatTime(cutoff))
