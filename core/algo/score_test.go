@@ -497,7 +497,7 @@ func TestIsConfigurationFile(t *testing.T) {
 	}{
 		{".yml", true},
 		{".yaml", true},
-		{"json", true},
+		{".json", true},
 		{".xml", true},
 		{".lock", true},
 		{".sum", true},
@@ -508,9 +508,9 @@ func TestIsConfigurationFile(t *testing.T) {
 		{".rs", false},
 		{".java", false},
 		{".gradle", false},
-		{"Makefile", false},
 		{".csv", true},
 		{".ini", true},
+		{"", false},
 	}
 
 	for _, tt := range tests {
