@@ -141,7 +141,7 @@ func ComputeScore(m *schema.FileResult, mode schema.ScoringMode, weights map[sch
 	}
 
 	// Debuff signals on configuration
-	if slices.Contains([]string{"yml", "yaml", "json", "toml", "cfg"}, extLower) {
+	if isConfigurationFile(extLower) {
 		if mode == schema.ComplexityMode {
 			score *= 0.50
 		}
@@ -258,4 +258,15 @@ func Gini(values []float64) float64 {
 	g := (2*weightedSum)/(nFloat*sum) - (nFloat+1)/nFloat
 
 	return math.Min(math.Max(g, 0), 1) // clamp to [0,1]
+}
+
+// isConfigurationFile returns true if the extension belongs to a data or configuration format.
+func isConfigurationFile(ext string) bool {
+	// Remove leading dot if present
+	ext = strings.TrimPrefix(ext, ".")
+
+	return slices.Contains([]string{
+		"yml", "yaml", "json", "toml", "cfg", "xml", "ini",
+		"lock", "sum", "csv", "tsv", "md", "txt", "tfstate",
+	}, ext)
 }
