@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"context"
 	"maps"
 	"os"
@@ -150,7 +151,10 @@ func (b *FileResultBuilder) FetchFileStats() *FileResultBuilder {
 	}
 
 	size := int64(len(content))
-	lines := len(strings.Split(string(content), "\n"))
+	lines := bytes.Count(content, []byte("\n"))
+	if size > 0 && (lines > 0 || !bytes.HasSuffix(content, []byte("\n"))) {
+		lines++
+	}
 
 	b.result.SizeBytes = size
 	b.result.LinesOfCode = schema.Metric(lines)
