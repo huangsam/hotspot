@@ -12,8 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//go:fix inline
 func ptrInt32(v int32) *int32 {
-	return &v
+	return new(v)
 }
 
 func TestAnalysisRunStructTags(t *testing.T) {
