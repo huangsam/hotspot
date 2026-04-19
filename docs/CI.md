@@ -5,10 +5,10 @@ The `check` command allows you to enforce risk thresholds in CI/CD pipelines, fa
 ## Examples
 
 **1. Basic comparison check:**
-`hotspot check --base-ref v1.9.0 --target-ref v1.10.0`
+`hotspot check --base-ref v1.17.0 --target-ref v1.18.0`
 
 **2. Custom thresholds via CLI:**
-`hotspot check --base-ref v1.9.0 --target-ref v1.10.0 --thresholds-override "hot:75,risk:60,complexity:80"`
+`hotspot check --base-ref v1.17.0 --target-ref v1.18.0 --thresholds-override "hot:75,risk:60,complexity:80"`
 
 ## Reference
 

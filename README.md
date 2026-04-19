@@ -23,7 +23,7 @@ Unlike traditional linters or team-velocity metrics, Hotspot analyzes **developm
 
 ### Requirements
 
-- **Go 1.25+** for building from source
+- **Go 1.26+** for building from source
 - **Git 2.2+** for repository analysis
 
 ### Install from source

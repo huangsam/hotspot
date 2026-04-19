@@ -36,7 +36,7 @@ The core power of Hotspot lies in its `--mode` flag, which selects the ranking a
 ### 3. Risk Comparison & Delta Tracking
 Measure the change in metrics between two different points in history.
 
-`hotspot compare files --mode complexity --base-ref v0.15.0 --target-ref v0.16.0`
+`hotspot compare files --mode complexity --base-ref v1.17.0 --target-ref v1.18.0`
 
 ### 4. Timeseries Analysis
 Track how hotspot scores change over time for a specific file or folder path.

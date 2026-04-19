@@ -48,7 +48,7 @@ If you use Hotspot to ask "Why did you write such complex code?" or "Why are you
 
 Data is only useful if it shows progress. Use these commands to quantify your impact:
 
-- **Audit a Refactor**: Run `hotspot compare files --base-ref v1.0 --target-ref HEAD --mode complexity`. A successful refactor should show a significant delta decrease in complexity scores.
+- **Audit a Refactor**: Run `hotspot compare files --base-ref v1.17.0 --target-ref HEAD --mode complexity`. A successful refactor should show a significant delta decrease in complexity scores.
 - **Track Trends**: Use `hotspot timeseries --path <path> --mode risk` to prove that "Knowledge Islands" are shrinking over time as ownership is shared.
 
 ## Hotspot in Agile Rituals

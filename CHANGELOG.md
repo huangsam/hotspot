@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optimized Gini coefficient scoring calculations and file stat implementation
 - Streamlined exclusion logic by optimizing recursive glob calls across repository assets
 - Refined complexity scoring logic with intelligent configuration file detection and debuffs
+- Updated Go requirement to 1.26.0 and refreshed all dependencies
 
 ### Fixed
 - Line counting logic in `FetchFileStats` to handle trailing newlines correctly
