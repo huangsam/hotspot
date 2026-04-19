@@ -152,7 +152,10 @@ func (b *FileResultBuilder) FetchFileStats() *FileResultBuilder {
 
 	size := int64(len(content))
 	lines := bytes.Count(content, []byte("\n"))
-	if size > 0 && (lines > 0 || !bytes.HasSuffix(content, []byte("\n"))) {
+
+	// If the file is not empty and doesn't end with a newline, it has
+	// an "orphaned" last line that bytes.Count missed.
+	if size > 0 && !bytes.HasSuffix(content, []byte("\n")) {
 		lines++
 	}
 
