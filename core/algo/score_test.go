@@ -489,3 +489,33 @@ func TestComputeScore_EdgeCases(t *testing.T) {
 		})
 	}
 }
+
+func TestIsConfigurationFile(t *testing.T) {
+	tests := []struct {
+		ext      string
+		expected bool
+	}{
+		{".yml", true},
+		{".yaml", true},
+		{"json", true},
+		{".xml", true},
+		{".lock", true},
+		{".sum", true},
+		{".md", true},
+		{".txt", true},
+		{".tfstate", true},
+		{".go", false},
+		{".rs", false},
+		{".java", false},
+		{".gradle", false},
+		{"Makefile", false},
+		{".csv", true},
+		{".ini", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.ext, func(t *testing.T) {
+			assert.Equal(t, tt.expected, isConfigurationFile(tt.ext))
+		})
+	}
+}
