@@ -233,26 +233,29 @@ func computeReasoning(m *schema.FileResult, mode schema.ScoringMode) []string {
 // among contributors.
 func Gini(values []float64) float64 {
 	n := len(values)
-	if n == 0 {
+	if n <= 1 {
 		return 0
 	}
+
+	// Sort values in non-decreasing order
+	slices.Sort(values)
 
 	var sum float64
-	for _, v := range values {
+	var weightedSum float64
+	for i, v := range values {
 		sum += v
+		// Note: i is 0-indexed, so we use (i+1) for 1-based indexing in formula
+		weightedSum += float64(i+1) * v
 	}
-	mean := sum / float64(n)
-	if mean == 0 {
+
+	if sum == 0 {
 		return 0
 	}
 
-	var diffSum float64
-	for i := range n {
-		for j := range n {
-			diffSum += math.Abs(values[i] - values[j])
-		}
-	}
+	// G = (2 * sum(i * x_i)) / (n * sum(x_i)) - (n + 1) / n
+	// where x_i are sorted values.
+	nFloat := float64(n)
+	g := (2*weightedSum)/(nFloat*sum) - (nFloat+1)/nFloat
 
-	g := diffSum / (2 * float64(n*n) * mean)
 	return math.Min(math.Max(g, 0), 1) // clamp to [0,1]
 }
