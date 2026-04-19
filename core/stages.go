@@ -81,11 +81,14 @@ type filteringStage struct{}
 func filterFiles(gitSettings config.GitSettings, allFiles []string) []string {
 	var filtered []string
 	pathFilterSet := gitSettings.GetPathFilter() != ""
+	pathFilter := gitSettings.GetPathFilter()
+	matcher := schema.NewPathMatcher(gitSettings.GetExcludes())
+
 	for _, f := range allFiles {
-		if pathFilterSet && !strings.HasPrefix(f, gitSettings.GetPathFilter()) {
+		if pathFilterSet && !strings.HasPrefix(f, pathFilter) {
 			continue
 		}
-		if schema.ShouldIgnore(f, gitSettings.GetExcludes()) {
+		if matcher.Match(f) {
 			continue
 		}
 		filtered = append(filtered, f)
