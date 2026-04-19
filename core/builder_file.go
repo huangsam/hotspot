@@ -206,6 +206,10 @@ func (b *FileResultBuilder) FetchRecentInfo() *FileResultBuilder {
 
 // CalculateOwner identifies the owner based on commit volume.
 func (b *FileResultBuilder) CalculateOwner() *FileResultBuilder {
+	if b.output == nil {
+		return b
+	}
+
 	stat, ok := b.output.FileStats[b.path]
 	if !ok || len(stat.Contributors) == 0 {
 		return b
