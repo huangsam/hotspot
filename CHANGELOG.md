@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.0] - 2026-04-18
+
+### Added
+- Comprehensive benchmark test suite for `core`, `schema`, and `iocache` packages
+- `busy_timeout` configuration for SQLite analysis backend to improve concurrency
+
+### Changed
+- Reduced aggregation allocations by 99% via struct-based aggregation
+- Implemented high-performance, zero-allocation Git log parser for faster repository scanning
+- Optimized Gini coefficient scoring calculations and file stat implementation
+- Streamlined exclusion logic by optimizing recursive glob calls across repository assets
+- Refined complexity scoring logic with intelligent configuration file detection and debuffs
+
+### Fixed
+- Line counting logic in `FetchFileStats` to handle trailing newlines correctly
+- PostgreSQL compatibility issue when pruning analysis entries
+- Transactional safety in global stores and refined config detection test cases
+
 ## [1.17.0] - 2026-04-18
 
 ### Added
@@ -671,6 +689,7 @@ Initial development covered core functionality including:
 - Code quality and maintainability refactoring
 - Proper package structure architecture
 
+[1.18.0]: https://github.com/huangsam/hotspot/compare/v1.17.0...v1.18.0
 [1.17.0]: https://github.com/huangsam/hotspot/compare/v1.16.2...v1.17.0
 [1.16.2]: https://github.com/huangsam/hotspot/compare/v1.16.1...v1.16.2
 [1.16.1]: https://github.com/huangsam/hotspot/compare/v1.16.0...v1.16.1
