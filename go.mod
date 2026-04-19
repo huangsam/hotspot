@@ -1,6 +1,6 @@
 module github.com/huangsam/hotspot
 
-go 1.25.0
+go 1.26.0
 
 retract v1.6.0
 
