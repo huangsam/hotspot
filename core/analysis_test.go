@@ -262,7 +262,7 @@ func TestRecordFileAnalysis(t *testing.T) {
 	ctx = contextWithCacheManager(ctx, mockCacheMgr)
 
 	// Execute - should not panic
-	recordFileAnalysis(ctx, cfg.Scoring, 1, fileResult)
+	BatchRecordFileAnalysis(ctx, cfg.Scoring, 1, []schema.FileResult{*fileResult})
 
 	// Verify mocks were called
 	mockCacheMgr.AssertExpectations(t)

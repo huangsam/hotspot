@@ -10,11 +10,6 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// recordFileAnalysis records file metrics and scores to the database.
-func recordFileAnalysis(ctx context.Context, scoringSettings config.ScoringSettings, analysisID int64, result *schema.FileResult) {
-	BatchRecordFileAnalysis(ctx, scoringSettings, analysisID, []schema.FileResult{*result})
-}
-
 // BatchRecordFileAnalysis records multiple file metrics and scores to the database in one operation.
 func BatchRecordFileAnalysis(ctx context.Context, scoringSettings config.ScoringSettings, analysisID int64, results []schema.FileResult) {
 	// Get the cache manager from context
