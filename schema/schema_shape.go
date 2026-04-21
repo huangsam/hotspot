@@ -36,6 +36,7 @@ type RepoShape struct {
 	AvgChurnPerFile    float64    `json:"avg_churn_per_file"`
 	IaCFileRatio       float64    `json:"iac_file_ratio"`
 	RecommendedPreset  PresetName `json:"recommended_preset"`
+	Reasoning          []string   `json:"reasoning,omitempty"`
 	Preset             Preset     `json:"preset"`
 	AnalyzedAt         time.Time  `json:"analyzed_at"`
 }

@@ -129,7 +129,7 @@ func TestIsIaCFile(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.path, func(t *testing.T) {
-			assert.Equal(t, tt.expected, isIaCFile(tt.path), "isIaCFile(%q) mismatch", tt.path)
+			assert.Equal(t, tt.expected, schema.IsIaCFile(tt.path), "IsIaCFile(%q) mismatch", tt.path)
 		})
 	}
 }
@@ -171,6 +171,7 @@ func TestComputeRepoShape(t *testing.T) {
 	assert.Equal(t, 75.0, shape.AvgChurnPerFile)      // (100+50)/2
 	assert.InDelta(t, 0.4, shape.IaCFileRatio, 0.001) // infra/main.tf and app.cf.yaml are IaC. 2/5 = 0.4
 	assert.Equal(t, schema.PresetInfra, shape.RecommendedPreset)
+	assert.NotEmpty(t, shape.Reasoning)
 }
 
 func BenchmarkIsIaCFile(b *testing.B) {
@@ -184,7 +185,7 @@ func BenchmarkIsIaCFile(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for _, c := range cases {
-			_ = isIaCFile(c)
+			_ = schema.IsIaCFile(c)
 		}
 	}
 }

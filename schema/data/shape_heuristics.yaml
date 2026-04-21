@@ -1,0 +1,182 @@
+# Shape Heuristics for Hotspot
+# This file is embedded into the schema package to drive repository classification and "Teacher" reasoning.
+
+# Classification thresholds
+# These values determine when a repository is classified into a specific mode.
+thresholds:
+  iac_ratio: 0.25
+  file_count: 300
+  contributor_count: 20
+
+# Teacher reasoning templates
+# Used to provide human-readable justifications for classification decisions.
+templates:
+  infra: "Infra-Dominant (%.1f%%, %.1f signal): Analyzing Knowledge Risk."
+  large_files: "Monorepo Scale (%d files, %.1f signal): Prioritizing Refactoring ROI."
+  large_contributors: "Collaborative Hub (%d contribs, %.1f signal): Analyzing Ownership Silos."
+  compounding: "Cumulative Complexity (%.1f combined signal): Significant scale and social signals detected."
+  small: "Focused Project: Optimized for rapid development activity (Hot Mode)."
+
+# IaC identification rules
+# Patterns used to identify Infrastructure-as-Code files.
+iac:
+  extensions:
+    # Terraform
+    - ".tf"
+    - ".tfvars"
+    - ".hcl"
+    - ".tfstate"
+    - ".tfplan"
+
+    # Puppet
+    - ".pp"
+
+    # Azure Bicep
+    - ".bicep"
+
+    # Templates (GCP/Ansible)
+    - ".jinja"
+
+  basenames:
+    # Ansible
+    - "ansible.cfg"
+    - "site.yml"
+    - "site.yaml"
+    - "playbook.yml"
+    - "playbook.yaml"
+
+    # Helm
+    - "chart.yaml"
+    - "values.yaml"
+
+    # Containerization
+    - "dockerfile"
+    - "containerfile"
+    - "docker-compose.yml"
+    - "docker-compose.yaml"
+
+    # Pulumi
+    - "pulumi.yaml"
+    - "pulumi.yml"
+
+    # Vagrant
+    - "vagrantfile"
+
+    # Terraform (Specific Files)
+    - "backend.tf"
+    - "provider.tf"
+    - ".terraform.lock.hcl"
+
+    # CloudFormation
+    - "cloudformation.json"
+    - "cloudformation.yaml"
+    - "cloudformation.yml"
+
+    # Configuration Management (Chef/Puppet)
+    - "cheffile"
+    - "berksfile"
+    - "puppetfile"
+    - "hiera.yaml"
+
+    # Orchestration & Deployment
+    - "helmfile.yaml"
+    - "serverless.yml"
+    - "serverless.yaml"
+    - "azuredeploy.json"
+    - "terragrunt.hcl"
+    - "samconfig.toml"
+    - "main.bicep"
+    - "packer.json"
+
+    # Kubernetes & Local Dev
+    - "kustomization.yaml"
+    - "kustomization.yml"
+    - "skaffold.yaml"
+    - "tiltfile"
+
+    # Task Runners
+    - "taskfile.yml"
+    - "taskfile.yaml"
+    - "justfile"
+
+    # CI/CD Pipelines
+    - ".gitlab-ci.yml"
+    - "bitbucket-pipelines.yml"
+
+  path_patterns:
+    # Core Infrastructure Directories
+    - "terraform/"
+    - "ansible/"
+    - "helm/"
+    - "k8s/"
+    - "kubernetes/"
+    - "kustomize/"
+    - "playbooks/"
+    - "roles/"
+    - "charts/"
+    - "manifests/"
+    - "deploy/"
+    - "deployments/"
+    - "kube/"
+
+    # Configuration & Variables
+    - "group_vars/"
+    - "host_vars/"
+    - "inventory/"
+    - "molecule/"
+    - "vars/"
+
+    # Configuration Management
+    - "puppet/"
+    - "chef/"
+    - "recipes/"
+
+    # Cloud & Serverless
+    - "cloudformation/"
+    - "cfn/"
+    - "sam/"
+    - "cdk/"
+    - "terragrunt/"
+    - "packer/"
+    - "bicep/"
+    - "flux/"
+    - "argo/"
+    - "serverless/"
+    - "gitops/"
+
+    # CI/CD & Automation
+    - ".github/workflows/"
+    - ".gitlab/"
+    - ".circleci/"
+
+    # General Infrastructure Folders
+    - "infra/"
+    - "infrastructure/"
+    - "ops/"
+    - "provision/"
+    - "provisioning/"
+    - "setup/"
+    - "env/"
+    - "environments/"
+
+  strong_suffixes:
+    # High-confidence IaC indicators
+    - ".dockerfile"
+    - ".containerfile"
+    - ".cf.yml"
+    - ".cf.yaml"
+    - ".cf.json"
+
+  contextual_extensions:
+    # Extensions that require context to be classified as IaC
+    - ".yml"
+    - ".yaml"
+    - ".json"
+    - ".rb"
+    - ".toml"
+
+  heuristic_suffixes:
+    # Suffixes often used for infrastructure-related names
+    - "-deployment"
+    - "-stack"
+    - "-provision"

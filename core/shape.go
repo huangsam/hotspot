@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/huangsam/hotspot/core/agg"
@@ -17,152 +15,50 @@ import (
 	"github.com/huangsam/hotspot/schema"
 )
 
-// iacExtensions are file extensions strongly associated with IaC tooling.
-var iacExtensions = map[string]struct{}{
-	".tf":      {}, // Terraform
-	".tfvars":  {}, // Terraform
-	".hcl":     {}, // Terraform
-	".tfstate": {}, // Terraform
-	".tfplan":  {}, // Terraform
-	".pp":      {}, // Puppet
-	".bicep":   {}, // Azure Bicep
-	".jinja":   {}, // Jinja templates (GCP/Ansible)
-}
+// recommendPreset selects the best preset based on weighted signal strengths.
+func recommendPreset(fileCount, uniqueContributors int, iacFileRatio float64) (schema.PresetName, []string) {
+	var reasons []string
+	thresh := schema.GetShapeThresholds()
+	tmpl := schema.GetShapeTemplates()
 
-// iacBaseNames are filenames that are strong indicators of IaC or infrastructure configuration.
-var iacBaseNames = map[string]struct{}{
-	"ansible.cfg":             {}, // Ansible
-	"site.yml":                {}, // Ansible
-	"site.yaml":               {}, // Ansible
-	"playbook.yml":            {}, // Ansible
-	"playbook.yaml":           {}, // Ansible
-	"chart.yaml":              {}, // Helm
-	"values.yaml":             {}, // Helm
-	"dockerfile":              {}, // Docker
-	"containerfile":           {}, // Docker
-	"docker-compose.yml":      {}, // Docker
-	"docker-compose.yaml":     {}, // Docker
-	"pulumi.yaml":             {}, // Pulumi
-	"pulumi.yml":              {}, // Pulumi
-	"vagrantfile":             {}, // Vagrant
-	"backend.tf":              {}, // Terraform
-	"provider.tf":             {}, // Terraform
-	".terraform.lock.hcl":     {}, // Terraform
-	"cloudformation.json":     {}, // CloudFormation
-	"cloudformation.yaml":     {}, // CloudFormation
-	"cloudformation.yml":      {}, // CloudFormation
-	"cheffile":                {}, // Chef
-	"berksfile":               {}, // Chef
-	"puppetfile":              {}, // Puppet
-	"hiera.yaml":              {}, // Puppet
-	"helmfile.yaml":           {}, // Helm
-	"serverless.yml":          {}, // Serverless
-	"serverless.yaml":         {}, // Serverless
-	"azuredeploy.json":        {}, // Azure ARM
-	"terragrunt.hcl":          {}, // Terragrunt
-	"samconfig.toml":          {}, // AWS SAM
-	"main.bicep":              {}, // Azure Bicep
-	"packer.json":             {}, // Packer
-	"kustomization.yaml":      {}, // Kustomize
-	"kustomization.yml":       {}, // Kustomize
-	"skaffold.yaml":           {}, // Skaffold
-	"tiltfile":                {}, // Tilt
-	"taskfile.yml":            {}, // Task
-	"taskfile.yaml":           {}, // Task
-	"justfile":                {}, // Just
-	".gitlab-ci.yml":          {}, // GitLab CI
-	"bitbucket-pipelines.yml": {}, // Bitbucket
-}
+	infraSignal := iacFileRatio / thresh.IaCRatio
+	scaleSignal := float64(fileCount) / float64(thresh.FileCount)
+	socialSignal := float64(uniqueContributors) / float64(thresh.ContributorCount)
 
-// iacPathPatterns are directory substrings whose YAML/JSON children are likely IaC.
-var iacPathPatterns = []string{
-	// Tool-specific patterns
-	"terraform/", "ansible/", "helm/", "k8s/", "kubernetes/",
-	"kustomize/", "playbooks/", "roles/", "charts/",
-	"manifests/", "deploy/", "deployments/", "kube/",
-	"group_vars/", "host_vars/", "inventory/", "molecule/", "vars/",
-	"puppet/", "chef/", "recipes/", "cloudformation/", "cfn/",
-	"sam/", "cdk/", "terragrunt/", "packer/", "bicep/", "flux/", "argo/",
-	"serverless/", "gitops/", ".github/workflows/", ".gitlab/", ".circleci/",
-	// Generic infrastructure patterns
-	"infra/", "infrastructure/", "ops/", "provision/", "provisioning/",
-	"setup/", "env/", "environments/",
-}
-
-// iacStrongSuffixes are multi-part extensions or tool-specific suffixes.
-var iacStrongSuffixes = []string{
-	".dockerfile", ".containerfile",
-	".cf.yml", ".cf.yaml", ".cf.json",
-}
-
-// iacContextualExts are extensions that require path context to be considered IaC.
-var iacContextualExts = map[string]struct{}{
-	".yml":  {},
-	".yaml": {},
-	".json": {},
-	".rb":   {},
-	".toml": {},
-}
-
-// iacHeuristicSuffixes are generic filename patterns often used for infrastructure.
-var iacHeuristicSuffixes = []string{"-deployment", "-stack", "-provision"}
-
-// isIaCFile returns true when the path is likely an infrastructure-as-code file.
-func isIaCFile(path string) bool {
-	ext := strings.ToLower(filepath.Ext(path))
-	base := strings.ToLower(filepath.Base(path))
-
-	// 1. Fast Map Matches: Fixed extensions or specific filenames (O(1))
-	if _, ok := iacExtensions[ext]; ok {
-		return true
-	}
-	if _, ok := iacBaseNames[base]; ok {
-		return true
+	// 1. Check for Infra Dominance
+	if infraSignal >= 1.0 {
+		reasons = append(reasons, fmt.Sprintf(tmpl.Infra, iacFileRatio*100, infraSignal))
+		return schema.PresetInfra, reasons
 	}
 
-	// 2. Suffix Matches: Known tool suffixes (O(N) small loop)
-	for _, s := range iacStrongSuffixes {
-		if strings.HasSuffix(base, s) {
-			return true
+	// 2. Check for Compounding Scale and Social complexity
+	combinedSignal := scaleSignal + socialSignal
+	if combinedSignal >= 1.2 {
+		if scaleSignal >= 1.0 {
+			reasons = append(reasons, fmt.Sprintf(tmpl.LargeFiles, fileCount, scaleSignal))
 		}
-	}
-
-	// 3. Path-dependent matches: Require path context
-	if _, ok := iacContextualExts[ext]; ok {
-		lowerPath := strings.ToLower(path)
-		for _, pattern := range iacPathPatterns {
-			if strings.Contains(lowerPath, pattern) {
-				// Special Case: Ruby files are ONLY infra if in chef/ or recipes/
-				if ext == ".rb" && (!strings.Contains(lowerPath, "chef/") && !strings.Contains(lowerPath, "recipes/")) {
-					continue
-				}
-				return true
-			}
+		if socialSignal >= 1.0 {
+			reasons = append(reasons, fmt.Sprintf(tmpl.LargeContributors, uniqueContributors, socialSignal))
 		}
-
-		// 4. Heuristic matches: Generic patterns (only for YAML/JSON)
-		if ext != ".rb" && ext != ".toml" {
-			noExt := strings.TrimSuffix(base, ext)
-			for _, s := range iacHeuristicSuffixes {
-				if strings.HasSuffix(noExt, s) {
-					return true
-				}
-			}
+		// If it's the combination that pushed it over (neither is > 1.0), use the compounding reason
+		if len(reasons) == 0 {
+			reasons = append(reasons, fmt.Sprintf(tmpl.Compounding, combinedSignal))
 		}
+		return schema.PresetLarge, reasons
 	}
 
-	return false
-}
+	// 3. Check for Single Large Signal (Fallback)
+	if scaleSignal >= 1.0 {
+		reasons = append(reasons, fmt.Sprintf(tmpl.LargeFiles, fileCount, scaleSignal))
+		return schema.PresetLarge, reasons
+	}
+	if socialSignal >= 1.0 {
+		reasons = append(reasons, fmt.Sprintf(tmpl.LargeContributors, uniqueContributors, socialSignal))
+		return schema.PresetLarge, reasons
+	}
 
-// recommendPreset selects the best preset based on key shape metrics.
-func recommendPreset(fileCount, uniqueContributors int, iacFileRatio float64) schema.PresetName {
-	if iacFileRatio >= 0.25 {
-		return schema.PresetInfra
-	}
-	if fileCount > 300 || uniqueContributors > 20 {
-		return schema.PresetLarge
-	}
-	return schema.PresetSmall
+	reasons = append(reasons, tmpl.Small)
+	return schema.PresetSmall, reasons
 }
 
 // ComputeRepoShape derives shape metrics from a file list and aggregate output.
@@ -195,7 +91,7 @@ func ComputeRepoShape(files []string, output *schema.AggregateOutput) schema.Rep
 	// IaC file ratio based on current HEAD file list
 	iacCount := 0
 	for _, f := range files {
-		if isIaCFile(f) {
+		if schema.IsIaCFile(f) {
 			iacCount++
 		}
 	}
@@ -204,7 +100,7 @@ func ComputeRepoShape(files []string, output *schema.AggregateOutput) schema.Rep
 		iacFileRatio = float64(iacCount) / float64(fileCount)
 	}
 
-	preset := recommendPreset(fileCount, len(allContribs), iacFileRatio)
+	preset, reasons := recommendPreset(fileCount, len(allContribs), iacFileRatio)
 
 	return schema.RepoShape{
 		FileCount:          fileCount,
@@ -213,6 +109,7 @@ func ComputeRepoShape(files []string, output *schema.AggregateOutput) schema.Rep
 		AvgChurnPerFile:    avgChurnPerFile,
 		IaCFileRatio:       iacFileRatio,
 		RecommendedPreset:  preset,
+		Reasoning:          reasons,
 		Preset:             schema.GetPreset(preset),
 		AnalyzedAt:         time.Now().UTC(),
 	}

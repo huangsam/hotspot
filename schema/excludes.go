@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-//go:embed default_excludes.txt
+//go:embed data/default_excludes.txt
 var defaultExcludesRaw string
 
 // DefaultExclude represents the universal noise exclusion set applied across all analysis modes.
