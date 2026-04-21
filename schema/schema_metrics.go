@@ -32,31 +32,15 @@ type MetricsModeWithData struct {
 
 // BuildMetricsRenderModel constructs the complete render model with all processed data.
 func BuildMetricsRenderModel(activeWeights map[ScoringMode]map[BreakdownKey]float64) *MetricsRenderModel {
-	modes := []MetricsMode{
-		{
-			Name:       "hot",
-			Purpose:    "Activity hotspots - high recent activity & volatility",
-			Factors:    []string{"Commits", "Churn", "Contributors", "Age", "Size"},
-			FactorKeys: []string{string(BreakdownCommits), string(BreakdownChurn), string(BreakdownContrib), string(BreakdownAge), string(BreakdownSize)},
-		},
-		{
-			Name:       "risk",
-			Purpose:    "Knowledge risk/bus factor - concentrated ownership & knowledge decay",
-			Factors:    []string{"InvContributors", "Gini", "LowRecent", "Age", "Size", "Churn", "LOC"},
-			FactorKeys: []string{string(BreakdownInvContrib), string(BreakdownGini), string(BreakdownLowRecent), string(BreakdownAge), string(BreakdownSize), string(BreakdownChurn), string(BreakdownLOC)},
-		},
-		{
-			Name:       "complexity",
-			Purpose:    "Technical debt - large, old files with high maintenance burden",
-			Factors:    []string{"Age", "Churn", "Commits", "LOC", "LowRecent", "Size"},
-			FactorKeys: []string{string(BreakdownAge), string(BreakdownChurn), string(BreakdownCommits), string(BreakdownLOC), string(BreakdownLowRecent), string(BreakdownSize)},
-		},
-		{
-			Name:       "roi",
-			Purpose:    "ROI - priority for refactoring effort based on technical impact",
-			Factors:    []string{"Churn", "LOC", "Gini", "Age"},
-			FactorKeys: []string{string(BreakdownChurn), string(BreakdownLOC), string(BreakdownGini), string(BreakdownAge)},
-		},
+	var modes []MetricsMode
+	for _, mode := range AllScoringModes {
+		purpose, factors, factorKeys := GetScoringModeMetadata(mode)
+		modes = append(modes, MetricsMode{
+			Name:       string(mode),
+			Purpose:    purpose,
+			Factors:    factors,
+			FactorKeys: factorKeys,
+		})
 	}
 	modesWithData := make([]MetricsModeWithData, len(modes))
 
