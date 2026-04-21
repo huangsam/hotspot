@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.1] - 2026-04-20
+
+### Added
+- IaC detection for Chef, Puppet, CloudFormation, Bicep, SAM, and Serverless.
+- Zero-allocation classification engine (0 B/op) for monorepo performance.
+- Memory reporting in `make bench` for continuous performance monitoring.
+- High-throughput benchmarks for IaC detection and path matching.
+
+### Changed
+- Refactored `isIaCFile` into a declarative structure for maintainability.
+- Optimized `PathMatcher` to eliminate redundant allocations in hot loops.
+- Expanded `infra` preset exclusions to filter out modern tool noise.
+
+### Fixed
+- Monorepo metrics: isolated Git activity to filtered subdirectory paths.
+- Cache Collision: unique cache keys for subdirectory analysis.
+- Accuracy: context-aware IaC detection for Ruby (`.rb`) and TOML files.
+
 ## [1.18.0] - 2026-04-18
 
 ### Added
@@ -690,6 +708,7 @@ Initial development covered core functionality including:
 - Code quality and maintainability refactoring
 - Proper package structure architecture
 
+[1.18.1]: https://github.com/huangsam/hotspot/compare/v1.18.0...v1.18.1
 [1.18.0]: https://github.com/huangsam/hotspot/compare/v1.17.0...v1.18.0
 [1.17.0]: https://github.com/huangsam/hotspot/compare/v1.16.2...v1.17.0
 [1.16.2]: https://github.com/huangsam/hotspot/compare/v1.16.1...v1.16.2
