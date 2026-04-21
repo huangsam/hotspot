@@ -33,11 +33,13 @@ detail: true
 follow: true
 
 # --- Exclusions ---
-# exclude: Skip lock files, generated provider schemas, and example/test fixtures.
+# exclude: Skip lock files, generated provider schemas, dependency folders, and example/test fixtures.
 exclude: >-
   .DS_Store, .gitignore, .idea/, .vscode/, LICENSE,
   *.lock, *.lock.hcl, terraform.tfstate*, **/*.tfstate*,
   **/.terraform/, **/.terragrunt-cache/, **/.serverless/, **/.pulumi/, **/.vagrant/,
+  **/.chef/, **/.librarian/, berks-cookbooks/, cdk.out/, .aws-sam/,
+  node_modules/, venv/, .venv/, __pycache__/, .tox/,
   packer_cache/, **/examples/, **/tests/, **/fixtures/,
   *.retry, .vault_password, .aws/, .kube/, .ssh/, .vault/, *.pem, *.key,
   *.po, *.mo, *.xlf, *.xliff, *.zip, *.tar.gz, *.log, *.tgz,

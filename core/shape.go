@@ -19,35 +19,50 @@ import (
 
 // iacExtensions are file extensions strongly associated with IaC tooling.
 var iacExtensions = map[string]struct{}{
-	".tf":      {},
-	".tfvars":  {},
-	".hcl":     {},
-	".tfstate": {},
-	".tfplan":  {},
+	".tf":      {}, // Terraform
+	".tfvars":  {}, // Terraform
+	".hcl":     {}, // Terraform
+	".tfstate": {}, // Terraform
+	".tfplan":  {}, // Terraform
+	".pp":      {}, // Puppet
+	".bicep":   {}, // Azure Bicep
+	".jinja":   {}, // Jinja templates (GCP/Ansible)
 }
 
 // iacBaseNames are filenames that are strong indicators of IaC or infrastructure configuration.
 var iacBaseNames = map[string]struct{}{
-	"ansible.cfg":         {},
-	"site.yml":            {},
-	"site.yaml":           {},
-	"playbook.yml":        {},
-	"playbook.yaml":       {},
-	"chart.yaml":          {},
-	"values.yaml":         {},
-	"dockerfile":          {},
-	"containerfile":       {},
-	"docker-compose.yml":  {},
-	"docker-compose.yaml": {},
-	"pulumi.yaml":         {},
-	"pulumi.yml":          {},
-	"vagrantfile":         {},
-	"backend.tf":          {},
-	"provider.tf":         {},
-	".terraform.lock.hcl": {},
-	"cloudformation.json": {},
-	"cloudformation.yaml": {},
-	"cloudformation.yml":  {},
+	"ansible.cfg":         {}, // Ansible
+	"site.yml":            {}, // Ansible
+	"site.yaml":           {}, // Ansible
+	"playbook.yml":        {}, // Ansible
+	"playbook.yaml":       {}, // Ansible
+	"chart.yaml":          {}, // Helm
+	"values.yaml":         {}, // Helm
+	"dockerfile":          {}, // Docker
+	"containerfile":       {}, // Docker
+	"docker-compose.yml":  {}, // Docker
+	"docker-compose.yaml": {}, // Docker
+	"pulumi.yaml":         {}, // Pulumi
+	"pulumi.yml":          {}, // Pulumi
+	"vagrantfile":         {}, // Vagrant
+	"backend.tf":          {}, // Terraform
+	"provider.tf":         {}, // Terraform
+	".terraform.lock.hcl": {}, // Terraform
+	"cloudformation.json": {}, // CloudFormation
+	"cloudformation.yaml": {}, // CloudFormation
+	"cloudformation.yml":  {}, // CloudFormation
+	"cheffile":            {}, // Chef
+	"berksfile":           {}, // Chef
+	"puppetfile":          {}, // Puppet
+	"hiera.yaml":          {}, // Puppet
+	"helmfile.yaml":       {}, // Helm
+	"serverless.yml":      {}, // Serverless
+	"serverless.yaml":     {}, // Serverless
+	"azuredeploy.json":    {}, // Azure ARM
+	"terragrunt.hcl":      {}, // Terragrunt
+	"samconfig.toml":      {}, // AWS SAM
+	"main.bicep":          {}, // Azure Bicep
+	"packer.json":         {}, // Packer
 }
 
 // iacPathPatterns are directory substrings whose YAML/JSON children are likely IaC.
@@ -57,46 +72,73 @@ var iacPathPatterns = []string{
 	"kustomize/", "playbooks/", "roles/", "charts/",
 	"manifests/", "deploy/", "deployments/", "kube/",
 	"group_vars/", "host_vars/", "inventory/", "molecule/", "vars/",
+	"puppet/", "chef/", "recipes/", "cloudformation/", "cfn/",
+	"sam/", "cdk/", "terragrunt/", "packer/", "bicep/", "flux/", "argo/",
+	"serverless/", "gitops/",
 	// Generic infrastructure patterns
 	"infra/", "infrastructure/", "ops/", "provision/", "provisioning/",
 	"setup/", "env/", "environments/",
 }
 
+// iacStrongSuffixes are multi-part extensions or tool-specific suffixes.
+var iacStrongSuffixes = []string{
+	".dockerfile", ".containerfile",
+	".cf.yml", ".cf.yaml", ".cf.json",
+}
+
+// iacContextualExts are extensions that require path context to be considered IaC.
+var iacContextualExts = map[string]struct{}{
+	".yml":  {},
+	".yaml": {},
+	".json": {},
+	".rb":   {},
+	".toml": {},
+}
+
+// iacHeuristicSuffixes are generic filename patterns often used for infrastructure.
+var iacHeuristicSuffixes = []string{"-deployment", "-stack", "-provision"}
+
 // isIaCFile returns true when the path is likely an infrastructure-as-code file.
 func isIaCFile(path string) bool {
-	lower := strings.ToLower(path)
 	ext := strings.ToLower(filepath.Ext(path))
 	base := strings.ToLower(filepath.Base(path))
 
-	// 1. Strong indicators: Extensions
+	// 1. Fast Map Matches: Fixed extensions or specific filenames (O(1))
 	if _, ok := iacExtensions[ext]; ok {
 		return true
 	}
-
-	// 2. Strong indicators: Specific filenames
 	if _, ok := iacBaseNames[base]; ok {
 		return true
 	}
 
-	// 3. Container variants (e.g. api.dockerfile, web.containerfile)
-	if strings.HasSuffix(base, ".dockerfile") || strings.HasSuffix(base, ".containerfile") {
-		return true
+	// 2. Suffix Matches: Known tool suffixes (O(N) small loop)
+	for _, s := range iacStrongSuffixes {
+		if strings.HasSuffix(base, s) {
+			return true
+		}
 	}
 
-	// 4. YAML/JSON files inside well-known IaC or infrastructure directories
-	if ext == ".yml" || ext == ".yaml" || ext == ".json" {
+	// 3. Path-dependent matches: Require path context
+	if _, ok := iacContextualExts[ext]; ok {
+		lowerPath := strings.ToLower(path)
 		for _, pattern := range iacPathPatterns {
-			if strings.Contains(lower, pattern) {
+			if strings.Contains(lowerPath, pattern) {
+				// Special Case: Ruby files are ONLY infra if in chef/ or recipes/
+				if ext == ".rb" && (!strings.Contains(lowerPath, "chef/") && !strings.Contains(lowerPath, "recipes/")) {
+					continue
+				}
 				return true
 			}
 		}
 
-		// 5. Generic suffixes for YAML/JSON files (e.g., app-deployment.yaml)
-		noExt := strings.TrimSuffix(base, ext)
-		if strings.HasSuffix(noExt, "-deployment") ||
-			strings.HasSuffix(noExt, "-stack") ||
-			strings.HasSuffix(noExt, "-provision") {
-			return true
+		// 4. Heuristic matches: Generic patterns (only for YAML/JSON)
+		if ext != ".rb" && ext != ".toml" {
+			noExt := strings.TrimSuffix(base, ext)
+			for _, s := range iacHeuristicSuffixes {
+				if strings.HasSuffix(noExt, s) {
+					return true
+				}
+			}
 		}
 	}
 
@@ -174,6 +216,17 @@ func GetHotspotShapeResults(ctx context.Context, cfg *config.Config, client git.
 	files, err := client.ListFilesAtRef(ctx, cfg.Git.RepoPath, "HEAD")
 	if err != nil {
 		return schema.RepoShape{}, 0, fmt.Errorf("failed to list files: %w", err)
+	}
+
+	// FIX: Apply PathFilter so subdirectory shape analysis only looks at relevant files
+	if cfg.Git.PathFilter != "" {
+		var filtered []string
+		for _, f := range files {
+			if strings.HasPrefix(f, cfg.Git.PathFilter) {
+				filtered = append(filtered, f)
+			}
+		}
+		files = filtered
 	}
 
 	urn := git.ResolveURN(ctx, client, cfg.Git.RepoPath)
