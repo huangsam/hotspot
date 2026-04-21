@@ -526,18 +526,38 @@ func TestExcludes(t *testing.T) {
 			}(),
 		},
 		{
-			name: "override when exclude provided",
+			name: "additive with custom exclude provided",
 			input: &RawInput{
-				Exclude: "tmp/, vendor/",
+				Exclude: "my_custom_dir/, another_dir/",
 			},
-			expected: []string{"tmp/", "vendor/"},
+			expected: func() []string {
+				var expected []string
+				for p := range strings.SplitSeq(schema.DefaultExclude, ",") {
+					trimmedP := strings.TrimSpace(p)
+					if trimmedP != "" {
+						expected = append(expected, trimmedP)
+					}
+				}
+				expected = append(expected, "my_custom_dir/", "another_dir/")
+				return expected
+			}(),
 		},
 		{
-			name: "override with single item",
+			name: "additive with single custom item",
 			input: &RawInput{
-				Exclude: "*.log",
+				Exclude: "*.special_log",
 			},
-			expected: []string{"*.log"},
+			expected: func() []string {
+				var expected []string
+				for p := range strings.SplitSeq(schema.DefaultExclude, ",") {
+					trimmedP := strings.TrimSpace(p)
+					if trimmedP != "" {
+						expected = append(expected, trimmedP)
+					}
+				}
+				expected = append(expected, "*.special_log")
+				return expected
+			}(),
 		},
 	}
 

@@ -598,28 +598,35 @@ func validateScoringInputs(cfg *Config, input *RawInput) error {
 
 func processExcludes(cfg *Config, input *RawInput) {
 	// --- 6. Excludes Processing ---
-	var defaults []string
-	for p := range strings.SplitSeq(schema.DefaultExclude, ",") {
-		trimmedP := strings.TrimSpace(p)
-		if trimmedP != "" {
-			defaults = append(defaults, trimmedP)
+	uniqueExcludes := make(map[string]bool)
+	var finalExcludes []string
+
+	addExclude := func(pattern string) {
+		trimmed := strings.TrimSpace(pattern)
+		if trimmed != "" && !uniqueExcludes[trimmed] {
+			uniqueExcludes[trimmed] = true
+			finalExcludes = append(finalExcludes, trimmed)
 		}
 	}
 
-	if input.Exclude != "" {
-		var custom []string
-		parts := strings.SplitSeq(input.Exclude, ",")
-		for p := range parts {
-			trimmedP := strings.TrimSpace(p)
-			if trimmedP != "" {
-				custom = append(custom, trimmedP)
-			}
-		}
-		cfg.Git.Excludes = custom
-	} else if len(cfg.Git.Excludes) == 0 {
-		// Only apply defaults if not already populated by a preset
-		cfg.Git.Excludes = defaults
+	// 1. Add Default Excludes (always apply these universal noise filters)
+	for p := range strings.SplitSeq(schema.DefaultExclude, ",") {
+		addExclude(p)
 	}
+
+	// 2. Add Preset Excludes (already loaded into cfg.Git.Excludes by ApplyPreset)
+	for _, p := range cfg.Git.Excludes {
+		addExclude(p)
+	}
+
+	// 3. Add Custom Excludes from CLI/Env
+	if input.Exclude != "" {
+		for p := range strings.SplitSeq(input.Exclude, ",") {
+			addExclude(p)
+		}
+	}
+
+	cfg.Git.Excludes = finalExcludes
 }
 
 // processTimeRange handles the complex date parsing and time range validation.
