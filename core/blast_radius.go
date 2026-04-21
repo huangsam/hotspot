@@ -42,6 +42,8 @@ func GetHotspotBlastRadiusResults(ctx context.Context, cfg *config.Config, clien
 	var currentCommit string
 	totalCommits := 0
 
+	matcher := schema.NewPathMatcher(cfg.Git.Excludes)
+
 	for _, l := range lines {
 		l = strings.Trim(l, " \t\r\n'")
 		if strings.HasPrefix(l, "--") {
@@ -64,7 +66,7 @@ func GetHotspotBlastRadiusResults(ctx context.Context, cfg *config.Config, clien
 		path := parts[2]
 
 		// Handle renames and filter
-		cleanPaths := resolvePaths(path, fileExists, cfg.Git.Excludes)
+		cleanPaths := resolvePaths(path, fileExists, matcher)
 		commits[currentCommit] = append(commits[currentCommit], cleanPaths...)
 	}
 
@@ -153,7 +155,7 @@ func GetHotspotBlastRadiusResults(ctx context.Context, cfg *config.Config, clien
 }
 
 // resolvePaths replicates the logic in core/agg/agg.go for consistency.
-func resolvePaths(path string, fileExists map[string]bool, excludes []string) []string {
+func resolvePaths(path string, fileExists map[string]bool, matcher *schema.PathMatcher) []string {
 	var candidates []string
 	if !strings.Contains(path, " => ") {
 		candidates = append(candidates, path)
@@ -181,7 +183,7 @@ func resolvePaths(path string, fileExists map[string]bool, excludes []string) []
 
 	var result []string
 	for _, c := range candidates {
-		if fileExists[c] && !schema.ShouldIgnore(c, excludes) {
+		if fileExists[c] && !matcher.Match(c) {
 			result = append(result, c)
 		}
 	}

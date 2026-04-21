@@ -211,8 +211,9 @@ func (b *CheckResultBuilder) GetResult() *schema.CheckResult {
 // filterChangedFiles filters the list of changed files based on excludes.
 func filterChangedFiles(files []string, excludes []string) []string {
 	filtered := make([]string, 0, len(files))
+	matcher := schema.NewPathMatcher(excludes)
 	for _, f := range files {
-		if !schema.ShouldIgnore(f, excludes) {
+		if !matcher.Match(f) {
 			filtered = append(filtered, f)
 		}
 	}
