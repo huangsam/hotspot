@@ -444,6 +444,32 @@ func TestParseBoolString(t *testing.T) {
 	}
 }
 
+func TestIsPathInFilter(t *testing.T) {
+	tests := []struct {
+		name     string
+		path     string
+		filter   string
+		expected bool
+	}{
+		{"empty filter", "src/main.go", "", true},
+		{"exact file match", "src/main.go", "src/main.go", true},
+		{"directory match", "src/main.go", "src", true},
+		{"directory match with slash", "src/main.go", "src/", true},
+		{"nested directory match", "src/cmd/main.go", "src/cmd", true},
+		{"partial directory mismatch", "src_old/main.go", "src", false},
+		{"partial file mismatch", "main.go.bak", "main.go", false},
+		{"sibling directory mismatch", "src/main.go", "lib", false},
+		{"deep nested match", "a/b/c/d/e.go", "a/b/c", true},
+		{"deep nested mismatch", "a/b/c/d/e.go", "a/b/x", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsPathInFilter(tt.path, tt.filter))
+		})
+	}
+}
+
 func FuzzShouldIgnore(f *testing.F) {
 	seeds := []struct {
 		path     string

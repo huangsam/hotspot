@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/huangsam/hotspot/core/algo"
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/schema"
@@ -322,7 +323,7 @@ func BuildFilteredFileList(gitSettings config.GitSettings, output *schema.Aggreg
 
 	for f := range output.FileStats {
 		// Apply path filter check only if the filter is set
-		if pathFilterSet && !strings.HasPrefix(f, pathFilter) {
+		if pathFilterSet && !schema.IsPathInFilter(f, pathFilter) {
 			continue
 		}
 
@@ -403,6 +404,14 @@ func AggregateAndScoreFolders(gitSettings config.GitSettings, scoringSettings co
 			sort.Slice(authors, func(i, j int) bool {
 				return authors[i].commits > authors[j].commits
 			})
+
+			// NEW: Calculate UniqueContributors and Gini for the folder
+			res.UniqueContributors = schema.Metric(len(authorMap))
+			giniValues := make([]float64, 0, len(authorMap))
+			for _, commits := range authorMap {
+				giniValues = append(giniValues, commits.Float64())
+			}
+			res.Gini = algo.Gini(giniValues)
 
 			// Set top owner and top 2 owners
 			if len(authors) > 0 {

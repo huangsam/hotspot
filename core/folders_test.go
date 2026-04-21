@@ -212,6 +212,8 @@ func TestAggregateAndScoreFolders_OwnerCalculation(t *testing.T) {
 
 	// Alice should be the primary owner (14 commits > Bob's 12)
 	assert.Equal(t, []string{"Alice", "Bob"}, folder.Owners)
+	assert.Equal(t, schema.Metric(2), folder.UniqueContributors)
+	assert.True(t, folder.Gini > 0)
 	assert.Equal(t, schema.Metric(26), folder.Commits)   // 8 + 12 + 6
 	assert.Equal(t, schema.Metric(130), folder.Churn)    // 40 + 60 + 30
 	assert.Equal(t, schema.Metric(260), folder.TotalLOC) // 80 + 120 + 60

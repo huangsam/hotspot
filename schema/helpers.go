@@ -294,3 +294,26 @@ func NormalizeTimeseriesPath(repoPath, userPath string) (string, error) {
 
 	return normalized, nil
 }
+
+// IsPathInFilter returns true if the path is within the directory or file specified by the filter.
+// It correctly handles directory boundaries to avoid partial matches (e.g. "src" matching "src_old").
+func IsPathInFilter(path, filter string) bool {
+	if filter == "" {
+		return true
+	}
+	// Normalize to forward slashes
+	path = filepath.ToSlash(path)
+	filter = filepath.ToSlash(filter)
+
+	// Exact match
+	if path == filter {
+		return true
+	}
+
+	// Ensure filter ends with a slash for directory prefix check
+	if !strings.HasSuffix(filter, "/") {
+		filter += "/"
+	}
+
+	return strings.HasPrefix(path, filter)
+}

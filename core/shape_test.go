@@ -102,6 +102,18 @@ func TestIsIaCFile(t *testing.T) {
 		{"flux/sync.yaml", true},
 		{"argo/app.json", true},
 		{"ansible/playbook.jinja", true},
+		{".github/workflows/ci.yml", true},
+		{".gitlab-ci.yml", true},
+		{".gitlab/deploy.yaml", true},
+		{".circleci/config.yml", true},
+		{"bitbucket-pipelines.yml", true},
+		{"kustomization.yaml", true},
+		{"deploy/kustomization.yml", true},
+		{"skaffold.yaml", true},
+		{"Tiltfile", true},
+		{"Taskfile.yml", true},
+		{"taskfile.yaml", true},
+		{"justfile", true},
 
 		// Helm patterns (extended)
 		{"helmfile.yaml", true},

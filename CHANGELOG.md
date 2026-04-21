@@ -3,7 +3,20 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to [Semantic Versioning](https://semver.org).
+
+## [1.18.2] - 2026-04-20
+
+### Added
+- Folder Risk Intelligence: added `Gini` and `UniqueContributors` metrics.
+- Extended IaC Detection: support for Kustomize, Skaffold, Tilt, and CI/CD.
+
+### Changed
+- Hardened Path Filtering: ensured strict directory boundaries in monorepos.
+- Preset Refinement: expanded exclusions for modern toolchain noise.
+
+### Fixed
+- Monorepo Accuracy: fixed edge cases in partial directory matching.
 
 ## [1.18.1] - 2026-04-20
 
@@ -26,15 +39,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.18.0] - 2026-04-18
 
 ### Added
-- Comprehensive benchmark test suite for `core`, `schema`, and `iocache` packages
-- `busy_timeout` configuration for SQLite analysis backend to improve concurrency
+- Comprehensive benchmark suite for core, schema, and iocache packages.
+- Added `busy_timeout` for SQLite backend to improve concurrency.
 
 ### Changed
 - Reduced aggregation allocations by 99% via struct-based aggregation
-- Implemented high-performance, zero-allocation Git log parser for faster repository scanning
+- Implemented high-performance, zero-allocation Git log parser.
 - Optimized Gini coefficient scoring calculations and file stat implementation
-- Streamlined exclusion logic by optimizing recursive glob calls across repository assets
-- Refined complexity scoring logic with intelligent configuration file detection and debuffs
+- Streamlined exclusion logic by optimizing recursive glob calls.
+- Refined complexity scoring with intelligent file detection.
 - Updated Go requirement to 1.26.0 and refreshed all dependencies
 
 ### Fixed
@@ -45,20 +58,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.17.0] - 2026-04-18
 
 ### Added
-- Persisted ROI and Recency metrics across all storage backends (SQLite, MySQL, PostgreSQL)
-- Analytical "Intelligence Layer" in the database schema for high-fidelity reasoning signals
-- Full parity for `compare_file_hotspots` and `compare_folder_hotspots` MCP tools
-- `run_check` MCP tool for automated policy gating in agentic workflows
-- Full metrics parity for Parquet analytical lake exports, including reasoning signals
+- Persisted ROI/Recency metrics across SQLite, MySQL, and PostgreSQL.
+- Added Analytical "Intelligence Layer" for high-fidelity reasoning.
+- Full parity for file/folder comparison MCP tools.
+- `run_check` MCP tool for automated policy gating.
+- Full metrics and reasoning signal parity for Parquet lake exports.
 
 ### Changed
-- Performance optimization for analysis tracking with batched, transactional recording
+- Optimized analysis tracking with batched, transactional recording.
 - Unified exclusion logic across CLI presets and MCP server invocations
 - Refined `small` preset for tighter microservice analysis defaults
 - Refreshed demo assets and updated performance benchmarks in documentation
 
 ### Fixed
-- Transactional safety in database integration tests with dialect-specific assertions
+- Transactional safety in integration tests with dialect assertions.
 - Preset handling for MCP to ensure consistent recursive glob filtering
 - Dependency hygiene with Go module updates and `go mod tidy`
 
@@ -73,7 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactored output orchestration layer for consistent cross-format reporting
 - Improved CSV stability by standardizing columns regardless of filtering flags
 - Sanitized history views by moving raw JSON parameters to metadata-only fields
-- Reorganized user documentation into `docs/` directory for better maintainability
+- Reorganized documentation into `docs/` for better maintainability.
 - Refactored macro-benchmark to use `bench-repos` target
 
 ## [1.16.1] - 2026-04-16
@@ -86,21 +99,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bazel, Buck, and Pants build artifact exclusions for monorepo hardening
 
 ### Changed
-- Refined `infra` and `large` presets with modern artifact patterns (Terraform, Next.js, Vercel)
+- Refined `infra` and `large` presets with modern artifact patterns
+  (Terraform, Next.js, Vercel)
 - Streamlined `small` preset to leverage built-in system defaults
 
 ### Fixed
-- Recursive glob matching for subdirectory exclusions in multi-level repositories
+- Recursive glob matching for subdirectory exclusions in multi-level
+  repositories
 
 ## [1.16.0] - 2026-04-16
 
 ### Added
-- `hotspot init` command for automated repository configuration and preset selection
-- `get_release_journey` and `get_blast_radius` MCP tools for architectural analysis
-- Native MCP documentation resources (`hotspot://docs/*`) served directly from binary
-- Guided analysis playbooks (Prompts) for repository audits and refactor prioritization
-- Enhanced MCP tool intelligence with semantic annotations and synchronized defaults
-- Standardized parameter descriptions and explicit default mappings across all tools
+- `hotspot init` command for automated repository setup and presets.
+- `get_release_journey` and `get_blast_radius` architectural tools.
+- Native MCP documentation resources served directly from binary.
+- Guided analysis playbooks for repository audits and prioritization.
+- Enhanced MCP tool intelligence with annotations and synced defaults.
+- Standardized parameter descriptions and mappings across all tools.
 
 ### Changed
 - Disabled analysis tracking by default to reduce overhead for local use
@@ -117,13 +132,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.15.0] - 2026-04-15
 
 ### Added
-- `hotspot shape` command for lightweight repository characterization and preset recommendation
+- `hotspot shape` for lightweight characterization and presets.
 - `get_repo_shape` MCP tool to expose shape analysis as JSON for AI agents
 - Preset system (small, large, infra) with embedded configuration templates
-- Preset parameter support on all MCP analysis tools (`get_files_hotspots`, `get_folders_hotspots`, `compare_hotspots`, `get_timeseries`)
+- Preset support for all MCP analysis tools.
 
 ### Changed
-- MCP preset handling now treats presets as optional convenience (silent fallback to defaults for invalid names)
+- MCP presets now treat invalid names as optional convenience.
 
 ### Fixed
 - Help text alignment for `--mode` flag across CLI and documentation
@@ -131,24 +146,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.14.0] - 2026-04-14
 
 ### Added
-- ROI scoring mode to prioritize refactoring efforts with highest technical return
-- Time-weighted activity (exponential decay) to prioritize recent development impact
+- ROI scoring mode to prioritize high-return refactoring.
+- Time-weighted activity (decay) to prioritize recent development.
 - Repository URN tracking for portable repository identity across machines
 - Markdown and Describe (Executive Summary) output formats
-- Structured reasoning signals to analysis results for AI/ML and human interpretability
+- Structured reasoning signals for AI and human interpretability.
 - Database pagination and URN filtering for historical analysis queries
 - Hardened Agentic documentation and expanded example configuration suite
 
 ### Changed
 - Modernized output architecture with a modular, extensible provider pattern
-- Standardized metadata models for consistent API responses across all analysis modes
+- Standardized metadata for consistent API responses across modes.
 - Performance optimizations resulting in 15-20% faster cold analysis times
 - Hardened database persistence layer with pluggable SQL dialects
 - Updated all direct and indirect dependencies
 
 ### Fixed
-- Improved debuff logic for autogenerated and test code across all scoring modes
-- Synchronization of CLI help strings and documentation for all supported output formats
+- Improved debuff logic for autogenerated and test code.
+- Synced CLI help strings and docs for all output formats.
 
 ## [1.13.0] - 2026-04-11
 
@@ -167,18 +182,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.12.1] - 2026-02-22
 
 ### Changed
-- Migrate from `go-sqlite3` (CGO) to pure-Go `modernc.org/sqlite` driver to support zero-dependency cross-compilation for release binaries
+- Migrate from `go-sqlite3` (CGO) to pure-Go `modernc.org/sqlite` driver to
+  support zero-dependency cross-compilation for release binaries
 
 ## [1.12.0] - 2026-02-22
 
 ### Added
 - Model Context Protocol (MCP) server for native AI Agent integration
-- `hotspot mcp` subcommand to expose `get_files_hotspots`, `get_folders_hotspots`, `compare_hotspots`, and `get_timeseries` tools
+- `hotspot mcp` subcommand to expose core analysis tools via JSON-RPC.
 - Agentic documentation (AGENTS.md) and playbook examples for MCP setup
 
 ### Changed
-- Extract core analytical dependencies into a modular `toolHandler` structure for MCP
-- Abstract stdout rendering away from core getter methods to guarantee seamless JSON-RPC transport
+- Modularized core dependencies into `toolHandler` for MCP integration.
+- Decoupled stdout rendering from getters for seamless JSON-RPC transport.
 - Update Go setup to 1.26 in GitHub Actions CI
 
 ### Fixed
@@ -220,11 +236,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Optimize memory usage for score calculations
 - Improve check failure output
-- Reorder schema fields, add line breaks, and refine comments for better structure
+- Refined schema structure: reordered fields and improved comments.
 - Refactor schema terms across multiple files
 - Reorganize all core tests for readability
 - Migrate filter logic to check builder and split print functions
-- Update benchmark results, performance details, requirements language, and agentic docs
+- Updated benchmarks, performance details, and agentic documentation.
 
 ### Fixed
 - Check section references in USERGUIDE and README formatting
@@ -281,10 +297,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.7.0] - 2025-11-20
 
 ### Added
-- Unified `hotspot_file_scores_metrics` table merging prior tables for better data organization
+- Unified metrics into `hotspot_file_scores_metrics` table.
 
 ### Changed
-- Remove deprecated AnalysisStore methods for cleaner interface and reduced complexity
+- Cleaned up `AnalysisStore` by removing deprecated methods.
 
 ### Deprecated
 - Retract v1.6.0 due to breaking API changes that would cause incompatibility
@@ -292,7 +308,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.6.0] - 2025-11-20
 
 ### Added
-- Analysis tracking system with DB storage for SQLite, MySQL, PostgreSQL backends
+- Analysis tracking with support for SQLite, MySQL, and PostgreSQL.
 - Status commands for analysis and cache backends
 - Comprehensive tests for analysis tracking and backend status
 
@@ -336,7 +352,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.4.0] - 2025-11-14
 
 ### Added
-- Persistent SQLite result caching with ~35x faster analysis for repeated runs and seamless mode switching
+- Persistent SQLite caching for ~35x faster repeated analyses.
 
 ### Changed
 - Bump cache version for compatibility
@@ -405,31 +421,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.4] - 2025-11-09
 
 ### Changed
-- Use pipe delimiters for owner names in all CSV outputs to prevent parsing issues
+- Use pipe delimiters for owners in CSV to prevent parsing issues.
 - Separate before/after owner columns for clearer comparison data
 
 ## [1.1.3] - 2025-11-09
 
 ### Changed
-- Extract duplicated weight processing logic into shared `ProcessWeightsRawInput` helper, eliminating ~50 lines of duplicated code
-- Combine `loadActiveWeights` and `ExecuteHotspotMetrics` functions to reduce unnecessary abstraction
+- Consolidated weight processing logic into `ProcessWeightsRawInput`.
+- Combined weight loading and metrics execution for simpler abstraction.
 
 ## [1.1.2] - 2025-11-09
 
 ### Changed
-- Remove O(N) git calls during file analysis by using pre-aggregated commit data instead of individual `git log` calls per file, significantly improving performance for large repositories
-- Optimize integration tests to build hotspot binary only once instead of 5-6 times, reducing test execution time by 37% (from ~7.4s to ~4.6s)
+- Optimized file analysis using pre-aggregated commit data (O(1)).
+- Optimized integration tests: single binary build reduces time by 37%.
 - Remove unused `GetFileFirstCommitTime` method and related dead code
-- Add `hotspot-integration-*/` pattern to `.gitignore` to prevent accidental commits of temporary test directories
-- Unify all integration tests to use single `parseHotspotDetailOutput` function with `HotspotFileDetail` struct
+- Ignored `hotspot-integration-*/` to prevent committing test dirs.
+- Unified integration tests using `parseHotspotDetailOutput` helper.
 
 ### Fixed
-- Age verification tests by using relative time windows from aggregated data instead of broken individual git queries
+- Fixed age tests using relative time windows from aggregated data.
 
 ## [1.1.1] - 2025-11-08
 
 ### Changed
-- Add context.Context throughout the codebase for better cancellability and request-scoped data flow
+- Added `context.Context` for better cancellability across the codebase.
 - Make command headers more compact and consistent across all subcommands
 
 ## [1.1.0] - 2025-11-08
@@ -708,6 +724,7 @@ Initial development covered core functionality including:
 - Code quality and maintainability refactoring
 - Proper package structure architecture
 
+[1.18.2]: https://github.com/huangsam/hotspot/compare/v1.18.1...v1.18.2
 [1.18.1]: https://github.com/huangsam/hotspot/compare/v1.18.0...v1.18.1
 [1.18.0]: https://github.com/huangsam/hotspot/compare/v1.17.0...v1.18.0
 [1.17.0]: https://github.com/huangsam/hotspot/compare/v1.16.2...v1.17.0

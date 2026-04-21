@@ -31,38 +31,47 @@ var iacExtensions = map[string]struct{}{
 
 // iacBaseNames are filenames that are strong indicators of IaC or infrastructure configuration.
 var iacBaseNames = map[string]struct{}{
-	"ansible.cfg":         {}, // Ansible
-	"site.yml":            {}, // Ansible
-	"site.yaml":           {}, // Ansible
-	"playbook.yml":        {}, // Ansible
-	"playbook.yaml":       {}, // Ansible
-	"chart.yaml":          {}, // Helm
-	"values.yaml":         {}, // Helm
-	"dockerfile":          {}, // Docker
-	"containerfile":       {}, // Docker
-	"docker-compose.yml":  {}, // Docker
-	"docker-compose.yaml": {}, // Docker
-	"pulumi.yaml":         {}, // Pulumi
-	"pulumi.yml":          {}, // Pulumi
-	"vagrantfile":         {}, // Vagrant
-	"backend.tf":          {}, // Terraform
-	"provider.tf":         {}, // Terraform
-	".terraform.lock.hcl": {}, // Terraform
-	"cloudformation.json": {}, // CloudFormation
-	"cloudformation.yaml": {}, // CloudFormation
-	"cloudformation.yml":  {}, // CloudFormation
-	"cheffile":            {}, // Chef
-	"berksfile":           {}, // Chef
-	"puppetfile":          {}, // Puppet
-	"hiera.yaml":          {}, // Puppet
-	"helmfile.yaml":       {}, // Helm
-	"serverless.yml":      {}, // Serverless
-	"serverless.yaml":     {}, // Serverless
-	"azuredeploy.json":    {}, // Azure ARM
-	"terragrunt.hcl":      {}, // Terragrunt
-	"samconfig.toml":      {}, // AWS SAM
-	"main.bicep":          {}, // Azure Bicep
-	"packer.json":         {}, // Packer
+	"ansible.cfg":             {}, // Ansible
+	"site.yml":                {}, // Ansible
+	"site.yaml":               {}, // Ansible
+	"playbook.yml":            {}, // Ansible
+	"playbook.yaml":           {}, // Ansible
+	"chart.yaml":              {}, // Helm
+	"values.yaml":             {}, // Helm
+	"dockerfile":              {}, // Docker
+	"containerfile":           {}, // Docker
+	"docker-compose.yml":      {}, // Docker
+	"docker-compose.yaml":     {}, // Docker
+	"pulumi.yaml":             {}, // Pulumi
+	"pulumi.yml":              {}, // Pulumi
+	"vagrantfile":             {}, // Vagrant
+	"backend.tf":              {}, // Terraform
+	"provider.tf":             {}, // Terraform
+	".terraform.lock.hcl":     {}, // Terraform
+	"cloudformation.json":     {}, // CloudFormation
+	"cloudformation.yaml":     {}, // CloudFormation
+	"cloudformation.yml":      {}, // CloudFormation
+	"cheffile":                {}, // Chef
+	"berksfile":               {}, // Chef
+	"puppetfile":              {}, // Puppet
+	"hiera.yaml":              {}, // Puppet
+	"helmfile.yaml":           {}, // Helm
+	"serverless.yml":          {}, // Serverless
+	"serverless.yaml":         {}, // Serverless
+	"azuredeploy.json":        {}, // Azure ARM
+	"terragrunt.hcl":          {}, // Terragrunt
+	"samconfig.toml":          {}, // AWS SAM
+	"main.bicep":              {}, // Azure Bicep
+	"packer.json":             {}, // Packer
+	"kustomization.yaml":      {}, // Kustomize
+	"kustomization.yml":       {}, // Kustomize
+	"skaffold.yaml":           {}, // Skaffold
+	"tiltfile":                {}, // Tilt
+	"taskfile.yml":            {}, // Task
+	"taskfile.yaml":           {}, // Task
+	"justfile":                {}, // Just
+	".gitlab-ci.yml":          {}, // GitLab CI
+	"bitbucket-pipelines.yml": {}, // Bitbucket
 }
 
 // iacPathPatterns are directory substrings whose YAML/JSON children are likely IaC.
@@ -74,7 +83,7 @@ var iacPathPatterns = []string{
 	"group_vars/", "host_vars/", "inventory/", "molecule/", "vars/",
 	"puppet/", "chef/", "recipes/", "cloudformation/", "cfn/",
 	"sam/", "cdk/", "terragrunt/", "packer/", "bicep/", "flux/", "argo/",
-	"serverless/", "gitops/",
+	"serverless/", "gitops/", ".github/workflows/", ".gitlab/", ".circleci/",
 	// Generic infrastructure patterns
 	"infra/", "infrastructure/", "ops/", "provision/", "provisioning/",
 	"setup/", "env/", "environments/",
@@ -222,7 +231,7 @@ func GetHotspotShapeResults(ctx context.Context, cfg *config.Config, client git.
 	if cfg.Git.PathFilter != "" {
 		var filtered []string
 		for _, f := range files {
-			if strings.HasPrefix(f, cfg.Git.PathFilter) {
+			if schema.IsPathInFilter(f, cfg.Git.PathFilter) {
 				filtered = append(filtered, f)
 			}
 		}

@@ -67,13 +67,15 @@ func (f FileResult) GetOwners() []string {
 
 // FolderResult holds the final computed scores and aggregated metrics for a folder.
 type FolderResult struct {
-	Path           string   `json:"path"`            // Relative path to the folder in the repository
-	Commits        Metric   `json:"commits"`         // Total number of commits across all contained files
-	Churn          Metric   `json:"churn"`           // Total number of lines added/deleted across all contained files
-	DecayedCommits Metric   `json:"decayed_commits"` // Time-weighted commits across all contained files
-	DecayedChurn   Metric   `json:"decayed_churn"`   // Time-weighted churn across all contained files
-	Score          float64  `json:"score"`           // Computed importance score for the folder
-	Owners         []string `json:"owners"`          // Top 2 owners by commit count
+	Path               string   `json:"path"`                // Relative path to the folder in the repository
+	Commits            Metric   `json:"commits"`             // Total number of commits across all contained files
+	Churn              Metric   `json:"churn"`               // Total number of lines added/deleted across all contained files
+	DecayedCommits     Metric   `json:"decayed_commits"`     // Time-weighted commits across all contained files
+	DecayedChurn       Metric   `json:"decayed_churn"`       // Time-weighted churn across all contained files
+	Score              float64  `json:"score"`               // Computed importance score for the folder
+	Gini               float64  `json:"gini"`                // Gini coefficient of commit distribution in the folder
+	UniqueContributors Metric   `json:"unique_contributors"` // Number of unique contributors in the folder
+	Owners             []string `json:"owners"`              // Top 2 owners by commit count
 
 	TotalLOC         Metric      `json:"total_loc"`          // Sum of LOC of all contained files (used for weighted average)
 	WeightedScoreSum float64     `json:"weighted_score_sum"` // Sum of (FileScore * FileLOC)
