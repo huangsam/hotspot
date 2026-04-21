@@ -242,7 +242,9 @@ func (m *PathMatcher) Match(path string) bool {
 
 // ShouldIgnore returns true if the given path matches any of the exclude patterns.
 // This is a convenience wrapper around PathMatcher for one-off checks.
-// For repeated checks, create a PathMatcher using NewPathMatcher instead.
+//
+// Performance Note: For repeated checks (e.g. in a loop), create a PathMatcher
+// using NewPathMatcher instead to achieve zero-allocation matching.
 func ShouldIgnore(path string, excludes []string) bool {
 	if len(excludes) == 0 {
 		return false
