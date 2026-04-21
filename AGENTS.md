@@ -93,3 +93,4 @@ Hotspot includes **shape analysis** (lightweight single-pass aggregation) to cha
 To ensure consistency and readability in repository-wide documentation, agents MUST follow these formatting guardrails:
 
 - **Changelog Formatting**: All entries in `CHANGELOG.md` MUST be under 80 characters and formatted as one-liners. Do not use multi-line descriptions or wrapping for list items; instead, distill the change into a concise, high-impact summary.
+- **Versioning**: Do NOT hardcode the version string in `cmd/root.go` or other source files. The release version is managed by Git tags and injected by CI linker flags at build time. The source value should remain as `dev`.

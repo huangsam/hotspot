@@ -5,15 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org).
 
-## [1.18.2] - 2026-04-20
+## [1.19.0] - 2026-04-21
 
 ### Added
+- Centralized data-driven configuration system in `schema/data/`.
 - Folder Risk Intelligence: added `Gini` and `UniqueContributors` metrics.
 - Extended IaC Detection: support for Kustomize, Skaffold, Tilt, and CI/CD.
 
 ### Changed
+- Consolidated all repository presets into `presets.yaml`.
+- Refactored `init` command to use internal data-driven presets.
 - Hardened Path Filtering: ensured strict directory boundaries in monorepos.
 - Preset Refinement: expanded exclusions for modern toolchain noise.
+- Updated `USERGUIDE.md` and `README.md` for new configuration flow.
+
+### Removed
+- Deleted redundant `examples/cli/` directory and `clipresets` package.
 
 ### Fixed
 - Monorepo Accuracy: fixed edge cases in partial directory matching.
@@ -724,7 +731,7 @@ Initial development covered core functionality including:
 - Code quality and maintainability refactoring
 - Proper package structure architecture
 
-[1.18.2]: https://github.com/huangsam/hotspot/compare/v1.18.1...v1.18.2
+[1.19.0]: https://github.com/huangsam/hotspot/compare/v1.18.1...v1.19.0
 [1.18.1]: https://github.com/huangsam/hotspot/compare/v1.18.0...v1.18.1
 [1.18.0]: https://github.com/huangsam/hotspot/compare/v1.17.0...v1.18.0
 [1.17.0]: https://github.com/huangsam/hotspot/compare/v1.16.2...v1.17.0
