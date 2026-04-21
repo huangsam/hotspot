@@ -108,7 +108,7 @@ func (p *TextProvider) WriteFolders(w io.Writer, results []schema.FolderResult, 
 
 	headers := []string{"Rank", "Path", "Score", "Label"}
 	if output.IsDetail() {
-		headers = append(headers, "Commits", "Churn", "LOC")
+		headers = append(headers, "Commits", "Churn", "LOC", "Contrib", "Gini")
 	}
 	if output.IsOwner() {
 		headers = append(headers, "Owner")
@@ -133,9 +133,11 @@ func (p *TextProvider) WriteFolders(w io.Writer, results []schema.FolderResult, 
 		}
 		if output.IsDetail() {
 			row = append(row,
-				r.Commits.Display(),  // Total Commits
-				r.Churn.Display(),    // Total Churn
-				r.TotalLOC.Display(), // Total LOC
+				r.Commits.Display(),            // Total Commits
+				r.Churn.Display(),              // Total Churn
+				r.TotalLOC.Display(),           // Total LOC
+				r.UniqueContributors.Display(), // Unique Contributors
+				fmtFloat(r.Gini),               // Gini Coefficient
 			)
 		}
 		if output.IsOwner() {

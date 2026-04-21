@@ -92,7 +92,7 @@ func (p *MarkdownProvider) WriteFolders(w io.Writer, results []schema.FolderResu
 
 	headers := []string{"Rank", "Path", "Score", "Label"}
 	if output.IsDetail() {
-		headers = append(headers, "Commits", "Churn", "LOC")
+		headers = append(headers, "Commits", "Churn", "LOC", "Contrib", "Gini")
 	}
 	if output.IsOwner() {
 		headers = append(headers, "Owner")
@@ -112,6 +112,8 @@ func (p *MarkdownProvider) WriteFolders(w io.Writer, results []schema.FolderResu
 				r.Commits.Display(),
 				r.Churn.Display(),
 				r.TotalLOC.Display(),
+				r.UniqueContributors.Display(),
+				fmtFloat(r.Gini),
 			)
 		}
 		if output.IsOwner() {

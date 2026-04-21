@@ -78,6 +78,8 @@ func (p *CSVProvider) WriteFolders(w io.Writer, results []schema.FolderResult, o
 		"total_commits",
 		"total_churn",
 		"total_loc",
+		"unique_contributors",
+		"gini",
 		"owner",
 		"mode",
 	}
@@ -85,15 +87,17 @@ func (p *CSVProvider) WriteFolders(w io.Writer, results []schema.FolderResult, o
 	return WriteCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {
 		for i, r := range results {
 			row := []string{
-				strconv.Itoa(i + 1),           // Rank
-				r.Path,                        // Folder Path
-				fmtFloat(r.Score),             // Score
-				schema.GetPlainLabel(r.Score), // Label
-				r.Commits.Display(),           // Total Commits
-				r.Churn.Display(),             // Total Churn
-				r.TotalLOC.Display(),          // Total LOC
-				strings.Join(r.Owners, "|"),   // Owners
-				string(r.Mode),                // Mode
+				strconv.Itoa(i + 1),            // Rank
+				r.Path,                         // Folder Path
+				fmtFloat(r.Score),              // Score
+				schema.GetPlainLabel(r.Score),  // Label
+				r.Commits.Display(),            // Total Commits
+				r.Churn.Display(),              // Total Churn
+				r.TotalLOC.Display(),           // Total LOC
+				r.UniqueContributors.Display(), // Unique Contributors
+				fmtFloat(r.Gini),               // Gini Coefficient
+				strings.Join(r.Owners, "|"),    // Owners
+				string(r.Mode),                 // Mode
 			}
 			if err := csvWriter.Write(row); err != nil {
 				return err

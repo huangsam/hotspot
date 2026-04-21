@@ -106,13 +106,11 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Bazel, Buck, and Pants build artifact exclusions for monorepo hardening
 
 ### Changed
-- Refined `infra` and `large` presets with modern artifact patterns
-  (Terraform, Next.js, Vercel)
+- Refined presets with modern artifact patterns (Terraform, Next.js, Vercel).
 - Streamlined `small` preset to leverage built-in system defaults
 
 ### Fixed
-- Recursive glob matching for subdirectory exclusions in multi-level
-  repositories
+- Fixed recursive glob matching for multi-level subdirectory exclusions.
 
 ## [1.16.0] - 2026-04-16
 
