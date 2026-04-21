@@ -496,6 +496,24 @@ func validateSimpleInputs(cfg *Config, input *RawInput) error {
 	cfg.Git.Follow = input.Follow
 	cfg.Output.Width = input.Width
 
+	if err := validateOutputInputs(cfg, input); err != nil {
+		return err
+	}
+	if err := validateRuntimeInputs(cfg, input); err != nil {
+		return err
+	}
+	if err := validateScoringInputs(cfg, input); err != nil {
+		return err
+	}
+	if err := validateBackendConfigs(cfg, input); err != nil {
+		return err
+	}
+	processExcludes(cfg, input)
+
+	return nil
+}
+
+func validateOutputInputs(cfg *Config, input *RawInput) error {
 	// Parse color flag
 	if input.Color != "" {
 		colors, err := schema.ParseBoolString(input.Color)
@@ -517,6 +535,29 @@ func validateSimpleInputs(cfg *Config, input *RawInput) error {
 		cfg.Output.ResultLimit = DefaultResultLimit
 	}
 
+	// --- 4. Precision and Output Validation ---
+	if input.Precision != 0 {
+		if input.Precision < 1 || input.Precision > 2 {
+			return fmt.Errorf("--precision (%d) must be 1 or 2 (controls decimal places in output)", input.Precision)
+		}
+		cfg.Output.Precision = input.Precision
+	} else if cfg.Output.Precision == 0 {
+		cfg.Output.Precision = DefaultPrecision
+	}
+
+	if input.Output != "" {
+		cfg.Output.Format = schema.OutputMode(strings.ToLower(input.Output))
+		if _, ok := schema.ValidOutputModes[cfg.Output.Format]; !ok {
+			return fmt.Errorf("invalid output format '%s'. Must be one of: text (pretty table), csv (comma-separated), json (structured), parquet (analytics), markdown (github-flavored), describe (executive summary)", cfg.Output.Format)
+		}
+	} else if cfg.Output.Format == "" {
+		cfg.Output.Format = schema.TextOut
+	}
+
+	return nil
+}
+
+func validateRuntimeInputs(cfg *Config, input *RawInput) error {
 	// --- 2. Workers Validation ---
 	if input.Workers != 0 {
 		if input.Workers < 0 {
@@ -526,7 +567,10 @@ func validateSimpleInputs(cfg *Config, input *RawInput) error {
 	} else if cfg.Runtime.Workers == 0 {
 		cfg.Runtime.Workers = DefaultWorkers
 	}
+	return nil
+}
 
+func validateScoringInputs(cfg *Config, input *RawInput) error {
 	// --- 3. Mode Validation ---
 	if input.Mode != "" {
 		cfg.Scoring.Mode = schema.ScoringMode(strings.ToLower(input.Mode))
@@ -551,42 +595,17 @@ func validateSimpleInputs(cfg *Config, input *RawInput) error {
 	if cfg.Scoring.RecencyThresholdHigh == 0 {
 		cfg.Scoring.RecencyThresholdHigh = 0.40
 	}
+	return nil
+}
 
-	// --- 4. Precision and Output Validation ---
-	if input.Precision != 0 {
-		if input.Precision < 1 || input.Precision > 2 {
-			return fmt.Errorf("--precision (%d) must be 1 or 2 (controls decimal places in output)", input.Precision)
-		}
-		cfg.Output.Precision = input.Precision
-	} else if cfg.Output.Precision == 0 {
-		cfg.Output.Precision = DefaultPrecision
-	}
-
-	if input.Output != "" {
-		cfg.Output.Format = schema.OutputMode(strings.ToLower(input.Output))
-		if _, ok := schema.ValidOutputModes[cfg.Output.Format]; !ok {
-			return fmt.Errorf("invalid output format '%s'. Must be one of: text (pretty table), csv (comma-separated), json (structured), parquet (analytics), markdown (github-flavored), describe (executive summary)", cfg.Output.Format)
-		}
-	} else if cfg.Output.Format == "" {
-		cfg.Output.Format = schema.TextOut
-	}
-
-	// --- 5. Backend Validation ---
-	if err := validateBackendConfigs(cfg, input); err != nil {
-		return err
-	}
-
+func processExcludes(cfg *Config, input *RawInput) {
 	// --- 6. Excludes Processing ---
-	defaults := []string{
-		"Cargo.lock", "go.sum", "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "composer.lock", "uv.lock",
-		".min.js", ".min.css",
-		".jpg", ".jpeg", ".png", ".gif", ".svg", ".ico", ".mp4", ".mov", ".webm", ".mp3", ".ogg", ".pdf", ".webp",
-		".json", ".csv", ".po", ".mo", ".xlf", ".xliff",
-		".md", "LICENSE",
-		".DS_Store", ".gitignore", ".idea/", ".vscode/",
-		"node_modules/", "vendor/", "__pycache__/",
-		"dist/", "build/", "out/", "target/", "bin/",
-		"*.zip", "*.tar", "*.gz", "*.7z", "*.rar", "*.log",
+	var defaults []string
+	for p := range strings.SplitSeq(schema.DefaultExclude, ",") {
+		trimmedP := strings.TrimSpace(p)
+		if trimmedP != "" {
+			defaults = append(defaults, trimmedP)
+		}
 	}
 
 	if input.Exclude != "" {
@@ -603,8 +622,6 @@ func validateSimpleInputs(cfg *Config, input *RawInput) error {
 		// Only apply defaults if not already populated by a preset
 		cfg.Git.Excludes = defaults
 	}
-
-	return nil
 }
 
 // processTimeRange handles the complex date parsing and time range validation.

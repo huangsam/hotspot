@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -513,17 +514,16 @@ func TestExcludes(t *testing.T) {
 			input: &RawInput{
 				Exclude: "",
 			},
-			expected: []string{
-				"Cargo.lock", "go.sum", "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "composer.lock", "uv.lock",
-				".min.js", ".min.css",
-				".jpg", ".jpeg", ".png", ".gif", ".svg", ".ico", ".mp4", ".mov", ".webm", ".mp3", ".ogg", ".pdf", ".webp",
-				".json", ".csv", ".po", ".mo", ".xlf", ".xliff",
-				".md", "LICENSE",
-				".DS_Store", ".gitignore", ".idea/", ".vscode/",
-				"node_modules/", "vendor/", "__pycache__/",
-				"dist/", "build/", "out/", "target/", "bin/",
-				"*.zip", "*.tar", "*.gz", "*.7z", "*.rar", "*.log",
-			},
+			expected: func() []string {
+				var expected []string
+				for p := range strings.SplitSeq(schema.DefaultExclude, ",") {
+					trimmedP := strings.TrimSpace(p)
+					if trimmedP != "" {
+						expected = append(expected, trimmedP)
+					}
+				}
+				return expected
+			}(),
 		},
 		{
 			name: "override when exclude provided",

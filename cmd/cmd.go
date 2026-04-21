@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"github.com/huangsam/hotspot/internal/logger"
+	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -40,7 +41,7 @@ func init() {
 	// Bind all persistent flags of rootCmd to Viper
 	rootCmd.PersistentFlags().Bool("detail", false, "Print per-target metadata (lines of code, size, age)")
 	rootCmd.PersistentFlags().String("end", "", "End date in ISO8601 or time ago")
-	rootCmd.PersistentFlags().String("exclude", "", "Comma-separated list of path prefixes or patterns to ignore")
+	rootCmd.PersistentFlags().String("exclude", schema.DefaultExclude, "Comma-separated list of path prefixes or patterns to ignore")
 	rootCmd.PersistentFlags().StringP("filter", "f", "", "Filter targets by path prefix")
 	rootCmd.PersistentFlags().IntP("limit", "l", 0, "Number of results to display")
 	rootCmd.PersistentFlags().String("mode", "", "Scoring mode: hot or risk or complexity or roi")

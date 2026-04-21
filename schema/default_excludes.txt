@@ -1,0 +1,111 @@
+# OS & Version Control
+.DS_Store
+.gitignore
+
+# IDEs & Editor Configs
+.idea/
+.vscode/
+.editorconfig
+.prettierrc*
+.eslintrc*
+.stylelintrc*
+.markdownlint*
+
+# Dependency Directories
+vendor/
+node_modules/
+__pycache__/
+venv/
+.venv/
+.tox/
+.mypy_cache/
+.pytest_cache/
+.gradle/
+.m2/
+
+# Build & Compilation Artifacts
+dist/
+bin/
+build/
+out/
+target/
+obj/
+CMakeFiles/
+bazel-*/
+buck-out/
+.pants.d/
+**/.next/
+**/.vercel/
+**/.turbo/
+**/coverage/
+**/.cache/
+coverage/
+
+# Compiled Binaries & Object Files
+*.class
+*.jar
+*.exe
+*.so
+*.dll
+*.pdb
+*.o
+*.obj
+*.pyc
+
+# Lockfiles & Dependency Manifests
+Cargo.lock
+go.sum
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+composer.lock
+uv.lock
+
+# Media & Assets
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.svg
+*.ico
+*.webp
+*.pdf
+*.mp4
+*.mov
+*.webm
+*.mp3
+*.ogg
+
+# Minified Assets & Data Files
+*.min.js
+*.min.css
+*.json
+*.csv
+*.md
+
+# Localization & Archives
+*.po
+*.mo
+*.xlf
+*.xliff
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+*.log
+
+# Generated Code & Mocks
+*.pb.go
+**/*.generated.go
+**/*_mock.go
+
+# Environment & Tooling Versions
+.nvmrc
+.ruby-version
+.python-version
+.tool-versions
+
+# Licensing
+LICENSE

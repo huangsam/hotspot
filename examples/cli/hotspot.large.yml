@@ -40,15 +40,5 @@ explain: false
 follow: true
 
 # --- Exclusions ---
-# exclude: Skip generated code, vendored dependencies, and build artifacts.
-exclude: >-
-  .DS_Store, .gitignore, .idea/, .vscode/,
-  vendor/, node_modules/, dist/, bin/, build/, target/, obj/, CMakeFiles/, LICENSE,
-  bazel-*/, buck-out/, .pants.d/,
-  **/.next/, **/.vercel/, **/.turbo/, **/coverage/, **/.cache/,
-  *.pb.go, **/*.generated.go, **/*_mock.go,
-  *.class, *.jar, *.exe, *.so, *.dll, *.pdb, *.o, *.obj,
-  Cargo.lock, package-lock.json, yarn.lock, pnpm-lock.yaml, uv.lock,
-  *.jpg, *.jpeg, *.png, *.gif, *.svg, *.ico, *.webp, *.pdf, *.mp4, *.mov, *.webm,
-  *.pyc, __pycache__/, venv/, .venv/, .tox/, .mypy_cache/, .pytest_cache/, coverage/,
-  .gradle/, .m2/, *.po, *.mo, *.xlf, *.xliff, *.zip, *.tar.gz, *.log
+# The large preset relies on Hotspot's robust global default exclusions
+# to filter out standard toolchain and dependency noise.
