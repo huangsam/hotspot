@@ -222,7 +222,7 @@ func TestCachedAggregateActivity_CacheMiss(t *testing.T) {
 
 	// Setup for aggregateActivity
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return(strings.Split(strings.TrimSpace(fileListFixture), "\n"), nil)
-	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(gitLogBasicFixture, nil)
+	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("string"), mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(gitLogBasicFixture, nil)
 	mockClient.On("GetRepoHash", ctx, "/test/repo").Return("abcd1234", nil)
 	mockClient.On("GetRemoteURL", mock.Anything, mock.AnythingOfType("string")).Return("", nil).Maybe()
 	mockClient.On("GetRootCommitHash", mock.Anything, mock.AnythingOfType("string")).Return("root123", nil).Maybe()
@@ -259,7 +259,7 @@ func TestCachedAggregateActivity_NoCacheManager(t *testing.T) {
 
 	// Setup for aggregateActivity
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return(strings.Split(strings.TrimSpace(fileListFixture), "\n"), nil)
-	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(gitLogBasicFixture, nil)
+	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("string"), mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(gitLogBasicFixture, nil)
 
 	// No cache manager
 	mockMgr.On("GetActivityStore").Return(nil)

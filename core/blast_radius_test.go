@@ -44,7 +44,7 @@ func TestGetHotspotBlastRadiusResults(t *testing.T) {
 		},
 	}
 
-	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.Anything, mock.Anything).Return([]byte(gitLog), nil)
+	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return([]byte(gitLog), nil)
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return([]string{"file_a.go", "file_b.go", "file_c.go"}, nil)
 
 	// Threshold 0.2 to catch all pairs:
@@ -95,7 +95,7 @@ func TestJaccardWithHigherCoupling(t *testing.T) {
 		},
 	}
 
-	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.Anything, mock.Anything).Return([]byte(gitLog), nil)
+	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return([]byte(gitLog), nil)
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return([]string{"file_a.go", "file_b.go"}, nil)
 
 	// A: 3 commits

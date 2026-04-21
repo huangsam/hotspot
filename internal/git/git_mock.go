@@ -27,8 +27,8 @@ func (m *MockGitClient) Run(ctx context.Context, repoPath string, args ...string
 }
 
 // GetActivityLog implements the GitClient interface.
-func (m *MockGitClient) GetActivityLog(ctx context.Context, repoPath string, startTime, endTime time.Time) ([]byte, error) {
-	ret := m.Called(ctx, repoPath, startTime, endTime)
+func (m *MockGitClient) GetActivityLog(ctx context.Context, repoPath string, path string, startTime, endTime time.Time) ([]byte, error) {
+	ret := m.Called(ctx, repoPath, path, startTime, endTime)
 	output, _ := ret.Get(0).([]byte)
 	return output, ret.Error(1)
 }

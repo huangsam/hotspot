@@ -39,7 +39,7 @@ func aggregateActivity(ctx context.Context, gitSettings config.GitSettings, clie
 	recentThreshold := endTime.AddDate(0, 0, -30) // Fixed 30-day window for now
 
 	// 4. Run the git log command
-	out, err := client.GetActivityLog(ctx, gitSettings.GetRepoPath(), gitSettings.GetStartTime(), gitSettings.GetEndTime())
+	out, err := client.GetActivityLog(ctx, gitSettings.GetRepoPath(), gitSettings.GetPathFilter(), gitSettings.GetStartTime(), gitSettings.GetEndTime())
 	if err != nil {
 		return nil, err
 	}

@@ -97,8 +97,9 @@ func generateCacheKey(ctx context.Context, gitSettings config.GitSettings, compa
 		repoID = git.ResolveURN(ctx, client, gitSettings.GetRepoPath())
 	}
 
-	key := fmt.Sprintf("%s:%d:%d:%d:%s",
+	key := fmt.Sprintf("%s:%s:%d:%d:%d:%s",
 		repoID,
+		gitSettings.GetPathFilter(),
 		int64(compareSettings.GetLookback()),
 		startHour.Unix(),
 		endHour.Unix(),

@@ -38,7 +38,7 @@ func (c *LocalGitClient) Run(_ context.Context, repoPath string, args ...string)
 }
 
 // GetActivityLog implements the GitClient interface.
-func (c *LocalGitClient) GetActivityLog(ctx context.Context, repoPath string, startTime, endTime time.Time) ([]byte, error) {
+func (c *LocalGitClient) GetActivityLog(ctx context.Context, repoPath string, path string, startTime, endTime time.Time) ([]byte, error) {
 	args := []string{
 		"log",
 		"--numstat",
@@ -50,6 +50,9 @@ func (c *LocalGitClient) GetActivityLog(ctx context.Context, repoPath string, st
 	}
 	if !endTime.IsZero() {
 		args = append(args, fmt.Sprintf("--until=%s", endTime.Format(schema.DateTimeFormat)))
+	}
+	if path != "" {
+		args = append(args, "--", path)
 	}
 	return c.Run(ctx, repoPath, args...)
 }

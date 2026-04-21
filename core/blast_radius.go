@@ -31,7 +31,7 @@ func GetHotspotBlastRadiusResults(ctx context.Context, cfg *config.Config, clien
 	}
 
 	// 2. Fetch activity log
-	out, err := client.GetActivityLog(ctx, cfg.Git.RepoPath, cfg.Git.StartTime, cfg.Git.EndTime)
+	out, err := client.GetActivityLog(ctx, cfg.Git.RepoPath, cfg.Git.PathFilter, cfg.Git.StartTime, cfg.Git.EndTime)
 	if err != nil {
 		return schema.BlastRadiusResult{}, err
 	}

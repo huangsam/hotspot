@@ -29,7 +29,7 @@ func TestAggregateActivity(t *testing.T) {
 
 	// Setup expectations
 	mockClient.On("ListFilesAtRef", ctx, "/test/repo", "HEAD").Return(strings.Split(strings.TrimSpace(fileListFixture), "\n"), nil)
-	mockClient.On("GetActivityLog", ctx, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(gitLogBasicFixture, nil)
+	mockClient.On("GetActivityLog", ctx, "/test/repo", "", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(gitLogBasicFixture, nil)
 
 	// Create config
 	cfg := &config.Config{

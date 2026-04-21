@@ -176,12 +176,12 @@ func TestLocalGitClient_GetActivityLog(t *testing.T) {
 	endTime := time.Now()
 
 	// Test with time range
-	_, err = client.GetActivityLog(ctx, repoRoot, startTime, endTime)
+	_, err = client.GetActivityLog(ctx, repoRoot, "", startTime, endTime)
 	assert.NoError(t, err, "GetActivityLog should not return an error")
 	// Log might be empty if no commits in range, but should not error
 
 	// Test with zero times (no time filter)
-	_, err = client.GetActivityLog(ctx, repoRoot, time.Time{}, time.Time{})
+	_, err = client.GetActivityLog(ctx, repoRoot, "", time.Time{}, time.Time{})
 	assert.NoError(t, err, "GetActivityLog should not return an error with zero times")
 }
 

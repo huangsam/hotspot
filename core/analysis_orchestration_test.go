@@ -23,7 +23,7 @@ func TestRunSingleAnalysisCore_Success(t *testing.T) {
 	mockMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
 	mockClient.On("GetRemoteURL", mock.Anything, "/test/repo").Return("https://github.com/test/repo", nil).Maybe()
 	mockClient.On("ListFilesAtRef", mock.Anything, "/test/repo", "HEAD").Return([]string{"main.go", "core/agg.go"}, nil)
-	mockClient.On("GetActivityLog", mock.Anything, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
+	mockClient.On("GetActivityLog", mock.Anything, "/test/repo", mock.AnythingOfType("string"), mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
 
 	cfg := &config.Config{
 		Git: config.GitConfig{
@@ -64,7 +64,7 @@ func TestRunSingleAnalysisCore_NoFilesFound(t *testing.T) {
 	mockMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
 	mockClient.On("GetRemoteURL", mock.Anything, "/test/repo").Return("https://github.com/test/repo", nil).Maybe()
 	mockClient.On("ListFilesAtRef", mock.Anything, "/test/repo", "HEAD").Return([]string{}, nil)
-	mockClient.On("GetActivityLog", mock.Anything, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte(""), nil)
+	mockClient.On("GetActivityLog", mock.Anything, "/test/repo", mock.AnythingOfType("string"), mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte(""), nil)
 
 	cfg := &config.Config{
 		Git: config.GitConfig{
@@ -100,7 +100,7 @@ func TestRunSingleAnalysisCore_AggregationError(t *testing.T) {
 	mockMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
 	mockClient.On("GetRemoteURL", mock.Anything, "/test/repo").Return("https://github.com/test/repo", nil).Maybe()
 	mockClient.On("ListFilesAtRef", mock.Anything, "/test/repo", "HEAD").Return([]string{"main.go"}, nil)
-	mockClient.On("GetActivityLog", mock.Anything, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(nil, assert.AnError)
+	mockClient.On("GetActivityLog", mock.Anything, "/test/repo", mock.AnythingOfType("string"), mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return(nil, assert.AnError)
 
 	cfg := &config.Config{
 		Git: config.GitConfig{
@@ -140,7 +140,7 @@ func TestRunCompareAnalysisForRef(t *testing.T) {
 	mockClient.On("GetCommitTime", mock.Anything, "/test/repo", ref).Return(commitTime, nil)
 	mockClient.On("ListFilesAtRef", mock.Anything, "/test/repo", ref).Return([]string{"main.go", "core/agg.go"}, nil)
 	mockClient.On("ListFilesAtRef", mock.Anything, "/test/repo", "HEAD").Return([]string{"main.go", "core/agg.go"}, nil) // For aggregateActivity
-	mockClient.On("GetActivityLog", mock.Anything, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-06-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
+	mockClient.On("GetActivityLog", mock.Anything, "/test/repo", mock.AnythingOfType("string"), mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-06-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
 
 	cfg := &config.Config{
 		Git: config.GitConfig{
@@ -211,7 +211,7 @@ func TestAnalyzeAllFilesAtRef(t *testing.T) {
 	mockClient.On("GetRemoteURL", mock.Anything, "/test/repo").Return("https://github.com/test/repo", nil).Maybe()
 	mockClient.On("ListFilesAtRef", mock.Anything, "/test/repo", ref).Return([]string{"main.go", "core/agg.go", "test_main.go"}, nil)
 	mockClient.On("ListFilesAtRef", mock.Anything, "/test/repo", "HEAD").Return([]string{"main.go", "core/agg.go", "test_main.go"}, nil) // For aggregateActivity
-	mockClient.On("GetActivityLog", mock.Anything, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
+	mockClient.On("GetActivityLog", mock.Anything, "/test/repo", mock.AnythingOfType("string"), mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
 
 	cfg := &config.Config{
 		Git: config.GitConfig{
@@ -255,7 +255,7 @@ func TestAnalyzeAllFilesAtRef_EmptyAfterFiltering(t *testing.T) {
 	mockClient.On("GetRemoteURL", mock.Anything, "/test/repo").Return("https://github.com/test/repo", nil).Maybe()
 	mockClient.On("ListFilesAtRef", mock.Anything, "/test/repo", ref).Return([]string{"test_main.go", "test_utils.go"}, nil)
 	mockClient.On("ListFilesAtRef", mock.Anything, "/test/repo", "HEAD").Return([]string{"test_main.go", "test_utils.go"}, nil)
-	mockClient.On("GetActivityLog", mock.Anything, "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte(""), nil)
+	mockClient.On("GetActivityLog", mock.Anything, "/test/repo", mock.AnythingOfType("string"), mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]byte(""), nil)
 
 	cfg := &config.Config{
 		Git: config.GitConfig{

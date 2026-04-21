@@ -30,7 +30,8 @@ type Client interface {
 	// --- Activity / Churn Logs ---
 
 	// GetActivityLog returns the raw commit log output needed for repository-wide aggregation.
-	GetActivityLog(ctx context.Context, repoPath string, startTime, endTime time.Time) ([]byte, error)
+	// If path is non-empty, the log is restricted to that subdirectory or file.
+	GetActivityLog(ctx context.Context, repoPath string, path string, startTime, endTime time.Time) ([]byte, error)
 
 	// GetFileActivityLog returns the raw commit log output for a specific file path (supports --follow).
 	GetFileActivityLog(ctx context.Context, repoPath string, path string, startTime, endTime time.Time, follow bool) ([]byte, error)

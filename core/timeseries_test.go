@@ -44,7 +44,7 @@ func TestRunTimeseriesAnalysis_Success(t *testing.T) {
 	mockMgr.On("GetActivityStore").Return(nil).Maybe() // No caching for test
 	mockMgr.On("GetAnalysisStore").Return(nil).Maybe() // No analysis tracking for test
 	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{path}, nil).Maybe()
-	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
+	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("string"), mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil).Maybe()
 
 	cfg := &config.Config{
@@ -100,7 +100,7 @@ func TestRunTimeseriesAnalysis_GetOldestCommitError(t *testing.T) {
 	mockClient.On("GetOldestCommitDateForPath", ctx, "/test/repo", path, mock.AnythingOfType("time.Time"), minCommits, maxSearchDuration).
 		Return(time.Time{}, assert.AnError).Maybe()
 	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{path}, nil).Maybe()
-	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
+	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("string"), mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte(""), nil).Maybe() // Empty log for fallback case
 
 	cfg := &config.Config{
@@ -144,7 +144,7 @@ func TestAnalyzeTimeseriesPoint_File(t *testing.T) {
 	mockMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
 	mockClient.On("GetRemoteURL", mock.Anything, "/test/repo").Return("https://github.com/test/repo", nil).Maybe()
 	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{path}, nil)
-	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
+	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("string"), mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tmain.go\n"), nil)
 
 	cfg := &config.Config{
@@ -185,7 +185,7 @@ func TestAnalyzeTimeseriesPoint_Folder(t *testing.T) {
 	mockMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
 	mockClient.On("GetRemoteURL", mock.Anything, "/test/repo").Return("https://github.com/test/repo", nil).Maybe()
 	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{"src/main.go", "src/utils.go"}, nil)
-	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
+	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("string"), mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tsrc/main.go\n2\t1\tsrc/utils.go\n"), nil)
 
 	cfg := &config.Config{
@@ -227,7 +227,7 @@ func TestAnalyzeTimeseriesPoint_NoData(t *testing.T) {
 	mockMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
 	mockClient.On("GetRemoteURL", mock.Anything, "/test/repo").Return("https://github.com/test/repo", nil).Maybe()
 	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{}, nil)
-	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
+	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("string"), mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte(""), nil)
 
 	cfg := &config.Config{
@@ -265,7 +265,7 @@ func TestAnalyzeTimeseriesPoint_PathNotFound(t *testing.T) {
 	mockMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
 	mockClient.On("GetRemoteURL", mock.Anything, "/test/repo").Return("https://github.com/test/repo", nil).Maybe()
 	mockClient.On("ListFilesAtRef", mock.AnythingOfType("*context.valueCtx"), "/test/repo", "HEAD").Return([]string{"other.go"}, nil)
-	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
+	mockClient.On("GetActivityLog", mock.AnythingOfType("*context.valueCtx"), "/test/repo", mock.AnythingOfType("string"), mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).
 		Return([]byte("--abc123|Alice|2024-01-01T00:00:00Z\n1\t0\tother.go\n"), nil)
 
 	cfg := &config.Config{
