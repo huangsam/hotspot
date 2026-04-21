@@ -57,11 +57,13 @@ For specialized use cases, please refer to the following guides:
 ## Configuration
 
 ### Configuration File
-Manage settings without long command-line strings by using a `.hotspot.yaml` file. We provide documented configuration templates in the `examples/cli` directory, organized by use case:
+Manage settings without long command-line strings by using a `.hotspot.yaml` file. The easiest way to get started is by using the `init` command, which generates a configuration tailored to your repository:
 
-- [Large Monorepos](./examples/cli/hotspot.large.yml)
-- [Small Tools/Services](./examples/cli/hotspot.small.yml)
-- [Infrastructure/IaC](./examples/cli/hotspot.infra.yml)
+- `hotspot init --preset small`
+- `hotspot init --preset large`
+- `hotspot init --preset infra`
+
+For full details on the built-in presets and available configuration options, refer to the [canonical preset definitions](schema/data/presets.yaml) and the [reference configuration template](examples/reference/hotspot.docs.yml).
 
 ---
 

@@ -19,4 +19,4 @@ The `check` command allows you to enforce risk thresholds in CI/CD pipelines, fa
 | `--lookback` | Time window (e.g. `6 months`) used for base and target. |
 | `--thresholds-override` | Custom risk thresholds per scoring mode (format: `hot:50,risk:50,complexity:50,roi:50`). |
 
-The [example CI config](../examples/cli/hotspot.ci.yml) shows how custom thresholds can be configured for each scoring mode and is useful for maintaining code quality standards specific to your team.
+The [example CI config](../examples/reference/hotspot.ci.yml) shows how custom thresholds can be configured for each scoring mode and is useful for maintaining code quality standards specific to your team.

@@ -12,11 +12,9 @@ import (
 	"strings"
 	"time"
 
-	clipresets "github.com/huangsam/hotspot/examples/cli"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
 	"github.com/huangsam/hotspot/schema"
-	"gopkg.in/yaml.v3"
 )
 
 // --- Settings Interfaces (Strangler Fig Pattern) ---
@@ -756,6 +754,12 @@ func ApplyPreset(cfg *Config, presetName schema.PresetName) error {
 	cfg.Runtime.Workers = p.Workers
 	cfg.Git.Follow = p.Follow
 	cfg.Output.Detail = p.Detail
+	cfg.Output.Owner = p.Owner
+	cfg.Output.Precision = p.Precision
+	cfg.Output.Format = p.Output
+	cfg.Output.UseColors = p.Color
+	cfg.Output.Explain = p.Explain
+
 	if p.Start != "" {
 		if err := RevalidateTimeRange(cfg, p.Start, ""); err != nil {
 			return fmt.Errorf("preset start time: %w", err)
@@ -764,24 +768,16 @@ func ApplyPreset(cfg *Config, presetName schema.PresetName) error {
 	cfg.Scoring.RecencyThresholdLow = p.RecencyThresholdLow
 	cfg.Scoring.RecencyThresholdHigh = p.RecencyThresholdHigh
 
-	// Dynamically parse the embedded YAML to extract the exclusions,
-	// avoiding duplication of the complex exclusion patterns.
-	yamlBytes := clipresets.PresetYAML(presetName)
-	if len(yamlBytes) > 0 {
-		var partial struct {
-			Exclude string `yaml:"exclude"`
-		}
-		if err := yaml.Unmarshal(yamlBytes, &partial); err == nil && partial.Exclude != "" {
-			var custom []string
-			parts := strings.SplitSeq(partial.Exclude, ",")
-			for p := range parts {
-				trimmed := strings.TrimSpace(p)
-				if trimmed != "" {
-					custom = append(custom, trimmed)
-				}
+	if p.Exclude != "" {
+		var custom []string
+		parts := strings.SplitSeq(p.Exclude, ",")
+		for p := range parts {
+			trimmed := strings.TrimSpace(p)
+			if trimmed != "" {
+				custom = append(custom, trimmed)
 			}
-			cfg.Git.Excludes = custom
 		}
+		cfg.Git.Excludes = custom
 	}
 
 	return nil

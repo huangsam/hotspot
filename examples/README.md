@@ -1,57 +1,35 @@
 # Hotspot Configuration Examples
 
-This directory contains example configurations organized by use case and context.
+This directory contains example configurations and references for advanced customization.
 
 ## Quick Start
 
-**If you're analyzing a repository locally**, start with a **CLI** example that matches your codebase:
-- **Large monorepo?** → [`cli/hotspot.large.yml`](./cli/hotspot.large.yml)
-- **Small service or module?** → [`cli/hotspot.small.yml`](./cli/hotspot.small.yml)
-- **Infrastructure-as-code (IaC)?** → [`cli/hotspot.infra.yml`](./cli/hotspot.infra.yml)
-- **CI/CD pipeline enforcement?** → [`cli/hotspot.ci.yml`](./cli/hotspot.ci.yml)
+**If you're analyzing a repository locally**, we recommend using the built-in shape analysis to automatically generate a configuration:
 
-**If you're integrating Hotspot with an AI agent**, use:
-- **MCP server** → [`mcp/hotspot.mcp.yml`](./mcp/hotspot.mcp.yml)
+```bash
+hotspot init
+```
 
-**If you need detailed guidance**, see:
-- **Complete reference** → [`reference/hotspot.docs.yml`](./reference/hotspot.docs.yml)
-- **Advanced weight tuning** → [`reference/hotspot.weights.yml`](./reference/hotspot.weights.yml)
+This will analyze your repository and create a `.hotspot.yml` tailored to your codebase. Alternatively, you can specify a preset directly:
+- `hotspot init --preset large` (Monorepos)
+- `hotspot init --preset small` (Microservices/Tools)
+- `hotspot init --preset infra` (IaC/Terraform)
 
-## Directory Structure
+## Reference Documentation
 
-### `cli/`
-Ready-to-use configurations for different repository types and organizational contexts:
-- **hotspot.large.yml** — Monorepos with many services, contributors, and deep histories
-- **hotspot.small.yml** — Single-purpose tools, microservices, or libraries
-- **hotspot.infra.yml** — Infrastructure-as-code: Terraform, Ansible, Helm, etc.
-- **hotspot.ci.yml** — CI/CD integration and policy enforcement
+### [`reference/`](./reference/)
+Comprehensive documentation and advanced templates:
+- **[Complete Reference](./reference/hotspot.docs.yml)** — Every available configuration option documented.
+- **[CI/CD Policy](./reference/hotspot.ci.yml)** — Example configuration for build gating and risk thresholds.
+- **[Weight Tuning](./reference/hotspot.weights.yml)** — Advanced examples for custom score algorithm adjustments.
 
-### `mcp/`
+### [`mcp/`](./mcp/)
 Configurations optimized for AI agent integration via the Model Context Protocol:
-- **hotspot.mcp.yml** — MCP server defaults (higher precision, structured output)
-
-### `reference/`
-Comprehensive documentation and advanced customization templates:
-- **hotspot.docs.yml** — Complete reference listing every available option
-- **hotspot.weights.yml** — Advanced examples for custom score weight tuning
+- **[MCP Config](./mcp/hotspot.mcp.yml)** — MCP server defaults (higher precision, structured output).
 
 ## Getting Started
 
-Copy a relevant config to your repository root or home directory as `.hotspot.yaml` or `.hotspot.yml`:
-
-```bash
-# For a large monorepo
-cp examples/cli/hotspot.large.yml /path/to/repo/.hotspot.yml
-
-# For a small service
-cp examples/cli/hotspot.small.yml /path/to/repo/.hotspot.yml
-```
-
-Then run Hotspot — it will automatically load the config:
-
-```bash
-hotspot files
-```
+The easiest way to manage settings is by using the `init` command. To see the canonical definitions for all built-in presets, refer to [schema/data/presets.yaml](../schema/data/presets.yaml).
 
 To override specific settings from the command line:
 

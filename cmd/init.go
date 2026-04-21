@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 
 	"github.com/huangsam/hotspot/core"
-	clipresets "github.com/huangsam/hotspot/examples/cli"
 	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -70,7 +70,12 @@ Styles:
 
 		var data []byte
 		if initStyle == styleFull {
-			data = clipresets.PresetYAML(presetName)
+			p := schema.GetPreset(presetName)
+			var err error
+			data, err = yaml.Marshal(p)
+			if err != nil {
+				logger.Fatal("Failed to marshal preset to YAML", err)
+			}
 		} else {
 			data = fmt.Appendf(nil, "preset: %s\n", presetName)
 		}

@@ -1,0 +1,63 @@
+# Repository Configuration Presets for Hotspot
+# These presets provide recommended defaults based on the repository's detected shape.
+
+# Large Monorepo Preset
+# Optimized for high-scale environments with many services and deep histories.
+large:
+  name: "large"
+  description: "Optimized for large monorepos with many services and deep Git histories."
+  mode: "roi"
+  limit: 30
+  workers: 16
+  precision: 2
+  output: "markdown"
+  color: true
+  owner: true
+  detail: true
+  explain: false
+  follow: true
+  start: "1 year ago"
+  transitions: 6
+  recency_threshold_low: 0.01
+  recency_threshold_high: 0.05
+
+# Infrastructure-as-Code Preset
+# Optimized for IaC repositories where ownership drift and knowledge silos are key risks.
+infra:
+  name: "infra"
+  description: "Optimized for infrastructure-as-code repositories (Terraform, Ansible, Helm, etc.)."
+  mode: "risk"
+  limit: 20
+  workers: 8
+  precision: 1
+  output: "text"
+  color: true
+  owner: true
+  detail: true
+  explain: false
+  follow: true
+  start: "2 years ago"
+  transitions: 4
+  exclude: "**/*.tfstate, **/*.tfstate.backup, **/.terraform/, **/.kitchen/"
+  recency_threshold_low: 0.05
+  recency_threshold_high: 0.20
+
+# Focused Project Preset
+# Optimized for small repositories (CLI tools, microservices, libraries) with rapid churn.
+small:
+  name: "small"
+  description: "Optimized for small, focused repositories (CLI tools, microservices, libraries)."
+  mode: "hot"
+  limit: 10
+  workers: 4
+  precision: 1
+  output: "text"
+  color: true
+  owner: false
+  detail: false
+  explain: false
+  follow: false
+  exclude: "**/tests/, **/testdata/, **/*_test.go"
+  transitions: 3
+  recency_threshold_low: 0.10
+  recency_threshold_high: 0.40
