@@ -87,3 +87,9 @@ Hotspot includes **shape analysis** (lightweight single-pass aggregation) to cha
 - **Hardened Path Filtering (Recursive Globs)**: The `exclude` parameter supports recursive wildcard patterns (e.g., `**/node_modules/`, `**/*.pb.go`). This allows agents to reliably filter out build artifacts and generated code at any directory depth, ensuring high-signal analysis in multi-level repositories.
 
 - **Modular Output Provider Pattern**: Output formatting is decoupled from core analysis via the `outwriter.FormatProvider` interface, with specific formats like JSON, CSV, Text, Markdown, Parquet, and Describe implemented as specialized files within the `internal/outwriter/provider/` package. Cross-provider logic such as coloring, table rendering, and metric models is consolidated within the same package to facilitate code reuse and eliminate package circularity. The `internal/outwriter/outwriter.go` registry dispatches calls based on the configured `OutputMode`, and the `FormatProvider` interface should always be used when passing writers through the core orchestration layer.
+
+## Maintenance Guardrails
+
+To ensure consistency and readability in repository-wide documentation, agents MUST follow these formatting guardrails:
+
+- **Changelog Formatting**: All entries in `CHANGELOG.md` MUST be under 80 characters and formatted as one-liners. Do not use multi-line descriptions or wrapping for list items; instead, distill the change into a concise, high-impact summary.
