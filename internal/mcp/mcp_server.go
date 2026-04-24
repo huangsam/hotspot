@@ -70,6 +70,24 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
 	), h.handleGetFilesHotspots)
 
+	// --- 1.1 Tool: get_heatmap ---
+	s.AddTool(mcp.NewTool("get_heatmap",
+		mcp.WithDescription("Analyze git history and return an interactive SVG heatmap visualization of code hotspots."),
+		mcp.WithToolAnnotation(mcp.ToolAnnotation{
+			Title:          "Get Repository Heatmap",
+			ReadOnlyHint:   &readOnly,
+			IdempotentHint: &idempotent,
+		}),
+		mcp.WithString("preset", mcp.Description("Apply a named configuration preset (small, large, infra). It is recommended to run 'get_repo_shape' first to identify the correct preset for this repository."), mcp.Enum("small", "large", "infra")),
+		mcp.WithString("urn", mcp.Description(urnDesc)),
+		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
+		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi"), mcp.DefaultString("hot")),
+		mcp.WithString("start", mcp.Description(startDesc)),
+		mcp.WithString("end", mcp.Description(endDesc)),
+		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go')."), mcp.DefaultString(schema.DefaultExclude)),
+		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
+	), h.handleGetHeatmap)
+
 	// --- 2. Tool: get_folders_hotspots ---
 	s.AddTool(mcp.NewTool("get_folders_hotspots",
 		mcp.WithDescription("Analyze git history to find code hotspots aggregated by folder."),
@@ -205,6 +223,12 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 
 	s.AddResource(mcp.NewResource("hotspot://docs/agents", "Agent Documentation", mcp.WithResourceDescription("High-level architectural context and domain concepts for AI agents."), mcp.WithMIMEType("text/markdown")), h.handleReadResource)
 	s.AddResource(mcp.NewResource("hotspot://docs/metrics", "Scoring Metrics Definition", mcp.WithResourceDescription("Markdown definition of scoring modes, factors, and formulas."), mcp.WithMIMEType("text/markdown")), h.handleReadResource)
+
+	// --- Dynamic Analysis Resources ---
+	s.AddResource(mcp.NewResource("hotspot://analysis/heatmap/hot", "Heatmap: Activity (Hot)", mcp.WithResourceDescription("Interactive SVG heatmap showing recent activity and churn."), mcp.WithMIMEType("image/svg+xml")), h.handleReadResource)
+	s.AddResource(mcp.NewResource("hotspot://analysis/heatmap/risk", "Heatmap: Knowledge Risk", mcp.WithResourceDescription("Interactive SVG heatmap showing knowledge silos and bus factor risk."), mcp.WithMIMEType("image/svg+xml")), h.handleReadResource)
+	s.AddResource(mcp.NewResource("hotspot://analysis/heatmap/complexity", "Heatmap: Complexity", mcp.WithResourceDescription("Interactive SVG heatmap showing technical debt and file complexity."), mcp.WithMIMEType("image/svg+xml")), h.handleReadResource)
+	s.AddResource(mcp.NewResource("hotspot://analysis/heatmap/roi", "Heatmap: Refactoring ROI", mcp.WithResourceDescription("Interactive SVG heatmap prioritizing refactoring targets by return on investment."), mcp.WithMIMEType("image/svg+xml")), h.handleReadResource)
 
 	// --- Prompts ---
 	s.AddPrompt(mcp.NewPrompt("refactor-prioritization", mcp.WithPromptDescription("Guided workflow for prioritizing refactoring targets using ROI mode.")), h.handleGetPrompt)

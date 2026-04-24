@@ -39,6 +39,7 @@ func NewOutWriter() *OutWriter {
 	ow.providers[schema.MarkdownOut] = provider.NewMarkdownProvider()
 	ow.providers[schema.Describe] = provider.NewDescribeProvider()
 	ow.providers[schema.ParquetOut] = provider.NewParquetProvider()
+	ow.providers[schema.HeatmapOut] = provider.NewHeatmapProvider()
 
 	return ow
 }

@@ -40,6 +40,7 @@ const (
 	ParquetOut  OutputMode = "parquet"
 	Describe    OutputMode = "describe"
 	MarkdownOut OutputMode = "markdown"
+	HeatmapOut  OutputMode = "heatmap"
 )
 
 // All status supported.
@@ -85,6 +86,7 @@ var ValidOutputModes = map[OutputMode]struct{}{
 	ParquetOut:  {},
 	Describe:    {},
 	MarkdownOut: {},
+	HeatmapOut:  {},
 }
 
 // ValidScoringModes lists all valid scoring modes.

@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org).
 
+## [1.20.0] - 2026-04-24
+
+### Added
+- High-fidelity interactive SVG heatmap visualization for hotspots.
+- Squarified treemap algorithm with directory-based spatial clustering.
+- Dynamic font scaling and smart label hiding for dense visualizations.
+- Integrated interactive SVG hotspots directly into README documentation.
+- Native MCP tool `get_heatmap` for agent-driven visual repository audits.
+
+### Changed
+- Refactored heatmap provider into a modular, component-based architecture.
+- Optimized SVG coordinate math and visual hierarchy for clarity.
+- Standardized SVG output to use a clean, "Intelligence Layer" aesthetic.
+
+### Fixed
+- Resolved cyclomatic complexity and errcheck lints in output providers.
+- Updated MCP server tests to validate registration of 10 tools.
+
 ## [1.19.0] - 2026-04-21
 
 ### Added
@@ -729,6 +747,7 @@ Initial development covered core functionality including:
 - Code quality and maintainability refactoring
 - Proper package structure architecture
 
+[1.20.0]: https://github.com/huangsam/hotspot/compare/v1.19.0...v1.20.0
 [1.19.0]: https://github.com/huangsam/hotspot/compare/v1.18.1...v1.19.0
 [1.18.1]: https://github.com/huangsam/hotspot/compare/v1.18.0...v1.18.1
 [1.18.0]: https://github.com/huangsam/hotspot/compare/v1.17.0...v1.18.0

@@ -7,17 +7,20 @@
 
 Hotspot is an agentic intelligence layer and CLI that analyzes Git history to diagnose technical debt and bus factor risk based on developer activity, ownership, and churn patterns.
 
-<img src="./images/demo.gif" alt="Hotspot Demo" width="800px" />
+<img src="./images/heatmap.svg" alt="Hotspot Risk Heatmap" width="600px" />
+
+**Visual Risk Intelligence**: Hotspot transforms Git metadata into interactive heatmaps that instantly reveal your codebase's risk distribution. Files are color-coded by risk level (green=low, red=high) and sized by complexity, making technical debt visible at a glance.
 
 Unlike traditional linters or team-velocity metrics, Hotspot analyzes **development behavior**. It turns Git metadata into high-fidelity signals for technical debt, knowledge silos, and refactoring ROI—empowering both humans and AI agents to make data-driven architecture decisions.
 
 ## Features
 
+- 🗺️ **Visual Risk Heatmaps** - Interactive SVG visualizations that make technical debt instantly visible
 - 🤖 **Agentic Hub** - Native MCP server with shape-aware "Reasoning" labels for autonomous auditing.
 - 🔍 **Tactical CLI** - Rapid file/folder ranking by activity, complexity, and ownership.
 - 🧮 **Deep Metrics** - High-fidelity signals for churn, Ginni coefficients, and bus factor risk.
 - 🕓 **Trend Tracking** - Time-anchored analysis and delta tracking across Git references.
-- 📊 **Polyglot Exports** - Professional CSV/JSON/Parquet/Markdown reporting.
+- 📊 **Polyglot Exports** - Professional CSV/JSON/Parquet/Markdown/SVG reporting.
 
 ## Installation
 
@@ -56,6 +59,12 @@ For immediate terminal-based checks and CI/CD integration.
 ```bash
 # Initialize hotspot with sensible defaults
 hotspot init
+
+# Quick heatmap generation for all risk modes
+./generate-heatmaps.sh
+
+# Generate specific risk heatmap
+hotspot files --mode hot --output heatmap --output-file risk-heatmap.svg
 
 # Analyze files for tactical risk
 hotspot files

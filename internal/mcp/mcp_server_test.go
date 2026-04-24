@@ -98,6 +98,7 @@ func TestMCPServer_ToolRegistration(t *testing.T) {
 	expectedTools := []string{
 		"get_repo_shape",
 		"get_files_hotspots",
+		"get_heatmap",
 		"get_folders_hotspots",
 		"compare_file_hotspots",
 		"compare_folder_hotspots",

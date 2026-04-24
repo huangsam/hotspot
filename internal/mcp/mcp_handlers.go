@@ -1,7 +1,6 @@
 package mcp
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -143,6 +142,40 @@ func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.Ca
 	jsonData, _ := json.MarshalIndent(enriched, "", "  ")
 
 	return mcp.NewToolResultText(string(jsonData)), nil
+}
+
+// handleGetHeatmap handles the get_heatmap tool.
+func (h *toolHandler) handleGetHeatmap(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	cfg := h.baseCfg.Clone()
+	urn := request.GetString("urn", "")
+	repoPath := request.GetString("repo_path", "")
+
+	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
+	}
+
+	applyPresetToConfig(cfg, request.GetString("preset", ""))
+	applyDynamicFilters(cfg, request)
+
+	if m := request.GetString("mode", ""); m != "" {
+		cfg.Scoring.Mode = schema.ScoringMode(m)
+	}
+	if err := config.RevalidateTimeRange(cfg, request.GetString("start", ""), request.GetString("end", "")); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid time range: %v", err)), nil
+	}
+
+	ranked, _, err := core.GetHotspotFilesResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("analysis failed: %v", err)), nil
+	}
+
+	var buf strings.Builder
+	p := provider.NewHeatmapProvider()
+	if err := p.WriteFiles(&buf, ranked, cfg.Output, cfg.Runtime, 0); err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("heatmap generation failed: %v", err)), nil
+	}
+
+	return mcp.NewToolResultText(buf.String()), nil
 }
 
 // handleGetFoldersHotspots handles the get_folders_hotspots tool.
@@ -382,7 +415,7 @@ func (h *toolHandler) handleRunCheck(ctx context.Context, request mcp.CallToolRe
 }
 
 // handleReadResource handles the reading of registered resources.
-func (h *toolHandler) handleReadResource(_ context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
+func (h *toolHandler) handleReadResource(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
 	switch request.Params.URI {
 	case "hotspot://docs/agents":
 		return []mcp.ResourceContents{
@@ -393,7 +426,7 @@ func (h *toolHandler) handleReadResource(_ context.Context, request mcp.ReadReso
 			},
 		}, nil
 	case "hotspot://docs/metrics":
-		var buf bytes.Buffer
+		var buf strings.Builder
 		p := provider.NewMarkdownProvider()
 		if err := p.WriteMetrics(&buf, h.baseCfg.Scoring.CustomWeights, h.baseCfg.Output); err != nil {
 			return nil, fmt.Errorf("failed to render metrics documentation: %w", err)
@@ -405,9 +438,44 @@ func (h *toolHandler) handleReadResource(_ context.Context, request mcp.ReadReso
 				Text:     buf.String(),
 			},
 		}, nil
-	default:
-		return nil, fmt.Errorf("unknown resource: %s", request.Params.URI)
 	}
+
+	// Handle dynamic heatmap resource template: hotspot://analysis/heatmap/{mode}
+	if after, ok := strings.CutPrefix(request.Params.URI, "hotspot://analysis/heatmap/"); ok {
+		mode := after
+		// Strip any query parameters for mode identification
+		if idx := strings.Index(mode, "?"); idx != -1 {
+			mode = mode[:idx]
+		}
+
+		cfg := h.baseCfg.Clone()
+		cfg.Scoring.Mode = schema.ScoringMode(mode)
+		// Default to current directory for resources
+		if err := h.resolveRepositoryPath(ctx, cfg, "", "."); err != nil {
+			return nil, fmt.Errorf("failed to resolve repository: %w", err)
+		}
+
+		ranked, _, err := core.GetHotspotFilesResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
+		if err != nil {
+			return nil, fmt.Errorf("analysis failed: %w", err)
+		}
+
+		var buf strings.Builder
+		p := provider.NewHeatmapProvider()
+		if err := p.WriteFiles(&buf, ranked, cfg.Output, cfg.Runtime, 0); err != nil {
+			return nil, fmt.Errorf("heatmap generation failed: %w", err)
+		}
+
+		return []mcp.ResourceContents{
+			mcp.TextResourceContents{
+				URI:      request.Params.URI,
+				MIMEType: "image/svg+xml",
+				Text:     buf.String(),
+			},
+		}, nil
+	}
+
+	return nil, fmt.Errorf("unknown resource: %s", request.Params.URI)
 }
 
 // handleGetPrompt handles the retrieval of analytical playbooks.
