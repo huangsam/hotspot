@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Orphaned `ranking.png` CLI ranking screenshot in favor of live heatmaps.
 
 ### Fixed
+- Harden MCP handlers with execution tests and Git-native path verification.
 - Resolved nil pointer dereference in MCP server during shared setup.
 - Fixed missing `GenerateSVG` in `HeatmapProvider` for MCP resources.
 - Fixed `TestMCPServer_ToolRegistration` by updating tool expectations.
