@@ -29,74 +29,93 @@ type toolHandler struct {
 // If repo_path is also provided, it validates and uses that for git operations.
 // If neither is provided, it defaults to "." for current directory.
 // This ensures the analysis is path-independent when URN is used uniformly across machines.
-func (h *toolHandler) resolveRepositoryPath(ctx context.Context, cfg *config.Config, urn string, repoPath string) error {
-	// If URN is provided, use it for portable identity
-	// The actual repo_path is needed for git operations, so we still need to resolve it
-	if urn != "" {
-		// Store URN as a hint (though it will be resolved again in the pipeline)
-		// For now, we still need repo_path for git operations
-		// If repo_path is not provided with URN, we have a few options:
-		// 1. Require repo_path (backward compatible)
-		// 2. Return error asking for repo_path
-		// 3. Use "." as default and let URN be the identity
-		// We'll go with option 3 for maximum portability
-		if repoPath == "" {
-			repoPath = "."
-		}
-	}
+// setupConfig clones the base configuration and populates it with parameters from the MCP request.
+// It handles repository resolution, presets, dynamic filters, scoring modes, and time ranges.
+func (h *toolHandler) setupConfig(ctx context.Context, request mcp.CallToolRequest) (*config.Config, *mcp.CallToolResult) {
+	cfg := h.baseCfg.Clone()
+	urn := request.GetString("urn", "")
+	repoPath := request.GetString("repo_path", "")
 
-	// Default to current directory if nothing provided
+	// 1. Resolve repository and identity
+	if urn != "" && repoPath == "" {
+		repoPath = "."
+	}
 	if repoPath == "" && cfg.Git.RepoPath == "" {
 		repoPath = "."
 	}
-
-	// If we have a repo path, resolve it
 	if repoPath != "" {
 		if err := config.ResolveGitPathAndFilter(ctx, cfg, h.client, &config.RawInput{RepoPathStr: repoPath}); err != nil {
-			return err
+			return nil, mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err))
 		}
 	}
 
-	return nil
-}
-
-// applyPresetToConfig applies a named preset to cfg if preset is non-empty.
-// Unknown preset names silently fall back to defaults. Explicit request parameters
-// applied after this call take precedence.
-func applyPresetToConfig(cfg *config.Config, presetName string) {
-	if presetName == "" {
-		return
+	// 2. Apply preset if provided
+	if p := request.GetString("preset", ""); p != "" {
+		_ = config.ApplyPreset(cfg, schema.PresetName(p))
 	}
-	_ = config.ApplyPreset(cfg, schema.PresetName(presetName))
-}
 
-// applyDynamicFilters applies ad-hoc filter and exclude parameters from the MCP request.
-// It overrides any preset or default exclusions/filters if explicitly provided.
-func applyDynamicFilters(cfg *config.Config, request mcp.CallToolRequest) {
+	// 3. Apply dynamic path filters and excludes
 	if filter := request.GetString("filter", ""); filter != "" {
 		cfg.Git.PathFilter = filter
 	}
 	if exclude := request.GetString("exclude", ""); exclude != "" {
 		var custom []string
-		parts := strings.SplitSeq(exclude, ",")
-		for p := range parts {
-			trimmed := strings.TrimSpace(p)
-			if trimmed != "" {
+		for p := range strings.SplitSeq(exclude, ",") {
+			if trimmed := strings.TrimSpace(p); trimmed != "" {
 				custom = append(custom, trimmed)
 			}
 		}
 		cfg.Git.Excludes = custom
 	}
+
+	// 4. Apply common scoring and output params
+	if m := request.GetString("mode", ""); m != "" {
+		cfg.Scoring.Mode = schema.ScoringMode(m)
+	}
+	if l := request.GetInt("limit", 0); l > 0 {
+		cfg.Output.ResultLimit = l
+	}
+
+	// 5. Apply comparison params if provided
+	if base := request.GetString("base_ref", ""); base != "" {
+		cfg.Compare.BaseRef = base
+		cfg.Compare.Enabled = true
+	}
+	if target := request.GetString("target_ref", ""); target != "" {
+		cfg.Compare.TargetRef = target
+		cfg.Compare.Enabled = true
+	}
+
+	// 6. Apply timeseries params if provided
+	if path := request.GetString("path", ""); path != "" {
+		cfg.Timeseries.Path = path
+	}
+	if points := request.GetInt("points", 0); points > 0 {
+		cfg.Timeseries.Points = points
+	}
+
+	// 7. Validate and apply time range
+	if err := config.RevalidateTimeRange(cfg, request.GetString("start", ""), request.GetString("end", "")); err != nil {
+		return nil, mcp.NewToolResultError(fmt.Sprintf("invalid time range: %v", err))
+	}
+
+	return cfg, nil
+}
+
+// jsonResponse marshals the data into a standardized indented JSON tool result.
+func (h *toolHandler) jsonResponse(data any) (*mcp.CallToolResult, error) {
+	jsonData, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("failed to serialize response: %v", err)), nil
+	}
+	return mcp.NewToolResultText(string(jsonData)), nil
 }
 
 // handleGetRepoShape handles the get_repo_shape tool.
 func (h *toolHandler) handleGetRepoShape(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	cfg := h.baseCfg.Clone()
-	urn := request.GetString("urn", "")
-	repoPath := request.GetString("repo_path", "")
-
-	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
+	cfg, errRes := h.setupConfig(ctx, request)
+	if errRes != nil {
+		return errRes, nil
 	}
 
 	shape, _, err := core.GetHotspotShapeResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
@@ -104,34 +123,14 @@ func (h *toolHandler) handleGetRepoShape(ctx context.Context, request mcp.CallTo
 		return mcp.NewToolResultError(fmt.Sprintf("shape analysis failed: %v", err)), nil
 	}
 
-	jsonData, err := json.MarshalIndent(shape, "", "  ")
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("failed to serialize shape: %v", err)), nil
-	}
-	return mcp.NewToolResultText(string(jsonData)), nil
+	return h.jsonResponse(shape)
 }
 
 // handleGetFilesHotspots handles the get_files_hotspots tool.
 func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	cfg := h.baseCfg.Clone()
-	urn := request.GetString("urn", "")
-	repoPath := request.GetString("repo_path", "")
-
-	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
-	}
-
-	applyPresetToConfig(cfg, request.GetString("preset", ""))
-	applyDynamicFilters(cfg, request)
-
-	if m := request.GetString("mode", ""); m != "" {
-		cfg.Scoring.Mode = schema.ScoringMode(m)
-	}
-	if l := request.GetInt("limit", 0); l > 0 {
-		cfg.Output.ResultLimit = l
-	}
-	if err := config.RevalidateTimeRange(cfg, request.GetString("start", ""), request.GetString("end", "")); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid time range: %v", err)), nil
+	cfg, errRes := h.setupConfig(ctx, request)
+	if errRes != nil {
+		return errRes, nil
 	}
 
 	ranked, _, err := core.GetHotspotFilesResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
@@ -139,30 +138,14 @@ func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.Ca
 		return mcp.NewToolResultError(fmt.Sprintf("analysis failed: %v", err)), nil
 	}
 
-	enriched := schema.EnrichFiles(ranked)
-	jsonData, _ := json.MarshalIndent(enriched, "", "  ")
-
-	return mcp.NewToolResultText(string(jsonData)), nil
+	return h.jsonResponse(schema.EnrichFiles(ranked))
 }
 
 // handleGetHeatmap handles the get_heatmap tool.
 func (h *toolHandler) handleGetHeatmap(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	cfg := h.baseCfg.Clone()
-	urn := request.GetString("urn", "")
-	repoPath := request.GetString("repo_path", "")
-
-	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
-	}
-
-	applyPresetToConfig(cfg, request.GetString("preset", ""))
-	applyDynamicFilters(cfg, request)
-
-	if m := request.GetString("mode", ""); m != "" {
-		cfg.Scoring.Mode = schema.ScoringMode(m)
-	}
-	if err := config.RevalidateTimeRange(cfg, request.GetString("start", ""), request.GetString("end", "")); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid time range: %v", err)), nil
+	cfg, errRes := h.setupConfig(ctx, request)
+	if errRes != nil {
+		return errRes, nil
 	}
 
 	analysisType := request.GetString("type", "files")
@@ -192,25 +175,9 @@ func (h *toolHandler) handleGetHeatmap(ctx context.Context, request mcp.CallTool
 
 // handleGetFoldersHotspots handles the get_folders_hotspots tool.
 func (h *toolHandler) handleGetFoldersHotspots(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	cfg := h.baseCfg.Clone()
-	urn := request.GetString("urn", "")
-	repoPath := request.GetString("repo_path", "")
-
-	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
-	}
-
-	applyPresetToConfig(cfg, request.GetString("preset", ""))
-	applyDynamicFilters(cfg, request)
-
-	if m := request.GetString("mode", ""); m != "" {
-		cfg.Scoring.Mode = schema.ScoringMode(m)
-	}
-	if l := request.GetInt("limit", 0); l > 0 {
-		cfg.Output.ResultLimit = l
-	}
-	if err := config.RevalidateTimeRange(cfg, request.GetString("start", ""), request.GetString("end", "")); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid time range: %v", err)), nil
+	cfg, errRes := h.setupConfig(ctx, request)
+	if errRes != nil {
+		return errRes, nil
 	}
 
 	ranked, _, err := core.GetHotspotFoldersResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
@@ -218,114 +185,55 @@ func (h *toolHandler) handleGetFoldersHotspots(ctx context.Context, request mcp.
 		return mcp.NewToolResultError(fmt.Sprintf("analysis failed: %v", err)), nil
 	}
 
-	enriched := schema.EnrichFolders(ranked)
-	jsonData, _ := json.MarshalIndent(enriched, "", "  ")
-
-	return mcp.NewToolResultText(string(jsonData)), nil
+	return h.jsonResponse(schema.EnrichFolders(ranked))
 }
 
 // handleCompareFileHotspots handles the compare_file_hotspots tool.
 func (h *toolHandler) handleCompareFileHotspots(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	cfg := h.baseCfg.Clone()
-	cfg.Compare.BaseRef = request.GetString("base_ref", "")
-	cfg.Compare.TargetRef = request.GetString("target_ref", "")
-	cfg.Compare.Enabled = true
-	lookbackStr := request.GetString("lookback", "")
-	urn := request.GetString("urn", "")
-	repoPath := request.GetString("repo_path", "")
-
-	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
+	cfg, errRes := h.setupConfig(ctx, request)
+	if errRes != nil {
+		return errRes, nil
 	}
 
-	applyPresetToConfig(cfg, request.GetString("preset", ""))
-	applyDynamicFilters(cfg, request)
-
-	if m := request.GetString("mode", ""); m != "" {
-		cfg.Scoring.Mode = schema.ScoringMode(m)
-	}
-
-	if err := config.RevalidateTimeRange(cfg, request.GetString("start", ""), request.GetString("end", "")); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid time range: %v", err)), nil
-	}
-
-	if err := config.RevalidateCompare(cfg, lookbackStr); err != nil {
+	if err := config.RevalidateCompare(cfg, request.GetString("lookback", "")); err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("invalid comparison parameters: %v", err)), nil
 	}
 
-	comparisonResult, _, err := core.GetHotspotCompareResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
+	result, _, err := core.GetHotspotCompareResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("comparison failed: %v", err)), nil
 	}
 
-	jsonData, _ := json.MarshalIndent(comparisonResult, "", "  ")
-	return mcp.NewToolResultText(string(jsonData)), nil
+	return h.jsonResponse(result)
 }
 
 // handleCompareFolderHotspots handles the compare_folder_hotspots tool.
 func (h *toolHandler) handleCompareFolderHotspots(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	cfg := h.baseCfg.Clone()
-	cfg.Compare.BaseRef = request.GetString("base_ref", "")
-	cfg.Compare.TargetRef = request.GetString("target_ref", "")
-	cfg.Compare.Enabled = true
-	lookbackStr := request.GetString("lookback", "")
-	urn := request.GetString("urn", "")
-	repoPath := request.GetString("repo_path", "")
-
-	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
+	cfg, errRes := h.setupConfig(ctx, request)
+	if errRes != nil {
+		return errRes, nil
 	}
 
-	applyPresetToConfig(cfg, request.GetString("preset", ""))
-	applyDynamicFilters(cfg, request)
-
-	if m := request.GetString("mode", ""); m != "" {
-		cfg.Scoring.Mode = schema.ScoringMode(m)
-	}
-
-	if err := config.RevalidateTimeRange(cfg, request.GetString("start", ""), request.GetString("end", "")); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid time range: %v", err)), nil
-	}
-
-	if err := config.RevalidateCompare(cfg, lookbackStr); err != nil {
+	if err := config.RevalidateCompare(cfg, request.GetString("lookback", "")); err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("invalid comparison parameters: %v", err)), nil
 	}
 
-	comparisonResult, _, err := core.GetHotspotCompareFoldersResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
+	result, _, err := core.GetHotspotCompareFoldersResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("comparison failed: %v", err)), nil
 	}
 
-	jsonData, _ := json.MarshalIndent(comparisonResult, "", "  ")
-	return mcp.NewToolResultText(string(jsonData)), nil
+	return h.jsonResponse(result)
 }
 
 // handleGetTimeseries handles the get_timeseries tool.
 func (h *toolHandler) handleGetTimeseries(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	cfg := h.baseCfg.Clone()
-	cfg.Timeseries.Path = request.GetString("path", "")
-	cfg.Timeseries.Points = request.GetInt("points", 0)
-	intervalStr := request.GetString("interval", "")
-	urn := request.GetString("urn", "")
-	repoPath := request.GetString("repo_path", "")
-
-	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
+	cfg, errRes := h.setupConfig(ctx, request)
+	if errRes != nil {
+		return errRes, nil
 	}
 
-	applyPresetToConfig(cfg, request.GetString("preset", ""))
-	applyDynamicFilters(cfg, request)
-
-	if m := request.GetString("mode", ""); m != "" {
-		cfg.Scoring.Mode = schema.ScoringMode(m)
-	}
-
-	if err := config.RevalidateTimeRange(cfg, request.GetString("start", ""), request.GetString("end", "")); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid time range: %v", err)), nil
-	}
-
-	// Re-validate specifically for timeseries interval parsing
-	if err := config.RevalidateTimeseries(cfg, intervalStr); err != nil {
+	if err := config.RevalidateTimeseries(cfg, request.GetString("interval", "")); err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("invalid timeseries parameters: %v", err)), nil
 	}
 
@@ -334,25 +242,14 @@ func (h *toolHandler) handleGetTimeseries(ctx context.Context, request mcp.CallT
 		return mcp.NewToolResultError(fmt.Sprintf("timeseries analysis failed: %v", err)), nil
 	}
 
-	jsonData, _ := json.MarshalIndent(result, "", "  ")
-	return mcp.NewToolResultText(string(jsonData)), nil
+	return h.jsonResponse(result)
 }
 
 // handleGetReleaseJourney handles the get_release_journey tool.
 func (h *toolHandler) handleGetReleaseJourney(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	cfg := h.baseCfg.Clone()
-	urn := request.GetString("urn", "")
-	repoPath := request.GetString("repo_path", "")
-
-	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
-	}
-
-	applyPresetToConfig(cfg, request.GetString("preset", ""))
-	applyDynamicFilters(cfg, request)
-
-	if m := request.GetString("mode", ""); m != "" {
-		cfg.Scoring.Mode = schema.ScoringMode(m)
+	cfg, errRes := h.setupConfig(ctx, request)
+	if errRes != nil {
+		return errRes, nil
 	}
 
 	transitions := request.GetInt("transitions", 3)
@@ -365,55 +262,34 @@ func (h *toolHandler) handleGetReleaseJourney(ctx context.Context, request mcp.C
 		return mcp.NewToolResultError(fmt.Sprintf("journey analysis failed: %v", err)), nil
 	}
 
-	jsonData, _ := json.MarshalIndent(result, "", "  ")
-	return mcp.NewToolResultText(string(jsonData)), nil
+	return h.jsonResponse(result)
 }
 
 // handleGetBlastRadius handles the get_blast_radius tool.
 func (h *toolHandler) handleGetBlastRadius(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	cfg := h.baseCfg.Clone()
-	urn := request.GetString("urn", "")
-	repoPath := request.GetString("repo_path", "")
-
-	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
+	cfg, errRes := h.setupConfig(ctx, request)
+	if errRes != nil {
+		return errRes, nil
 	}
 
-	applyDynamicFilters(cfg, request)
-
-	limit := request.GetInt("limit", 10)
 	threshold := request.GetFloat("threshold", 0.3)
 
-	if err := config.RevalidateTimeRange(cfg, request.GetString("start", ""), request.GetString("end", "")); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid time range: %v", err)), nil
-	}
-
-	result, err := core.GetHotspotBlastRadiusResults(ctx, cfg, h.client, limit, threshold)
+	result, err := core.GetHotspotBlastRadiusResults(ctx, cfg, h.client, cfg.Output.ResultLimit, threshold)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("blast radius analysis failed: %v", err)), nil
 	}
 
-	jsonBytes, _ := json.MarshalIndent(result, "", "  ")
-	return mcp.NewToolResultText(string(jsonBytes)), nil
+	return h.jsonResponse(result)
 }
 
 // handleRunCheck handles the run_check tool.
 func (h *toolHandler) handleRunCheck(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	cfg := h.baseCfg.Clone()
-	cfg.Compare.BaseRef = request.GetString("base_ref", "")
-	cfg.Compare.TargetRef = request.GetString("target_ref", "")
-	cfg.Compare.Enabled = true
-	lookbackStr := request.GetString("lookback", "")
-	urn := request.GetString("urn", "")
-	repoPath := request.GetString("repo_path", "")
-
-	if err := h.resolveRepositoryPath(ctx, cfg, urn, repoPath); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid repository: %v", err)), nil
+	cfg, errRes := h.setupConfig(ctx, request)
+	if errRes != nil {
+		return errRes, nil
 	}
 
-	applyDynamicFilters(cfg, request)
-
-	if err := config.RevalidateCompare(cfg, lookbackStr); err != nil {
+	if err := config.RevalidateCompare(cfg, request.GetString("lookback", "")); err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("invalid comparison parameters: %v", err)), nil
 	}
 
@@ -422,8 +298,7 @@ func (h *toolHandler) handleRunCheck(ctx context.Context, request mcp.CallToolRe
 		return mcp.NewToolResultError(fmt.Sprintf("check failed: %v", err)), nil
 	}
 
-	jsonData, _ := json.MarshalIndent(result, "", "  ")
-	return mcp.NewToolResultText(string(jsonData)), nil
+	return h.jsonResponse(result)
 }
 
 // withRecovery is a decorator that adds panic recovery to a tool handler.
