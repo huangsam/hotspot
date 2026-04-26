@@ -18,18 +18,18 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 ### Changed
 - Refactored heatmap provider into a modular, component-based architecture.
 - Optimized SVG coordinate math and visual hierarchy for clarity.
-- Refactored `iocache` to use explicit `Initialize` for storage setup.
+- Refactored `iocache` lifecycle with explicit initialization logic.
+- Decoupled `iocache` dependencies for cleaner dependency injection.
 - Implemented `SQLDialect` to unify backend-specific SQL across stores.
 - Hardened persistence for MySQL and PostgreSQL migration reliability.
 - Standardized SVG output to use a clean, "Intelligence Layer" aesthetic.
 
 ### Fixed
-- Fix nil pointer dereference in MCP server during shared setup.
-- Refactor `iocache.InitStores` to return `CacheManager` for explicit dependency injection.
-- Fix missing GenerateSVG method in HeatmapProvider for MCP resources.
-- Fix CI test TestMCPServer_ToolRegistration by updating tool count to 10.
-- Add panic recovery and Error logging to MCP server for better stability.
-- Resolved cyclomatic complexity and errcheck lints in output providers.
+- Resolved nil pointer dereference in MCP server during shared setup.
+- Fixed missing `GenerateSVG` in `HeatmapProvider` for MCP resources.
+- Fixed `TestMCPServer_ToolRegistration` by updating tool expectations.
+- Added panic recovery and error logging to MCP server for stability.
+- Addressed cyclomatic complexity and `errcheck` lints in providers.
 
 ## [1.19.0] - 2026-04-21
 
