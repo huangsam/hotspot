@@ -66,11 +66,11 @@ Hotspot includes **shape analysis** (lightweight single-pass aggregation) to cha
 
 ## Key Design Patterns
 
-- **I/O Caching**: Results and analysis are cached using pluggable backends (SQLite, MySQL, PostgreSQL) to dramatically speed up repeated analyses. See `internal/iocache/`.
+- **I/O Caching**: Results and analysis are cached using pluggable backends (SQLite, MySQL, PostgreSQL) to dramatically speed up repeated analyses. Stores use a "light constructor" pattern where connection is established first, followed by an explicit `Initialize()` call for schema setup. See `internal/iocache/`.
 
 - **Repository URN (Portable Identity)**: Every analysis run is tagged with a canonical repository identifier (`RepoURN`) of the form `git:host/owner/repo` (resolved from remote origin URL), `local:rootHash` (for local-only repos), or `local:absPath` (fallback). This ensures cache keys and DB records are path-independent and stable across checkout locations, solving multi-machine fragmentation. ALL MCP tools (including `get_repo_shape`, `get_files_hotspots`, `get_heatmap`, `get_folders_hotspots`, `compare_file_hotspots`, `compare_folder_hotspots`, `get_timeseries`, `get_release_journey`, `get_blast_radius`, and `run_check`) now accept an optional `urn` parameter, enabling agents to query by URN alone for fleet-wide querying and enterprise RAG without local path dependencies.
 
-- **Per-Dialect Migrations**: `internal/iocache/migrations/` contains three subdirectories (`sqlite/`, `mysql/`, `postgres/`) with backend-specific SQL files. `MigrateAnalysis` selects the correct subdirectory via `buildSource()`. DDL differs meaningfully across backends (e.g. `AUTOINCREMENT` vs `AUTO_INCREMENT` vs `BIGSERIAL`, `TEXT` vs `DATETIME(6)` vs `TIMESTAMPTZ`). Do not write dialect-agnostic SQL for schema changes — add a file per dialect.
+- **Per-Dialect SQL & Migrations**: `internal/iocache/` implements a `SQLDialect` interface to abstract backend-specific SQL variations (quoting, placeholders, and DDL). `internal/iocache/migrations/` contains three subdirectories (`sqlite/`, `mysql/`, `postgres/`) with backend-specific SQL files. `MigrateAnalysis` and store `Initialize()` methods select the correct dialect and migration sets. DDL differs meaningfully across backends (e.g. `AUTOINCREMENT` vs `AUTO_INCREMENT` vs `BIGSERIAL`, `TEXT` vs `DATETIME(6)` vs `TIMESTAMPTZ`). Do not write dialect-agnostic SQL for schema changes — add a file per dialect and update the Go dialect implementation if needed.
 
 - **Analysis Store Filtering**: `AnalysisStore` supports pagination and URN-based filtering via `schema.AnalysisQueryFilter`. Persistence dialects handle backend-specific variations (e.g., PostgreSQL placeholders vs SQLite/MySQL) internally.
 

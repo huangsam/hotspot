@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 ### Changed
 - Refactored heatmap provider into a modular, component-based architecture.
 - Optimized SVG coordinate math and visual hierarchy for clarity.
+- Refactored `iocache` to use explicit `Initialize` for storage setup.
+- Implemented `SQLDialect` to unify backend-specific SQL across stores.
+- Hardened persistence for MySQL and PostgreSQL migration reliability.
 - Standardized SVG output to use a clean, "Intelligence Layer" aesthetic.
 
 ### Fixed
