@@ -25,12 +25,12 @@ func NewHeatmapProvider() *HeatmapProvider {
 }
 
 // WriteFiles writes file analysis results as an SVG heatmap.
-func (p *HeatmapProvider) WriteFiles(w io.Writer, files []schema.FileResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
+func (p *HeatmapProvider) WriteFiles(w io.Writer, files []schema.FileResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	return p.generateHeatmapSVG(w, files, output)
 }
 
 // WriteFolders writes folder analysis results as an SVG heatmap.
-func (p *HeatmapProvider) WriteFolders(w io.Writer, folders []schema.FolderResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
+func (p *HeatmapProvider) WriteFolders(w io.Writer, folders []schema.FolderResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	files := make([]schema.FileResult, len(folders))
 	for i, f := range folders {
 		files[i] = schema.FileResult{
@@ -98,10 +98,16 @@ type tmItem struct {
 // generateHeatmapSVG creates an SVG treemap visualization (WinDirStat-style).
 // The visualization uses a fixed 1200x800 coordinate system (3:2 aspect ratio)
 // designed for high-fidelity rendering in both browsers and IDE previews.
-func (p *HeatmapProvider) generateHeatmapSVG(w io.Writer, files []schema.FileResult, _ config.OutputSettings) error {
-
+// To maintain readability, the heatmap respects the result limit configuration.
+func (p *HeatmapProvider) generateHeatmapSVG(w io.Writer, files []schema.FileResult, output config.OutputSettings) error {
 	if len(files) == 0 {
 		return fmt.Errorf("no files to visualize")
+	}
+
+	// Apply configured limit for readability (only if > 0)
+	limit := output.GetResultLimit()
+	if limit > 0 && len(files) > limit {
+		files = files[:limit]
 	}
 
 	const (
@@ -546,9 +552,20 @@ func (p *HeatmapProvider) renderFileCell(w io.Writer, it *tmItem, maxScore, minW
 		return nil
 	}
 
+	// Skip label entirely on very narrow cells (visual clutter with ellipsis)
+	if cw < 50 {
+		return nil
+	}
+
 	txt := it.label
-	if ch < 20 || cw < float64(len(txt))*fs*0.55 {
-		txt = truncLabel(txt, int(cw/(fs*0.5)))
+	// More conservative truncation: use 0.65 instead of 0.5 to give more breathing room
+	// This reduces character count estimate to fit text more comfortably
+	if ch < 20 || cw < float64(len(txt))*fs*0.65 {
+		maxChars := int(cw / (fs * 0.65))
+		if maxChars < 3 {
+			return nil // Don't show label if even truncated it won't fit
+		}
+		txt = truncLabel(txt, maxChars)
 	}
 	if txt == "" {
 		return nil

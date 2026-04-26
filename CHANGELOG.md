@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org).
 
+## [1.20.1] - 2026-04-26
+
+### Changed
+- Made heatmap label truncation more conservative for readability.
+
+### Fixed
+- Fixed XML declaration ordering in heatmap SVG.
+- Removed metadata comments from SVG output for cleaner files.
+
 ## [1.20.0] - 2026-04-25
 
 ### Added
