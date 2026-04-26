@@ -60,16 +60,13 @@ For immediate terminal-based checks and CI/CD integration.
 # Initialize hotspot with sensible defaults
 hotspot init
 
-# Quick heatmap generation for all risk modes
-./generate-heatmaps.sh
+# Generate heatmap
+hotspot files --mode hot --output heatmap --output-file heatmap.svg
 
-# Generate specific risk heatmap
-hotspot files --mode hot --output heatmap --output-file risk-heatmap.svg
-
-# Analyze files for tactical risk
+# Analyze files in tabular format
 hotspot files
 
-# Analyze folders for strategic subsystems
+# Analyze folders in tabular format
 hotspot folders
 ```
 

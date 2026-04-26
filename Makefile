@@ -149,11 +149,10 @@ fuzz-quick: fuzz
 fuzz-long: FUZZTIME=60s
 fuzz-long: fuzz
 
-# Run VHS demo
-demo:
-	@echo "Running VHS demo..."
-	@vhs demo.tape
-	@echo "Demo complete"
+# Run a quick demo of the CLI output on this repository
+demo: build
+	@echo "Running Hotspot demo on this repository..."
+	@./$(BIN_DIR)/$(BINARY_NAME) files --output heatmap --output-file images/heatmap.svg
 
 # Format code
 format:
@@ -215,8 +214,8 @@ help:
 	@echo "  make fuzz-quick          - Runs fuzz tests for 5 seconds."
 	@echo "  make fuzz-long           - Runs fuzz tests for 60 seconds."
 	@echo "  make profile             - Run full profiling workflow and show top functions."
+	@echo "  make demo                - Runs a quick CLI demo on this repository."
 
-	@echo "  make demo                - Runs the VHS demo script to generate a demo GIF."
 	@echo "  make snapshot            - Runs a snapshot release via $(GORELEASER)."
 	@echo "  make release             - Runs a full release via $(GORELEASER)."
 

@@ -45,14 +45,28 @@ Track how hotspot scores change over time for a specific file or folder path.
 
 ---
 
-## Next Steps & Deep Dives
+## Interpreting Results
 
-For specialized use cases, please refer to the following guides:
+Hotspot provides two primary ways to consume analysis data, depending on whether you are looking for strategic insights or tactical details.
 
-- **[Operations Guide](docs/OPERATIONS.md)**: Database backends, migration, and analysis history tracking.
-- **[CI/CD Enforcement](docs/CI.md)**: Using Hotspot to gate builds in your pipeline.
-- **[AI & MCP Server](docs/MCP.md)**: Connecting Hotspot to AI agents like Claude or Cursor.
-- **[Strategic Playbook](PLAYBOOK.md)**: In-depth recipes for risk auditing and refactoring prioritization.
+### 📊 Visual Heatmaps (Strategic)
+The `heatmap` output format transforms raw metrics into a high-fidelity SVG treemap. This is the **Strategic View**, designed to help you instantly identify which subsystems are dominating your technical debt landscape.
+
+```bash
+hotspot files --output heatmap --output-file images/heatmap.svg
+```
+
+Files are color-coded by risk level and sized by complexity, making "God Objects" and abandoned modules immediately obvious.
+
+### 🔍 The Terminal Experience (Tactical)
+The default tabular output is the **Tactical View**. It is optimized for power users who need high-precision data, rapid sorting, and easy integration with other terminal tools.
+
+The terminal output includes:
+- **High-Precision Scores**: Continuous magnitudes that eliminate "clipping" artifacts.
+- **Reasoning Labels**: Metric-anchored justifications (e.g., "Historical Hotspot") that prevent misinterpreting stale data.
+- **Ownership Metrics**: When using `--owner`, identifies knowledge silos directly in the table.
+
+---
 
 ## Configuration
 
@@ -65,8 +79,6 @@ Manage settings without long command-line strings by using a `.hotspot.yaml` fil
 
 For full details on the built-in presets and available configuration options, refer to the [canonical preset definitions](schema/data/presets.yaml) and the [reference configuration template](examples/reference/hotspot.docs.yml).
 
----
-
 ### Exporting Results
 Hotspot supports multiple export formats to assist in reporting:
 
@@ -74,3 +86,14 @@ Hotspot supports multiple export formats to assist in reporting:
 hotspot files --output markdown --explain > report.md
 hotspot files --output csv --output-file findings.csv
 ```
+
+---
+
+## Next Steps & Deep Dives
+
+For specialized use cases, please refer to the following guides:
+
+- **[Operations Guide](docs/OPERATIONS.md)**: Database backends, migration, and analysis history tracking.
+- **[CI/CD Enforcement](docs/CI.md)**: Using Hotspot to gate builds in your pipeline.
+- **[AI & MCP Server](docs/MCP.md)**: Connecting Hotspot to AI agents like Claude or Cursor.
+- **[Strategic Playbook](PLAYBOOK.md)**: In-depth recipes for risk auditing and refactoring prioritization.
