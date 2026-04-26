@@ -19,6 +19,7 @@ type FormatProvider interface {
 	WriteBlastRadius(w io.Writer, result schema.BlastRadiusResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error
 	WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, output config.OutputSettings) error
 	WriteHistory(w io.Writer, runs []schema.AnalysisRunRecord, output config.OutputSettings) error
+	WriteBatch(w io.Writer, results []schema.RepoShape, output config.OutputSettings) error
 }
 
 // OutWriter provides a unified interface for all output operations.
@@ -40,6 +41,7 @@ func NewOutWriter() *OutWriter {
 	ow.providers[schema.Describe] = provider.NewDescribeProvider()
 	ow.providers[schema.ParquetOut] = provider.NewParquetProvider()
 	ow.providers[schema.HeatmapOut] = provider.NewHeatmapProvider()
+	ow.providers[schema.NoneOut] = provider.NewNoneProvider()
 
 	return ow
 }
@@ -77,4 +79,9 @@ func (ow *OutWriter) WriteMetrics(w io.Writer, activeWeights map[schema.ScoringM
 // WriteHistory writes analysis history using the configured output format.
 func (ow *OutWriter) WriteHistory(w io.Writer, runs []schema.AnalysisRunRecord, output config.OutputSettings) error {
 	return ow.providers[output.GetFormat()].WriteHistory(w, runs, output)
+}
+
+// WriteBatch writes a summary of multiple repository shapes.
+func (ow *OutWriter) WriteBatch(w io.Writer, results []schema.RepoShape, output config.OutputSettings) error {
+	return ow.providers[output.GetFormat()].WriteBatch(w, results, output)
 }

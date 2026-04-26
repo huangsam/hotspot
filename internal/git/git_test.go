@@ -3,7 +3,9 @@ package git
 import (
 	"context"
 	"errors"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -310,4 +312,35 @@ func TestLocalGitClient_GetRemoteURL(t *testing.T) {
 	assert.NotContains(t, url, "https://")
 	assert.NotContains(t, url, "git@")
 	assert.False(t, strings.HasSuffix(url, ".git"), "URL should not end with .git")
+}
+
+// TestDiscoverRepositories tests the recursive discovery of git repositories.
+func TestDiscoverRepositories(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create a mock structure:
+	// tmpDir/
+	//   repo1/.git/
+	//   subdir/
+	//     repo2/.git/
+	//   node_modules/ (should be skipped)
+	//     repo3/.git/
+
+	repo1 := filepath.Join(tmpDir, "repo1")
+	repo2 := filepath.Join(tmpDir, "subdir", "repo2")
+	skippedRepo := filepath.Join(tmpDir, "node_modules", "repo3")
+
+	for _, dir := range []string{repo1, repo2, skippedRepo} {
+		err := os.MkdirAll(filepath.Join(dir, ".git"), 0o755)
+		assert.NoError(t, err)
+	}
+
+	repos, err := DiscoverRepositories(tmpDir)
+	assert.NoError(t, err)
+
+	// Should find repo1 and repo2, but not repo3
+	assert.Len(t, repos, 2)
+	assert.Contains(t, repos, repo1)
+	assert.Contains(t, repos, repo2)
+	assert.NotContains(t, repos, skippedRepo)
 }

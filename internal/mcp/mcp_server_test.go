@@ -111,6 +111,7 @@ func TestMCPServer_ToolRegistration(t *testing.T) {
 		"get_release_journey",
 		"get_blast_radius",
 		"run_check",
+		"run_batch_analysis",
 	}
 
 	// Verify the count matches to ensure the test list is updated when new tools are added.
@@ -343,5 +344,30 @@ func TestMCPServerHandlers_Execution(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, res.IsError, "Result should not be an error: %v", res.Content)
 		assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "Passed")
+	})
+
+	t.Run("run_batch_analysis success", func(t *testing.T) {
+		s, client := setup(t)
+		nowStr := time.Now().UTC().Format(time.RFC3339)
+		client.On("GetActivityLog", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+			Return(fmt.Appendf(nil, "--abc|Tester|%s\n\n1\t1\tmain.go\n", nowStr), nil)
+
+		tool := s.GetTool("run_batch_analysis")
+		require.NotNil(t, tool)
+
+		req := mcp.CallToolRequest{
+			Params: mcp.CallToolParams{
+				Name: "run_batch_analysis",
+				Arguments: map[string]any{
+					"path": ".",
+					"auto": false,
+				},
+			},
+		}
+
+		res, err := tool.Handler(ctx, req)
+		require.NoError(t, err)
+		assert.False(t, res.IsError, "Result should not be an error: %v", res.Content)
+		assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "results")
 	})
 }

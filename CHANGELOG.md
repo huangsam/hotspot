@@ -5,7 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org).
 
-## [1.20.1] - 2026-04-26
+## [1.21.0] - 2026-04-26
+
+### Added
+- Native `hotspot batch` command for multi-repository discovery and assessment.
+- MCP tool `run_batch_analysis` for fleet-wide repository audits.
+- Global `--quiet` flag (and `-q` alias) for silent, automated operations.
 
 ### Changed
 - Made heatmap label truncation more conservative for readability.
@@ -13,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 ### Fixed
 - Fixed XML declaration ordering in heatmap SVG.
 - Removed metadata comments from SVG output for cleaner files.
+- Corrected quiet mode logic to respect explicit log-level overrides.
 
 ## [1.20.0] - 2026-04-25
 

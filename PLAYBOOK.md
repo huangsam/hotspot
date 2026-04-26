@@ -44,6 +44,14 @@ If you use Hotspot to ask "Why did you write such complex code?" or "Why are you
     - **ROI Target**: Focus on these files first to get the most "bang for your buck" in terms of improved development velocity.
     - **Impact Audit**: After refactoring, run `hotspot compare` in ROI mode to quantify the technical return on investment.
 
+### Area 5: Fleet Intelligence (Cross-Project Risk)
+
+**The Signal**: Multiple repositories in your portfolio show high risk or complexity simultaneously.
+- **Supportive Action**:
+    - **Infrastructure Standardization**: If many repos show the same risk, it may be time to move that logic into a shared platform or library.
+    - **Team Cross-Training**: Use `hotspot batch` to identify which teams are struggling with knowledge silos across their entire service fleet.
+    - **Portfolio Health Review**: Present the batch summary to leadership to justify architectural "pause" periods for the entire department.
+
 ## Closing the Loop: Measuring Success
 
 Data is only useful if it shows progress. Use these commands to quantify your impact:

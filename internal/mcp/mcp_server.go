@@ -222,6 +222,18 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude."), mcp.DefaultString(schema.DefaultExclude)),
 	), withRecovery(h.handleRunCheck))
 
+	// --- 9. Tool: run_batch_analysis ---
+	s.AddTool(mcp.NewTool("run_batch_analysis",
+		mcp.WithDescription("Perform discovery and silent analysis on multiple Git repositories in a directory tree. Ideal for fleet-wide cache warming and high-level health reporting."),
+		mcp.WithToolAnnotation(mcp.ToolAnnotation{
+			Title:          "Run Batch Analysis",
+			ReadOnlyHint:   &readOnly,
+			IdempotentHint: &idempotent,
+		}),
+		mcp.WithString("path", mcp.Description("The root directory to search for Git repositories (defaults to current directory).")),
+		mcp.WithBoolean("auto", mcp.Description("Recursively discover repositories in the specified path (defaults to false).")),
+	), withRecovery(h.handleRunBatchAnalysis))
+
 	s.AddResource(mcp.NewResource("hotspot://docs/agents", "Agent Documentation", mcp.WithResourceDescription("High-level architectural context and domain concepts for AI agents."), mcp.WithMIMEType("text/markdown")), h.handleReadResource)
 	s.AddResource(mcp.NewResource("hotspot://docs/metrics", "Scoring Metrics Definition", mcp.WithResourceDescription("Markdown definition of scoring modes, factors, and formulas."), mcp.WithMIMEType("text/markdown")), h.handleReadResource)
 

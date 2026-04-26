@@ -114,6 +114,12 @@ type CheckResultsOutput struct {
 	Metadata Metadata     `json:"metadata"`
 }
 
+// BatchAnalysisResultsOutput is the standard container for fleet-wide batch analysis results.
+type BatchAnalysisResultsOutput struct {
+	Results  []RepoShape `json:"results"`
+	Metadata Metadata    `json:"metadata"`
+}
+
 // RuntimeSettings matches the minimal interface needed for metadata building.
 type RuntimeSettings interface {
 	GetWorkers() int

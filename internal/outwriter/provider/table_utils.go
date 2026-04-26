@@ -9,26 +9,26 @@ import (
 	"golang.org/x/term"
 )
 
+// GetTerminalWidth returns the terminal width, respecting overrides and auto-detection.
+func GetTerminalWidth(output config.OutputSettings) int {
+	// Check for absolute width override from flag/env
+	if output.GetWidth() > 0 {
+		return output.GetWidth()
+	}
+
+	// Get terminal width
+	detectedWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil || detectedWidth <= 0 {
+		// Fallback to conservative default if terminal size can't be detected
+		return 80 // Conservative default for narrow terminals and CI
+	}
+	return detectedWidth
+}
+
 // GetMaxTablePathWidth calculates the maximum width for file paths in table output
 // based on terminal width and table configuration.
 func GetMaxTablePathWidth(output config.OutputSettings) int {
-	var termWidth int
-
-	// Check for absolute width override from flag/env
-	if output.GetWidth() > 0 {
-		termWidth = output.GetWidth()
-	}
-
-	if termWidth == 0 { // Not set by override
-		// Get terminal width
-		detectedWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
-		if err != nil || detectedWidth <= 0 {
-			// Fallback to conservative default if terminal size can't be detected
-			termWidth = 80 // Conservative default for narrow terminals and CI
-		} else {
-			termWidth = detectedWidth
-		}
-	}
+	termWidth := GetTerminalWidth(output)
 
 	// Reserve space for fixed columns with table formatting
 	baseWidth := 25 // Rank + Score + Label with borders/padding
@@ -60,6 +60,24 @@ func GetMaxTablePathWidth(output config.OutputSettings) int {
 	if available > 70 {
 		// Maximum path width to prevent overly long paths
 		return 70
+	}
+	return available
+}
+
+// GetMaxBatchRepoWidth calculates the maximum width for repository names in batch output.
+func GetMaxBatchRepoWidth(output config.OutputSettings) int {
+	termWidth := GetTerminalWidth(output)
+
+	// Reserve space for fixed columns: Preset(8), Mode(6), Files(8), Commits(8), Owners(8)
+	// plus borders and padding (~25)
+	baseWidth := 38 + 25
+
+	available := termWidth - baseWidth
+	if available < 20 {
+		return 20
+	}
+	if available > 80 {
+		return 80
 	}
 	return available
 }

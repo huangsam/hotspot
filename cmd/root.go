@@ -7,6 +7,7 @@ import (
 	"runtime/pprof"
 	"strings"
 
+	"github.com/huangsam/hotspot/core"
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
@@ -164,7 +165,7 @@ func sharedSetup(ctx context.Context, cmd *cobra.Command, args []string) error {
 	client := git.NewLocalGitClient()
 	gitClient = client
 	if err := config.ProcessAndValidate(ctx, cfg, client, input); err != nil {
-		if cmd == nil || cmd.Name() != "mcp" {
+		if cmd == nil || (cmd.Name() != "mcp" && cmd.Name() != "batch") {
 			return err
 		}
 	}
@@ -181,6 +182,15 @@ func sharedSetup(ctx context.Context, cmd *cobra.Command, args []string) error {
 
 	// 7. Configure global color mode
 	provider.SetColorMode(cfg.Output.UseColors)
+
+	// 8. Apply global quiet mode to context
+	if cfg.Output.Quiet {
+		rootCtx = core.WithSuppressHeader(rootCtx)
+		// Only lower to error level if the user DID NOT explicitly ask for a specific level via flags
+		if cmd == nil || !cmd.Flags().Changed("log-level") {
+			logger.InitLogger("error")
+		}
+	}
 
 	return nil
 }

@@ -2,6 +2,7 @@ package provider
 
 import (
 	"encoding/csv"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -259,6 +260,31 @@ func (p *CSVProvider) WriteHistory(w io.Writer, runs []schema.AnalysisRunRecord,
 				duration,
 				files,
 				r.URN,
+			}
+			if err := csvWriter.Write(row); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// WriteBatch writes repository shapes in CSV format.
+func (p *CSVProvider) WriteBatch(w io.Writer, results []schema.RepoShape, _ config.OutputSettings) error {
+	header := []string{"urn", "file_count", "total_commits", "unique_contributors", "avg_churn_per_file", "iac_file_ratio", "recommended_preset", "mode", "analyzed_at"}
+
+	return WriteCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {
+		for _, s := range results {
+			row := []string{
+				s.URN,
+				strconv.Itoa(s.FileCount),
+				fmt.Sprintf("%.0f", s.TotalCommits),
+				strconv.Itoa(s.UniqueContributors),
+				fmt.Sprintf("%.2f", s.AvgChurnPerFile),
+				fmt.Sprintf("%.4f", s.IaCFileRatio),
+				string(s.RecommendedPreset),
+				string(s.Preset.Mode),
+				s.AnalyzedAt.Format(schema.DateTimeFormat),
 			}
 			if err := csvWriter.Write(row); err != nil {
 				return err

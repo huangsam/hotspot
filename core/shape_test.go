@@ -163,7 +163,7 @@ func TestComputeRepoShape(t *testing.T) {
 		},
 	}
 
-	shape := ComputeRepoShape(files, output)
+	shape := ComputeRepoShape("", files, output)
 
 	assert.Equal(t, 5, shape.FileCount)
 	assert.Equal(t, 15.0, shape.TotalCommits)

@@ -394,3 +394,44 @@ func (p *TextProvider) WriteHistory(w io.Writer, runs []schema.AnalysisRunRecord
 	}
 	return table.Render()
 }
+
+// WriteBatch writes a summary of multiple repository shapes in a human-readable table.
+func (p *TextProvider) WriteBatch(w io.Writer, results []schema.RepoShape, output config.OutputSettings) error {
+	if len(results) == 0 {
+		return nil
+	}
+
+	table := tablewriter.NewWriter(w)
+	defer func() { _ = table.Close() }()
+
+	table.Header([]string{"Repository", "Preset", "Mode", "Files", "Commits", "Owners"})
+	table.Configure(func(cfg *tablewriter.Config) {
+		cfg.Row.Alignment.Global = tw.AlignLeft
+	})
+
+	maxRepoWidth := GetMaxBatchRepoWidth(output)
+
+	var data [][]string
+	for _, s := range results {
+		// Use the URN but truncate it to something readable
+		repoName := strings.TrimPrefix(s.URN, "git:")
+		repoName = TruncatePath(repoName, maxRepoWidth)
+
+		data = append(data, []string{
+			repoName,
+			string(s.RecommendedPreset),
+			string(s.Preset.Mode),
+			strconv.Itoa(s.FileCount),
+			fmt.Sprintf("%.0f", s.TotalCommits),
+			strconv.Itoa(s.UniqueContributors),
+		})
+	}
+
+	if err := table.Bulk(data); err != nil {
+		return err
+	}
+	if err := table.Render(); err != nil {
+		return err
+	}
+	return nil
+}

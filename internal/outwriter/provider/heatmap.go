@@ -78,6 +78,11 @@ func (p *HeatmapProvider) WriteHistory(_ io.Writer, _ []schema.AnalysisRunRecord
 	return fmt.Errorf("heatmap output not supported for history")
 }
 
+// WriteBatch is not implemented for heatmap.
+func (p *HeatmapProvider) WriteBatch(_ io.Writer, _ []schema.RepoShape, _ config.OutputSettings) error {
+	return fmt.Errorf("heatmap output not supported for batch analysis")
+}
+
 // ─── Layout types ────────────────────────────────────────────────────────────
 
 // tmRect is an axis-aligned rectangle used during treemap layout.

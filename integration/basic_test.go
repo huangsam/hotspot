@@ -458,15 +458,33 @@ func TestTimeseriesVerification(t *testing.T) {
 }
 
 // extractJSONFromOutput extracts the JSON part from hotspot output that includes log lines.
+// extractJSONFromOutput extracts the JSON part from hotspot output that includes log lines.
 func extractJSONFromOutput(output string) string {
 	lines := strings.Split(output, "\n")
+	start := -1
 	for i, line := range lines {
 		trimmed := strings.TrimSpace(line)
-		if strings.HasPrefix(trimmed, "{") || strings.HasPrefix(trimmed, "[") { // Start of JSON object or array
-			return strings.Join(lines[i:], "\n")
+		if strings.HasPrefix(trimmed, "{") || strings.HasPrefix(trimmed, "[") {
+			start = i
+			break
 		}
 	}
-	return output // Fallback to original output
+
+	if start == -1 {
+		return output
+	}
+
+	// Find the end by looking for the last line that looks like JSON ending
+	end := len(lines)
+	for i := len(lines) - 1; i >= start; i-- {
+		trimmed := strings.TrimSpace(lines[i])
+		if strings.HasSuffix(trimmed, "}") || strings.HasSuffix(trimmed, "]") {
+			end = i + 1
+			break
+		}
+	}
+
+	return strings.Join(lines[start:end], "\n")
 }
 
 // TestCheckVerification tests the check command functionality.
@@ -704,4 +722,76 @@ weights:
 		err = cmd.Run()
 		assert.Error(t, err, "Should fail with invalid weights that don't sum to 1.0")
 	})
+}
+
+// TestBatchVerification tests the batch discovery and assessment command.
+func TestBatchVerification(t *testing.T) {
+	t.Parallel()
+
+	// Skip if git not available
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not available")
+	}
+
+	// Run hotspot batch on the current repository
+	output, err := runHotspotCommand(t, "batch", ".", "--output", "json")
+	require.NoError(t, err)
+
+	// Extract JSON
+	jsonPart := extractJSONFromOutput(string(output))
+	var batchOutput schema.BatchAnalysisResultsOutput
+	err = json.Unmarshal([]byte(jsonPart), &batchOutput)
+	require.NoError(t, err)
+
+	// Should have at least the current repository
+	assert.NotEmpty(t, batchOutput.Results, "batch analysis should find at least one repository")
+
+	// Verify the current repo is in the results
+	foundCurrent := false
+	for _, res := range batchOutput.Results {
+		if strings.Contains(res.URN, "hotspot") {
+			foundCurrent = true
+			assert.NotEmpty(t, res.RecommendedPreset, "should have a recommended preset")
+			assert.Greater(t, res.FileCount, 0, "should have files")
+			break
+		}
+	}
+	assert.True(t, foundCurrent, "batch analysis should find the current hotspot repository")
+}
+
+// TestQuietModeVerification verifies that the --quiet flag suppresses output correctly.
+func TestQuietModeVerification(t *testing.T) {
+	t.Parallel()
+
+	// 1. Test payload suppression on stdout
+	hotspotPath := getHotspotBinary()
+
+	// Get repo root for execution
+	repoPathCmd := exec.Command("git", "rev-parse", "--show-toplevel")
+	repoPath, err := repoPathCmd.Output()
+	require.NoError(t, err)
+	repoDir := strings.TrimSpace(string(repoPath))
+
+	// Run with --quiet
+	cmd := exec.Command(hotspotPath, "files", "--quiet")
+	cmd.Dir = repoDir
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err = cmd.Run()
+	require.NoError(t, err)
+
+	// Stdout and Stderr should be empty
+	assert.Empty(t, stdout.String(), "stdout should be empty when --quiet is set")
+	assert.Empty(t, stderr.String(), "stderr should be empty when --quiet is set")
+
+	// 2. Verify it doesn't override explicit log level if requested (via debug log check)
+	cmd2 := exec.Command(hotspotPath, "files", "--quiet", "--log-level", "info")
+	cmd2.Dir = repoDir
+	var stderr2 bytes.Buffer
+	cmd2.Stderr = &stderr2
+	_ = cmd2.Run()
+
+	// With info level, we should see some logs on stderr even if quiet is on
+	assert.NotEmpty(t, stderr2.String(), "stderr should NOT be empty when --log-level info is explicitly requested even with --quiet")
 }

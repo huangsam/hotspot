@@ -163,6 +163,7 @@ type OutputConfig struct {
 	Detail      bool
 	Explain     bool
 	Owner       bool
+	Quiet       bool
 }
 
 // GetResultLimit returns the maximum number of results to return.
@@ -290,6 +291,7 @@ type RawInput struct {
 	AnalysisBackend   string `mapstructure:"analysis-backend"`
 	AnalysisDBConnect string `mapstructure:"analysis-db-connect"`
 	Color             string `mapstructure:"color"`
+	Quiet             bool   `mapstructure:"quiet"`
 
 	// --- Recency Thresholds ---
 	RecencyThresholdLow  float64 `mapstructure:"recency-threshold-low"`
@@ -493,6 +495,7 @@ func validateSimpleInputs(cfg *Config, input *RawInput) error {
 	cfg.Output.Owner = input.Owner
 	cfg.Git.Follow = input.Follow
 	cfg.Output.Width = input.Width
+	cfg.Output.Quiet = input.Quiet
 
 	if err := validateOutputInputs(cfg, input); err != nil {
 		return err
@@ -550,6 +553,11 @@ func validateOutputInputs(cfg *Config, input *RawInput) error {
 		}
 	} else if cfg.Output.Format == "" {
 		cfg.Output.Format = schema.TextOut
+	}
+
+	// Quiet flag overrides everything to 'none' format
+	if cfg.Output.Quiet {
+		cfg.Output.Format = schema.NoneOut
 	}
 
 	return nil

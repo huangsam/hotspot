@@ -340,6 +340,40 @@ func (p *MarkdownProvider) WriteHistory(w io.Writer, runs []schema.AnalysisRunRe
 	return nil
 }
 
+// WriteBatch writes repository shapes in Markdown format.
+func (p *MarkdownProvider) WriteBatch(w io.Writer, results []schema.RepoShape, _ config.OutputSettings) error {
+	if _, err := fmt.Fprintln(w, "## Fleet Analysis Summary"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w); err != nil {
+		return err
+	}
+
+	headers := []string{"Repository", "Preset", "Mode", "Files", "Commits", "Owners"}
+	p.writeMarkdownTable(w, headers)
+
+	for _, s := range results {
+		repoName := strings.TrimPrefix(s.URN, "git:")
+		row := []string{
+			repoName,
+			string(s.RecommendedPreset),
+			string(s.Preset.Mode),
+			strconv.Itoa(s.FileCount),
+			fmt.Sprintf("%.0f", s.TotalCommits),
+			strconv.Itoa(s.UniqueContributors),
+		}
+		p.writeMarkdownRow(w, row)
+	}
+
+	if _, err := fmt.Fprintln(w); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "*Batch analysis of %d repositories completed.*\n", len(results)); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (p *MarkdownProvider) writeMarkdownTable(w io.Writer, headers []string) {
 	_, _ = fmt.Fprintf(w, "| %s |\n", strings.Join(headers, " | "))
 	sep := make([]string, len(headers))

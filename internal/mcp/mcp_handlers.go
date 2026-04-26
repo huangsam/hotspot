@@ -333,6 +333,61 @@ func (h *toolHandler) handleRunCheck(ctx context.Context, request mcp.CallToolRe
 	})
 }
 
+// handleRunBatchAnalysis handles the run_batch_analysis tool.
+func (h *toolHandler) handleRunBatchAnalysis(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	searchDir := request.GetString("path", ".")
+	autoDiscovery := request.GetBool("auto", false)
+
+	var repos []string
+	if autoDiscovery {
+		var err error
+		repos, err = git.DiscoverRepositories(searchDir)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("repository discovery failed: %v", err)), nil
+		}
+	} else {
+		repos = []string{searchDir}
+	}
+
+	if len(repos) == 0 {
+		return h.jsonResponse(schema.BatchAnalysisResultsOutput{
+			Results:  []schema.RepoShape{},
+			Metadata: schema.BuildMetadata(h.baseCfg.Runtime, 0),
+		})
+	}
+
+	start := time.Now()
+	var shapes []schema.RepoShape
+
+	for _, repoPath := range repos {
+		// Clone base config for each repo
+		repoCfg := h.baseCfg.Clone()
+		repoCfg.Git.RepoPath = repoPath
+		repoCfg.Output.Format = schema.NoneOut
+
+		// Resolve git details
+		if err := config.ResolveGitPathAndFilter(ctx, repoCfg, h.client, &config.RawInput{RepoPathStr: repoPath}); err != nil {
+			logger.Error("Failed to resolve repo in batch", "path", repoPath, "error", err)
+			continue
+		}
+
+		// Run analysis
+		analysisCtx := core.WithSuppressHeader(ctx)
+		shape, _, err := core.GetBatchAnalysisResults(analysisCtx, repoCfg, h.client, h.mgr)
+		if err != nil {
+			logger.Error("Analysis failed in batch", "path", repoPath, "error", err)
+			continue
+		}
+		shapes = append(shapes, shape)
+	}
+
+	duration := time.Since(start)
+	return h.jsonResponse(schema.BatchAnalysisResultsOutput{
+		Results:  shapes,
+		Metadata: schema.BuildMetadata(h.baseCfg.Runtime, duration),
+	})
+}
+
 // withRecovery is a decorator that adds panic recovery to a tool handler.
 func withRecovery(handler func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error)) func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	return func(ctx context.Context, request mcp.CallToolRequest) (result *mcp.CallToolResult, err error) {

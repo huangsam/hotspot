@@ -41,6 +41,7 @@ const (
 	Describe    OutputMode = "describe"
 	MarkdownOut OutputMode = "markdown"
 	HeatmapOut  OutputMode = "heatmap"
+	NoneOut     OutputMode = "none"
 )
 
 // All status supported.
@@ -87,6 +88,7 @@ var ValidOutputModes = map[OutputMode]struct{}{
 	Describe:    {},
 	MarkdownOut: {},
 	HeatmapOut:  {},
+	NoneOut:     {},
 }
 
 // ValidScoringModes lists all valid scoring modes.

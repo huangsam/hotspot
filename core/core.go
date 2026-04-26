@@ -293,3 +293,40 @@ func GetHotspotCheckResults(ctx context.Context, cfg *config.Config, client git.
 
 	return builder.GetResult(), time.Since(start), nil
 }
+
+// GetBatchAnalysisResults runs a full analysis (including recording to the database)
+// and returns the repository shape metrics. This is optimized for the 'batch' command
+// to provide immediate intelligence during fleet-wide scans.
+func GetBatchAnalysisResults(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) (schema.RepoShape, time.Duration, error) {
+	start := time.Now()
+
+	// 1. Run full analysis core (this triggers pipeline stages including recording to DB)
+	output, err := runSingleAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, client, mgr)
+	if err != nil {
+		return schema.RepoShape{}, 0, err
+	}
+
+	// 2. We need the file list for ComputeRepoShape
+	files, err := client.ListFilesAtRef(ctx, cfg.Git.RepoPath, "HEAD")
+	if err != nil {
+		return schema.RepoShape{}, 0, err
+	}
+
+	// 3. Filter files if path filter is set (consistent with core/shape.go)
+	if cfg.Git.PathFilter != "" {
+		var filtered []string
+		for _, f := range files {
+			if schema.IsPathInFilter(f, cfg.Git.PathFilter) {
+				filtered = append(filtered, f)
+			}
+		}
+		files = filtered
+	}
+
+	// 4. Resolve URN for the repository
+	urn := git.ResolveURN(ctx, client, cfg.Git.RepoPath)
+
+	// 5. Compute shape from the same aggregate output used in analysis
+	shape := ComputeRepoShape(urn, files, output.AggregateOutput)
+	return shape, time.Since(start), nil
+}

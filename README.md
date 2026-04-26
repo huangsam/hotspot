@@ -20,6 +20,7 @@ Unlike traditional linters or team-velocity metrics, Hotspot analyzes **developm
 - 🔍 **Tactical CLI** - Rapid file/folder ranking by activity, complexity, and ownership.
 - 🧮 **Deep Metrics** - High-fidelity signals for churn, Ginni coefficients, and bus factor risk.
 - 🕓 **Trend Tracking** - Time-anchored analysis and delta tracking across Git references.
+- 🚢 **Fleet Discovery** - Multi-repository assessment and portfolio risk characterization.
 - 📊 **Polyglot Exports** - Professional CSV/JSON/Parquet/Markdown/SVG reporting.
 
 ## Installation
@@ -68,6 +69,9 @@ hotspot files
 
 # Analyze folders in tabular format
 hotspot folders
+
+# Discover and assess multiple repositories (Fleet Analysis)
+hotspot batch --auto /path/to/projects
 ```
 
 ### Documentation

@@ -36,6 +36,7 @@ type Preset struct {
 
 // RepoShape captures key metrics from the first aggregation pass to characterize a repository.
 type RepoShape struct {
+	URN                string     `json:"urn,omitempty"`
 	FileCount          int        `json:"file_count"`
 	TotalCommits       float64    `json:"total_commits"`
 	UniqueContributors int        `json:"unique_contributors"`

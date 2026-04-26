@@ -43,6 +43,11 @@ Track how hotspot scores change over time for a specific file or folder path.
 
 `hotspot timeseries --path main.go --mode complexity --interval "30 days" --points 3`
 
+### 5. Fleet Intelligence (Batch Analysis)
+Assess multiple repositories at once to identify risk patterns across your entire project portfolio.
+
+`hotspot batch --auto /Users/sam/projects`
+
 ---
 
 ## Interpreting Results
@@ -86,6 +91,15 @@ Hotspot supports multiple export formats to assist in reporting:
 hotspot files --output markdown --explain > report.md
 hotspot files --output csv --output-file findings.csv
 ```
+
+### 🔕 Silent Operations (Quiet Mode)
+For automated pipelines, background indexing, or CI/CD, use the global `--quiet` flag to suppress all output except errors.
+
+```bash
+hotspot files . --quiet
+```
+
+This flag suppresses the payload (`stdout`), diagnostic headers (`stderr`), and telemetry logs (muting to `error` level).
 
 ---
 

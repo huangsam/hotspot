@@ -15,6 +15,7 @@ func init() {
 	// Add primary subcommands to the root command
 	rootCmd.AddCommand(filesCmd)
 	rootCmd.AddCommand(foldersCmd)
+	rootCmd.AddCommand(batchCmd)
 	rootCmd.AddCommand(compareCmd)
 	rootCmd.AddCommand(checkCmd)
 	rootCmd.AddCommand(timeseriesCmd)
@@ -63,6 +64,7 @@ func init() {
 	rootCmd.PersistentFlags().String("target-ref", "", "Target Git reference for the AFTER state")
 	rootCmd.PersistentFlags().String("config", "", "Path to config file")
 	rootCmd.PersistentFlags().String("log-level", "warn", "Log level for telemetry output (warn, info, debug)")
+	rootCmd.PersistentFlags().BoolP("quiet", "q", false, "Silent mode. Suppresses all output except errors.")
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
 		logger.Fatal("Error binding root flags", err)
 	}

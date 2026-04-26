@@ -76,3 +76,14 @@ func (p *JSONProvider) encode(w io.Writer, data any) error {
 func (p *JSONProvider) WriteHistory(w io.Writer, runs []schema.AnalysisRunRecord, _ config.OutputSettings) error {
 	return p.encode(w, runs)
 }
+
+// WriteBatch serializes repository shapes to JSON.
+func (p *JSONProvider) WriteBatch(w io.Writer, results []schema.RepoShape, _ config.OutputSettings) error {
+	output := schema.BatchAnalysisResultsOutput{
+		Results: results,
+		Metadata: schema.Metadata{
+			Timestamp: time.Now().UTC(),
+		},
+	}
+	return p.encode(w, output)
+}

@@ -62,7 +62,7 @@ func recommendPreset(fileCount, uniqueContributors int, iacFileRatio float64) (s
 }
 
 // ComputeRepoShape derives shape metrics from a file list and aggregate output.
-func ComputeRepoShape(files []string, output *schema.AggregateOutput) schema.RepoShape {
+func ComputeRepoShape(urn string, files []string, output *schema.AggregateOutput) schema.RepoShape {
 	fileCount := len(files)
 
 	// Total commits across all active files
@@ -103,6 +103,7 @@ func ComputeRepoShape(files []string, output *schema.AggregateOutput) schema.Rep
 	preset, reasons := recommendPreset(fileCount, len(allContribs), iacFileRatio)
 
 	return schema.RepoShape{
+		URN:                urn,
 		FileCount:          fileCount,
 		TotalCommits:       totalCommits,
 		UniqueContributors: len(allContribs),
@@ -141,7 +142,7 @@ func GetHotspotShapeResults(ctx context.Context, cfg *config.Config, client git.
 		return schema.RepoShape{}, 0, fmt.Errorf("aggregation failed: %w", err)
 	}
 
-	shape := ComputeRepoShape(files, output)
+	shape := ComputeRepoShape(urn, files, output)
 	return shape, time.Since(start), nil
 }
 

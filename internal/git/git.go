@@ -3,6 +3,9 @@ package git
 
 import (
 	"context"
+	"io/fs"
+	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -77,4 +80,37 @@ func ResolveURN(ctx context.Context, client Client, repoPath string) string {
 		absPath = repoPath
 	}
 	return "local:" + absPath
+}
+
+// DiscoverRepositories recursively searches for Git repositories within the root path.
+// It skips common large directories like node_modules and vendor to improve performance.
+func DiscoverRepositories(root string) ([]string, error) {
+	var repos []string
+	skipDirs := map[string]bool{
+		"node_modules": true,
+		".git":         true,
+		".venv":        true,
+		"vendor":       true,
+		"dist":         true,
+		"target":       true,
+		"build":        true,
+	}
+
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return filepath.SkipDir
+		}
+		if !d.IsDir() {
+			return nil
+		}
+		if skipDirs[d.Name()] {
+			return filepath.SkipDir
+		}
+		if _, err := os.Stat(filepath.Join(path, ".git")); err == nil {
+			repos = append(repos, path)
+			return filepath.SkipDir
+		}
+		return nil
+	})
+	return repos, err
 }
