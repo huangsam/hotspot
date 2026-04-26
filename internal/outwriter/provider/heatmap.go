@@ -42,6 +42,15 @@ func (p *HeatmapProvider) WriteFolders(w io.Writer, folders []schema.FolderResul
 	return p.generateHeatmapSVG(w, files, output)
 }
 
+// GenerateSVG creates an SVG heatmap visualization as a string.
+func (p *HeatmapProvider) GenerateSVG(files []schema.FileResult, output config.OutputSettings) (string, error) {
+	var b strings.Builder
+	if err := p.generateHeatmapSVG(&b, files, output); err != nil {
+		return "", err
+	}
+	return b.String(), nil
+}
+
 // WriteComparison is not implemented for heatmap.
 func (p *HeatmapProvider) WriteComparison(_ io.Writer, _ schema.ComparisonResult, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	return fmt.Errorf("heatmap output not supported for comparison results")

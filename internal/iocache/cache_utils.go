@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-
-	"github.com/huangsam/hotspot/schema"
 )
 
 // validateTableName validates that the table name is a safe SQL identifier.
@@ -23,18 +21,6 @@ func validateTableName(name string) error {
 		return fmt.Errorf("invalid table name: %s (must match pattern ^[a-zA-Z_][a-zA-Z0-9_]*$)", name)
 	}
 	return nil
-}
-
-// quoteTableName returns the properly quoted table name for the given backend.
-func quoteTableName(name string, backend schema.DatabaseBackend) string {
-	switch backend {
-	case schema.PostgreSQLBackend:
-		return fmt.Sprintf("\"%s\"", name)
-	case schema.MySQLBackend:
-		return fmt.Sprintf("`%s`", name)
-	default: // SQLite
-		return fmt.Sprintf("\"%s\"", name)
-	}
 }
 
 // ensureSQLitePragmas appends recommended SQLite pragmas to the connection string.

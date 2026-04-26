@@ -12,7 +12,7 @@ import (
 
 // BackfillAnalysisURNs scans existing analysis runs and populates the 'urn' column.
 // It uses the 'repo_path' from the config_params to resolve a stable URN if the path exists.
-func BackfillAnalysisURNs(store *AnalysisStoreImpl, client git.Client) error {
+func BackfillAnalysisURNs(store AnalysisStore, client git.Client) error {
 	runs, err := store.GetAllAnalysisRuns()
 	if err != nil {
 		return fmt.Errorf("failed to fetch analysis runs for backfill: %w", err)

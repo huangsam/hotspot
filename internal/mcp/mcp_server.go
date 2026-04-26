@@ -35,7 +35,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 	// Common parameter descriptions
 	urnDesc := "Universal Resource Name (e.g., 'git:github.com/org/repo' or 'local:hash'). If provided, repo_path is optional and utilizes cached/historical analysis results."
 	repoPathDesc := "Path to the Git repository (defaults to current directory if not specified)."
-	modeDesc := "Scoring mode (hot, risk, complexity, roi). ROI mode identifies refactoring priority. Defaults to 'hot'."
+	modeDesc := "Scoring mode: 'hot' (activity hotspots), 'risk' (knowledge silos/bus factor), 'complexity' (technical debt candidates), or 'roi' (refactoring priority)."
 	startDesc := "Start date for the analysis window (ISO8601 e.g. '2024-01-01T00:00:00Z', or relative e.g. '30d ago', '6 months ago')."
 	endDesc := "End date for the analysis window (ISO8601 or relative). Defaults to now."
 
@@ -49,7 +49,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		}),
 		mcp.WithString("urn", mcp.Description(urnDesc)),
 		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
-	), h.handleGetRepoShape)
+	), withRecovery(h.handleGetRepoShape))
 
 	// --- 1. Tool: get_files_hotspots ---
 	s.AddTool(mcp.NewTool("get_files_hotspots",
@@ -68,7 +68,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("end", mcp.Description(endDesc)),
 		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go')."), mcp.DefaultString(schema.DefaultExclude)),
 		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
-	), h.handleGetFilesHotspots)
+	), withRecovery(h.handleGetFilesHotspots))
 
 	// --- 1.1 Tool: get_heatmap ---
 	s.AddTool(mcp.NewTool("get_heatmap",
@@ -81,12 +81,13 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("preset", mcp.Description("Apply a named configuration preset (small, large, infra). It is recommended to run 'get_repo_shape' first to identify the correct preset for this repository."), mcp.Enum("small", "large", "infra")),
 		mcp.WithString("urn", mcp.Description(urnDesc)),
 		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
-		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi"), mcp.DefaultString("hot")),
+		mcp.WithString("mode", mcp.Description("Scoring mode: 'hot' (activity/volatility), 'risk' (knowledge silos/bus factor), 'complexity' (legacy technical debt), or 'roi' (refactoring priority)."), mcp.Enum("hot", "risk", "complexity", "roi"), mcp.DefaultString("hot")),
 		mcp.WithString("start", mcp.Description(startDesc)),
 		mcp.WithString("end", mcp.Description(endDesc)),
 		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go')."), mcp.DefaultString(schema.DefaultExclude)),
 		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
-	), h.handleGetHeatmap)
+		mcp.WithString("type", mcp.Description("Visualization level: 'files' for granular file hotspots, 'folders' for high-level architectural risk distribution."), mcp.Enum("files", "folders"), mcp.DefaultString("files")),
+	), withRecovery(h.handleGetHeatmap))
 
 	// --- 2. Tool: get_folders_hotspots ---
 	s.AddTool(mcp.NewTool("get_folders_hotspots",
@@ -105,7 +106,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("end", mcp.Description(endDesc)),
 		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go')."), mcp.DefaultString(schema.DefaultExclude)),
 		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
-	), h.handleGetFoldersHotspots)
+	), withRecovery(h.handleGetFoldersHotspots))
 
 	// --- 3. Tool: compare_file_hotspots ---
 	s.AddTool(mcp.NewTool("compare_file_hotspots",
@@ -126,7 +127,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("end", mcp.Description(endDesc)),
 		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go')."), mcp.DefaultString(schema.DefaultExclude)),
 		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
-	), h.handleCompareFileHotspots)
+	), withRecovery(h.handleCompareFileHotspots))
 
 	// --- 4. Tool: compare_folder_hotspots ---
 	s.AddTool(mcp.NewTool("compare_folder_hotspots",
@@ -147,7 +148,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("end", mcp.Description(endDesc)),
 		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go')."), mcp.DefaultString(schema.DefaultExclude)),
 		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
-	), h.handleCompareFolderHotspots)
+	), withRecovery(h.handleCompareFolderHotspots))
 
 	// --- 5. Tool: get_timeseries ---
 	s.AddTool(mcp.NewTool("get_timeseries",
@@ -168,7 +169,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("end", mcp.Description("End date for the entire timeseries window.")),
 		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go')."), mcp.DefaultString(schema.DefaultExclude)),
 		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
-	), h.handleGetTimeseries)
+	), withRecovery(h.handleGetTimeseries))
 
 	// --- 5. Tool: get_release_journey ---
 	s.AddTool(mcp.NewTool("get_release_journey",
@@ -185,7 +186,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithNumber("transitions", mcp.Description("Number of successive tag transitions to analyze (e.g. 3 = last 4 tags). Defaults to 3."), mcp.DefaultNumber(3)),
 		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go')."), mcp.DefaultString(schema.DefaultExclude)),
 		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
-	), h.handleGetReleaseJourney)
+	), withRecovery(h.handleGetReleaseJourney))
 
 	// --- 6. Tool: get_blast_radius ---
 	s.AddTool(mcp.NewTool("get_blast_radius",
@@ -203,7 +204,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("end", mcp.Description(endDesc)),
 		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go')."), mcp.DefaultString(schema.DefaultExclude)),
 		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
-	), h.handleGetBlastRadius)
+	), withRecovery(h.handleGetBlastRadius))
 
 	// --- 8. Tool: run_check ---
 	s.AddTool(mcp.NewTool("run_check",
@@ -219,16 +220,10 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
 		mcp.WithString("lookback", mcp.Description("Time window for analysis.")),
 		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude."), mcp.DefaultString(schema.DefaultExclude)),
-	), h.handleRunCheck)
+	), withRecovery(h.handleRunCheck))
 
 	s.AddResource(mcp.NewResource("hotspot://docs/agents", "Agent Documentation", mcp.WithResourceDescription("High-level architectural context and domain concepts for AI agents."), mcp.WithMIMEType("text/markdown")), h.handleReadResource)
 	s.AddResource(mcp.NewResource("hotspot://docs/metrics", "Scoring Metrics Definition", mcp.WithResourceDescription("Markdown definition of scoring modes, factors, and formulas."), mcp.WithMIMEType("text/markdown")), h.handleReadResource)
-
-	// --- Dynamic Analysis Resources ---
-	s.AddResource(mcp.NewResource("hotspot://analysis/heatmap/hot", "Heatmap: Activity (Hot)", mcp.WithResourceDescription("Interactive SVG heatmap showing recent activity and churn."), mcp.WithMIMEType("image/svg+xml")), h.handleReadResource)
-	s.AddResource(mcp.NewResource("hotspot://analysis/heatmap/risk", "Heatmap: Knowledge Risk", mcp.WithResourceDescription("Interactive SVG heatmap showing knowledge silos and bus factor risk."), mcp.WithMIMEType("image/svg+xml")), h.handleReadResource)
-	s.AddResource(mcp.NewResource("hotspot://analysis/heatmap/complexity", "Heatmap: Complexity", mcp.WithResourceDescription("Interactive SVG heatmap showing technical debt and file complexity."), mcp.WithMIMEType("image/svg+xml")), h.handleReadResource)
-	s.AddResource(mcp.NewResource("hotspot://analysis/heatmap/roi", "Heatmap: Refactoring ROI", mcp.WithResourceDescription("Interactive SVG heatmap prioritizing refactoring targets by return on investment."), mcp.WithMIMEType("image/svg+xml")), h.handleReadResource)
 
 	// --- Prompts ---
 	s.AddPrompt(mcp.NewPrompt("refactor-prioritization", mcp.WithPromptDescription("Guided workflow for prioritizing refactoring targets using ROI mode.")), h.handleGetPrompt)

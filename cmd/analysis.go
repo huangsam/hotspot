@@ -44,7 +44,7 @@ func analysisSetup() error {
 	outputFormat := viper.GetString("output")
 
 	// Initialize stores with the loaded config (no cache tracking for analysis commands)
-	if err := iocache.InitStores(schema.NoneBackend, "", backend, connStr, git.NewLocalGitClient()); err != nil {
+	if _, err := iocache.InitStores(schema.NoneBackend, "", backend, connStr, git.NewLocalGitClient()); err != nil {
 		return fmt.Errorf("failed to initialize analysis: %w", err)
 	}
 

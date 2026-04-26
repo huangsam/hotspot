@@ -3,6 +3,7 @@ package iocache
 import (
 	"time"
 
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/stretchr/testify/mock"
 )
@@ -35,6 +36,12 @@ type MockCacheStore struct {
 
 var _ CacheStore = &MockCacheStore{} // Compile-time check
 
+// Initialize implements the CacheStore interface.
+func (m *MockCacheStore) Initialize() error {
+	args := m.Called()
+	return args.Error(0)
+}
+
 // Get implements the CacheStore interface.
 func (m *MockCacheStore) Get(key string) ([]byte, int, int64, error) {
 	args := m.Called(key)
@@ -65,6 +72,12 @@ type MockAnalysisStore struct {
 }
 
 var _ AnalysisStore = &MockAnalysisStore{} // Compile-time check
+
+// Initialize implements the AnalysisStore interface.
+func (m *MockAnalysisStore) Initialize(client git.Client) error {
+	args := m.Called(client)
+	return args.Error(0)
+}
 
 // BeginAnalysis implements the AnalysisStore interface.
 func (m *MockAnalysisStore) BeginAnalysis(urn string, startTime time.Time, configParams map[string]any) (int64, error) {
@@ -106,6 +119,12 @@ func (m *MockAnalysisStore) GetStatus() (schema.AnalysisStatus, error) {
 func (m *MockAnalysisStore) GetAllAnalysisRuns() ([]schema.AnalysisRunRecord, error) {
 	args := m.Called()
 	return args.Get(0).([]schema.AnalysisRunRecord), args.Error(1)
+}
+
+// UpdateAnalysisRunURN implements the AnalysisStore interface.
+func (m *MockAnalysisStore) UpdateAnalysisRunURN(analysisID int64, urn string) error {
+	args := m.Called(analysisID, urn)
+	return args.Error(0)
 }
 
 // GetAnalysisRuns implements the AnalysisStore interface.

@@ -67,3 +67,17 @@ type SQLScanner interface {
 	// ScanFileScoresMetricsRecord parses a FileScoresMetricsRecord from rows.
 	ScanFileScoresMetricsRecord(rows *sql.Rows, record *schema.FileScoresMetricsRecord) error
 }
+
+// NewDialect returns the appropriate SQLDialect for the given backend.
+func NewDialect(backend schema.DatabaseBackend) SQLDialect {
+	switch backend {
+	case schema.SQLiteBackend:
+		return &SQLiteDialect{}
+	case schema.MySQLBackend:
+		return &MySQLDialect{}
+	case schema.PostgreSQLBackend:
+		return &PostgresDialect{}
+	default:
+		return nil
+	}
+}

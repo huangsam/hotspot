@@ -44,9 +44,10 @@ func GetAnalysisDBFilePath() string {
 }
 
 // InitStores initializes the global cache manager with separate cache and analysis stores.
+// It returns the initialized CacheManager and any error encountered.
 // cacheBackend and cacheConnStr can be empty to disable cache initialization.
 // analysisBackend and analysisConnStr can be empty to disable analysis tracking.
-func InitStores(cacheBackend schema.DatabaseBackend, cacheConnStr string, analysisBackend schema.DatabaseBackend, analysisConnStr string, client git.Client) error {
+func InitStores(cacheBackend schema.DatabaseBackend, cacheConnStr string, analysisBackend schema.DatabaseBackend, analysisConnStr string, client git.Client) (CacheManager, error) {
 	initOnce.Do(func() {
 		// This function body runs exactly once, even with concurrent calls.
 		// 'err' is a local scratch variable for each store-creation call.
@@ -59,6 +60,11 @@ func InitStores(cacheBackend schema.DatabaseBackend, cacheConnStr string, analys
 		if cacheBackend != "" {
 			activityCacheStore, err = NewCacheStore(activityTable, cacheBackend, cacheConnStr)
 			if err != nil {
+				initErr = fmt.Errorf("failed to create activity store: %w", err)
+				return
+			}
+			if err := activityCacheStore.Initialize(); err != nil {
+				_ = activityCacheStore.Close()
 				initErr = fmt.Errorf("failed to initialize activity caching: %w", err)
 				return
 			}
@@ -67,8 +73,16 @@ func InitStores(cacheBackend schema.DatabaseBackend, cacheConnStr string, analys
 		// Initialize Analysis Store only if backend is configured
 		var analysisStore AnalysisStore
 		if analysisBackend != "" {
-			analysisStore, err = NewAnalysisStore(analysisBackend, analysisConnStr, client)
+			analysisStore, err = NewAnalysisStore(analysisBackend, analysisConnStr)
 			if err != nil {
+				if activityCacheStore != nil {
+					_ = activityCacheStore.Close()
+				}
+				initErr = fmt.Errorf("failed to create analysis store: %w", err)
+				return
+			}
+			if err := analysisStore.Initialize(client); err != nil {
+				_ = analysisStore.Close()
 				if activityCacheStore != nil {
 					_ = activityCacheStore.Close()
 				}
@@ -88,7 +102,7 @@ func InitStores(cacheBackend schema.DatabaseBackend, cacheConnStr string, analys
 
 	// 'initErr' is package-level; all goroutines that lost the sync.Once race
 	// will observe the same outcome (success or failure) when Do unblocks them.
-	return initErr
+	return Manager, initErr
 }
 
 // CloseCaching should be called on application shutdown.

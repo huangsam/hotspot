@@ -22,19 +22,22 @@ type AnalysisStoreImpl struct {
 	db      *sql.DB
 	backend schema.DatabaseBackend
 	dialect SQLDialect
+	connStr string
 }
 
 var _ AnalysisStore = &AnalysisStoreImpl{} // Compile-time check
 
 // NewAnalysisStore creates a new AnalysisStore with the specified backend.
-func NewAnalysisStore(backend schema.DatabaseBackend, connStr string, client git.Client) (AnalysisStore, error) {
+func NewAnalysisStore(backend schema.DatabaseBackend, connStr string) (AnalysisStore, error) {
 	var db *sql.DB
 	var err error
-	var dialect SQLDialect
+	dialect := NewDialect(backend)
+	if dialect == nil && backend != schema.NoneBackend {
+		return nil, fmt.Errorf("unsupported backend: %s", backend)
+	}
 
 	switch backend {
 	case schema.SQLiteBackend:
-		dialect = &SQLiteDialect{}
 		dbPath := connStr
 		if dbPath == "" {
 			dbPath = GetAnalysisDBFilePath()
@@ -50,14 +53,12 @@ func NewAnalysisStore(backend schema.DatabaseBackend, connStr string, client git
 		db.SetMaxOpenConns(1)
 
 	case schema.MySQLBackend:
-		dialect = &MySQLDialect{}
 		db, err = sql.Open(dialect.DriverName(), connStr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open MySQL database: %w. Check connection string format: user:password@tcp(host:port)/dbname", err)
 		}
 
 	case schema.PostgreSQLBackend:
-		dialect = &PostgresDialect{}
 		db, err = sql.Open(dialect.DriverName(), connStr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open PostgreSQL database: %w. Check connection string format: postgres://user:password@host:port/dbname", err)
@@ -90,31 +91,41 @@ func NewAnalysisStore(backend schema.DatabaseBackend, connStr string, client git
 		return nil, fmt.Errorf("failed to connect to %s database: %w. %s", backend, err, connDetail)
 	}
 
-	// Run migrations to ensure the schema is current
-	if err := migrateUpWithDB(backend, db, connStr); err != nil {
-		_ = db.Close()
-		return nil, fmt.Errorf("failed to run analysis migrations: %w", err)
-	}
-
-	store := &AnalysisStoreImpl{
+	return &AnalysisStoreImpl{
 		db:      db,
 		backend: backend,
 		dialect: dialect,
+		connStr: connStr,
+	}, nil
+}
+
+// Initialize performs one-time setup such as migrations, backfilling, and pruning.
+func (as *AnalysisStoreImpl) Initialize(client git.Client) error {
+	if as.backend == schema.NoneBackend || as.db == nil {
+		return nil
+	}
+
+	// Run migrations to ensure the schema is current
+	// Note: We use as.backend and as.db which are already set in NewAnalysisStore
+	if err := migrateUpWithDB(as.backend, as.db, as.connStr); err != nil {
+		return fmt.Errorf("failed to run analysis migrations: %w", err)
 	}
 
 	// Backfill URNs for legacy runs synchronously to ensure store consistency
-	if err := BackfillAnalysisURNs(store, client); err != nil {
-		logger.Warn("Analysis URN backfill encountered errors", err)
-		// Don't fail store creation, but log the issue for debugging
+	if client != nil {
+		if err := BackfillAnalysisURNs(as, client); err != nil {
+			logger.Warn("Analysis URN backfill encountered errors", err)
+			// Don't fail store creation, but log the issue for debugging
+		}
 	}
 
 	// Periodically prune orphaned runs (runs that started but never completed)
 	// that are older than 24 hours. This cleans up crashed or interrupted analyses.
-	if err := store.PruneOrphanedRuns(24 * time.Hour); err != nil {
+	if err := as.PruneOrphanedRuns(24 * time.Hour); err != nil {
 		logger.Warn("Failed to prune orphaned runs", err)
 	}
 
-	return store, nil
+	return nil
 }
 
 // BeginAnalysis creates a new analysis run and returns its unique ID.

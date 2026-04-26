@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/schema"
 )
 
@@ -16,8 +17,10 @@ type CacheManager interface {
 }
 
 // CacheStore defines the interface for cache data storage.
-// This allows mocking the store for testing.
 type CacheStore interface {
+	// Initialize performs one-time setup such as schema creation
+	Initialize() error
+
 	Get(key string) ([]byte, int, int64, error)
 	Set(key string, value []byte, version int, timestamp int64) error
 	GetStatus() (schema.CacheStatus, error)
@@ -26,6 +29,9 @@ type CacheStore interface {
 
 // AnalysisStore defines the interface for tracking analysis runs and storing metrics.
 type AnalysisStore interface {
+	// Initialize performs one-time setup such as migrations, backfilling, and pruning
+	Initialize(client git.Client) error
+
 	// BeginAnalysis creates a new analysis run and returns its unique ID
 	BeginAnalysis(urn string, startTime time.Time, configParams map[string]any) (int64, error)
 
@@ -40,6 +46,9 @@ type AnalysisStore interface {
 
 	// GetAllAnalysisRuns retrieves all analysis runs from the store
 	GetAllAnalysisRuns() ([]schema.AnalysisRunRecord, error)
+
+	// UpdateAnalysisRunURN updates the urn for an existing analysis run record
+	UpdateAnalysisRunURN(analysisID int64, urn string) error
 
 	// GetAnalysisRuns retrieves analysis runs with optional filtering and pagination
 	GetAnalysisRuns(filter schema.AnalysisQueryFilter) ([]schema.AnalysisRunRecord, error)

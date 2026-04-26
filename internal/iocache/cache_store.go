@@ -14,11 +14,11 @@ import (
 
 // CacheStoreImpl handles durable storage operations using various database backends.
 type CacheStoreImpl struct {
-	db         *sql.DB
-	tableName  string
-	backend    schema.DatabaseBackend
-	driverName string
-	connStr    string
+	db        *sql.DB
+	tableName string
+	backend   schema.DatabaseBackend
+	dialect   SQLDialect
+	connStr   string
 }
 
 var _ CacheStore = &CacheStoreImpl{} // Compile-time check
@@ -32,11 +32,13 @@ func NewCacheStore(tableName string, backend schema.DatabaseBackend, connStr str
 
 	var db *sql.DB
 	var err error
-	var driverName string
+	dialect := NewDialect(backend)
+	if dialect == nil && backend != schema.NoneBackend {
+		return nil, fmt.Errorf("unsupported cache backend: %s. Must be sqlite, mysql, postgresql, or none", backend)
+	}
 
 	switch backend {
 	case schema.SQLiteBackend:
-		driverName = "sqlite"
 		dbPath := connStr
 		if dbPath == "" {
 			dbPath = GetDBFilePath()
@@ -44,7 +46,7 @@ func NewCacheStore(tableName string, backend schema.DatabaseBackend, connStr str
 		// Add busy timeout so concurrent processes wait instead of failing immediately
 		// with SQLITE_BUSY when racing to initialize the schema.
 		dbPath = ensureSQLitePragmas(dbPath)
-		db, err = sql.Open(driverName, dbPath)
+		db, err = sql.Open(dialect.DriverName(), dbPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize SQLite cache at %q: %w. Ensure the directory is writable", dbPath, err)
 		}
@@ -54,8 +56,7 @@ func NewCacheStore(tableName string, backend schema.DatabaseBackend, connStr str
 	case schema.MySQLBackend:
 		// connStr should be:
 		// user:password@tcp(host:port)/dbname
-		driverName = "mysql"
-		db, err = sql.Open(driverName, connStr)
+		db, err = sql.Open(dialect.DriverName(), connStr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to connect to MySQL cache: %w. Check connection format: user:password@tcp(host:port)/dbname", err)
 		}
@@ -63,8 +64,7 @@ func NewCacheStore(tableName string, backend schema.DatabaseBackend, connStr str
 	case schema.PostgreSQLBackend:
 		// connStr should be:
 		// host=localhost port=5432 user=postgres password=mysecretpassword dbname=postgres
-		driverName = "pgx"
-		db, err = sql.Open(driverName, connStr)
+		db, err = sql.Open(dialect.DriverName(), connStr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to connect to PostgreSQL cache: %w. Check connection format: host=localhost port=5432 user=postgres dbname=mydb", err)
 		}
@@ -72,11 +72,11 @@ func NewCacheStore(tableName string, backend schema.DatabaseBackend, connStr str
 	case schema.NoneBackend:
 		// Return a no-op store for disabled caching
 		return &CacheStoreImpl{
-			db:         nil,
-			tableName:  tableName,
-			backend:    backend,
-			driverName: "",
-			connStr:    connStr,
+			db:        nil,
+			tableName: tableName,
+			backend:   backend,
+			dialect:   nil,
+			connStr:   connStr,
 		}, nil
 
 	default:
@@ -89,27 +89,35 @@ func NewCacheStore(tableName string, backend schema.DatabaseBackend, connStr str
 		return nil, fmt.Errorf("failed to connect to %s database. Check that the server is running and connection parameters are valid: %w", backend, err)
 	}
 
-	// Create the table schema
-	query := getCreateTableQuery(tableName, backend)
-	if _, err := db.Exec(query); err != nil {
-		_ = db.Close()
-		return nil, fmt.Errorf("failed to create table %s: %w", tableName, err)
-	}
-
 	return &CacheStoreImpl{
-		db:         db,
-		tableName:  tableName,
-		backend:    backend,
-		driverName: driverName,
-		connStr:    connStr,
+		db:        db,
+		tableName: tableName,
+		backend:   backend,
+		dialect:   dialect,
+		connStr:   connStr,
 	}, nil
 }
 
-// getCreateTableQuery returns the CREATE TABLE query for the given backend.
-func getCreateTableQuery(tableName string, backend schema.DatabaseBackend) string {
-	quotedTableName := quoteTableName(tableName, backend)
-	switch backend {
-	case schema.MySQLBackend:
+// Initialize performs one-time setup such as schema creation.
+func (ps *CacheStoreImpl) Initialize() error {
+	if ps.backend == schema.NoneBackend || ps.db == nil {
+		return nil
+	}
+
+	// Create the table schema
+	query := getCreateTableQuery(ps.tableName, ps.dialect)
+	if _, err := ps.db.Exec(query); err != nil {
+		return fmt.Errorf("failed to create table %s: %w", ps.tableName, err)
+	}
+
+	return nil
+}
+
+// getCreateTableQuery returns the CREATE TABLE query for the given dialect.
+func getCreateTableQuery(tableName string, dialect SQLDialect) string {
+	quotedTableName := dialect.QuoteIdentifier(tableName)
+	switch dialect.DriverName() {
+	case "mysql":
 		return fmt.Sprintf(`
 			CREATE TABLE IF NOT EXISTS %s (
 				cache_key VARCHAR(255) PRIMARY KEY,
@@ -119,7 +127,7 @@ func getCreateTableQuery(tableName string, backend schema.DatabaseBackend) strin
 			);
 		`, quotedTableName)
 
-	case schema.PostgreSQLBackend:
+	case "pgx":
 		return fmt.Sprintf(`
 			CREATE TABLE IF NOT EXISTS %s (
 				cache_key TEXT PRIMARY KEY,
@@ -129,7 +137,7 @@ func getCreateTableQuery(tableName string, backend schema.DatabaseBackend) strin
 			);
 		`, quotedTableName)
 
-	default: // SQLite
+	default: // sqlite
 		return fmt.Sprintf(`
 			CREATE TABLE IF NOT EXISTS %s (
 				cache_key TEXT PRIMARY KEY,
@@ -153,8 +161,8 @@ func (ps *CacheStoreImpl) Get(key string) ([]byte, int, int64, error) {
 	var ts int64
 
 	// Use backend-specific placeholder
-	quotedTableName := quoteTableName(ps.tableName, ps.backend)
-	placeholder := ps.getPlaceholder()
+	quotedTableName := ps.dialect.QuoteIdentifier(ps.tableName)
+	placeholder := ps.dialect.Placeholder(1)
 	query := fmt.Sprintf(`SELECT cache_value, cache_version, cache_timestamp FROM %s WHERE cache_key = %s`, quotedTableName, placeholder)
 	row := ps.db.QueryRow(query, key)
 
@@ -177,19 +185,9 @@ func (ps *CacheStoreImpl) Set(key string, value []byte, version int, timestamp i
 	return err
 }
 
-// getPlaceholder returns the parameter placeholder for the backend.
-func (ps *CacheStoreImpl) getPlaceholder() string {
-	switch ps.backend {
-	case schema.PostgreSQLBackend:
-		return "$1"
-	default: // SQLite and MySQL
-		return "?"
-	}
-}
-
 // getUpsertQuery returns the UPSERT query for the backend.
 func (ps *CacheStoreImpl) getUpsertQuery() string {
-	quotedTableName := quoteTableName(ps.tableName, ps.backend)
+	quotedTableName := ps.dialect.QuoteIdentifier(ps.tableName)
 	switch ps.backend {
 	case schema.MySQLBackend:
 		return fmt.Sprintf(`INSERT INTO %s (cache_key, cache_value, cache_version, cache_timestamp) VALUES (?, ?, ?, ?) AS new
@@ -223,7 +221,7 @@ func (ps *CacheStoreImpl) GetStatus() (schema.CacheStatus, error) {
 		return status, nil
 	}
 
-	quotedTableName := quoteTableName(ps.tableName, ps.backend)
+	quotedTableName := ps.dialect.QuoteIdentifier(ps.tableName)
 
 	// Get total entries
 	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s", quotedTableName)

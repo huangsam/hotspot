@@ -43,7 +43,7 @@ func cacheSetup() error {
 	}
 
 	// Initialize caching with the loaded config (no analysis tracking for cache commands)
-	if err := iocache.InitStores(backend, connStr, "", "", git.NewLocalGitClient()); err != nil {
+	if _, err := iocache.InitStores(backend, connStr, "", "", git.NewLocalGitClient()); err != nil {
 		return fmt.Errorf("failed to initialize cache: %w", err)
 	}
 

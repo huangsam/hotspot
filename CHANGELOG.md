@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Dynamic font scaling and smart label hiding for dense visualizations.
 - Integrated interactive SVG hotspots directly into README documentation.
 - Native MCP tool `get_heatmap` for agent-driven visual repository audits.
+- Support for folder-level heatmap visualizations via the `type=folders` parameter.
 
 ### Changed
 - Refactored heatmap provider into a modular, component-based architecture.
@@ -20,8 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Standardized SVG output to use a clean, "Intelligence Layer" aesthetic.
 
 ### Fixed
+- Fix nil pointer dereference in MCP server during shared setup.
+- Refactor `iocache.InitStores` to return `CacheManager` for explicit dependency injection.
+- Fix missing GenerateSVG method in HeatmapProvider for MCP resources.
+- Fix CI test TestMCPServer_ToolRegistration by updating tool count to 10.
+- Add panic recovery and Error logging to MCP server for better stability.
 - Resolved cyclomatic complexity and errcheck lints in output providers.
-- Updated MCP server tests to validate registration of 10 tools.
 
 ## [1.19.0] - 2026-04-21
 

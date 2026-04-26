@@ -31,7 +31,7 @@ func TestCaching(t *testing.T) {
 		resetGlobals() // Reset all global state for test
 
 		// Test initialization with SQLite backend
-		err := InitStores(schema.SQLiteBackend, "", "", "", nil)
+		_, err := InitStores(schema.SQLiteBackend, "", "", "", nil)
 		assert.NoError(t, err, "Failed to initialize persistence")
 
 		// Test that Manager is accessible
@@ -55,9 +55,9 @@ func TestCaching(t *testing.T) {
 		resetGlobals() // Reset all global state for test
 
 		// Multiple initializations should be safe (sync.Once)
-		err1 := InitStores(schema.SQLiteBackend, "", "", "", nil)
-		err2 := InitStores(schema.SQLiteBackend, "", "", "", nil)
-		err3 := InitStores(schema.SQLiteBackend, "", "", "", nil)
+		_, err1 := InitStores(schema.SQLiteBackend, "", "", "", nil)
+		_, err2 := InitStores(schema.SQLiteBackend, "", "", "", nil)
+		_, err3 := InitStores(schema.SQLiteBackend, "", "", "", nil)
 
 		assert.NoError(t, err1, "First init should not fail")
 		assert.NoError(t, err2, "Second init should not fail")
@@ -73,7 +73,7 @@ func TestCaching(t *testing.T) {
 		resetGlobals() // Reset all global state for test
 
 		// Test initialization with None backend (no database)
-		err := InitStores(schema.NoneBackend, "", "", "", nil)
+		_, err := InitStores(schema.NoneBackend, "", "", "", nil)
 		assert.NoError(t, err, "Failed to initialize persistence with none backend")
 
 		// Test that Manager is accessible
@@ -91,6 +91,7 @@ func TestCaching(t *testing.T) {
 		// Create a none backend store directly
 		store, err := NewCacheStore("test_table", schema.NoneBackend, "")
 		assert.NoError(t, err, "Failed to create none backend store")
+		assert.NoError(t, store.Initialize(), "Failed to initialize none backend store")
 
 		// Test Get returns error (no data)
 		_, _, _, err = store.Get("test_key")
@@ -196,7 +197,7 @@ func TestValidateTableName(t *testing.T) {
 	}
 }
 
-// TestQuoteTableName tests the quoteTableName function for all backends.
+// TestQuoteTableName tests the QuoteIdentifier method for all dialects.
 func TestQuoteTableName(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -222,18 +223,13 @@ func TestQuoteTableName(t *testing.T) {
 			backend:   schema.PostgreSQLBackend,
 			want:      `"test_table"`,
 		},
-		{
-			name:      "None backend defaults to SQLite style",
-			tableName: "test_table",
-			backend:   schema.NoneBackend,
-			want:      `"test_table"`,
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := quoteTableName(tt.tableName, tt.backend)
-			assert.Equal(t, tt.want, got, "quoteTableName(%q, %q)", tt.tableName, tt.backend)
+			dialect := NewDialect(tt.backend)
+			got := dialect.QuoteIdentifier(tt.tableName)
+			assert.Equal(t, tt.want, got, "QuoteIdentifier(%q, %q)", tt.tableName, tt.backend)
 		})
 	}
 }
@@ -242,7 +238,8 @@ func TestQuoteTableName(t *testing.T) {
 func TestSQLiteBackendOperations(t *testing.T) {
 	t.Run("set and get operations", func(t *testing.T) {
 		store, err := NewCacheStore("test_table", schema.SQLiteBackend, ":memory:")
-		assert.NoError(t, err, "Failed to create SQLite store")
+		assert.NoError(t, err)
+		assert.NoError(t, store.Initialize())
 		defer func() { _ = store.Close() }()
 
 		// Test Set operation
@@ -265,7 +262,8 @@ func TestSQLiteBackendOperations(t *testing.T) {
 
 	t.Run("upsert behavior", func(t *testing.T) {
 		store, err := NewCacheStore("test_table", schema.SQLiteBackend, ":memory:")
-		assert.NoError(t, err, "Failed to create SQLite store")
+		assert.NoError(t, err)
+		assert.NoError(t, store.Initialize())
 		defer func() { _ = store.Close() }()
 
 		// Insert initial value
@@ -288,7 +286,8 @@ func TestSQLiteBackendOperations(t *testing.T) {
 
 	t.Run("get non-existent key", func(t *testing.T) {
 		store, err := NewCacheStore("test_table", schema.SQLiteBackend, ":memory:")
-		assert.NoError(t, err, "Failed to create SQLite store")
+		assert.NoError(t, err)
+		assert.NoError(t, store.Initialize())
 		defer func() { _ = store.Close() }()
 
 		_, _, _, err = store.Get("non_existent_key")
@@ -297,7 +296,8 @@ func TestSQLiteBackendOperations(t *testing.T) {
 
 	t.Run("multiple keys", func(t *testing.T) {
 		store, err := NewCacheStore("test_table", schema.SQLiteBackend, ":memory:")
-		assert.NoError(t, err, "Failed to create SQLite store")
+		assert.NoError(t, err)
+		assert.NoError(t, store.Initialize())
 		defer func() { _ = store.Close() }()
 
 		// Set multiple keys
@@ -350,11 +350,13 @@ func TestGetPlaceholder(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			store := &CacheStoreImpl{
-				backend: tt.backend,
+			dialect := NewDialect(tt.backend)
+			if dialect == nil {
+				// Handle NoneBackend or unsupported
+				return
 			}
-			got := store.getPlaceholder()
-			assert.Equal(t, tt.want, got, "getPlaceholder()")
+			got := dialect.Placeholder(1)
+			assert.Equal(t, tt.want, got, "Placeholder(1)")
 		})
 	}
 }
@@ -405,6 +407,7 @@ func TestGetUpsertQuery(t *testing.T) {
 			store := &CacheStoreImpl{
 				backend:   tt.backend,
 				tableName: tt.tableName,
+				dialect:   NewDialect(tt.backend),
 			}
 			got := store.getUpsertQuery()
 			for _, want := range tt.wantContains {
@@ -465,7 +468,8 @@ func TestGetCreateTableQuery(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getCreateTableQuery(tt.tableName, tt.backend)
+			dialect := NewDialect(tt.backend)
+			got := getCreateTableQuery(tt.tableName, dialect)
 			for _, want := range tt.wantContains {
 				assert.Contains(t, got, want, "getCreateTableQuery() should contain %q", want)
 			}
@@ -549,7 +553,7 @@ func TestClearCache(t *testing.T) {
 func TestCacheStoreManagerConcurrency(t *testing.T) {
 	resetGlobals()
 
-	err := InitStores(schema.SQLiteBackend, ":memory:", "", "", nil)
+	_, err := InitStores(schema.SQLiteBackend, ":memory:", "", "", nil)
 	if err != nil {
 		t.Fatalf("InitStores failed: %v", err)
 	}
@@ -596,7 +600,7 @@ func TestInitStoresErrors(t *testing.T) {
 
 		// Try to init with an invalid connection string for MySQL
 		// This should fail during database connection
-		err := InitStores(schema.MySQLBackend, "invalid://connection", "", "", nil)
+		_, err := InitStores(schema.MySQLBackend, "invalid://connection", "", "", nil)
 		assert.Error(t, err, "Expected error for invalid MySQL connection string")
 	})
 }
@@ -667,7 +671,7 @@ func TestInitStoresNoneBackend(t *testing.T) {
 		resetGlobals()
 
 		// Initialize with NoneBackend for cache, in-memory SQLite for analysis
-		err := InitStores(schema.NoneBackend, "", schema.SQLiteBackend, ":memory:", nil)
+		_, err := InitStores(schema.NoneBackend, "", schema.SQLiteBackend, ":memory:", nil)
 		assert.NoError(t, err, "InitStores with NoneBackend cache should not error")
 
 		// Verify Manager is initialized
@@ -701,7 +705,7 @@ func TestInitStoresNoneBackend(t *testing.T) {
 		resetGlobals()
 
 		// Initialize with in-memory SQLite for cache, NoneBackend for analysis
-		err := InitStores(schema.SQLiteBackend, ":memory:", schema.NoneBackend, "", nil)
+		_, err := InitStores(schema.SQLiteBackend, ":memory:", schema.NoneBackend, "", nil)
 		assert.NoError(t, err, "InitStores with NoneBackend analysis should not error")
 
 		// Verify Manager is initialized
@@ -727,7 +731,7 @@ func TestInitStoresNoneBackend(t *testing.T) {
 		resetGlobals()
 
 		// Initialize with NoneBackend for both
-		err := InitStores(schema.NoneBackend, "", schema.NoneBackend, "", nil)
+		_, err := InitStores(schema.NoneBackend, "", schema.NoneBackend, "", nil)
 		assert.NoError(t, err, "InitStores with both NoneBackend should not error")
 
 		// Verify Manager is initialized
@@ -755,7 +759,8 @@ func TestInitStoresNoneBackend(t *testing.T) {
 func TestCacheStoreGetStatus(t *testing.T) {
 	t.Run("SQLite backend with data", func(t *testing.T) {
 		store, err := NewCacheStore("test_status_table", schema.SQLiteBackend, ":memory:")
-		assert.NoError(t, err, "Failed to create SQLite store")
+		assert.NoError(t, err)
+		assert.NoError(t, store.Initialize())
 		defer func() { _ = store.Close() }()
 
 		// Add some test data
@@ -788,7 +793,8 @@ func TestCacheStoreGetStatus(t *testing.T) {
 
 	t.Run("SQLite backend empty", func(t *testing.T) {
 		store, err := NewCacheStore("test_empty_table", schema.SQLiteBackend, ":memory:")
-		assert.NoError(t, err, "Failed to create SQLite store")
+		assert.NoError(t, err)
+		assert.NoError(t, store.Initialize())
 		defer func() { _ = store.Close() }()
 
 		// Get status without data
@@ -806,6 +812,7 @@ func TestCacheStoreGetStatus(t *testing.T) {
 	t.Run("None backend", func(t *testing.T) {
 		store, err := NewCacheStore("test_none", schema.NoneBackend, "")
 		assert.NoError(t, err, "Failed to create None store")
+		assert.NoError(t, store.Initialize())
 
 		// Get status
 		status, err := store.GetStatus()
@@ -825,7 +832,7 @@ func TestCacheStoreGetStatus(t *testing.T) {
 func BenchmarkManagerContention(b *testing.B) {
 	resetGlobals()
 	// Initialize with None backend to avoid actual DB I/O overhead in this benchmark
-	_ = InitStores(schema.NoneBackend, "", schema.NoneBackend, "", nil)
+	_, _ = InitStores(schema.NoneBackend, "", schema.NoneBackend, "", nil)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -841,9 +848,12 @@ func BenchmarkManagerContention(b *testing.B) {
 // batch-recording file results into a memory-backed SQLite AnalysisStore.
 func BenchmarkAnalysisStore_RecordFileResultsBatch(b *testing.B) {
 	// Setup a memory-backed AnalysisStore
-	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:", nil)
+	store, err := NewAnalysisStore(schema.SQLiteBackend, ":memory:")
 	if err != nil {
 		b.Fatalf("failed to create analysis store: %v", err)
+	}
+	if err := store.Initialize(nil); err != nil {
+		b.Fatalf("failed to initialize analysis store: %v", err)
 	}
 	defer func() { _ = store.Close() }()
 

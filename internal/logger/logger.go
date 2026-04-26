@@ -54,6 +54,11 @@ func Debug(msg string, args ...any) {
 	slog.Debug(msg, args...)
 }
 
+// Error logs an error message to stderr.
+func Error(msg string, args ...any) {
+	slog.Error(msg, args...)
+}
+
 // Fatal logs a fatal error message to stderr and exits the program.
 func Fatal(msg string, err error) {
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
+	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/huangsam/hotspot/internal/outwriter/provider"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -164,15 +165,26 @@ func (h *toolHandler) handleGetHeatmap(ctx context.Context, request mcp.CallTool
 		return mcp.NewToolResultError(fmt.Sprintf("invalid time range: %v", err)), nil
 	}
 
-	ranked, _, err := core.GetHotspotFilesResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("analysis failed: %v", err)), nil
-	}
-
+	analysisType := request.GetString("type", "files")
 	var buf strings.Builder
 	p := provider.NewHeatmapProvider()
-	if err := p.WriteFiles(&buf, ranked, cfg.Output, cfg.Runtime, 0); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("heatmap generation failed: %v", err)), nil
+
+	if analysisType == "folders" {
+		ranked, _, err := core.GetHotspotFoldersResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("analysis failed: %v", err)), nil
+		}
+		if err := p.WriteFolders(&buf, ranked, cfg.Output, cfg.Runtime, 0); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("heatmap generation failed: %v", err)), nil
+		}
+	} else {
+		ranked, _, err := core.GetHotspotFilesResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("analysis failed: %v", err)), nil
+		}
+		if err := p.WriteFiles(&buf, ranked, cfg.Output, cfg.Runtime, 0); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("heatmap generation failed: %v", err)), nil
+		}
 	}
 
 	return mcp.NewToolResultText(buf.String()), nil
@@ -414,8 +426,27 @@ func (h *toolHandler) handleRunCheck(ctx context.Context, request mcp.CallToolRe
 	return mcp.NewToolResultText(string(jsonData)), nil
 }
 
+// withRecovery is a decorator that adds panic recovery to a tool handler.
+func withRecovery(handler func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error)) func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	return func(ctx context.Context, request mcp.CallToolRequest) (result *mcp.CallToolResult, err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				logger.Error("Panic in tool handler", "err", r, "tool", request.Params.Name)
+				result = mcp.NewToolResultError(fmt.Sprintf("internal server error: %v", r))
+				err = nil
+			}
+		}()
+		return handler(ctx, request)
+	}
+}
+
 // handleReadResource handles the reading of registered resources.
-func (h *toolHandler) handleReadResource(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
+func (h *toolHandler) handleReadResource(_ context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("Panic in handleReadResource", "err", r, "uri", request.Params.URI)
+		}
+	}()
 	switch request.Params.URI {
 	case "hotspot://docs/agents":
 		return []mcp.ResourceContents{
@@ -435,41 +466,6 @@ func (h *toolHandler) handleReadResource(ctx context.Context, request mcp.ReadRe
 			mcp.TextResourceContents{
 				URI:      request.Params.URI,
 				MIMEType: "text/markdown",
-				Text:     buf.String(),
-			},
-		}, nil
-	}
-
-	// Handle dynamic heatmap resource template: hotspot://analysis/heatmap/{mode}
-	if after, ok := strings.CutPrefix(request.Params.URI, "hotspot://analysis/heatmap/"); ok {
-		mode := after
-		// Strip any query parameters for mode identification
-		if idx := strings.Index(mode, "?"); idx != -1 {
-			mode = mode[:idx]
-		}
-
-		cfg := h.baseCfg.Clone()
-		cfg.Scoring.Mode = schema.ScoringMode(mode)
-		// Default to current directory for resources
-		if err := h.resolveRepositoryPath(ctx, cfg, "", "."); err != nil {
-			return nil, fmt.Errorf("failed to resolve repository: %w", err)
-		}
-
-		ranked, _, err := core.GetHotspotFilesResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
-		if err != nil {
-			return nil, fmt.Errorf("analysis failed: %w", err)
-		}
-
-		var buf strings.Builder
-		p := provider.NewHeatmapProvider()
-		if err := p.WriteFiles(&buf, ranked, cfg.Output, cfg.Runtime, 0); err != nil {
-			return nil, fmt.Errorf("heatmap generation failed: %w", err)
-		}
-
-		return []mcp.ResourceContents{
-			mcp.TextResourceContents{
-				URI:      request.Params.URI,
-				MIMEType: "image/svg+xml",
 				Text:     buf.String(),
 			},
 		}, nil
