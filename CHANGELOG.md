@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Dynamic font scaling and smart label hiding for dense visualizations.
 - Integrated interactive SVG hotspots directly into README documentation.
 - Native MCP tool `get_heatmap` for agent-driven visual repository audits.
-- Support for folder-level heatmap visualizations via the `type=folders` parameter.
+- Support for folder-level heatmap visualizations.
 
 ### Changed
 - Refactored heatmap provider into a modular, component-based architecture.
@@ -23,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Implemented `SQLDialect` to unify backend-specific SQL across stores.
 - Hardened persistence for MySQL and PostgreSQL migration reliability.
 - Standardized SVG output to use a clean, "Intelligence Layer" aesthetic.
+- Refactored `USERGUIDE.md` with a new "Interpreting Results" section.
+
+### Removed
+- Legacy VHS demo assets (`demo.gif`, `demo.tape`).
+- Orphaned `ranking.png` CLI ranking screenshot in favor of live heatmaps.
 
 ### Fixed
 - Resolved nil pointer dereference in MCP server during shared setup.
