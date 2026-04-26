@@ -26,19 +26,11 @@ func NewHeatmapProvider() *HeatmapProvider {
 
 // WriteFiles writes file analysis results as an SVG heatmap.
 func (p *HeatmapProvider) WriteFiles(w io.Writer, files []schema.FileResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
-	meta := schema.BuildMetadata(runtime, duration)
-	if _, err := fmt.Fprintf(w, "<!-- Analysis Metadata: %+v -->\n", meta); err != nil {
-		return err
-	}
 	return p.generateHeatmapSVG(w, files, output)
 }
 
 // WriteFolders writes folder analysis results as an SVG heatmap.
 func (p *HeatmapProvider) WriteFolders(w io.Writer, folders []schema.FolderResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
-	meta := schema.BuildMetadata(runtime, duration)
-	if _, err := fmt.Fprintf(w, "<!-- Analysis Metadata: %+v -->\n", meta); err != nil {
-		return err
-	}
 	files := make([]schema.FileResult, len(folders))
 	for i, f := range folders {
 		files[i] = schema.FileResult{
@@ -107,6 +99,7 @@ type tmItem struct {
 // The visualization uses a fixed 1200x800 coordinate system (3:2 aspect ratio)
 // designed for high-fidelity rendering in both browsers and IDE previews.
 func (p *HeatmapProvider) generateHeatmapSVG(w io.Writer, files []schema.FileResult, _ config.OutputSettings) error {
+
 	if len(files) == 0 {
 		return fmt.Errorf("no files to visualize")
 	}
@@ -160,8 +153,11 @@ func (p *HeatmapProvider) generateHeatmapSVG(w io.Writer, files []schema.FileRes
 
 	// ── SVG header ───────────────────────────────────────────────────────────
 	var b strings.Builder
-	if _, err := fmt.Fprintf(&b, `<?xml version="1.0" encoding="UTF-8"?>
-<svg width="%d" height="%d" viewBox="0 0 %d %d" xmlns="http://www.w3.org/2000/svg">
+	// Write XML declaration first (must come before any other content per XML spec)
+	if _, err := fmt.Fprintf(&b, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(&b, `<svg width="%d" height="%d" viewBox="0 0 %d %d" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="riskGradient" x1="0%%" y1="0%%" x2="100%%" y2="0%%">
       <stop offset="0%%" style="stop-color:#10b981;stop-opacity:1" />
