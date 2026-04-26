@@ -38,7 +38,10 @@ func BackfillAnalysisURNs(store AnalysisStore, client git.Client) error {
 			continue
 		}
 
-		// Use cached URN if available for this path
+		// Use cached URN if available for this path.
+		// Performance: This optimization reduces startup time from O(N_runs) to O(N_unique_paths)
+		// git calls. In large history sets (200+ runs), this prevents MCP protocol timeouts
+		// by keeping initialization under the ~5s threshold.
 		urn, found := urnCache[repoPath]
 		if !found {
 			// If the repo directory still exists on this machine, try to resolve its actual URN.
