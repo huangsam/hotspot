@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/huangsam/hotspot/core"
 	"github.com/huangsam/hotspot/internal/config"
@@ -118,12 +119,15 @@ func (h *toolHandler) handleGetRepoShape(ctx context.Context, request mcp.CallTo
 		return errRes, nil
 	}
 
-	shape, _, err := core.GetHotspotShapeResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
+	shape, duration, err := core.GetHotspotShapeResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("shape analysis failed: %v", err)), nil
 	}
 
-	return h.jsonResponse(shape)
+	return h.jsonResponse(schema.RepoShapeOutput{
+		Results:  shape,
+		Metadata: schema.BuildMetadata(cfg.Runtime, duration),
+	})
 }
 
 // handleGetFilesHotspots handles the get_files_hotspots tool.
@@ -133,12 +137,15 @@ func (h *toolHandler) handleGetFilesHotspots(ctx context.Context, request mcp.Ca
 		return errRes, nil
 	}
 
-	ranked, _, err := core.GetHotspotFilesResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
+	ranked, duration, err := core.GetHotspotFilesResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("analysis failed: %v", err)), nil
 	}
 
-	return h.jsonResponse(schema.EnrichFiles(ranked))
+	return h.jsonResponse(schema.FileResultsOutput{
+		Results:  schema.EnrichFiles(ranked),
+		Metadata: schema.BuildMetadata(cfg.Runtime, duration),
+	})
 }
 
 // handleGetHeatmap handles the get_heatmap tool.
@@ -153,19 +160,19 @@ func (h *toolHandler) handleGetHeatmap(ctx context.Context, request mcp.CallTool
 	p := provider.NewHeatmapProvider()
 
 	if analysisType == "folders" {
-		ranked, _, err := core.GetHotspotFoldersResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
+		ranked, duration, err := core.GetHotspotFoldersResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("analysis failed: %v", err)), nil
 		}
-		if err := p.WriteFolders(&buf, ranked, cfg.Output, cfg.Runtime, 0); err != nil {
+		if err := p.WriteFolders(&buf, ranked, cfg.Output, cfg.Runtime, duration); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("heatmap generation failed: %v", err)), nil
 		}
 	} else {
-		ranked, _, err := core.GetHotspotFilesResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
+		ranked, duration, err := core.GetHotspotFilesResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("analysis failed: %v", err)), nil
 		}
-		if err := p.WriteFiles(&buf, ranked, cfg.Output, cfg.Runtime, 0); err != nil {
+		if err := p.WriteFiles(&buf, ranked, cfg.Output, cfg.Runtime, duration); err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("heatmap generation failed: %v", err)), nil
 		}
 	}
@@ -180,12 +187,15 @@ func (h *toolHandler) handleGetFoldersHotspots(ctx context.Context, request mcp.
 		return errRes, nil
 	}
 
-	ranked, _, err := core.GetHotspotFoldersResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
+	ranked, duration, err := core.GetHotspotFoldersResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("analysis failed: %v", err)), nil
 	}
 
-	return h.jsonResponse(schema.EnrichFolders(ranked))
+	return h.jsonResponse(schema.FolderResultsOutput{
+		Results:  schema.EnrichFolders(ranked),
+		Metadata: schema.BuildMetadata(cfg.Runtime, duration),
+	})
 }
 
 // handleCompareFileHotspots handles the compare_file_hotspots tool.
@@ -199,12 +209,15 @@ func (h *toolHandler) handleCompareFileHotspots(ctx context.Context, request mcp
 		return mcp.NewToolResultError(fmt.Sprintf("invalid comparison parameters: %v", err)), nil
 	}
 
-	result, _, err := core.GetHotspotCompareResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
+	result, duration, err := core.GetHotspotCompareResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("comparison failed: %v", err)), nil
 	}
 
-	return h.jsonResponse(result)
+	return h.jsonResponse(schema.ComparisonResultsOutput{
+		Results:  result,
+		Metadata: schema.BuildMetadata(cfg.Runtime, duration),
+	})
 }
 
 // handleCompareFolderHotspots handles the compare_folder_hotspots tool.
@@ -218,12 +231,15 @@ func (h *toolHandler) handleCompareFolderHotspots(ctx context.Context, request m
 		return mcp.NewToolResultError(fmt.Sprintf("invalid comparison parameters: %v", err)), nil
 	}
 
-	result, _, err := core.GetHotspotCompareFoldersResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
+	result, duration, err := core.GetHotspotCompareFoldersResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("comparison failed: %v", err)), nil
 	}
 
-	return h.jsonResponse(result)
+	return h.jsonResponse(schema.ComparisonResultsOutput{
+		Results:  result,
+		Metadata: schema.BuildMetadata(cfg.Runtime, duration),
+	})
 }
 
 // handleGetTimeseries handles the get_timeseries tool.
@@ -237,12 +253,15 @@ func (h *toolHandler) handleGetTimeseries(ctx context.Context, request mcp.CallT
 		return mcp.NewToolResultError(fmt.Sprintf("invalid timeseries parameters: %v", err)), nil
 	}
 
-	result, _, err := core.GetHotspotTimeseriesResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
+	result, duration, err := core.GetHotspotTimeseriesResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("timeseries analysis failed: %v", err)), nil
 	}
 
-	return h.jsonResponse(result)
+	return h.jsonResponse(schema.TimeseriesResultsOutput{
+		Results:  result,
+		Metadata: schema.BuildMetadata(cfg.Runtime, duration),
+	})
 }
 
 // handleGetReleaseJourney handles the get_release_journey tool.
@@ -257,12 +276,17 @@ func (h *toolHandler) handleGetReleaseJourney(ctx context.Context, request mcp.C
 		transitions = 3
 	}
 
+	start := time.Now()
 	result, err := core.GetHotspotJourneyResults(ctx, cfg, h.client, h.mgr, transitions)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("journey analysis failed: %v", err)), nil
 	}
+	duration := time.Since(start)
 
-	return h.jsonResponse(result)
+	return h.jsonResponse(schema.JourneyResultsOutput{
+		Results:  result,
+		Metadata: schema.BuildMetadata(cfg.Runtime, duration),
+	})
 }
 
 // handleGetBlastRadius handles the get_blast_radius tool.
@@ -274,12 +298,17 @@ func (h *toolHandler) handleGetBlastRadius(ctx context.Context, request mcp.Call
 
 	threshold := request.GetFloat("threshold", 0.3)
 
+	start := time.Now()
 	result, err := core.GetHotspotBlastRadiusResults(ctx, cfg, h.client, cfg.Output.ResultLimit, threshold)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("blast radius analysis failed: %v", err)), nil
 	}
+	duration := time.Since(start)
 
-	return h.jsonResponse(result)
+	return h.jsonResponse(schema.BlastRadiusResultsOutput{
+		Results:  result,
+		Metadata: schema.BuildMetadata(cfg.Runtime, duration),
+	})
 }
 
 // handleRunCheck handles the run_check tool.
@@ -293,12 +322,15 @@ func (h *toolHandler) handleRunCheck(ctx context.Context, request mcp.CallToolRe
 		return mcp.NewToolResultError(fmt.Sprintf("invalid comparison parameters: %v", err)), nil
 	}
 
-	result, _, err := core.GetHotspotCheckResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
+	result, duration, err := core.GetHotspotCheckResults(core.WithSuppressHeader(ctx), cfg, h.client, h.mgr)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("check failed: %v", err)), nil
 	}
 
-	return h.jsonResponse(result)
+	return h.jsonResponse(schema.CheckResultsOutput{
+		Results:  result,
+		Metadata: schema.BuildMetadata(cfg.Runtime, duration),
+	})
 }
 
 // withRecovery is a decorator that adds panic recovery to a tool handler.

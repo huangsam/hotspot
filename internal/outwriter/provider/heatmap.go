@@ -25,12 +25,20 @@ func NewHeatmapProvider() *HeatmapProvider {
 }
 
 // WriteFiles writes file analysis results as an SVG heatmap.
-func (p *HeatmapProvider) WriteFiles(w io.Writer, files []schema.FileResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+func (p *HeatmapProvider) WriteFiles(w io.Writer, files []schema.FileResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
+	meta := schema.BuildMetadata(runtime, duration)
+	if _, err := fmt.Fprintf(w, "<!-- Analysis Metadata: %+v -->\n", meta); err != nil {
+		return err
+	}
 	return p.generateHeatmapSVG(w, files, output)
 }
 
 // WriteFolders writes folder analysis results as an SVG heatmap.
-func (p *HeatmapProvider) WriteFolders(w io.Writer, folders []schema.FolderResult, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
+func (p *HeatmapProvider) WriteFolders(w io.Writer, folders []schema.FolderResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
+	meta := schema.BuildMetadata(runtime, duration)
+	if _, err := fmt.Fprintf(w, "<!-- Analysis Metadata: %+v -->\n", meta); err != nil {
+		return err
+	}
 	files := make([]schema.FileResult, len(folders))
 	for i, f := range folders {
 		files[i] = schema.FileResult{

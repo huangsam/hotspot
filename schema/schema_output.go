@@ -84,6 +84,36 @@ type ComparisonResultsOutput struct {
 	Metadata Metadata         `json:"metadata"`
 }
 
+// RepoShapeOutput is the standard container for repository shape analysis results.
+type RepoShapeOutput struct {
+	Results  RepoShape `json:"results"`
+	Metadata Metadata  `json:"metadata"`
+}
+
+// TimeseriesResultsOutput is the standard container for timeseries analysis results.
+type TimeseriesResultsOutput struct {
+	Results  TimeseriesResult `json:"results"`
+	Metadata Metadata         `json:"metadata"`
+}
+
+// BlastRadiusResultsOutput is the standard container for blast radius analysis results.
+type BlastRadiusResultsOutput struct {
+	Results  BlastRadiusResult `json:"results"`
+	Metadata Metadata          `json:"metadata"`
+}
+
+// JourneyResultsOutput is the standard container for release journey analysis results.
+type JourneyResultsOutput struct {
+	Results  JourneyResult `json:"results"`
+	Metadata Metadata      `json:"metadata"`
+}
+
+// CheckResultsOutput is the standard container for policy check analysis results.
+type CheckResultsOutput struct {
+	Results  *CheckResult `json:"results"`
+	Metadata Metadata     `json:"metadata"`
+}
+
 // RuntimeSettings matches the minimal interface needed for metadata building.
 type RuntimeSettings interface {
 	GetWorkers() int
