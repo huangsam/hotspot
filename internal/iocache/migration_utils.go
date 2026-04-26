@@ -18,6 +18,7 @@ func BackfillAnalysisURNs(store AnalysisStore, client git.Client) error {
 		return fmt.Errorf("failed to fetch analysis runs for backfill: %w", err)
 	}
 
+	urnCache := make(map[string]string)
 	for _, run := range runs {
 		if run.URN != "" {
 			continue // Already has a URN
@@ -37,13 +38,18 @@ func BackfillAnalysisURNs(store AnalysisStore, client git.Client) error {
 			continue
 		}
 
-		// If the repo directory still exists on this machine, try to resolve its actual URN.
-		// This upgrades legacy path-based URNs to modern git: or local:hash URNs.
-		urn := "local:" + repoPath
-		if info, err := os.Stat(repoPath); err == nil && info.IsDir() {
-			if resolved := git.ResolveURN(context.Background(), client, repoPath); resolved != "" {
-				urn = resolved
+		// Use cached URN if available for this path
+		urn, found := urnCache[repoPath]
+		if !found {
+			// If the repo directory still exists on this machine, try to resolve its actual URN.
+			// This upgrades legacy path-based URNs to modern git: or local:hash URNs.
+			urn = "local:" + repoPath
+			if info, err := os.Stat(repoPath); err == nil && info.IsDir() {
+				if resolved := git.ResolveURN(context.Background(), client, repoPath); resolved != "" {
+					urn = resolved
+				}
 			}
+			urnCache[repoPath] = urn
 		}
 
 		if err = store.UpdateAnalysisRunURN(run.AnalysisID, urn); err != nil {
