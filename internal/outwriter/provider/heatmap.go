@@ -15,6 +15,8 @@ import (
 )
 
 // HeatmapProvider implements the FormatProvider interface for SVG heatmap visualization.
+// It uses a squarified treemap algorithm to represent codebase risk as a 2D spatial
+// layout where area denotes weight and color denotes scoring magnitude.
 type HeatmapProvider struct{}
 
 // NewHeatmapProvider creates a new heatmap provider.
@@ -94,6 +96,8 @@ type tmItem struct {
 // ─── Entry point ─────────────────────────────────────────────────────────────
 
 // generateHeatmapSVG creates an SVG treemap visualization (WinDirStat-style).
+// The visualization uses a fixed 1200x800 coordinate system (3:2 aspect ratio)
+// designed for high-fidelity rendering in both browsers and IDE previews.
 func (p *HeatmapProvider) generateHeatmapSVG(w io.Writer, files []schema.FileResult, _ config.OutputSettings) error {
 	if len(files) == 0 {
 		return fmt.Errorf("no files to visualize")
@@ -398,7 +402,11 @@ func worstRatio(items []*tmItem, rect tmRect, total float64) float64 {
 
 // ─── Visual helpers ───────────────────────────────────────────────────────────
 
-// scoreToHex maps a normalised score [0,1] to a green→yellow→red hex colour.
+// scoreToHex maps a normalised score [0,1] to a high-contrast color vector.
+// It uses a three-point linear interpolation:
+// - Green (#10b981 / Emerald 500) for low risk (0.0)
+// - Amber (#f59e0b / Amber 500) for medium risk (0.5)
+// - Red   (#ef4444 / Red 500) for high risk (1.0).
 func scoreToHex(norm float64) string {
 	norm = math.Max(0, math.Min(1, norm))
 	var r, g, bl int
