@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/huangsam/hotspot/core/algo"
@@ -176,13 +175,36 @@ func GetHotspotTimeseriesResults(ctx context.Context, cfg *config.Config, client
 		return schema.TimeseriesResult{}, 0, fmt.Errorf("invalid path %q: %w. Path must be relative to the repository root (%s)", path, err, cfg.Git.RepoPath)
 	}
 
-	// Check if path exists and determine if it's a file or folder
-	fullPath := filepath.Join(cfg.Git.RepoPath, normalizedPath)
-	info, err := os.Stat(fullPath)
-	if err != nil {
-		return schema.TimeseriesResult{}, 0, fmt.Errorf("path %q does not exist in repository. Use 'hotspot files' to see available paths", path)
+	// Check if path exists and determine if it's a file or folder via Git
+	// This is more robust than os.Stat as it works for non-checked-out refs
+	// and allows for proper mocking in tests.
+	ref := cfg.Compare.GetTargetRef()
+	if ref == "" {
+		ref = "HEAD"
 	}
-	isFolder := info.IsDir()
+	files, err := client.ListFilesAtRef(ctx, cfg.Git.RepoPath, ref)
+	if err != nil {
+		return schema.TimeseriesResult{}, 0, fmt.Errorf("failed to verify path %q: %w", path, err)
+	}
+
+	exists := false
+	isFolder := false
+	for _, f := range files {
+		if f == normalizedPath {
+			exists = true
+			break
+		}
+		// If normalizedPath is a prefix followed by a slash, it's a folder
+		if len(f) > len(normalizedPath) && f[len(normalizedPath)] == '/' && f[:len(normalizedPath)] == normalizedPath {
+			exists = true
+			isFolder = true
+			break
+		}
+	}
+
+	if !exists {
+		return schema.TimeseriesResult{}, 0, fmt.Errorf("path %q does not exist in repository at ref %q. Use 'hotspot files' to see available paths", path, ref)
+	}
 
 	// Execute the timeseries analysis
 	anchor := cfg.Git.GetEndTime()
