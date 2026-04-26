@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Integrated interactive SVG hotspots directly into README documentation.
 - Native MCP tool `get_heatmap` for agent-driven visual repository audits.
 - Support for folder-level heatmap visualizations.
+- Standardized Intelligence Envelopes: added metadata blocks to all tool outputs.
+- Comprehensive execution test suite for all MCP analytical tools.
 
 ### Changed
 - Refactored heatmap provider into a modular, component-based architecture.
@@ -23,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Implemented `SQLDialect` to unify backend-specific SQL across stores.
 - Hardened persistence for MySQL and PostgreSQL migration reliability.
 - Standardized SVG output to use a clean, "Intelligence Layer" aesthetic.
+- Standardized MCP result envelopes with analytical metadata and traceability.
 - Refactored `USERGUIDE.md` with a new "Interpreting Results" section.
 
 ### Removed
