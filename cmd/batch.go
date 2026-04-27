@@ -37,7 +37,10 @@ Examples:
   hotspot batch ./project-a ./project-b
 
   # Automatically find and analyze all repos in a directory tree
-  hotspot batch --auto /path/to/many/repos`,
+  hotspot batch --auto /path/to/many/repos
+
+  # Find and analyze all repos in the current directory
+  hotspot batch --auto .`,
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, args []string) {
 		autoDiscovery := viper.GetBool("auto")
