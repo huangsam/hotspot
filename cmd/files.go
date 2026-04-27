@@ -9,7 +9,7 @@ import (
 // filesCmd performs file-level hotspot analysis.
 var filesCmd = &cobra.Command{
 	Use:   "files [repo-path]",
-	Short: "Show the top files ranked by risk score.",
+	Short: "Rank files by activity, risk, complexity, or refactoring ROI",
 	Long: `Perform deep Git analysis and rank individual files by risk score.
 
 Analyzes the entire history of each file to compute risk metrics, helping you:

@@ -8,7 +8,7 @@ import (
 
 var shapeCmd = &cobra.Command{
 	Use:   "shape [repo-path]",
-	Short: "Analyze repository shape and recommend a configuration preset.",
+	Short: "Analyze repository shape and recommend a configuration preset",
 	Long: `Runs a lightweight aggregation pass over Git history to characterize the
 repository and recommend a configuration preset (small, large, or infra).
 

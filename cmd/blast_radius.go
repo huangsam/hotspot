@@ -9,7 +9,7 @@ import (
 // blastRadiusCmd performs blast radius analysis.
 var blastRadiusCmd = &cobra.Command{
 	Use:   "blast-radius [repo-path]",
-	Short: "Identify files that historically change together (co-change coupling).",
+	Short: "Identify files that historically change together (co-change coupling)",
 	Long: `Analyze Git history to identify files that are logically coupled.
 Coupling is measured using the Jaccard Index, which looks at how often
 files appear together in the same commit.
@@ -26,6 +26,9 @@ Examples:
 
   # Limit to top 20 pairs
   hotspot blast-radius --limit 20
+
+  # Analyze a specific repository
+  hotspot blast-radius /path/to/repo
 `,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,

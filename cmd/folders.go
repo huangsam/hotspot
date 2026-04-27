@@ -9,7 +9,7 @@ import (
 // foldersCmd performs folder-level hotspot analysis.
 var foldersCmd = &cobra.Command{
 	Use:   "folders [repo-path]",
-	Short: "Show the top folders ranked by risk score.",
+	Short: "Rank folders by activity, risk, complexity, or refactoring ROI",
 	Long: `Perform deep Git analysis and rank directories/folders by risk score.
 
 Aggregates file-level analysis to folder level. Helps you:

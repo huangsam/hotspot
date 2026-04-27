@@ -93,8 +93,8 @@ func stopProfiling() error {
 // rootCmd is the command-line entrypoint for all other commands.
 var rootCmd = &cobra.Command{
 	Use:                "hotspot",
-	Short:              "Analyze Git repository activity to find code hotspots.",
-	Long:               `Hotspot cuts through Git history to show you which files and folders are your greatest risk.`,
+	Short:              "Analyze Git repository activity to find code hotspots",
+	Long:               `Hotspot cuts through Git history to identify which files and folders carry the most risk.`,
 	Version:            version,
 	SilenceErrors:      true,
 	SilenceUsage:       true,

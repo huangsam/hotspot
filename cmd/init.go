@@ -27,7 +27,7 @@ const (
 // initCmd initializes the repository with a hotspot configuration file.
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Initialize hotspot configuration for the repository or globally.",
+	Short: "Initialize hotspot configuration for the repository or globally",
 	Long: `Creates a .hotspot.yml configuration file to customize hotspot behavior.
 
 If no preset is provided, shape analysis is run to recommend the best fit for
@@ -36,7 +36,20 @@ which acts as a fallback for all repositories.
 
 Styles:
   minimal: Only includes the 'preset' name (cleanest, uses built-in defaults).
-  full:    Copies all recommended settings from the preset into the file.`,
+  full:    Copies all recommended settings from the preset into the file.
+
+Examples:
+  # Auto-detect preset and write minimal config
+  hotspot init
+
+  # Explicitly choose a preset
+  hotspot init --preset large
+
+  # Write a full config file with all settings
+  hotspot init --style full
+
+  # Save as global fallback configuration
+  hotspot init --global`,
 	Args:    cobra.NoArgs,
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, _ []string) {

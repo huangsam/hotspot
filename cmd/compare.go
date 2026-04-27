@@ -11,7 +11,7 @@ import (
 // compareCmd focused on strategic per-target comparisons.
 var compareCmd = &cobra.Command{
 	Use:   "compare [repo-path]",
-	Short: "Compare analysis results between two Git references.",
+	Short: "Compare analysis results between two Git references",
 	Long: `Compare analysis results between two Git references to track how risk has evolved.
 
 Ideal for:
