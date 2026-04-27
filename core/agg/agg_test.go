@@ -41,7 +41,7 @@ func TestAggregateActivity(t *testing.T) {
 	}
 
 	// Execute
-	output, err := aggregateActivity(ctx, cfg.Git, mockClient)
+	output, err := aggregateActivity(ctx, cfg.Git, mockClient, nil)
 
 	// Assert
 	assert.NoError(t, err)

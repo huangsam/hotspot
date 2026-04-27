@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"time"
 
 	"github.com/huangsam/hotspot/core/algo"
@@ -37,7 +36,7 @@ func ExecuteHotspotFiles(ctx context.Context, cfg *config.Config, client git.Cli
 // GetHotspotFilesResults runs the file-level analysis and returns the ranked results.
 func GetHotspotFilesResults(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) ([]schema.FileResult, time.Duration, error) {
 	start := time.Now()
-	output, err := runSingleAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, client, mgr)
+	output, err := runSingleAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, client, mgr, nil)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -65,7 +64,7 @@ func ExecuteHotspotFolders(ctx context.Context, cfg *config.Config, client git.C
 // GetHotspotFoldersResults runs the folder-level analysis and returns the ranked results.
 func GetHotspotFoldersResults(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) ([]schema.FolderResult, time.Duration, error) {
 	start := time.Now()
-	output, err := runFolderAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, client, mgr)
+	output, err := runFolderAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, client, mgr, nil)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -250,8 +249,7 @@ func ExecuteHotspotCheck(ctx context.Context, cfg *config.Config, client git.Cli
 
 		// Return error if check failed
 		if !result.Passed {
-			fmt.Fprintf(os.Stderr, "%d violation(s) found\n", len(result.FailedFiles))
-			os.Exit(1)
+			return fmt.Errorf("%d violation(s) found", len(result.FailedFiles))
 		}
 	}
 	return nil
@@ -299,34 +297,33 @@ func GetHotspotCheckResults(ctx context.Context, cfg *config.Config, client git.
 // to provide immediate intelligence during fleet-wide scans.
 func GetBatchAnalysisResults(ctx context.Context, cfg *config.Config, client git.Client, mgr iocache.CacheManager) (schema.RepoShape, time.Duration, error) {
 	start := time.Now()
-
-	// 1. Run full analysis core (this triggers pipeline stages including recording to DB)
-	output, err := runSingleAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, client, mgr)
-	if err != nil {
-		return schema.RepoShape{}, 0, err
-	}
-
-	// 2. We need the file list for ComputeRepoShape
+	// 1. Fetch files first (Discovery)
 	files, err := client.ListFilesAtRef(ctx, cfg.Git.RepoPath, "HEAD")
 	if err != nil {
 		return schema.RepoShape{}, 0, err
 	}
 
-	// 3. Filter files if path filter is set (consistent with core/shape.go)
+	// 2. Filter files if path filter is set
+	filteredFiles := files
 	if cfg.Git.PathFilter != "" {
-		var filtered []string
+		filteredFiles = nil
 		for _, f := range files {
 			if schema.IsPathInFilter(f, cfg.Git.PathFilter) {
-				filtered = append(filtered, f)
+				filteredFiles = append(filteredFiles, f)
 			}
 		}
-		files = filtered
+	}
+
+	// 3. Run full analysis core with pre-discovered files (Optimized)
+	output, err := runSingleAnalysisCore(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, client, mgr, filteredFiles)
+	if err != nil {
+		return schema.RepoShape{}, 0, err
 	}
 
 	// 4. Resolve URN for the repository
 	urn := git.ResolveURN(ctx, client, cfg.Git.RepoPath)
 
 	// 5. Compute shape from the same aggregate output used in analysis
-	shape := ComputeRepoShape(urn, files, output.AggregateOutput)
+	shape := ComputeRepoShape(urn, filteredFiles, output.AggregateOutput)
 	return shape, time.Since(start), nil
 }

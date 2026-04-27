@@ -27,9 +27,11 @@ func (s *preparationStage) Execute(ac *AnalysisContext) error {
 	ac.AnalysisStore = ac.Mgr.GetAnalysisStore()
 
 	// Resolve Repository URN
-	repoPath := ac.Git.GetRepoPath()
-	urn := git.ResolveURN(ac.Context, ac.Client, repoPath)
-	ac.RepoURN = urn
+	if ac.RepoURN == "" {
+		repoPath := ac.Git.GetRepoPath()
+		ac.RepoURN = git.ResolveURN(ac.Context, ac.Client, repoPath)
+	}
+	urn := ac.RepoURN
 
 	if ac.AnalysisStore != nil {
 		configParams := map[string]any{
@@ -70,7 +72,7 @@ type aggregationStage struct{}
 
 func (s *aggregationStage) Execute(ac *AnalysisContext) error {
 	var err error
-	ac.AggregateOutput, err = agg.CachedAggregateActivity(ac.Context, ac.Git, ac.Compare, ac.Client, ac.Mgr, ac.RepoURN)
+	ac.AggregateOutput, err = agg.CachedAggregateActivity(ac.Context, ac.Git, ac.Compare, ac.Client, ac.Mgr, ac.RepoURN, ac.Files)
 	return err
 }
 

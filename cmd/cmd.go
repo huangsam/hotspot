@@ -60,6 +60,7 @@ func init() {
 	rootCmd.PersistentFlags().String("analysis-db-connect", "", "Database connection string for analysis tracking (must differ from cache-db-connect)")
 	rootCmd.PersistentFlags().String("color", "yes", "Enable colored labels in output (yes/no/true/false/1/0)")
 	rootCmd.PersistentFlags().String("lookback", "", "Time duration to look back from Base/Target ref commit time")
+	rootCmd.PersistentFlags().String("urn", "", "Optional repository identifier (e.g. git:github.com/org/repo) to override auto-resolution")
 	rootCmd.PersistentFlags().String("base-ref", "", "Base Git reference for the BEFORE state")
 	rootCmd.PersistentFlags().String("target-ref", "", "Target Git reference for the AFTER state")
 	rootCmd.PersistentFlags().String("config", "", "Path to config file")

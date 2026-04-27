@@ -19,8 +19,8 @@ func TestExecuteHotspotFiles(t *testing.T) {
 
 	// Create mock cache manager
 	mockCacheMgr := &iocache.MockCacheManager{}
-	mockCacheMgr.On("GetActivityStore").Return(nil) // No caching for test
-	mockCacheMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
+	mockCacheMgr.On("GetActivityStore").Return(nil).Maybe() // No caching for test
+	mockCacheMgr.On("GetAnalysisStore").Return(nil).Maybe() // No analysis tracking for test
 
 	// Create config - this will fail because we're not in a real git repo
 	cfg := &config.Config{
@@ -53,8 +53,8 @@ func TestExecuteHotspotFolders(t *testing.T) {
 
 	// Create mock cache manager
 	mockCacheMgr := &iocache.MockCacheManager{}
-	mockCacheMgr.On("GetActivityStore").Return(nil) // No caching for test
-	mockCacheMgr.On("GetAnalysisStore").Return(nil) // No analysis tracking for test
+	mockCacheMgr.On("GetActivityStore").Return(nil).Maybe() // No caching for test
+	mockCacheMgr.On("GetAnalysisStore").Return(nil).Maybe() // No analysis tracking for test
 
 	// Create config - this will fail because we're not in a real git repo
 	cfg := &config.Config{

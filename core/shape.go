@@ -137,7 +137,7 @@ func GetHotspotShapeResults(ctx context.Context, cfg *config.Config, client git.
 	}
 
 	urn := git.ResolveURN(ctx, client, cfg.Git.RepoPath)
-	output, err := agg.CachedAggregateActivity(ctx, cfg.Git, cfg.Compare, client, mgr, urn)
+	output, err := agg.CachedAggregateActivity(ctx, cfg.Git, cfg.Compare, client, mgr, urn, files)
 	if err != nil {
 		return schema.RepoShape{}, 0, fmt.Errorf("aggregation failed: %w", err)
 	}

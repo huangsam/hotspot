@@ -50,9 +50,9 @@ Examples:
 			if err != nil {
 				logger.Fatal("Invalid search directory", err)
 			}
-			fmt.Fprintf(os.Stderr, "Searching for Git repositories in %s...\n", absSearchDir)
+			logger.Info(fmt.Sprintf("Searching for Git repositories in %s...", absSearchDir))
 			repos = discoverRepos(absSearchDir)
-			fmt.Fprintf(os.Stderr, "Found %d repositories.\n", len(repos))
+			logger.Info(fmt.Sprintf("Found %d repositories.", len(repos)))
 		} else {
 			if len(args) == 0 {
 				logger.Fatal("No repository paths provided. Use --auto for recursive discovery.", nil)
@@ -79,7 +79,9 @@ Examples:
 			return resultWriter.WriteBatch(w, shapes, cfg.Output)
 		}, "Wrote batch summary")
 
-		fmt.Fprintln(os.Stderr, "\nBatch analysis complete.")
+		if !cfg.Output.Quiet {
+			fmt.Fprintln(os.Stderr, "\nBatch analysis complete.")
+		}
 	},
 }
 
@@ -95,15 +97,21 @@ func processRepos(repos []string) []schema.RepoShape {
 	var shapes []schema.RepoShape
 	total := len(repos)
 	for i, repoPath := range repos {
-		fmt.Fprintf(os.Stderr, "\rProgress: [%d/%d] Analyzing %s...                    ", i+1, total, filepath.Base(repoPath))
+		if !cfg.Output.Quiet {
+			fmt.Fprintf(os.Stderr, "\rProgress: [%d/%d] Analyzing %s...                    ", i+1, total, filepath.Base(repoPath))
+		}
 		shape, err := analyzeOneRepo(repoPath)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "\nError analyzing %s: %v\n", repoPath, err)
+			if !cfg.Output.Quiet {
+				fmt.Fprintf(os.Stderr, "\nError analyzing %s: %v\n", repoPath, err)
+			}
 			continue
 		}
 		shapes = append(shapes, shape)
 	}
-	fmt.Fprintln(os.Stderr) // Clear the progress line
+	if !cfg.Output.Quiet {
+		fmt.Fprintln(os.Stderr) // Clear the progress line
+	}
 	return shapes
 }
 

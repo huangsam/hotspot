@@ -25,6 +25,10 @@ func InitLogger(level string) {
 		Level.Set(slog.LevelDebug)
 	case "info":
 		Level.Set(slog.LevelInfo)
+	case "error":
+		Level.Set(slog.LevelError)
+	case "warn":
+		Level.Set(slog.LevelWarn)
 	default:
 		Level.Set(slog.LevelWarn)
 	}

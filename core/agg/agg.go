@@ -21,11 +21,14 @@ import (
 // commits, churn and contributors. It runs over the entire history if
 // gitSettings.GetStartTime() is zero, or runs since gitSettings.GetStartTime() otherwise.
 // It filters out files that no longer exist in a single pass.
-func aggregateActivity(ctx context.Context, gitSettings config.GitSettings, client git.Client) (*schema.AggregateOutput, error) {
-	// 1. Get the list of currently existing files
-	currentFiles, err := client.ListFilesAtRef(ctx, gitSettings.GetRepoPath(), "HEAD")
-	if err != nil {
-		return nil, err
+func aggregateActivity(ctx context.Context, gitSettings config.GitSettings, client git.Client, currentFiles []string) (*schema.AggregateOutput, error) {
+	// 1. Get the list of currently existing files if not provided
+	if len(currentFiles) == 0 {
+		var err error
+		currentFiles, err = client.ListFilesAtRef(ctx, gitSettings.GetRepoPath(), "HEAD")
+		if err != nil {
+			return nil, err
+		}
 	}
 	fileExists := buildFileExistenceMap(currentFiles)
 

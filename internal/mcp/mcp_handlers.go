@@ -41,6 +41,7 @@ func (h *toolHandler) setupConfig(ctx context.Context, request mcp.CallToolReque
 	if urn != "" && repoPath == "" {
 		repoPath = "."
 	}
+	cfg.Git.RepoURN = urn
 	if repoPath == "" && cfg.Git.RepoPath == "" {
 		repoPath = "."
 	}

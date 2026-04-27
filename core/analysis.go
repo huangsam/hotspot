@@ -53,6 +53,7 @@ func newAnalysisContext(ctx context.Context, gitSettings config.GitSettings, sco
 		Runtime: runtimeSettings, Output: outputSettings,
 		Compare: compareSettings, Client: client, Mgr: mgr,
 		TargetRef: "HEAD",
+		RepoURN:   gitSettings.GetRepoURN(),
 	}
 }
 
@@ -85,10 +86,16 @@ func runSingleAnalysisCore(
 	compareSettings config.ComparisonSettings,
 	client git.Client,
 	mgr iocache.CacheManager,
+	currentFiles []string,
 ) (*schema.SingleAnalysisOutput, error) {
 	ac := newAnalysisContext(ctx, gitSettings, scoringSettings, runtimeSettings, outputSettings, compareSettings, client, mgr)
+	ac.Files = currentFiles
 
 	pCfg := pipelineConfig{withTrackedAnalysis: true}
+	if len(currentFiles) == 0 {
+		pCfg.discovery = &fileDiscoveryStage{}
+	}
+
 	if err := executePipeline(ac, pCfg); err != nil {
 		return nil, err
 	}
@@ -113,13 +120,19 @@ func runFolderAnalysisCore(
 	compareSettings config.ComparisonSettings,
 	client git.Client,
 	mgr iocache.CacheManager,
+	currentFiles []string,
 ) (*schema.SingleAnalysisOutput, error) {
 	ac := newAnalysisContext(ctx, gitSettings, scoringSettings, runtimeSettings, outputSettings, compareSettings, client, mgr)
+	ac.Files = currentFiles
 
 	pCfg := pipelineConfig{
 		withTrackedAnalysis:   true,
 		withFolderAggregation: true,
 	}
+	if len(currentFiles) == 0 {
+		pCfg.discovery = &fileDiscoveryStage{}
+	}
+
 	if err := executePipeline(ac, pCfg); err != nil {
 		return nil, err
 	}

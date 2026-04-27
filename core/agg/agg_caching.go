@@ -24,11 +24,12 @@ func CachedAggregateActivity(
 	client git.Client,
 	mgr iocache.CacheManager,
 	urn string, // Added URN
+	currentFiles []string, // Optional pre-discovered files
 ) (*schema.AggregateOutput, error) {
 	activity := mgr.GetActivityStore()
 	if activity == nil {
 		// Fallback to direct computation
-		return aggregateActivity(ctx, gitSettings, client)
+		return aggregateActivity(ctx, gitSettings, client, currentFiles)
 	}
 
 	key := generateCacheKey(ctx, gitSettings, compareSettings, client, urn)
@@ -39,7 +40,7 @@ func CachedAggregateActivity(
 	}
 
 	// Cache miss: compute and store
-	return computeAndStore(ctx, gitSettings, client, activity, key)
+	return computeAndStore(ctx, gitSettings, client, activity, key, currentFiles)
 }
 
 // checkCacheHit attempts to retrieve and validate a cached result.
@@ -64,8 +65,8 @@ func checkCacheHit(activity iocache.CacheStore, key string) *schema.AggregateOut
 }
 
 // computeAndStore computes the result and stores it in cache.
-func computeAndStore(ctx context.Context, gitSettings config.GitSettings, client git.Client, activity iocache.CacheStore, key string) (*schema.AggregateOutput, error) {
-	result, err := aggregateActivity(ctx, gitSettings, client)
+func computeAndStore(ctx context.Context, gitSettings config.GitSettings, client git.Client, activity iocache.CacheStore, key string, currentFiles []string) (*schema.AggregateOutput, error) {
+	result, err := aggregateActivity(ctx, gitSettings, client, currentFiles)
 	if err != nil {
 		return nil, err
 	}

@@ -27,6 +27,7 @@ type GitSettings interface {
 	GetPathFilter() string
 	GetExcludes() []string
 	IsFollow() bool
+	GetRepoURN() string
 }
 
 // ScoringSettings defines requirements for algorithm and weight configuration.
@@ -100,6 +101,7 @@ type GitConfig struct {
 	PathFilter string
 	Excludes   []string
 	Follow     bool
+	RepoURN    string // Unique Identifier for the repository
 }
 
 // GetRepoPath returns the repository path.
@@ -119,6 +121,9 @@ func (c GitConfig) GetExcludes() []string { return c.Excludes }
 
 // IsFollow returns whether to follow renames.
 func (c GitConfig) IsFollow() bool { return c.Follow }
+
+// GetRepoURN returns the repository URN.
+func (c GitConfig) GetRepoURN() string { return c.RepoURN }
 
 // ScoringConfig holds algorithm and weight settings.
 type ScoringConfig struct {
@@ -278,6 +283,7 @@ type RawInput struct {
 	Limit             int    `mapstructure:"limit"`
 	Start             string `mapstructure:"start"`
 	End               string `mapstructure:"end"`
+	URN               string `mapstructure:"urn"`
 	Workers           int    `mapstructure:"workers"`
 	Mode              string `mapstructure:"mode"`
 	Exclude           string `mapstructure:"exclude"`
@@ -494,6 +500,7 @@ func validateSimpleInputs(cfg *Config, input *RawInput) error {
 	cfg.Output.Explain = input.Explain
 	cfg.Output.Owner = input.Owner
 	cfg.Git.Follow = input.Follow
+	cfg.Git.RepoURN = input.URN
 	cfg.Output.Width = input.Width
 	cfg.Output.Quiet = input.Quiet
 

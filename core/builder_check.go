@@ -115,7 +115,7 @@ func (b *CheckResultBuilder) RunAnalysis() (*CheckResultBuilder, error) {
 	urn := git.ResolveURN(b.ctx, b.client, repoPath)
 
 	// Run aggregation once (shared for all modes)
-	output, err := agg.CachedAggregateActivity(b.ctx, b.cfgTarget.Git, b.cfgTarget.Compare, b.client, b.mgr, urn)
+	output, err := agg.CachedAggregateActivity(b.ctx, b.cfgTarget.Git, b.cfgTarget.Compare, b.client, b.mgr, urn, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to analyze repository activity: %w. Verify the repository has Git history and is readable", err)
 	}
