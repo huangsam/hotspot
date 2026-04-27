@@ -15,13 +15,10 @@ Unlike traditional linters or team-velocity metrics, Hotspot analyzes **developm
 
 ## Features
 
-- 🗺️ **Visual Risk Heatmaps** - Interactive SVG visualizations that make technical debt instantly visible
-- 🤖 **Agentic Hub** - Native MCP server with shape-aware "Reasoning" labels for autonomous auditing.
-- 🔍 **Tactical CLI** - Rapid file/folder ranking by activity, complexity, and ownership.
-- 🧮 **Deep Metrics** - High-fidelity signals for churn, Ginni coefficients, and bus factor risk.
-- 🕓 **Trend Tracking** - Time-anchored analysis and delta tracking across Git references.
-- 🚢 **Fleet Discovery** - Multi-repository assessment and portfolio risk characterization.
-- 📊 **Polyglot Exports** - Professional CSV/JSON/Parquet/Markdown/SVG reporting.
+- 🗺️ **Visual Risk Radar** - Interactive SVG heatmaps that make technical debt instantly visible.
+- 🤖 **Agentic Intelligence** - Native MCP server with shape-aware "Reasoning" for autonomous auditing.
+- 🚢 **Fleet-Scale Discovery** - Recursive assessment and portfolio risk characterization across repositories.
+- 🍭 **Extensible & Fast** - High-fidelity metrics (Gini, Churn) with multi-format exports (CSV, JSON, Parquet).
 
 ## Installation
 
