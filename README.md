@@ -15,10 +15,10 @@ Unlike traditional linters or team-velocity metrics, Hotspot analyzes **developm
 
 ## Features
 
-- 🗺️ **Visual Risk Radar** - Interactive SVG heatmaps that make technical debt instantly visible.
-- 🤖 **Agentic Intelligence** - Native MCP server with shape-aware "Reasoning" for autonomous auditing.
-- 🚢 **Fleet-Scale Discovery** - Recursive assessment and portfolio risk characterization across repositories.
-- 🍭 **Extensible & Fast** - High-fidelity metrics (Gini, Churn) with multi-format exports (CSV, JSON, Parquet).
+- 🗺️ **Visual Risk Radar** - SVG heatmaps that make technical debt instantly visible.
+- 🤖 **Agentic Intelligence** - MCP server with shape-aware "Reasoning" for analysis.
+- 🚢 **Fleet-Scale Discovery** - Recursive analysis and risk mapping across projects.
+- 💼 **Professional Analytics** - High-fidelity metrics with standard data exports.
 
 ## Installation
 
