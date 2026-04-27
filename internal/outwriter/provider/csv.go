@@ -270,7 +270,7 @@ func (p *CSVProvider) WriteHistory(w io.Writer, runs []schema.AnalysisRunRecord,
 }
 
 // WriteBatch writes repository shapes in CSV format.
-func (p *CSVProvider) WriteBatch(w io.Writer, results []schema.RepoShape, _ config.OutputSettings) error {
+func (p *CSVProvider) WriteBatch(w io.Writer, results []schema.RepoShape, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	header := []string{"urn", "file_count", "total_commits", "unique_contributors", "avg_churn_per_file", "iac_file_ratio", "recommended_preset", "mode", "analyzed_at"}
 
 	return WriteCSVWithHeader(w, header, func(csvWriter *csv.Writer) error {

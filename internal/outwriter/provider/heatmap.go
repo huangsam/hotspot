@@ -79,7 +79,7 @@ func (p *HeatmapProvider) WriteHistory(_ io.Writer, _ []schema.AnalysisRunRecord
 }
 
 // WriteBatch is not implemented for heatmap.
-func (p *HeatmapProvider) WriteBatch(_ io.Writer, _ []schema.RepoShape, _ config.OutputSettings) error {
+func (p *HeatmapProvider) WriteBatch(_ io.Writer, _ []schema.RepoShape, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	return fmt.Errorf("heatmap output not supported for batch analysis")
 }
 

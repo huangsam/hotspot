@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ### Added
 - Native `hotspot batch` command for multi-repository discovery and assessment.
+- Implement "Traffic Light" progress bar with TTY-aware auto-visibility.
+- Add intelligent failure summarization and deduplication in batch mode.
+- Decouple human-facing metadata (stderr) from analysis payload (stdout).
 - MCP tool `run_batch_analysis` for fleet-wide repository audits.
 - Global `--quiet` flag (and `-q` alias) for silent, automated operations.
 
@@ -779,6 +782,7 @@ Initial development covered core functionality including:
 - Code quality and maintainability refactoring
 - Proper package structure architecture
 
+[1.21.0]: https://github.com/huangsam/hotspot/compare/v1.20.0...v1.21.0
 [1.20.0]: https://github.com/huangsam/hotspot/compare/v1.19.0...v1.20.0
 [1.19.0]: https://github.com/huangsam/hotspot/compare/v1.18.1...v1.19.0
 [1.18.1]: https://github.com/huangsam/hotspot/compare/v1.18.0...v1.18.1

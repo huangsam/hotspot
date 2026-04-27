@@ -341,7 +341,7 @@ func (p *MarkdownProvider) WriteHistory(w io.Writer, runs []schema.AnalysisRunRe
 }
 
 // WriteBatch writes repository shapes in Markdown format.
-func (p *MarkdownProvider) WriteBatch(w io.Writer, results []schema.RepoShape, _ config.OutputSettings) error {
+func (p *MarkdownProvider) WriteBatch(w io.Writer, results []schema.RepoShape, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	if _, err := fmt.Fprintln(w, "## Fleet Analysis Summary"); err != nil {
 		return err
 	}

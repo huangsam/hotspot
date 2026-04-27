@@ -5,6 +5,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/huangsam/hotspot/core"
 	"github.com/huangsam/hotspot/internal/config"
@@ -39,20 +41,22 @@ Examples:
 	PreRunE: sharedSetupWrapper,
 	Run: func(_ *cobra.Command, args []string) {
 		autoDiscovery := viper.GetBool("auto")
-		var repos []string
+		var rawRepos []string
 
 		if autoDiscovery {
-			searchDir := "."
-			if len(args) > 0 {
-				searchDir = args[0]
+			searchDirs := args
+			if len(searchDirs) == 0 {
+				searchDirs = []string{"."}
 			}
-			absSearchDir, err := filepath.Abs(searchDir)
-			if err != nil {
-				logger.Fatal("Invalid search directory", err)
+			for _, dir := range searchDirs {
+				absSearchDir, err := filepath.Abs(dir)
+				if err != nil {
+					logger.Warn(fmt.Sprintf("Invalid search directory: %s", dir), err)
+					continue
+				}
+				logger.Info(fmt.Sprintf("Searching for Git repositories in %s...", absSearchDir))
+				rawRepos = append(rawRepos, discoverRepos(absSearchDir)...)
 			}
-			logger.Info(fmt.Sprintf("Searching for Git repositories in %s...", absSearchDir))
-			repos = discoverRepos(absSearchDir)
-			logger.Info(fmt.Sprintf("Found %d repositories.", len(repos)))
 		} else {
 			if len(args) == 0 {
 				logger.Fatal("No repository paths provided. Use --auto for recursive discovery.", nil)
@@ -63,24 +67,73 @@ Examples:
 					logger.Warn(fmt.Sprintf("Invalid path: %s", arg), err)
 					continue
 				}
-				repos = append(repos, absPath)
+				rawRepos = append(rawRepos, absPath)
+			}
+		}
+
+		// Deduplicate repositories by absolute path
+		seen := make(map[string]bool)
+		var repos []string
+		for _, repo := range rawRepos {
+			if !seen[repo] {
+				seen[repo] = true
+				repos = append(repos, repo)
 			}
 		}
 
 		if len(repos) == 0 {
+			logger.Warn("No repositories found for analysis.", nil)
 			return
 		}
 
+		if autoDiscovery {
+			logger.Info(fmt.Sprintf("Found %d unique repositories.", len(repos)))
+		}
+
 		// Process repositories sequentially
-		shapes := processRepos(repos)
+		start := time.Now()
+		shapes, errs := processRepos(repos)
+		duration := time.Since(start)
+
+		// Report human-facing summary to stderr
+		if !cfg.Output.Quiet {
+			if len(errs) > 0 {
+				errorGroups := make(map[string][]string)
+				for _, err := range errs {
+					msg := err.Error()
+					if strings.Contains(msg, "no files found for analysis") {
+						errorGroups["no files found"] = append(errorGroups["no files found"], msg)
+					} else {
+						errorGroups["other errors"] = append(errorGroups["other errors"], msg)
+					}
+				}
+
+				fmt.Fprintf(os.Stderr, "Batch analysis finished with %d failures:\n", len(errs))
+				for group, msgs := range errorGroups {
+					if group == "no files found" {
+						fmt.Fprintf(os.Stderr, "- %d repositories had no files found (try adjusting excludes or search path)\n", len(msgs))
+					} else {
+						for i, msg := range msgs {
+							if i >= 3 {
+								fmt.Fprintf(os.Stderr, "- ... and %d more unique errors\n", len(msgs)-3)
+								break
+							}
+							fmt.Fprintf(os.Stderr, "- %s\n", msg)
+						}
+					}
+				}
+			} else {
+				fmt.Fprintln(os.Stderr, "Batch analysis complete.")
+			}
+		}
 
 		// Final report via unified outwriter
-		_ = outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
-			return resultWriter.WriteBatch(w, shapes, cfg.Output)
-		}, "Wrote batch summary")
 
-		if !cfg.Output.Quiet {
-			fmt.Fprintln(os.Stderr, "\nBatch analysis complete.")
+		// Final report via unified outwriter
+		if err := outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
+			return resultWriter.WriteBatch(w, shapes, cfg.Output, cfg.Runtime, duration)
+		}, "Wrote batch summary"); err != nil {
+			logger.Fatal("Failed to write batch summary", err)
 		}
 	},
 }
@@ -93,36 +146,40 @@ func discoverRepos(root string) []string {
 	return repos
 }
 
-func processRepos(repos []string) []schema.RepoShape {
+func processRepos(repos []string) ([]schema.RepoShape, []error) {
 	var shapes []schema.RepoShape
+	var errors []error
 	total := len(repos)
+	progress := logger.NewProgress()
+
 	for i, repoPath := range repos {
-		if !cfg.Output.Quiet {
-			fmt.Fprintf(os.Stderr, "\rProgress: [%d/%d] Analyzing %s...                    ", i+1, total, filepath.Base(repoPath))
-		}
+		progress.Update(i+1, total, fmt.Sprintf("Analyzing %s...", filepath.Base(repoPath)))
 		shape, err := analyzeOneRepo(repoPath)
 		if err != nil {
-			if !cfg.Output.Quiet {
-				fmt.Fprintf(os.Stderr, "\nError analyzing %s: %v\n", repoPath, err)
-			}
+			progress.IncrWarn()
+			errors = append(errors, fmt.Errorf("%s: %w", repoPath, err))
 			continue
 		}
 		shapes = append(shapes, shape)
 	}
-	if !cfg.Output.Quiet {
-		fmt.Fprintln(os.Stderr) // Clear the progress line
-	}
-	return shapes
+	progress.Complete("") // The summary is now handled by the caller
+
+	return shapes, errors
 }
 
 func analyzeOneRepo(repoPath string) (schema.RepoShape, error) {
 	repoCfg := cfg.Clone()
 	repoCfg.Git.RepoPath = repoPath
 	repoCfg.Output.Format = schema.NoneOut
+	// Clear the URN so each repo resolves its own identity; a user-supplied
+	// --urn would otherwise stamp the same URN on every repository in the
+	// batch, causing cache-key collisions and cross-repo data contamination.
+	repoCfg.Git.RepoURN = ""
 
 	repoInput := *input
 	repoInput.RepoPathStr = repoPath
 	repoInput.Output = "none"
+	repoInput.URN = ""
 
 	if err := config.ResolveGitPathAndFilter(rootCtx, repoCfg, gitClient, &repoInput); err != nil {
 		return schema.RepoShape{}, fmt.Errorf("failed to resolve git path: %w", err)

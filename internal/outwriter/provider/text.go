@@ -396,7 +396,7 @@ func (p *TextProvider) WriteHistory(w io.Writer, runs []schema.AnalysisRunRecord
 }
 
 // WriteBatch writes a summary of multiple repository shapes in a human-readable table.
-func (p *TextProvider) WriteBatch(w io.Writer, results []schema.RepoShape, output config.OutputSettings) error {
+func (p *TextProvider) WriteBatch(w io.Writer, results []schema.RepoShape, output config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	if len(results) == 0 {
 		return nil
 	}

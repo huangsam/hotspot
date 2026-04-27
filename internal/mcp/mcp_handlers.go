@@ -359,16 +359,19 @@ func (h *toolHandler) handleRunBatchAnalysis(ctx context.Context, request mcp.Ca
 
 	start := time.Now()
 	var shapes []schema.RepoShape
+	failures := 0
 
 	for _, repoPath := range repos {
 		// Clone base config for each repo
 		repoCfg := h.baseCfg.Clone()
 		repoCfg.Git.RepoPath = repoPath
+		repoCfg.Git.RepoURN = ""
 		repoCfg.Output.Format = schema.NoneOut
 
 		// Resolve git details
 		if err := config.ResolveGitPathAndFilter(ctx, repoCfg, h.client, &config.RawInput{RepoPathStr: repoPath}); err != nil {
 			logger.Error("Failed to resolve repo in batch", "path", repoPath, "error", err)
+			failures++
 			continue
 		}
 
@@ -377,9 +380,14 @@ func (h *toolHandler) handleRunBatchAnalysis(ctx context.Context, request mcp.Ca
 		shape, _, err := core.GetBatchAnalysisResults(analysisCtx, repoCfg, h.client, h.mgr)
 		if err != nil {
 			logger.Error("Analysis failed in batch", "path", repoPath, "error", err)
+			failures++
 			continue
 		}
 		shapes = append(shapes, shape)
+	}
+
+	if len(shapes) == 0 {
+		return mcp.NewToolResultError(fmt.Sprintf("all %d repositories failed to analyze", failures)), nil
 	}
 
 	duration := time.Since(start)

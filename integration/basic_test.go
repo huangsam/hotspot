@@ -458,7 +458,6 @@ func TestTimeseriesVerification(t *testing.T) {
 }
 
 // extractJSONFromOutput extracts the JSON part from hotspot output that includes log lines.
-// extractJSONFromOutput extracts the JSON part from hotspot output that includes log lines.
 func extractJSONFromOutput(output string) string {
 	lines := strings.Split(output, "\n")
 	start := -1

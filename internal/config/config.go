@@ -378,10 +378,12 @@ func (c *Config) GetAnalysisEndTime() time.Time {
 	return c.Git.EndTime.Truncate(CacheGranularity)
 }
 
-// ProcessAndValidate performs all complex parsing and validation on the raw inputs
-// and updates the final Config struct.
-func ProcessAndValidate(ctx context.Context, cfg *Config, client git.Client, input *RawInput) error {
-	// All validation functions now read from 'input' and populate 'cfg'.
+// ValidateInputs performs all complex parsing and validation on the raw inputs
+// and updates the final Config struct, excluding git path resolution. It is
+// suitable for callers (e.g. mcp, batch) that handle git path resolution
+// themselves and need to fail fast on invalid flags without requiring a
+// valid git repository at startup.
+func ValidateInputs(cfg *Config, input *RawInput) error {
 	if err := ApplyPreset(cfg, schema.PresetName(input.Preset)); err != nil {
 		return err
 	}
@@ -401,6 +403,15 @@ func ProcessAndValidate(ctx context.Context, cfg *Config, client git.Client, inp
 		return err
 	}
 	if err := processRiskThresholds(cfg, input); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ProcessAndValidate performs all complex parsing and validation on the raw inputs
+// and updates the final Config struct.
+func ProcessAndValidate(ctx context.Context, cfg *Config, client git.Client, input *RawInput) error {
+	if err := ValidateInputs(cfg, input); err != nil {
 		return err
 	}
 	if err := ResolveGitPathAndFilter(ctx, cfg, client, input); err != nil {
@@ -556,7 +567,7 @@ func validateOutputInputs(cfg *Config, input *RawInput) error {
 	if input.Output != "" {
 		cfg.Output.Format = schema.OutputMode(strings.ToLower(input.Output))
 		if _, ok := schema.ValidOutputModes[cfg.Output.Format]; !ok {
-			return fmt.Errorf("invalid output format '%s'. Must be one of: text (pretty table), csv (comma-separated), json (structured), parquet (analytics), markdown (github-flavored), describe (executive summary), heatmap (visualization)", cfg.Output.Format)
+			return fmt.Errorf("invalid output format '%s'. Must be one of: text (pretty table), csv (comma-separated), json (structured), parquet (analytics), markdown (github-flavored), describe (executive summary), heatmap (visualization), none (suppress output)", cfg.Output.Format)
 		}
 	} else if cfg.Output.Format == "" {
 		cfg.Output.Format = schema.TextOut

@@ -64,7 +64,7 @@ func init() {
 	rootCmd.PersistentFlags().String("base-ref", "", "Base Git reference for the BEFORE state")
 	rootCmd.PersistentFlags().String("target-ref", "", "Target Git reference for the AFTER state")
 	rootCmd.PersistentFlags().String("config", "", "Path to config file")
-	rootCmd.PersistentFlags().String("log-level", "warn", "Log level for telemetry output (warn, info, debug)")
+	rootCmd.PersistentFlags().String("log-level", "warn", "Log level for telemetry output (error, warn, info, debug)")
 	rootCmd.PersistentFlags().BoolP("quiet", "q", false, "Silent mode. Suppresses all output except errors.")
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
 		logger.Fatal("Error binding root flags", err)

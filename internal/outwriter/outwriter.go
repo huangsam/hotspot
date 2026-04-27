@@ -19,7 +19,7 @@ type FormatProvider interface {
 	WriteBlastRadius(w io.Writer, result schema.BlastRadiusResult, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error
 	WriteMetrics(w io.Writer, activeWeights map[schema.ScoringMode]map[schema.BreakdownKey]float64, output config.OutputSettings) error
 	WriteHistory(w io.Writer, runs []schema.AnalysisRunRecord, output config.OutputSettings) error
-	WriteBatch(w io.Writer, results []schema.RepoShape, output config.OutputSettings) error
+	WriteBatch(w io.Writer, results []schema.RepoShape, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error
 }
 
 // OutWriter provides a unified interface for all output operations.
@@ -82,6 +82,6 @@ func (ow *OutWriter) WriteHistory(w io.Writer, runs []schema.AnalysisRunRecord, 
 }
 
 // WriteBatch writes a summary of multiple repository shapes.
-func (ow *OutWriter) WriteBatch(w io.Writer, results []schema.RepoShape, output config.OutputSettings) error {
-	return ow.providers[output.GetFormat()].WriteBatch(w, results, output)
+func (ow *OutWriter) WriteBatch(w io.Writer, results []schema.RepoShape, output config.OutputSettings, runtime config.RuntimeSettings, duration time.Duration) error {
+	return ow.providers[output.GetFormat()].WriteBatch(w, results, output, runtime, duration)
 }

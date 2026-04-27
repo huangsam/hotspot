@@ -11,9 +11,22 @@ import (
 // Level is the dynamic logging level for the global logger.
 var Level = new(slog.LevelVar)
 
+// isQuiet suppresses all non-error output when true.
+var isQuiet bool
+
 // InitLogger with a default level on package load.
 func init() {
 	InitLogger("warn")
+}
+
+// SetQuiet enables or disables quiet mode.
+func SetQuiet(q bool) {
+	isQuiet = q
+}
+
+// IsQuiet returns whether quiet mode is enabled.
+func IsQuiet() bool {
+	return isQuiet
 }
 
 // InitLogger initializes the global default logger to write to os.Stderr
@@ -25,10 +38,10 @@ func InitLogger(level string) {
 		Level.Set(slog.LevelDebug)
 	case "info":
 		Level.Set(slog.LevelInfo)
-	case "error":
-		Level.Set(slog.LevelError)
 	case "warn":
 		Level.Set(slog.LevelWarn)
+	case "error":
+		Level.Set(slog.LevelError)
 	default:
 		Level.Set(slog.LevelWarn)
 	}

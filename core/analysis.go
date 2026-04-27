@@ -92,7 +92,7 @@ func runSingleAnalysisCore(
 	ac.Files = currentFiles
 
 	pCfg := pipelineConfig{withTrackedAnalysis: true}
-	if len(currentFiles) == 0 {
+	if currentFiles == nil {
 		pCfg.discovery = &fileDiscoveryStage{}
 	}
 
@@ -129,7 +129,7 @@ func runFolderAnalysisCore(
 		withTrackedAnalysis:   true,
 		withFolderAggregation: true,
 	}
-	if len(currentFiles) == 0 {
+	if currentFiles == nil {
 		pCfg.discovery = &fileDiscoveryStage{}
 	}
 

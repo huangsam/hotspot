@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/huangsam/hotspot/internal/config"
+	"github.com/huangsam/hotspot/schema"
 )
 
 // selectOutputFile returns the appropriate file handle for output, based on the provided
@@ -33,8 +34,8 @@ func WriteWithOutputFile(output config.OutputSettings, writer func(io.Writer) er
 		return err
 	}
 
-	if file != os.Stdout {
-		_, _ = fmt.Fprintf(os.Stdout, "%s to %s\n", successMsg, output.GetOutputFile())
+	if file != os.Stdout && output.GetFormat() != schema.NoneOut {
+		_, _ = fmt.Fprintf(os.Stderr, "%s to %s\n", successMsg, output.GetOutputFile())
 	}
 	return nil
 }

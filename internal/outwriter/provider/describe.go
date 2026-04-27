@@ -120,7 +120,7 @@ func (p *DescribeProvider) WriteMetrics(w io.Writer, _ map[schema.ScoringMode]ma
 }
 
 // WriteBatch is not specifically implemented for describe mode.
-func (p *DescribeProvider) WriteBatch(w io.Writer, _ []schema.RepoShape, _ config.OutputSettings) error {
+func (p *DescribeProvider) WriteBatch(w io.Writer, _ []schema.RepoShape, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	_, err := fmt.Fprintln(w, "Describe mode is not supported for batch analysis.")
 	return err
 }

@@ -106,7 +106,7 @@ func (p *ParquetProvider) WriteHistory(w io.Writer, _ []schema.AnalysisRunRecord
 }
 
 // WriteBatch is not specifically implemented for Parquet.
-func (p *ParquetProvider) WriteBatch(w io.Writer, _ []schema.RepoShape, _ config.OutputSettings) error {
+func (p *ParquetProvider) WriteBatch(w io.Writer, _ []schema.RepoShape, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	_, err := fmt.Fprintln(w, "Parquet output is not supported for batch analysis.")
 	return err
 }

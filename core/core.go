@@ -303,15 +303,22 @@ func GetBatchAnalysisResults(ctx context.Context, cfg *config.Config, client git
 		return schema.RepoShape{}, 0, err
 	}
 
-	// 2. Filter files if path filter is set
-	filteredFiles := files
-	if cfg.Git.PathFilter != "" {
-		filteredFiles = nil
-		for _, f := range files {
-			if schema.IsPathInFilter(f, cfg.Git.PathFilter) {
-				filteredFiles = append(filteredFiles, f)
-			}
+	// 2. Filter files by path filter and excludes
+	excludeMatcher := schema.NewPathMatcher(cfg.Git.GetExcludes())
+	filteredFiles := make([]string, 0, len(files))
+	for _, f := range files {
+		if cfg.Git.PathFilter != "" && !schema.IsPathInFilter(f, cfg.Git.PathFilter) {
+			continue
 		}
+		if excludeMatcher.Match(f) {
+			continue
+		}
+		filteredFiles = append(filteredFiles, f)
+	}
+
+	if len(filteredFiles) == 0 {
+		ac := newAnalysisContext(ctx, cfg.Git, cfg.Scoring, cfg.Runtime, cfg.Output, cfg.Compare, client, mgr)
+		return schema.RepoShape{}, 0, noFilesFoundError(ac)
 	}
 
 	// 3. Run full analysis core with pre-discovered files (Optimized)

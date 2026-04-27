@@ -164,7 +164,13 @@ func sharedSetup(ctx context.Context, cmd *cobra.Command, args []string) error {
 	// This function now populates the global 'cfg' from 'input'.
 	client := git.NewLocalGitClient()
 	gitClient = client
-	if err := config.ProcessAndValidate(ctx, cfg, client, input); err != nil {
+	if err := config.ValidateInputs(cfg, input); err != nil {
+		// Invalid flags / config always fail fast, even for mcp and batch.
+		return err
+	}
+	if err := config.ResolveGitPathAndFilter(ctx, cfg, client, input); err != nil {
+		// mcp/batch don't need a valid git repo at startup; they resolve
+		// per-repo paths themselves at runtime.
 		if cmd == nil || (cmd.Name() != "mcp" && cmd.Name() != "batch") {
 			return err
 		}
@@ -185,6 +191,7 @@ func sharedSetup(ctx context.Context, cmd *cobra.Command, args []string) error {
 
 	// 8. Apply global quiet mode to context
 	if cfg.Output.Quiet {
+		logger.SetQuiet(true)
 		rootCtx = core.WithSuppressHeader(rootCtx)
 		// Only lower to error level if the user DID NOT explicitly ask for a specific level via flags
 		if cmd == nil || !cmd.Flags().Changed("log-level") {

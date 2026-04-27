@@ -52,6 +52,6 @@ func (p *NoneProvider) WriteHistory(_ io.Writer, _ []schema.AnalysisRunRecord, _
 }
 
 // WriteBatch is a no-op implementation of FormatProvider.
-func (p *NoneProvider) WriteBatch(_ io.Writer, _ []schema.RepoShape, _ config.OutputSettings) error {
+func (p *NoneProvider) WriteBatch(_ io.Writer, _ []schema.RepoShape, _ config.OutputSettings, _ config.RuntimeSettings, _ time.Duration) error {
 	return nil
 }
