@@ -10,7 +10,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/mark3labs/mcp-go v0.49.0
-	github.com/mattn/go-isatty v0.0.21
+	github.com/mattn/go-isatty v0.0.22
 	github.com/olekukonko/tablewriter v1.1.4
 	github.com/parquet-go/parquet-go v0.29.0
 	github.com/schollz/progressbar/v3 v3.19.0

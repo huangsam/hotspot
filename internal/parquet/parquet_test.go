@@ -12,11 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//go:fix inline
-func ptrInt32(v int32) *int32 {
-	return new(v)
-}
-
 func TestAnalysisRunStructTags(t *testing.T) {
 	// Verify struct tags are properly defined for parquet schema inference
 	schema := parquet.SchemaOf(new(AnalysisRun))
@@ -297,7 +292,7 @@ func TestNullableFieldHandling(t *testing.T) {
 			StartTime:          now,
 			EndTime:            &endTime,
 			RunDurationMs:      &durationMs,
-			TotalFilesAnalyzed: ptrInt32(100),
+			TotalFilesAnalyzed: new(int32(100)),
 			ConfigParams:       &config,
 		},
 		// All nullable fields are nil
