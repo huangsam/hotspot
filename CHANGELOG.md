@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ### Changed
 - Made heatmap label truncation more conservative for readability.
+- Enhanced help text across all commands.
 
 ### Fixed
 - Fixed XML declaration ordering in heatmap SVG.
