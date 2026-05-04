@@ -26,12 +26,34 @@ The core power of Hotspot lies in its `--mode` flag, which selects the ranking a
 
 `hotspot files --mode risk --owner`
 
+#### Base Modes
 | Mode | Focus | Description |
 |------|-------|-------------|
 | **hot** | Activity hotspots | Identify files and subsystems with the most activity. |
 | **risk** | Knowledge risk | Find areas with unequal ownership and knowledge decay. |
 | **complexity** | Technical debt | Triage files with high churn, large size, and high complexity. |
 | **roi** | Refactoring ROI | Prioritize refactoring targets that offer the highest technical return. |
+
+#### Composite Modes (v1.22.0+)
+Composite modes blend two base scoring modes to surface nuanced problem types:
+
+| Mode | Blend | Use Case |
+|------|-------|----------|
+| **active_owners** | Hot (50%) + Risk (50%) | High activity + concentrated ownership. Prioritize knowledge transfer for actively developed siloed code. |
+| **refactor_now** | Complexity (60%) + ROI (40%) | Large, churning legacy code = highest refactoring ROI. Prioritize these for sprint planning. |
+| **legacy_debt** | Complexity (70%) + Risk (30%) | Old, complex, siloed code = high blast radius if touched. Requires expert review. |
+
+**Examples:**
+```bash
+# Find volatile files with concentrated ownership (highest urgency for knowledge transfer)
+hotspot files --mode active_owners --owner --limit 20
+
+# Prioritize refactoring targets by highest technical ROI
+hotspot files --mode refactor_now --output describe
+
+# Identify fragile legacy systems that need expert review
+hotspot files --mode legacy_debt --detail
+```
 
 ### 3. Risk Comparison & Delta Tracking
 Measure the change in metrics between two different points in history.

@@ -29,4 +29,5 @@ type CheckFailedFile struct {
 	Mode      ScoringMode
 	Score     float64
 	Threshold float64
+	Reasoning []string
 }

@@ -9,7 +9,7 @@ import (
 // filesCmd performs file-level hotspot analysis.
 var filesCmd = &cobra.Command{
 	Use:   "files [repo-path]",
-	Short: "Rank files by activity, risk, complexity, or refactoring ROI",
+	Short: "Rank files by activity, risk, complexity, refactoring ROI, or composite signals",
 	Long: `Perform deep Git analysis and rank individual files by risk score.
 
 Analyzes the entire history of each file to compute risk metrics, helping you:
@@ -18,8 +18,18 @@ Analyzes the entire history of each file to compute risk metrics, helping you:
 - Spot files with uneven ownership and knowledge silos
 - Locate large, complex files that are difficult to maintain
 
-Scores files based on your selected mode (hot, risk, complexity, roi),
-ranking them from highest to lowest risk.
+Scores files based on your selected mode:
+
+Base Modes:
+- hot: High recent activity and volatility (activity hotspots)
+- risk: Few contributors or concentrated ownership (knowledge risk)
+- complexity: Large, old, volatile files (technical debt)
+- roi: High churn on complex files (refactoring priority)
+
+Composite Modes (blend multiple base modes):
+- active_owners: 50% hot + 50% risk (volatile + siloed code)
+- refactor_now: 60% complexity + 40% roi (high ROI targets)
+- legacy_debt: 70% complexity + 30% risk (fragile + under-maintained)
 
 Examples:
   # Find the most active/volatile files
@@ -33,6 +43,9 @@ Examples:
 
   # Prioritize refactoring targets by ROI
   hotspot files --mode roi
+
+  # Find files that are volatile AND have concentrated ownership
+  hotspot files --mode active_owners --owner
 
   # Include detailed metrics and component breakdown
   hotspot files --detail --explain --owner

@@ -12,6 +12,9 @@ var scoringConfigRaw []byte
 //go:embed data/presets.yaml
 var presetsRaw []byte
 
+//go:embed data/composites.yaml
+var compositesRaw []byte
+
 type modeConfig struct {
 	Name       string             `yaml:"name"`
 	Purpose    string             `yaml:"purpose"`
@@ -24,9 +27,14 @@ type scoringConfig struct {
 	Modes map[string]modeConfig `yaml:"modes"`
 }
 
+type compositesConfig struct {
+	Composites map[ScoringMode]*CompositeConfig `yaml:"composites"`
+}
+
 var (
 	sCfg scoringConfig
 	pCfg map[string]Preset
+	cCfg compositesConfig
 )
 
 func init() {
@@ -35,6 +43,9 @@ func init() {
 	}
 	if err := yaml.Unmarshal(presetsRaw, &pCfg); err != nil {
 		panic("failed to unmarshal presets.yaml: " + err.Error())
+	}
+	if err := yaml.Unmarshal(compositesRaw, &cCfg); err != nil {
+		panic("failed to unmarshal composites.yaml: " + err.Error())
 	}
 }
 
@@ -79,4 +90,14 @@ func AllPresets() []Preset {
 		GetPreset(PresetLarge),
 		GetPreset(PresetInfra),
 	}
+}
+
+// GetCompositeConfig returns the CompositeConfig for a given composite mode.
+// Returns nil if the mode is not a composite.
+func GetCompositeConfig(mode ScoringMode) *CompositeConfig {
+	cfg, ok := cCfg.Composites[mode]
+	if !ok {
+		return nil
+	}
+	return cfg
 }

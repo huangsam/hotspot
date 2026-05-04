@@ -30,11 +30,13 @@ type FileResult struct {
 	RecencyThresholdHigh float64   `json:"recency_threshold_high"`
 
 	Mode          ScoringMode                              `json:"mode"`                 // Scoring mode used (hot, risk, complexity, roi)
+	ModeType      string                                   `json:"mode_type"`            // Type of mode: 'base' or 'composite'
 	ModeScore     float64                                  `json:"score"`                // Computed score for the current mode (0-100)
 	Reasoning     []string                                 `json:"reasoning,omitempty"`  // Human-and-AI-readable justifications for the score
 	ModeBreakdown map[BreakdownKey]float64                 `json:"breakdown"`            // Normalized contribution of each metric to the score
 	AllScores     map[ScoringMode]float64                  `json:"scores"`               // All computed scores by mode
 	AllBreakdowns map[ScoringMode]map[BreakdownKey]float64 `json:"breakdowns,omitempty"` // Score breakdowns for all modes
+	AllReasoning  map[ScoringMode][]string                 `json:"reasonings,omitempty"` // Reasoning for all computed modes
 }
 
 // GetPath returns the file path.
@@ -73,6 +75,7 @@ type FolderResult struct {
 	DecayedCommits     Metric   `json:"decayed_commits"`     // Time-weighted commits across all contained files
 	DecayedChurn       Metric   `json:"decayed_churn"`       // Time-weighted churn across all contained files
 	Score              float64  `json:"score"`               // Computed importance score for the folder
+	ModeType           string   `json:"mode_type"`           // Type of mode: 'base' or 'composite'
 	Gini               float64  `json:"gini"`                // Gini coefficient of commit distribution in the folder
 	UniqueContributors Metric   `json:"unique_contributors"` // Number of unique contributors in the folder
 	Owners             []string `json:"owners"`              // Top 2 owners by commit count
@@ -108,4 +111,12 @@ func (f FolderResult) GetOwners() []string {
 		return []string{}
 	}
 	return f.Owners
+}
+
+// CompositeConfig represents the definition of a composite scoring mode.
+type CompositeConfig struct {
+	DisplayName  string                  `yaml:"display_name"`
+	Description  string                  `yaml:"description"`
+	BaseModes    []ScoringMode           `yaml:"base_modes"`
+	BlendWeights map[ScoringMode]float64 `yaml:"blend_weights"`
 }

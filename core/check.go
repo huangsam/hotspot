@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/huangsam/hotspot/schema"
@@ -24,16 +25,19 @@ func printCheckResult(result *schema.CheckResult, duration time.Duration) {
 func printCheckHeader(result *schema.CheckResult, duration time.Duration) {
 	fmt.Fprintln(os.Stderr, "Policy Check Results:")
 
+	// Build thresholds string
+	var tStrings []string
+	for _, mode := range result.CheckedModes {
+		tStrings = append(tStrings, fmt.Sprintf("%s=%.1f", mode, result.Thresholds[mode]))
+	}
+
 	// Define labels and values for dynamic padding
 	labels := []string{"Base:", "Target:", "Lookback:", "Thresholds:"}
 	values := []any{
 		result.BaseRef,
 		result.TargetRef,
 		result.Lookback,
-		fmt.Sprintf("hot=%.1f, risk=%.1f, complexity=%.1f",
-			result.Thresholds[schema.HotMode],
-			result.Thresholds[schema.RiskMode],
-			result.Thresholds[schema.ComplexityMode]),
+		strings.Join(tStrings, ", "),
 	}
 
 	// Find the longest label for consistent padding
@@ -100,7 +104,7 @@ func printCheckFailure(result *schema.CheckResult) {
 			return files[i].Score > files[j].Score
 		})
 
-		fmt.Fprintf(os.Stderr, "Mode: %s (%d violations)\n", mode, len(files))
+		_, _ = fmt.Fprintf(os.Stdout, "Mode: %s (%d violations)\n", mode, len(files))
 
 		// Show top 5 violations, with "+X more" if needed
 		maxToShow := 5
@@ -109,13 +113,16 @@ func printCheckFailure(result *schema.CheckResult) {
 			if shown >= maxToShow {
 				remaining := len(files) - shown
 				if remaining > 0 {
-					fmt.Fprintf(os.Stderr, "  ... and %d more\n", remaining)
+					_, _ = fmt.Fprintf(os.Stdout, "  ... and %d more\n", remaining)
 				}
 				break
 			}
-			fmt.Printf("  - %s (score: %.1f > threshold: %.1f)\n", f.Path, f.Score, f.Threshold)
+			_, _ = fmt.Fprintf(os.Stdout, "  - %s (score: %.1f > threshold: %.1f)\n", f.Path, f.Score, f.Threshold)
+			for _, reason := range f.Reasoning {
+				_, _ = fmt.Fprintf(os.Stdout, "      reason: %s\n", reason)
+			}
 			shown++
 		}
-		fmt.Fprintln(os.Stderr)
+		_, _ = fmt.Fprintln(os.Stdout)
 	}
 }

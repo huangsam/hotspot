@@ -458,8 +458,8 @@ func (h *toolHandler) handleGetPrompt(_ context.Context, request mcp.GetPromptRe
 					Type: "text",
 					Text: `Help me prioritize refactoring targets by following this workflow:
 1. Run 'get_repo_shape' to ensure we are using the correct preset for this codebase.
-2. Use 'get_files_hotspots' with the recommended preset and mode='roi' to identify files with the highest return on refactoring investment.
-3. For the top 3 files identified, use 'get_timeseries' to see if their risk profile is improving or worsening over the last 6 months.
+2. Use 'get_files_hotspots' with the recommended preset and mode='refactor_now' to identify complex, high-churn legacy files that offer the highest return on refactoring investment.
+3. For the top 3 files identified, use 'get_timeseries' with mode='refactor_now' to see if their risk profile is improving or worsening over the last 6 months.
 4. Provide a prioritized list of refactoring candidates with justifications based on churn, complexity, and historical trends.`,
 				},
 			},
@@ -472,10 +472,9 @@ func (h *toolHandler) handleGetPrompt(_ context.Context, request mcp.GetPromptRe
 					Type: "text",
 					Text: `Assess whether this repository is ready for a release cut by following this workflow:
 1. Run 'get_repo_shape' to identify the preset and recommended scoring mode.
-2. Use 'compare_hotspots' with base_ref set to the most recent tag and target_ref='HEAD', mode='hot' to identify files that have spiked in activity since the last release.
-3. Re-run 'compare_hotspots' with the same refs but mode='risk' to surface any newly-introduced knowledge silos or ownership concentration.
-4. If any files appear in BOTH the hot and risk results, flag them as release blockers — they are simultaneously volatile and fragile.
-5. Provide a clear go/no-go recommendation with a short list of specific files and the reason each one is a concern, or confirm the release looks clean.`,
+2. Use 'compare_file_hotspots' with base_ref set to the most recent tag and target_ref='HEAD', mode='active_owners' to instantly identify files that have spiked in activity and have concentrated ownership since the last release.
+3. If any files appear with a high score, flag them as release blockers — they are simultaneously volatile and fragile.
+4. Provide a clear go/no-go recommendation with a short list of specific files and their reasoning labels, or confirm the release looks clean.`,
 				},
 			},
 		}

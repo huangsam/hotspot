@@ -45,7 +45,7 @@ func init() {
 	rootCmd.PersistentFlags().String("exclude", schema.DefaultExclude, "Comma-separated list of path prefixes or patterns to ignore")
 	rootCmd.PersistentFlags().StringP("filter", "f", "", "Filter targets by path prefix")
 	rootCmd.PersistentFlags().IntP("limit", "l", 0, "Number of results to display")
-	rootCmd.PersistentFlags().String("mode", "", "Scoring mode: hot or risk or complexity or roi")
+	rootCmd.PersistentFlags().String("mode", "", "Scoring mode: hot, risk, complexity, roi, active_owners, refactor_now, legacy_debt")
 	rootCmd.PersistentFlags().String("output", "", "Output format: text or csv or json or parquet or markdown or describe or heatmap")
 	rootCmd.PersistentFlags().String("output-file", "", "Optional path to write output to")
 	rootCmd.PersistentFlags().Bool("owner", false, "Print per-target owner")
@@ -86,7 +86,7 @@ func init() {
 	}
 
 	// Bind all flags of checkCmd to Viper
-	checkCmd.Flags().String("thresholds-override", "", "Risk thresholds for CI/CD gating (format: 'hot:50,risk:50,complexity:50,roi:50')")
+	checkCmd.Flags().String("thresholds-override", "", "Risk thresholds for CI/CD gating (format: 'hot:50,risk:50,complexity:50,roi:50,active_owners:50,refactor_now:50,legacy_debt:50')")
 	if err := viper.BindPFlags(checkCmd.Flags()); err != nil {
 		logger.Fatal("Error binding check flags", err)
 	}

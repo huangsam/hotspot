@@ -270,3 +270,102 @@ func isConfigurationFile(ext string) bool {
 		"lock", "sum", "csv", "tsv", "md", "txt", "tfstate",
 	}, ext)
 }
+
+// ComputeCompositeScore blends base mode scores to produce a composite score.
+// It weights the base mode scores according to the composite's blend weights and
+// returns both the blended score and blended breakdown without mutating the input.
+//
+// Parameters:
+//   - file: FileResult with all 4 base mode scores already computed (in AllScores)
+//   - composite: CompositeConfig specifying which modes to blend and their weights
+//
+// Returns: The blended composite score [0-100] and blended breakdown map.
+func ComputeCompositeScore(file *schema.FileResult, composite *schema.CompositeConfig) (float64, map[schema.BreakdownKey]float64) {
+	if file == nil || composite == nil || len(composite.BaseModes) < 2 {
+		return 0.0, map[schema.BreakdownKey]float64{}
+	}
+
+	// Ensure AllScores is populated
+	if len(file.AllScores) == 0 {
+		return 0.0, map[schema.BreakdownKey]float64{}
+	}
+
+	// Resolve and normalize blend weights; fallback to uniform if invalid/incomplete.
+	weights := resolveCompositeWeights(composite)
+
+	// Blend score and breakdowns.
+	var blended float64
+	blendedBreakdown := make(map[schema.BreakdownKey]float64)
+	for _, mode := range composite.BaseModes {
+		score, ok := file.AllScores[mode]
+		if !ok {
+			return 0.0, map[schema.BreakdownKey]float64{}
+		}
+		weight := weights[mode]
+		blended += score * weight
+
+		if breakdown, ok := file.AllBreakdowns[mode]; ok {
+			for key, val := range breakdown {
+				blendedBreakdown[key] += val * weight
+			}
+		}
+	}
+
+	blended = math.Min(math.Max(blended, 0), 100)
+	return blended, blendedBreakdown
+}
+
+func resolveCompositeWeights(composite *schema.CompositeConfig) map[schema.ScoringMode]float64 {
+	if composite == nil || len(composite.BaseModes) == 0 {
+		return map[schema.ScoringMode]float64{}
+	}
+	weights := make(map[schema.ScoringMode]float64, len(composite.BaseModes))
+
+	var sum float64
+	valid := true
+	for _, mode := range composite.BaseModes {
+		w, ok := composite.BlendWeights[mode]
+		if !ok || w <= 0 || math.IsNaN(w) || math.IsInf(w, 0) {
+			valid = false
+			break
+		}
+		weights[mode] = w
+		sum += w
+	}
+
+	if !valid || sum <= 0 {
+		uniform := 1.0 / float64(len(composite.BaseModes))
+		for _, mode := range composite.BaseModes {
+			weights[mode] = uniform
+		}
+		return weights
+	}
+
+	for mode, w := range weights {
+		weights[mode] = w / sum
+	}
+
+	return weights
+}
+
+// GenerateCompositeReasoning combines reasoning from each configured base mode.
+func GenerateCompositeReasoning(file *schema.FileResult, composite *schema.CompositeConfig) []string {
+	if composite == nil || file == nil || len(composite.BaseModes) < 2 {
+		return []string{}
+	}
+
+	if len(file.AllReasoning) == 0 {
+		return []string{}
+	}
+
+	var results []string
+
+	// Collect reasoning from each base mode
+	for _, baseMode := range composite.BaseModes {
+		if reasoning, ok := file.AllReasoning[baseMode]; ok {
+			results = append(results, reasoning...)
+		}
+	}
+
+	return results
+}

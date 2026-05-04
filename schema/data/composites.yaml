@@ -1,0 +1,37 @@
+# Composite Scoring Modes for Hotspot v1.22.0+
+# Composites blend two base scoring modes to surface different problem types.
+# Reasoning is generated compositionally by joining reasoning from each base mode.
+
+composites:
+  # Active Owners: High recent activity + concentrated ownership = immediate risk
+  active_owners:
+    display_name: "Active Owners"
+    description: "Files with high recent activity AND concentrated ownership—highest urgency for knowledge transfer."
+    base_modes:
+      - "hot"      # 50% weight: recent volatility signals
+      - "risk"     # 50% weight: knowledge silo signals
+    blend_weights:
+      hot: 0.5
+      risk: 0.5
+
+  # Refactoring Goldmine: High churn on complex legacy = highest ROI per hour
+  refactor_now:
+    display_name: "Refactoring Goldmine"
+    description: "High churn on complex legacy code—prioritizes files with the highest technical return per refactoring effort."
+    base_modes:
+      - "complexity"  # 60% weight: maintenance burden (effort)
+      - "roi"         # 40% weight: current impact (benefit)
+    blend_weights:
+      complexity: 0.6
+      roi: 0.4
+
+  # Sleeping Dragon: Fragile, under-maintained, critical systems
+  legacy_debt:
+    display_name: "Sleeping Dragon"
+    description: "Fragile, under-maintained systems with concentrated ownership—high blast radius if touched."
+    base_modes:
+      - "complexity"  # 70% weight: fragility (maintenance burden)
+      - "risk"        # 30% weight: bus factor (knowledge risk)
+    blend_weights:
+      complexity: 0.7
+      risk: 0.3

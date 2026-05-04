@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org).
 
+## [1.22.0] - 2026-05-04
+
+### Added
+- Three composite scoring modes: `active_owners`, `refactor_now`, `legacy_debt`.
+- Composite modes blend two base scoring algorithms for targeted risk analysis.
+- active_owners (hot+risk): volatile files with concentrated ownership.
+- refactor_now (complexity+roi): refactoring targets by highest ROI.
+- legacy_debt (complexity+risk): fragile legacy systems needing expert review.
+- Dynamic composite reasoning labels via base mode concatenation.
+- Full CLI and MCP support for composite mode analysis.
+
 ## [1.21.0] - 2026-04-27
 
 ### Added

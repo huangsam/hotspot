@@ -33,7 +33,7 @@ type MetricsModeWithData struct {
 // BuildMetricsRenderModel constructs the complete render model with all processed data.
 func BuildMetricsRenderModel(activeWeights map[ScoringMode]map[BreakdownKey]float64) *MetricsRenderModel {
 	var modes []MetricsMode
-	for _, mode := range AllScoringModes {
+	for _, mode := range BaseScoringModes {
 		purpose, factors, factorKeys := GetScoringModeMetadata(mode)
 		modes = append(modes, MetricsMode{
 			Name:       string(mode),

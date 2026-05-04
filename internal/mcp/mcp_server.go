@@ -35,7 +35,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 	// Common parameter descriptions
 	urnDesc := "Universal Resource Name (e.g., 'git:github.com/org/repo' or 'local:hash'). If provided, repo_path is optional and utilizes cached/historical analysis results."
 	repoPathDesc := "Path to the Git repository (defaults to current directory if not specified)."
-	modeDesc := "Scoring mode: 'hot' (activity hotspots), 'risk' (knowledge silos/bus factor), 'complexity' (technical debt candidates), or 'roi' (refactoring priority)."
+	modeDesc := "Scoring mode: 'hot' (activity hotspots), 'risk' (knowledge silos/bus factor), 'complexity' (technical debt candidates), 'roi' (refactoring priority), or composite modes: 'active_owners' (volatile + siloed), 'refactor_now' (high ROI targets), 'legacy_debt' (fragile + under-maintained)."
 	startDesc := "Start date for the analysis window (ISO8601 e.g. '2024-01-01T00:00:00Z', or relative e.g. '30d ago', '6 months ago')."
 	endDesc := "End date for the analysis window (ISO8601 or relative). Defaults to now."
 
@@ -62,7 +62,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("preset", mcp.Description("Apply a named configuration preset (small, large, infra). It is recommended to run 'get_repo_shape' first to identify the correct preset for this repository."), mcp.Enum("small", "large", "infra")),
 		mcp.WithString("urn", mcp.Description(urnDesc)),
 		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
-		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi"), mcp.DefaultString("hot")),
+		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi", "active_owners", "refactor_now", "legacy_debt"), mcp.DefaultString("hot")),
 		mcp.WithNumber("limit", mcp.Description("Limit the number of results returned."), mcp.DefaultNumber(10)),
 		mcp.WithString("start", mcp.Description(startDesc)),
 		mcp.WithString("end", mcp.Description(endDesc)),
@@ -81,7 +81,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("preset", mcp.Description("Apply a named configuration preset (small, large, infra). It is recommended to run 'get_repo_shape' first to identify the correct preset for this repository."), mcp.Enum("small", "large", "infra")),
 		mcp.WithString("urn", mcp.Description(urnDesc)),
 		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
-		mcp.WithString("mode", mcp.Description("Scoring mode: 'hot' (activity/volatility), 'risk' (knowledge silos/bus factor), 'complexity' (legacy technical debt), or 'roi' (refactoring priority)."), mcp.Enum("hot", "risk", "complexity", "roi"), mcp.DefaultString("hot")),
+		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi", "active_owners", "refactor_now", "legacy_debt"), mcp.DefaultString("hot")),
 		mcp.WithString("start", mcp.Description(startDesc)),
 		mcp.WithString("end", mcp.Description(endDesc)),
 		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go')."), mcp.DefaultString(schema.DefaultExclude)),
@@ -100,7 +100,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("preset", mcp.Description("Apply a named configuration preset (small, large, infra). It is recommended to run 'get_repo_shape' first to identify the correct preset for this repository."), mcp.Enum("small", "large", "infra")),
 		mcp.WithString("urn", mcp.Description(urnDesc)),
 		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
-		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi"), mcp.DefaultString("hot")),
+		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi", "active_owners", "refactor_now", "legacy_debt"), mcp.DefaultString("hot")),
 		mcp.WithNumber("limit", mcp.Description("Limit the number of results."), mcp.DefaultNumber(10)),
 		mcp.WithString("start", mcp.Description(startDesc)),
 		mcp.WithString("end", mcp.Description(endDesc)),
@@ -122,7 +122,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("urn", mcp.Description(urnDesc)),
 		mcp.WithString("lookback", mcp.Description("Time window for analysis (e.g., '6 months', '30d').")),
 		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
-		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi"), mcp.DefaultString("hot")),
+		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi", "active_owners", "refactor_now", "legacy_debt"), mcp.DefaultString("hot")),
 		mcp.WithString("start", mcp.Description(startDesc)),
 		mcp.WithString("end", mcp.Description(endDesc)),
 		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go')."), mcp.DefaultString(schema.DefaultExclude)),
@@ -143,7 +143,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("urn", mcp.Description(urnDesc)),
 		mcp.WithString("lookback", mcp.Description("Time window for analysis (e.g., '6 months', '30d').")),
 		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
-		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi"), mcp.DefaultString("hot")),
+		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi", "active_owners", "refactor_now", "legacy_debt"), mcp.DefaultString("hot")),
 		mcp.WithString("start", mcp.Description(startDesc)),
 		mcp.WithString("end", mcp.Description(endDesc)),
 		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go')."), mcp.DefaultString(schema.DefaultExclude)),
@@ -164,7 +164,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("preset", mcp.Description("Apply a named configuration preset (small, large, infra). It is recommended to run 'get_repo_shape' first to identify the correct preset for this repository."), mcp.Enum("small", "large", "infra")),
 		mcp.WithString("urn", mcp.Description(urnDesc)),
 		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
-		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi"), mcp.DefaultString("hot")),
+		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi", "active_owners", "refactor_now", "legacy_debt"), mcp.DefaultString("hot")),
 		mcp.WithString("start", mcp.Description("Start date for the entire timeseries window (anchors the first point).")),
 		mcp.WithString("end", mcp.Description("End date for the entire timeseries window.")),
 		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go')."), mcp.DefaultString(schema.DefaultExclude)),
@@ -182,7 +182,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("preset", mcp.Description("Apply a named configuration preset (small, large, infra). It is recommended to run 'get_repo_shape' first to identify the correct preset for this repository."), mcp.Enum("small", "large", "infra")),
 		mcp.WithString("urn", mcp.Description(urnDesc)),
 		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
-		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi"), mcp.DefaultString("hot")),
+		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi", "active_owners", "refactor_now", "legacy_debt"), mcp.DefaultString("hot")),
 		mcp.WithNumber("transitions", mcp.Description("Number of successive tag transitions to analyze (e.g. 3 = last 4 tags). Defaults to 3."), mcp.DefaultNumber(3)),
 		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude (e.g. '**/vendor/, **/*.pb.go')."), mcp.DefaultString(schema.DefaultExclude)),
 		mcp.WithString("filter", mcp.Description("Path prefix to filter analysis to a specific directory (e.g. 'src/main/').")),
@@ -218,6 +218,7 @@ func NewMCPServer(baseCfg *config.Config, mgr iocache.CacheManager, client git.C
 		mcp.WithString("target_ref", mcp.Description("The target reference for comparison."), mcp.Required()),
 		mcp.WithString("urn", mcp.Description(urnDesc)),
 		mcp.WithString("repo_path", mcp.Description(repoPathDesc)),
+		mcp.WithString("mode", mcp.Description(modeDesc), mcp.Enum("hot", "risk", "complexity", "roi", "active_owners", "refactor_now", "legacy_debt"), mcp.DefaultString("hot")),
 		mcp.WithString("lookback", mcp.Description("Time window for analysis.")),
 		mcp.WithString("exclude", mcp.Description("Comma-separated list of glob patterns to exclude."), mcp.DefaultString(schema.DefaultExclude)),
 	), withRecovery(h.handleRunCheck))

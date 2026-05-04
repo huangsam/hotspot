@@ -905,6 +905,41 @@ func TestConfigClone(t *testing.T) {
 	assert.NotEqual(t, original.Scoring.CustomWeights[schema.HotMode][schema.BreakdownCommits], clone.Scoring.CustomWeights[schema.HotMode][schema.BreakdownCommits])
 }
 
+func TestParseRiskThresholdsStringSupportsCompositeModes(t *testing.T) {
+	parsed, err := parseRiskThresholdsString("hot:10,risk:20,complexity:30,roi:40,active_owners:50,refactor_now:60,legacy_debt:70")
+	require.NoError(t, err)
+	assert.Equal(t, 10.0, parsed[schema.HotMode])
+	assert.Equal(t, 20.0, parsed[schema.RiskMode])
+	assert.Equal(t, 30.0, parsed[schema.ComplexityMode])
+	assert.Equal(t, 40.0, parsed[schema.ROIMode])
+	assert.Equal(t, 50.0, parsed[schema.ActiveOwnersMode])
+	assert.Equal(t, 60.0, parsed[schema.RefactorNowMode])
+	assert.Equal(t, 70.0, parsed[schema.LegacyDebtMode])
+
+	_, err = parseRiskThresholdsString("unknown:10")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "active_owners")
+	assert.Contains(t, err.Error(), "refactor_now")
+	assert.Contains(t, err.Error(), "legacy_debt")
+}
+
+func TestProcessRiskThresholdsSupportsCompositeConfigKeys(t *testing.T) {
+	cfg := &Config{}
+	input := &RawInput{
+		Thresholds: ThresholdsRawInput{
+			ActiveOwners: &[]float64{61}[0],
+			RefactorNow:  &[]float64{62}[0],
+			LegacyDebt:   &[]float64{63}[0],
+		},
+	}
+
+	err := processRiskThresholds(cfg, input)
+	require.NoError(t, err)
+	assert.Equal(t, 61.0, cfg.Scoring.RiskThresholds[schema.ActiveOwnersMode])
+	assert.Equal(t, 62.0, cfg.Scoring.RiskThresholds[schema.RefactorNowMode])
+	assert.Equal(t, 63.0, cfg.Scoring.RiskThresholds[schema.LegacyDebtMode])
+}
+
 func TestConfigCloneWithTimeWindow(t *testing.T) {
 	original := &Config{
 		Output: OutputConfig{

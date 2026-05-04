@@ -3,6 +3,7 @@ package schema
 import (
 	"fmt"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"unicode"
@@ -316,4 +317,14 @@ func IsPathInFilter(path, filter string) bool {
 	}
 
 	return strings.HasPrefix(path, filter)
+}
+
+// IsCompositeMode returns true if the given mode is a composite scoring mode.
+func IsCompositeMode(mode ScoringMode) bool {
+	return slices.Contains(AllScoringModes, mode) && !IsBaseMode(mode)
+}
+
+// IsBaseMode returns true if the given mode is one of the four base scoring modes.
+func IsBaseMode(mode ScoringMode) bool {
+	return slices.Contains(BaseScoringModes, mode)
 }

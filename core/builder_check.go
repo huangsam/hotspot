@@ -177,6 +177,7 @@ func (b *CheckResultBuilder) ComputeMetrics() *CheckResultBuilder {
 					Mode:      mode,
 					Score:     score,
 					Threshold: threshold,
+					Reasoning: file.AllReasoning[mode],
 				})
 			}
 		}

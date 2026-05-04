@@ -123,6 +123,22 @@ func TestGetDefaultWeights(t *testing.T) {
 	}
 }
 
+func TestModeTypeHelpersUseModeLists(t *testing.T) {
+	for _, mode := range BaseScoringModes {
+		assert.True(t, IsBaseMode(mode))
+		assert.False(t, IsCompositeMode(mode))
+	}
+
+	for _, mode := range AllScoringModes {
+		if !IsBaseMode(mode) {
+			assert.True(t, IsCompositeMode(mode))
+		}
+	}
+
+	assert.False(t, IsBaseMode(ScoringMode("unknown_mode")))
+	assert.False(t, IsCompositeMode(ScoringMode("unknown_mode")))
+}
+
 func TestFileResultGetters(t *testing.T) {
 	file := FileResult{
 		Path:      "src/main.go",

@@ -302,6 +302,119 @@ func TestComputeScoreInvalidCustomWeights(t *testing.T) {
 	assert.True(t, score >= 0 && score <= 100, "Score with empty custom weights should be valid")
 }
 
+func TestComputeCompositeScore_BlendsWithoutMutatingInput(t *testing.T) {
+	file := &schema.FileResult{
+		AllScores: map[schema.ScoringMode]float64{
+			schema.HotMode:  80,
+			schema.RiskMode: 40,
+		},
+		AllBreakdowns: map[schema.ScoringMode]map[schema.BreakdownKey]float64{
+			schema.HotMode: {
+				schema.BreakdownChurn: 60,
+				schema.BreakdownAge:   20,
+			},
+			schema.RiskMode: {
+				schema.BreakdownGini:       50,
+				schema.BreakdownInvContrib: 30,
+			},
+		},
+		ModeBreakdown: map[schema.BreakdownKey]float64{
+			schema.BreakdownSize: 99,
+		},
+	}
+	originalModeBreakdown := maps.Clone(file.ModeBreakdown)
+
+	composite := &schema.CompositeConfig{
+		BaseModes: []schema.ScoringMode{schema.HotMode, schema.RiskMode},
+		BlendWeights: map[schema.ScoringMode]float64{
+			schema.HotMode:  0.75,
+			schema.RiskMode: 0.25,
+		},
+	}
+
+	score, breakdown := ComputeCompositeScore(file, composite)
+	assert.InDelta(t, 70.0, score, 1e-9)
+	assert.InDelta(t, 45.0, breakdown[schema.BreakdownChurn], 1e-9)
+	assert.InDelta(t, 15.0, breakdown[schema.BreakdownAge], 1e-9)
+	assert.InDelta(t, 12.5, breakdown[schema.BreakdownGini], 1e-9)
+	assert.InDelta(t, 7.5, breakdown[schema.BreakdownInvContrib], 1e-9)
+
+	assert.Equal(t, originalModeBreakdown, file.ModeBreakdown)
+}
+
+func TestComputeCompositeScore_WeightValidationAndClamping(t *testing.T) {
+	t.Run("missing weight falls back to uniform weights", func(t *testing.T) {
+		file := &schema.FileResult{
+			AllScores: map[schema.ScoringMode]float64{
+				schema.HotMode:  100,
+				schema.RiskMode: 20,
+			},
+		}
+		composite := &schema.CompositeConfig{
+			BaseModes: []schema.ScoringMode{schema.HotMode, schema.RiskMode},
+			BlendWeights: map[schema.ScoringMode]float64{
+				schema.HotMode: 0.8,
+			},
+		}
+
+		score, _ := ComputeCompositeScore(file, composite)
+		assert.InDelta(t, 60.0, score, 1e-9)
+	})
+
+	t.Run("weights are normalized when sum is not one", func(t *testing.T) {
+		file := &schema.FileResult{
+			AllScores: map[schema.ScoringMode]float64{
+				schema.ComplexityMode: 90,
+				schema.ROIMode:        30,
+			},
+		}
+		composite := &schema.CompositeConfig{
+			BaseModes: []schema.ScoringMode{schema.ComplexityMode, schema.ROIMode},
+			BlendWeights: map[schema.ScoringMode]float64{
+				schema.ComplexityMode: 2,
+				schema.ROIMode:        1,
+			},
+		}
+
+		score, _ := ComputeCompositeScore(file, composite)
+		assert.InDelta(t, 70.0, score, 1e-9)
+	})
+
+	t.Run("composite score is clamped to 100", func(t *testing.T) {
+		file := &schema.FileResult{
+			AllScores: map[schema.ScoringMode]float64{
+				schema.HotMode:  180,
+				schema.RiskMode: 150,
+			},
+		}
+		composite := &schema.CompositeConfig{
+			BaseModes: []schema.ScoringMode{schema.HotMode, schema.RiskMode},
+			BlendWeights: map[schema.ScoringMode]float64{
+				schema.HotMode:  0.5,
+				schema.RiskMode: 0.5,
+			},
+		}
+
+		score, _ := ComputeCompositeScore(file, composite)
+		assert.Equal(t, 100.0, score)
+	})
+}
+
+func TestGenerateCompositeReasoning_ComposesBaseModeReasoning(t *testing.T) {
+	file := &schema.FileResult{
+		AllReasoning: map[schema.ScoringMode][]string{
+			schema.HotMode:  {"Hot reason 1", "Hot reason 2"},
+			schema.RiskMode: {"Risk reason"},
+		},
+	}
+	composite := &schema.CompositeConfig{
+		BaseModes: []schema.ScoringMode{schema.HotMode, schema.RiskMode},
+	}
+
+	reasoning := GenerateCompositeReasoning(file, composite)
+	assert.Equal(t, []string{"Hot reason 1", "Hot reason 2", "Risk reason"}, reasoning)
+}
+
 // FuzzComputeScore fuzzes the ComputeScore function with random FileResult inputs.
 func FuzzComputeScore(f *testing.F) {
 	seeds := []struct {

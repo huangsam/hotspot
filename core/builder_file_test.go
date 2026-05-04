@@ -2,6 +2,8 @@ package core
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -115,4 +117,64 @@ func TestFileResultBuilder_ZeroFirstCommit(t *testing.T) {
 
 	fileResult := builder.Build()
 	assert.Equal(t, schema.Metric(0), fileResult.AgeDays)
+}
+
+func TestFileResultBuilder_CompositeModeUsesSelectedBreakdown(t *testing.T) {
+	ctx := context.Background()
+	const (
+		aliceCommits = schema.Metric(100)
+		bobCommits   = schema.Metric(15)
+		carolCommits = schema.Metric(5)
+	)
+
+	repoPath := t.TempDir()
+	err := os.WriteFile(filepath.Join(repoPath, "critical.go"), []byte("package main\n\nfunc x() {}\n"), 0o644)
+	assert.NoError(t, err)
+
+	cfg := &config.Config{
+		Git: config.GitConfig{
+			RepoPath: repoPath,
+		},
+		Scoring: config.ScoringConfig{
+			Mode:                 schema.ActiveOwnersMode,
+			RecencyThresholdLow:  0.1,
+			RecencyThresholdHigh: 0.3,
+		},
+	}
+
+	output := &schema.AggregateOutput{
+		FileStats: map[string]*schema.FileAggregation{
+			"critical.go": {
+				Commits:       120,
+				RecentCommits: 45,
+				Churn:         3500,
+				RecentChurn:   1600,
+				FirstCommit:   time.Now().Add(-540 * 24 * time.Hour),
+				Contributors: map[string]schema.Metric{
+					"alice": aliceCommits,
+					"bob":   bobCommits,
+					"carol": carolCommits,
+				},
+			},
+		},
+	}
+
+	result := NewFileMetricsBuilder(ctx, cfg.Git, cfg.Scoring, nil, "critical.go", output).
+		FetchAllGitMetrics().
+		FetchFileStats().
+		CalculateDerivedMetrics().
+		FetchRecentInfo().
+		CalculateOwner().
+		CalculateScore().
+		Build()
+
+	assert.Equal(t, schema.ActiveOwnersMode, result.Mode)
+	assert.Equal(t, "composite", result.ModeType)
+	assert.Equal(t, result.AllScores[schema.ActiveOwnersMode], result.ModeScore)
+	assert.Equal(t, result.AllBreakdowns[schema.ActiveOwnersMode], result.ModeBreakdown)
+	assert.NotEmpty(t, result.ModeBreakdown)
+	assert.Contains(t, result.AllBreakdowns, schema.LegacyDebtMode)
+	assert.Greater(t, result.RecencySignal, 0.0)
+	assert.Equal(t, 0.1, result.RecencyThresholdLow)
+	assert.Equal(t, 0.3, result.RecencyThresholdHigh)
 }

@@ -145,6 +145,9 @@ func TestCheckResultBuilder_ComputeMetrics(t *testing.T) {
 				schema.RiskMode:       40.0,
 				schema.ComplexityMode: 30.0,
 			},
+			AllReasoning: map[schema.ScoringMode][]string{
+				schema.HotMode: {"High Churn"},
+			},
 			Owners: []string{"alice"},
 		},
 		{
@@ -153,6 +156,9 @@ func TestCheckResultBuilder_ComputeMetrics(t *testing.T) {
 				schema.HotMode:        50.0,
 				schema.RiskMode:       70.0,
 				schema.ComplexityMode: 25.0,
+			},
+			AllReasoning: map[schema.ScoringMode][]string{
+				schema.RiskMode: {"Ownership concentration"},
 			},
 			Owners: []string{"bob"},
 		},
@@ -201,6 +207,7 @@ func TestCheckResultBuilder_ComputeMetrics(t *testing.T) {
 			if actual.Path == expected.Path && actual.Mode == expected.Mode {
 				assert.Equal(t, expected.Score, actual.Score)
 				assert.Equal(t, expected.Threshold, actual.Threshold)
+				assert.NotEmpty(t, actual.Reasoning)
 				found = true
 				break
 			}

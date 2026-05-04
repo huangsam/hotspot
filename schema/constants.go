@@ -58,6 +58,10 @@ const (
 	RiskMode       ScoringMode = "risk"
 	ComplexityMode ScoringMode = "complexity"
 	ROIMode        ScoringMode = "roi"
+	// Composite modes (v1.22.0+).
+	ActiveOwnersMode ScoringMode = "active_owners"
+	RefactorNowMode  ScoringMode = "refactor_now"
+	LegacyDebtMode   ScoringMode = "legacy_debt"
 )
 
 // Scoring label constants for criticality levels.
@@ -76,8 +80,11 @@ const (
 	NoneBackend       DatabaseBackend = "none"
 )
 
-// AllScoringModes returns a list of all supported scoring modes.
-var AllScoringModes = []ScoringMode{HotMode, RiskMode, ComplexityMode, ROIMode}
+// BaseScoringModes returns the four base scoring modes.
+var BaseScoringModes = []ScoringMode{HotMode, RiskMode, ComplexityMode, ROIMode}
+
+// AllScoringModes returns all supported scoring modes (base + composite).
+var AllScoringModes = []ScoringMode{HotMode, RiskMode, ComplexityMode, ROIMode, ActiveOwnersMode, RefactorNowMode, LegacyDebtMode}
 
 // ValidOutputModes lists all valid output modes.
 var ValidOutputModes = map[OutputMode]struct{}{
@@ -93,10 +100,13 @@ var ValidOutputModes = map[OutputMode]struct{}{
 
 // ValidScoringModes lists all valid scoring modes.
 var ValidScoringModes = map[ScoringMode]struct{}{
-	HotMode:        {},
-	RiskMode:       {},
-	ComplexityMode: {},
-	ROIMode:        {},
+	HotMode:          {},
+	RiskMode:         {},
+	ComplexityMode:   {},
+	ROIMode:          {},
+	ActiveOwnersMode: {},
+	RefactorNowMode:  {},
+	LegacyDebtMode:   {},
 }
 
 // ValidDatabaseBackends lists all valid database backends.

@@ -364,6 +364,12 @@ func AggregateAndScoreFolders(gitSettings config.GitSettings, scoringSettings co
 				Path: folderPath,
 				Mode: scoringMode,
 			}
+			// Set ModeType based on whether the mode is composite or base
+			if schema.IsCompositeMode(scoringMode) {
+				folderResults[folderPath].ModeType = "composite"
+			} else {
+				folderResults[folderPath].ModeType = "base"
+			}
 		}
 
 		// 2. Aggregate simple metrics and score components

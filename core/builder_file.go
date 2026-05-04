@@ -248,35 +248,58 @@ func (b *FileResultBuilder) CalculateOwner() *FileResultBuilder {
 
 // CalculateScore computes the final composite score.
 func (b *FileResultBuilder) CalculateScore() *FileResultBuilder {
-	// Compute score for current mode
 	mode := b.scoringSettings.GetMode()
-	weights := b.scoringSettings.GetComputedWeights()[mode]
 	thresholdLow := b.scoringSettings.GetRecencyThresholdLow()
 	thresholdHigh := b.scoringSettings.GetRecencyThresholdHigh()
-	b.result.ModeScore = algo.ComputeScore(b.result, mode, weights, thresholdLow, thresholdHigh)
 
-	// Compute scores and breakdowns for all modes
+	// Compute scores and breakdowns for all base modes first
 	b.result.AllScores = make(map[schema.ScoringMode]float64)
 	b.result.AllBreakdowns = make(map[schema.ScoringMode]map[schema.BreakdownKey]float64)
+	b.result.AllReasoning = make(map[schema.ScoringMode][]string)
 
 	computedWeights := b.scoringSettings.GetComputedWeights()
 	for _, m := range []schema.ScoringMode{schema.HotMode, schema.RiskMode, schema.ComplexityMode, schema.ROIMode} {
-		if m == mode {
-			// Already computed
-			b.result.AllScores[m] = b.result.ModeScore
-			b.result.AllBreakdowns[m] = make(map[schema.BreakdownKey]float64, len(b.result.ModeBreakdown))
-			maps.Copy(b.result.AllBreakdowns[m], b.result.ModeBreakdown)
-		} else {
-			mCopy := *b.result // Shallow copy of top-level fields
-			// Crucially re-initialize the breakdown map to avoid stomping on the original
-			mCopy.ModeBreakdown = make(map[schema.BreakdownKey]float64, 8)
-			mCopy.Mode = m
-			score := algo.ComputeScore(&mCopy, m, computedWeights[m], thresholdLow, thresholdHigh)
-			b.result.AllScores[m] = score
-			b.result.AllBreakdowns[m] = mCopy.ModeBreakdown
+		mCopy := *b.result // Shallow copy of top-level fields
+		// Crucially re-initialize the breakdown map to avoid stomping on the original
+		mCopy.ModeBreakdown = make(map[schema.BreakdownKey]float64, 8)
+		mCopy.Mode = m
+		score := algo.ComputeScore(&mCopy, m, computedWeights[m], thresholdLow, thresholdHigh)
+		b.result.AllScores[m] = score
+		b.result.AllBreakdowns[m] = mCopy.ModeBreakdown
+		b.result.AllReasoning[m] = mCopy.Reasoning
+		if m == schema.HotMode {
+			b.result.RecencySignal = mCopy.RecencySignal
+			b.result.RecencyThresholdLow = mCopy.RecencyThresholdLow
+			b.result.RecencyThresholdHigh = mCopy.RecencyThresholdHigh
 		}
 	}
 
+	// Compute scores and reasoning for all composite modes
+	for _, m := range []schema.ScoringMode{schema.ActiveOwnersMode, schema.RefactorNowMode, schema.LegacyDebtMode} {
+		compositeConfig := schema.GetCompositeConfig(m)
+		if compositeConfig != nil {
+			score, breakdown := algo.ComputeCompositeScore(b.result, compositeConfig)
+			b.result.AllScores[m] = score
+			b.result.AllBreakdowns[m] = breakdown
+			b.result.AllReasoning[m] = algo.GenerateCompositeReasoning(b.result, compositeConfig)
+		}
+	}
+
+	// Now set the active mode score, breakdown, and reasoning.
+	b.result.ModeScore = b.result.AllScores[mode]
+	if breakdown, ok := b.result.AllBreakdowns[mode]; ok {
+		b.result.ModeBreakdown = breakdown
+	} else {
+		b.result.ModeBreakdown = map[schema.BreakdownKey]float64{}
+	}
+	b.result.Reasoning = b.result.AllReasoning[mode]
+
+	b.result.Mode = mode
+	if schema.IsCompositeMode(mode) {
+		b.result.ModeType = "composite"
+	} else {
+		b.result.ModeType = "base"
+	}
 	return b
 }
 

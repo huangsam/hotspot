@@ -599,7 +599,7 @@ func validateScoringInputs(cfg *Config, input *RawInput) error {
 	if input.Mode != "" {
 		cfg.Scoring.Mode = schema.ScoringMode(strings.ToLower(input.Mode))
 		if _, ok := schema.ValidScoringModes[cfg.Scoring.Mode]; !ok {
-			return fmt.Errorf("invalid mode '%s'. Must be one of: hot (activity), risk (knowledge distribution), complexity (technical debt)", input.Mode)
+			return fmt.Errorf("invalid mode '%s'. Base modes: hot (activity), risk (knowledge distribution), complexity (technical debt), roi (refactoring priority). Composite modes: active_owners, refactor_now, legacy_debt", input.Mode)
 		}
 	} else if cfg.Scoring.Mode == "" {
 		cfg.Scoring.Mode = schema.HotMode
@@ -989,6 +989,9 @@ func processRiskThresholds(cfg *Config, input *RawInput) error {
 	thresholds[schema.RiskMode] = 50.0
 	thresholds[schema.ComplexityMode] = 50.0
 	thresholds[schema.ROIMode] = 50.0
+	thresholds[schema.ActiveOwnersMode] = 50.0
+	thresholds[schema.RefactorNowMode] = 50.0
+	thresholds[schema.LegacyDebtMode] = 50.0
 
 	// Override with config file values if provided
 	if input.Thresholds.Hot != nil {
@@ -1002,6 +1005,15 @@ func processRiskThresholds(cfg *Config, input *RawInput) error {
 	}
 	if input.Thresholds.ROI != nil {
 		thresholds[schema.ROIMode] = *input.Thresholds.ROI
+	}
+	if input.Thresholds.ActiveOwners != nil {
+		thresholds[schema.ActiveOwnersMode] = *input.Thresholds.ActiveOwners
+	}
+	if input.Thresholds.RefactorNow != nil {
+		thresholds[schema.RefactorNowMode] = *input.Thresholds.RefactorNow
+	}
+	if input.Thresholds.LegacyDebt != nil {
+		thresholds[schema.LegacyDebtMode] = *input.Thresholds.LegacyDebt
 	}
 
 	// Override with command-line flag if provided (takes precedence)
@@ -1113,8 +1125,14 @@ func parseRiskThresholdsString(s string) (map[schema.ScoringMode]float64, error)
 			mode = schema.ComplexityMode
 		case "roi":
 			mode = schema.ROIMode
+		case "active_owners":
+			mode = schema.ActiveOwnersMode
+		case "refactor_now":
+			mode = schema.RefactorNowMode
+		case "legacy_debt":
+			mode = schema.LegacyDebtMode
 		default:
-			return nil, fmt.Errorf("invalid mode '%s', must be hot, risk, complexity or roi", modeStr)
+			return nil, fmt.Errorf("invalid mode '%s', must be %s", modeStr, formatThresholdModeList())
 		}
 
 		value, err := strconv.ParseFloat(valueStr, 64)
@@ -1126,6 +1144,18 @@ func parseRiskThresholdsString(s string) (map[schema.ScoringMode]float64, error)
 	}
 
 	return thresholds, nil
+}
+
+func formatThresholdModeList() string {
+	modeNames := make([]string, 0, len(schema.AllScoringModes))
+	for _, mode := range schema.AllScoringModes {
+		modeNames = append(modeNames, string(mode))
+	}
+	if len(modeNames) == 1 {
+		return modeNames[0]
+	}
+
+	return strings.Join(modeNames[:len(modeNames)-1], ", ") + " or " + modeNames[len(modeNames)-1]
 }
 
 // ProfileConfig holds profiling settings.
@@ -1157,8 +1187,11 @@ type ModeWeightsRaw struct {
 
 // ThresholdsRawInput holds the raw risk thresholds from the config file.
 type ThresholdsRawInput struct {
-	Hot        *float64 `mapstructure:"hot"`
-	Risk       *float64 `mapstructure:"risk"`
-	Complexity *float64 `mapstructure:"complexity"`
-	ROI        *float64 `mapstructure:"roi"`
+	Hot          *float64 `mapstructure:"hot"`
+	Risk         *float64 `mapstructure:"risk"`
+	Complexity   *float64 `mapstructure:"complexity"`
+	ROI          *float64 `mapstructure:"roi"`
+	ActiveOwners *float64 `mapstructure:"active_owners"`
+	RefactorNow  *float64 `mapstructure:"refactor_now"`
+	LegacyDebt   *float64 `mapstructure:"legacy_debt"`
 }
