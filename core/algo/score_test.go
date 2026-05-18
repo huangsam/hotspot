@@ -400,6 +400,37 @@ func TestComputeCompositeScore_WeightValidationAndClamping(t *testing.T) {
 	})
 }
 
+func TestComputeCompositeScore_MissingBaseScoreReturnsZero(t *testing.T) {
+	file := &schema.FileResult{
+		AllScores: map[schema.ScoringMode]float64{
+			schema.HotMode: 100,
+		},
+	}
+	composite := &schema.CompositeConfig{
+		BaseModes: []schema.ScoringMode{schema.HotMode, schema.RiskMode},
+		BlendWeights: map[schema.ScoringMode]float64{
+			schema.HotMode:  0.5,
+			schema.RiskMode: 0.5,
+		},
+	}
+
+	score, breakdown := ComputeCompositeScore(file, composite)
+	assert.Equal(t, 0.0, score)
+	assert.Empty(t, breakdown)
+}
+
+func TestGenerateCompositeReasoning_EmptyAllReasoningReturnsEmpty(t *testing.T) {
+	file := &schema.FileResult{
+		AllReasoning: map[schema.ScoringMode][]string{},
+	}
+	composite := &schema.CompositeConfig{
+		BaseModes: []schema.ScoringMode{schema.HotMode, schema.RiskMode},
+	}
+
+	reasoning := GenerateCompositeReasoning(file, composite)
+	assert.Empty(t, reasoning)
+}
+
 func TestGenerateCompositeReasoning_ComposesBaseModeReasoning(t *testing.T) {
 	file := &schema.FileResult{
 		AllReasoning: map[schema.ScoringMode][]string{

@@ -2,6 +2,8 @@ package schema
 
 import (
 	_ "embed"
+	"fmt"
+	"math"
 
 	"gopkg.in/yaml.v3"
 )
@@ -46,6 +48,44 @@ func init() {
 	}
 	if err := yaml.Unmarshal(compositesRaw, &cCfg); err != nil {
 		panic("failed to unmarshal composites.yaml: " + err.Error())
+	}
+
+	validateCompositeConfigs()
+}
+
+func validateCompositeConfigs() {
+	for mode, composite := range cCfg.Composites {
+		if composite == nil {
+			panic(fmt.Sprintf("composite mode %s has nil config", mode))
+		}
+		if len(composite.BaseModes) < 2 {
+			panic(fmt.Sprintf("composite mode %s must define at least two base_modes", mode))
+		}
+
+		seen := map[ScoringMode]struct{}{}
+		for _, baseMode := range composite.BaseModes {
+			if !IsBaseMode(baseMode) {
+				panic(fmt.Sprintf("composite mode %s has invalid base mode %s", mode, baseMode))
+			}
+			if _, ok := seen[baseMode]; ok {
+				panic(fmt.Sprintf("composite mode %s contains duplicate base mode %s", mode, baseMode))
+			}
+			seen[baseMode] = struct{}{}
+		}
+
+		if len(composite.BlendWeights) == 0 {
+			panic(fmt.Sprintf("composite mode %s must define blend_weights", mode))
+		}
+
+		for _, baseMode := range composite.BaseModes {
+			weight, ok := composite.BlendWeights[baseMode]
+			if !ok {
+				panic(fmt.Sprintf("composite mode %s missing blend weight for base mode %s", mode, baseMode))
+			}
+			if weight <= 0 || math.IsNaN(weight) || math.IsInf(weight, 0) {
+				panic(fmt.Sprintf("composite mode %s has invalid blend weight %v for base mode %s", mode, weight, baseMode))
+			}
+		}
 	}
 }
 
