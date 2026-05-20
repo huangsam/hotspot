@@ -23,9 +23,9 @@ func NewLocalGitClient() *LocalGitClient {
 }
 
 // Run executes a git command and returns its combined stdout/stderr output.
-func (c *LocalGitClient) Run(_ context.Context, repoPath string, args ...string) ([]byte, error) {
+func (c *LocalGitClient) Run(ctx context.Context, repoPath string, args ...string) ([]byte, error) {
 	fullArgs := append([]string{"-C", repoPath}, args...)
-	cmd := exec.Command("git", fullArgs...)
+	cmd := exec.CommandContext(ctx, "git", fullArgs...)
 	out, err := cmd.Output()
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {

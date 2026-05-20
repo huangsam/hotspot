@@ -37,9 +37,9 @@ Examples:
   hotspot check --mode complexity --lookback "7 days" --thresholds-override "complexity:70"`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
-	Run: func(_ *cobra.Command, _ []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		// Validation is done in ExecuteHotspotCheck
-		if err := core.ExecuteHotspotCheck(rootCtx, cfg, gitClient, cacheManager); err != nil {
+		if err := core.ExecuteHotspotCheck(cmd.Context(), cfg, gitClient, cacheManager); err != nil {
 			logger.Fatal("Policy check failed", err)
 		}
 	},

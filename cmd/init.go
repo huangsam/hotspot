@@ -52,13 +52,13 @@ Examples:
   hotspot init --global`,
 	Args:    cobra.NoArgs,
 	PreRunE: sharedSetupWrapper,
-	Run: func(_ *cobra.Command, _ []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		var presetName schema.PresetName
 		if initPreset != "" {
 			presetName = schema.PresetName(initPreset)
 		} else {
 			logger.Info("No preset provided, analyzing repository shape...")
-			shape, _, err := core.GetHotspotShapeResults(rootCtx, cfg, gitClient, cacheManager)
+			shape, _, err := core.GetHotspotShapeResults(cmd.Context(), cfg, gitClient, cacheManager)
 			if err != nil {
 				logger.Fatal("Failed to analyze repository shape", err)
 			}

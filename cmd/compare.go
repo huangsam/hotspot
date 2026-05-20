@@ -29,11 +29,11 @@ Each comparison shows before/after scores, deltas, and ranking changes.`,
 }
 
 // checkCompareAndExecute validates compare mode and executes the given function.
-func checkCompareAndExecute(executeFunc core.ExecutorFunc) {
+func checkCompareAndExecute(cmd *cobra.Command, executeFunc core.ExecutorFunc) {
 	if !cfg.Compare.Enabled {
 		logger.Fatal("Cannot run compare analysis", errors.New("base and target refs must be provided"))
 	}
-	if err := executeFunc(rootCtx, cfg, gitClient, cacheManager, resultWriter); err != nil {
+	if err := executeFunc(cmd.Context(), cfg, gitClient, cacheManager, resultWriter); err != nil {
 		logger.Fatal("Cannot run compare analysis", err)
 	}
 }
@@ -66,8 +66,8 @@ Examples:
   hotspot compare files --base-ref v1.0.0 --target-ref HEAD --output csv --output-file comparison.csv`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
-	Run: func(_ *cobra.Command, _ []string) {
-		checkCompareAndExecute(core.ExecuteHotspotCompare)
+	Run: func(cmd *cobra.Command, _ []string) {
+		checkCompareAndExecute(cmd, core.ExecuteHotspotCompare)
 	},
 }
 
@@ -94,7 +94,7 @@ Examples:
   hotspot compare folders --lookback "6 months"`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
-	Run: func(_ *cobra.Command, _ []string) {
-		checkCompareAndExecute(core.ExecuteHotspotCompareFolders)
+	Run: func(cmd *cobra.Command, _ []string) {
+		checkCompareAndExecute(cmd, core.ExecuteHotspotCompareFolders)
 	},
 }

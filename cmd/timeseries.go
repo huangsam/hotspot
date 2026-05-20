@@ -34,8 +34,8 @@ Examples:
   hotspot timeseries --path internal/utils/ --interval "120 days" --points 4`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
-	Run: func(_ *cobra.Command, _ []string) {
-		if err := core.ExecuteHotspotTimeseries(rootCtx, cfg, gitClient, cacheManager, resultWriter); err != nil {
+	Run: func(cmd *cobra.Command, _ []string) {
+		if err := core.ExecuteHotspotTimeseries(cmd.Context(), cfg, gitClient, cacheManager, resultWriter); err != nil {
 			logger.Fatal("Cannot run timeseries analysis", err)
 		}
 	},

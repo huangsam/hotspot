@@ -33,8 +33,8 @@ Examples:
   # View with custom weights from config file
   hotspot metrics --config .hotspot.yaml`,
 	PreRunE: sharedSetupWrapper,
-	Run: func(_ *cobra.Command, _ []string) {
-		if err := core.ExecuteHotspotMetrics(rootCtx, cfg, gitClient, cacheManager, resultWriter); err != nil {
+	Run: func(cmd *cobra.Command, _ []string) {
+		if err := core.ExecuteHotspotMetrics(cmd.Context(), cfg, gitClient, cacheManager, resultWriter); err != nil {
 			logger.Fatal("Cannot display metrics", err)
 		}
 	},

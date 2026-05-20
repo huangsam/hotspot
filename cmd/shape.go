@@ -26,8 +26,8 @@ Examples:
   hotspot shape /path/to/repo`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
-	Run: func(_ *cobra.Command, _ []string) {
-		if err := core.ExecuteHotspotShape(rootCtx, cfg, gitClient, cacheManager); err != nil {
+	Run: func(cmd *cobra.Command, _ []string) {
+		if err := core.ExecuteHotspotShape(cmd.Context(), cfg, gitClient, cacheManager); err != nil {
 			logger.Fatal("Cannot run shape analysis", err)
 		}
 	},

@@ -37,8 +37,8 @@ Examples:
   hotspot folders --detail --owner`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
-	Run: func(_ *cobra.Command, _ []string) {
-		if err := core.ExecuteHotspotFolders(rootCtx, cfg, gitClient, cacheManager, resultWriter); err != nil {
+	Run: func(cmd *cobra.Command, _ []string) {
+		if err := core.ExecuteHotspotFolders(cmd.Context(), cfg, gitClient, cacheManager, resultWriter); err != nil {
 			logger.Fatal("Cannot run folders analysis", err)
 		}
 	},

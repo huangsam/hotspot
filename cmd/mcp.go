@@ -30,14 +30,10 @@ Examples:
 
   # Start with a specific cache backend
   hotspot mcp --cache-backend sqlite`,
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		// Suppress the normal header logs when running in MCP mode
-		// to avoid polluting stdio which is used for the protocol.
-		return sharedSetup(rootCtx, cmd, args)
-	},
-	RunE: func(_ *cobra.Command, _ []string) error {
+	PreRunE: sharedSetup,
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		client := git.NewLocalGitClient()
-		return mcp.StartMCPServer(rootCtx, cfg, cacheManager, client, AgentsDoc)
+		return mcp.StartMCPServer(cmd.Context(), cfg, cacheManager, client, AgentsDoc)
 	},
 }
 

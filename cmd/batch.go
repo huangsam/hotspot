@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -42,7 +43,7 @@ Examples:
   # Find and analyze all repos in the current directory
   hotspot batch --auto .`,
 	PreRunE: sharedSetupWrapper,
-	Run: func(_ *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, args []string) {
 		autoDiscovery := viper.GetBool("auto")
 		var rawRepos []string
 
@@ -95,7 +96,7 @@ Examples:
 
 		// Process repositories sequentially
 		start := time.Now()
-		shapes, errs := processRepos(repos)
+		shapes, errs := processRepos(cmd.Context(), repos)
 		duration := time.Since(start)
 
 		// Report human-facing summary to stderr
@@ -149,7 +150,7 @@ func discoverRepos(root string) []string {
 	return repos
 }
 
-func processRepos(repos []string) ([]schema.RepoShape, []error) {
+func processRepos(ctx context.Context, repos []string) ([]schema.RepoShape, []error) {
 	var shapes []schema.RepoShape
 	var errors []error
 	total := len(repos)
@@ -157,7 +158,7 @@ func processRepos(repos []string) ([]schema.RepoShape, []error) {
 
 	for i, repoPath := range repos {
 		progress.Update(i+1, total, fmt.Sprintf("Analyzing %s...", filepath.Base(repoPath)))
-		shape, err := analyzeOneRepo(repoPath)
+		shape, err := analyzeOneRepo(ctx, repoPath)
 		if err != nil {
 			progress.IncrWarn()
 			errors = append(errors, fmt.Errorf("%s: %w", repoPath, err))
@@ -170,7 +171,7 @@ func processRepos(repos []string) ([]schema.RepoShape, []error) {
 	return shapes, errors
 }
 
-func analyzeOneRepo(repoPath string) (schema.RepoShape, error) {
+func analyzeOneRepo(ctx context.Context, repoPath string) (schema.RepoShape, error) {
 	repoCfg := cfg.Clone()
 	repoCfg.Git.RepoPath = repoPath
 	repoCfg.Output.Format = schema.NoneOut
@@ -184,11 +185,11 @@ func analyzeOneRepo(repoPath string) (schema.RepoShape, error) {
 	repoInput.Output = "none"
 	repoInput.URN = ""
 
-	if err := config.ResolveGitPathAndFilter(rootCtx, repoCfg, gitClient, &repoInput); err != nil {
+	if err := config.ResolveGitPathAndFilter(ctx, repoCfg, gitClient, &repoInput); err != nil {
 		return schema.RepoShape{}, fmt.Errorf("failed to resolve git path: %w", err)
 	}
 
-	analysisCtx := core.WithSuppressHeader(rootCtx)
+	analysisCtx := core.WithSuppressHeader(ctx)
 	shape, _, err := core.GetBatchAnalysisResults(analysisCtx, repoCfg, gitClient, cacheManager)
 	return shape, err
 }

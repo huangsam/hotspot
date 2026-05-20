@@ -32,8 +32,8 @@ Examples:
 `,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
-	Run: func(_ *cobra.Command, _ []string) {
-		if err := core.ExecuteHotspotBlastRadius(rootCtx, cfg, gitClient, resultWriter); err != nil {
+	Run: func(cmd *cobra.Command, _ []string) {
+		if err := core.ExecuteHotspotBlastRadius(cmd.Context(), cfg, gitClient, resultWriter); err != nil {
 			logger.Fatal("Cannot run blast radius analysis", err)
 		}
 	},

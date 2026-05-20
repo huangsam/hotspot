@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"runtime/pprof"
 	"strings"
+	"syscall"
 
 	"github.com/huangsam/hotspot/core"
 	"github.com/huangsam/hotspot/internal/config"
@@ -24,9 +26,6 @@ var (
 	commit  = "none"
 	date    = "unknown"
 )
-
-// rootCtx is the root context for all operations.
-var rootCtx = context.Background()
 
 // cfg will hold the validated, final configuration.
 var cfg = &config.Config{}
@@ -124,7 +123,9 @@ func initConfig() {
 }
 
 // sharedSetup unmarshals config and runs validation.
-func sharedSetup(ctx context.Context, cmd *cobra.Command, args []string) error {
+func sharedSetup(cmd *cobra.Command, args []string) error {
+	ctx := cmd.Context()
+
 	// Handle profiling flag
 	profilePrefix := viper.GetString("profile")
 	if err := config.ProcessProfilingConfig(profile, profilePrefix); err != nil {
@@ -192,7 +193,10 @@ func sharedSetup(ctx context.Context, cmd *cobra.Command, args []string) error {
 	// 8. Apply global quiet mode to context
 	if cfg.Output.Quiet {
 		logger.SetQuiet(true)
-		rootCtx = core.WithSuppressHeader(rootCtx)
+		ctx = core.WithSuppressHeader(ctx)
+		if cmd != nil {
+			cmd.SetContext(ctx)
+		}
 		// Only lower to error level if the user DID NOT explicitly ask for a specific level via flags
 		if cmd == nil || !cmd.Flags().Changed("log-level") {
 			logger.InitLogger("error")
@@ -204,7 +208,7 @@ func sharedSetup(ctx context.Context, cmd *cobra.Command, args []string) error {
 
 // sharedSetupWrapper wraps sharedSetup to provide context for Cobra's PreRunE.
 func sharedSetupWrapper(cmd *cobra.Command, args []string) error {
-	return sharedSetup(rootCtx, cmd, args)
+	return sharedSetup(cmd, args)
 }
 
 // loadConfigFile handles config file loading logic common to all setup functions.
@@ -231,7 +235,9 @@ func loadConfigFile() error {
 
 // Execute runs the root command.
 func Execute() error {
-	return rootCmd.Execute()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	return rootCmd.ExecuteContext(ctx)
 }
 
 // SetCacheManager sets the global cache manager.
