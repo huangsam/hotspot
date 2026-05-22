@@ -44,7 +44,19 @@ If you use Hotspot to ask "Why did you write such complex code?" or "Why are you
     - **ROI Target**: Focus on these files first to get the most "bang for your buck" in terms of improved development velocity.
     - **Impact Audit**: After refactoring, run `hotspot compare` in ROI mode to quantify the technical return on investment.
 
-### Area 5: Fleet Intelligence (Cross-Project Risk)
+### Area 5: Composite Signals (Multi-Dimensional Risk)
+
+**The Signal**: A file is dangerous across more than one dimension simultaneously.
+- **Supportive Action**:
+    - **`active_owners`**: Use when a file is both actively changing AND siloed. Run
+      `hotspot files --mode active_owners` to find immediate knowledge-transfer candidates.
+    - **`refactor_now`**: Use during sprint planning to rank refactoring targets by ROI.
+      Run `hotspot files --mode refactor_now --output describe` for an executive summary.
+    - **`legacy_debt`**: Use before touching old, rarely-maintained systems. Run
+      `hotspot files --mode legacy_debt` to surface high blast-radius files that need
+      expert review before any changes.
+
+### Area 6: Fleet Intelligence (Cross-Project Risk)
 
 **The Signal**: Multiple repositories in your portfolio show high risk or complexity simultaneously.
 - **Supportive Action**:
@@ -58,6 +70,7 @@ Data is only useful if it shows progress. Use these commands to quantify your im
 
 - **Audit a Refactor**: Run `hotspot compare files --base-ref v1.17.0 --target-ref HEAD --mode complexity`. A successful refactor should show a significant delta decrease in complexity scores.
 - **Track Trends**: Use `hotspot timeseries --path <path> --mode risk` to prove that "Knowledge Islands" are shrinking over time as ownership is shared.
+- **Composite Baseline**: Run `hotspot files --mode refactor_now --limit 10` before a quarter to establish a refactoring backlog, and re-run at quarter end to measure progress.
 
 ## Hotspot in Agile Rituals
 

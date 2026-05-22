@@ -51,6 +51,18 @@ The `core` package implements four distinct scoring algorithms based on differen
    - **Focus**: High churn on complex/large legacy files (Technical impact vs. Effort).
    - **Use Case**: Prioritize refactoring targets in a large codebase with limited resources.
 
+### Composite Modes (v1.22.0+)
+
+Three composite modes blend two base algorithms to surface multi-dimensional risk. Agents should prefer these over base modes when the use case spans more than one risk dimension:
+
+| Mode | Blend | When to Use |
+|------|-------|-------------|
+| **active_owners** | Hot (50%) + Risk (50%) | File is actively changing AND siloed — prioritize knowledge transfer. |
+| **refactor_now** | Complexity (60%) + ROI (40%) | Sprint planning — rank files by highest refactoring return. |
+| **legacy_debt** | Complexity (70%) + Risk (30%) | Pre-change audit — identify fragile, concentrated legacy systems. |
+
+Composite scores, breakdowns, and reasoning for all base modes are returned together in a single MCP response, giving agents full signal transparency without additional round-trips.
+
 ## Repository Shape & Preset System
 
 Hotspot includes **shape analysis** (lightweight single-pass aggregation) to characterize repositories and recommend presets.
