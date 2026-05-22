@@ -19,16 +19,19 @@ func main() {
 	// Set the global caching manager (will be initialized in sharedSetup)
 	cmd.SetCacheManager(iocache.Manager)
 
-	defer func() {
-		// Close caching on exit
-		iocache.CloseCaching()
+	// Run the application logic in a closure to ensure defers are executed before exit
+	err := func() error {
+		defer iocache.CloseCaching()
+		defer func() {
+			if err := cmd.StopProfiling(); err != nil {
+				// Use Error instead of Fatal here so we don't interrupt the shutdown sequence
+				logger.Error("Error stopping profiling: %v", err)
+			}
+		}()
 
-		if err := cmd.StopProfiling(); err != nil {
-			logger.Fatal("Error stopping profiling", err)
-		}
+		return cmd.Execute()
 	}()
-
-	if err := cmd.Execute(); err != nil {
-		logger.Fatal("Error starting CLI", err)
+	if err != nil {
+		logger.Fatal("Application error: %v", err)
 	}
 }

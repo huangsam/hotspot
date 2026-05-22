@@ -6,7 +6,6 @@ import (
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
-	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/huangsam/hotspot/internal/outwriter"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
@@ -162,17 +161,18 @@ Use this to:
 - Compare run durations across different configurations
 - Confirm which repositories have been analyzed`,
 	PreRunE: analysisSetupWrapper,
-	Run: func(cmd *cobra.Command, _ []string) {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		limit := viper.GetInt("limit")
 		runs, err := iocache.Manager.GetAnalysisStore().GetAnalysisRuns(schema.AnalysisQueryFilter{
 			Limit: limit,
 		})
 		if err != nil {
-			logger.Fatal("Failed to get analysis history", err)
+			return fmt.Errorf("failed to get analysis history: %w", err)
 		}
 		if err := resultWriter.WriteHistory(cmd.OutOrStdout(), runs, cfg.Output); err != nil {
-			logger.Fatal("Failed to write analysis history", err)
+			return fmt.Errorf("failed to write analysis history: %w", err)
 		}
+		return nil
 	},
 }
 
@@ -203,11 +203,12 @@ Examples:
   # Clear and start fresh
   hotspot analysis clear`,
 	PreRunE: analysisMigrateSetupWrapper,
-	Run: func(_ *cobra.Command, _ []string) {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		if err := iocache.ClearAnalysis(cfg.Runtime.AnalysisBackend, iocache.GetAnalysisDBFilePath(), cfg.Runtime.AnalysisDBConnect); err != nil {
-			logger.Fatal("Failed to clear analysis data", err)
+			return fmt.Errorf("failed to clear analysis data: %w", err)
 		}
 		fmt.Println("Analysis data cleared successfully.")
+		return nil
 	},
 }
 
@@ -234,12 +235,13 @@ Examples:
   # Check analysis tracking status
   hotspot analysis status`,
 	PreRunE: analysisSetupWrapper,
-	Run: func(_ *cobra.Command, _ []string) {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		status, err := iocache.Manager.GetAnalysisStore().GetStatus()
 		if err != nil {
-			logger.Fatal("Failed to get analysis status", err)
+			return fmt.Errorf("failed to get analysis status: %w", err)
 		}
 		iocache.PrintAnalysisStatus(status)
+		return nil
 	},
 }
 
@@ -275,10 +277,11 @@ Examples:
   hotspot analysis export --output-file data.parquet
   duckdb -c "SELECT * FROM read_parquet('data.parquet/runs.parquet') LIMIT 10"`,
 	PreRunE: analysisMigrateSetupWrapper,
-	Run: func(_ *cobra.Command, _ []string) {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		if err := iocache.ExecuteAnalysisExport(cfg.Output.OutputFile); err != nil {
-			logger.Fatal("Failed to export analysis data", err)
+			return fmt.Errorf("failed to export analysis data: %w", err)
 		}
+		return nil
 	},
 }
 
@@ -306,11 +309,12 @@ Examples:
   # Rollback to previous version
   hotspot analysis migrate --target-version 0`,
 	PreRunE: analysisMigrateSetupWrapper,
-	Run: func(_ *cobra.Command, _ []string) {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		targetVersion := viper.GetInt("target-version")
 		force := viper.GetBool("force")
 		if err := iocache.MigrateAnalysis(cfg.Runtime.AnalysisBackend, cfg.Runtime.AnalysisDBConnect, targetVersion, force); err != nil {
-			logger.Fatal("Failed to run migrations", err)
+			return fmt.Errorf("failed to run migrations: %w", err)
 		}
+		return nil
 	},
 }

@@ -1,8 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/huangsam/hotspot/core"
-	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -33,9 +34,10 @@ Examples:
   # View with custom weights from config file
   hotspot metrics --config .hotspot.yaml`,
 	PreRunE: sharedSetupWrapper,
-	Run: func(cmd *cobra.Command, _ []string) {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		if err := core.ExecuteHotspotMetrics(cmd.Context(), cfg, gitClient, cacheManager, resultWriter); err != nil {
-			logger.Fatal("Cannot display metrics", err)
+			return fmt.Errorf("cannot display metrics: %w", err)
 		}
+		return nil
 	},
 }

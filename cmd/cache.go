@@ -7,7 +7,6 @@ import (
 	"github.com/huangsam/hotspot/internal/config"
 	"github.com/huangsam/hotspot/internal/git"
 	"github.com/huangsam/hotspot/internal/iocache"
-	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/huangsam/hotspot/schema"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -107,11 +106,12 @@ Examples:
   # Clear MySQL cache (set connection string via env variable)
   HOTSPOT_CACHE_BACKEND=mysql HOTSPOT_CACHE_DB_CONNECT="..." hotspot cache clear`,
 	PreRunE: cacheSetupWrapper,
-	Run: func(_ *cobra.Command, _ []string) {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		if err := iocache.ClearCache(cfg.Runtime.CacheBackend, iocache.GetDBFilePath(), cfg.Runtime.CacheDBConnect); err != nil {
-			logger.Fatal("Failed to clear cache", err)
+			return fmt.Errorf("failed to clear cache: %w", err)
 		}
 		fmt.Fprintln(os.Stderr, "Cache cleared successfully.")
+		return nil
 	},
 }
 
@@ -137,11 +137,12 @@ Examples:
   # Check cache status
   hotspot cache status`,
 	PreRunE: cacheSetupWrapper,
-	Run: func(_ *cobra.Command, _ []string) {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		status, err := iocache.Manager.GetActivityStore().GetStatus()
 		if err != nil {
-			logger.Fatal("Failed to get cache status", err)
+			return fmt.Errorf("failed to get cache status: %w", err)
 		}
 		iocache.PrintCacheStatus(status)
+		return nil
 	},
 }

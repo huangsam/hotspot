@@ -1,8 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/huangsam/hotspot/core"
-	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -54,9 +55,10 @@ Examples:
   hotspot files --mode hot --output csv --output-file hotspots.csv`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
-	Run: func(cmd *cobra.Command, _ []string) {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		if err := core.ExecuteHotspotFiles(cmd.Context(), cfg, gitClient, cacheManager, resultWriter); err != nil {
-			logger.Fatal("Cannot run files analysis", err)
+			return fmt.Errorf("cannot run files analysis: %w", err)
 		}
+		return nil
 	},
 }

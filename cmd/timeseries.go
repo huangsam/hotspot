@@ -1,8 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/huangsam/hotspot/core"
-	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -34,9 +35,10 @@ Examples:
   hotspot timeseries --path internal/utils/ --interval "120 days" --points 4`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
-	Run: func(cmd *cobra.Command, _ []string) {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		if err := core.ExecuteHotspotTimeseries(cmd.Context(), cfg, gitClient, cacheManager, resultWriter); err != nil {
-			logger.Fatal("Cannot run timeseries analysis", err)
+			return fmt.Errorf("cannot run timeseries analysis: %w", err)
 		}
+		return nil
 	},
 }

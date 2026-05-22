@@ -1,8 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/huangsam/hotspot/core"
-	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -26,10 +27,11 @@ Examples:
   hotspot shape /path/to/repo`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
-	Run: func(cmd *cobra.Command, _ []string) {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		if err := core.ExecuteHotspotShape(cmd.Context(), cfg, gitClient, cacheManager); err != nil {
-			logger.Fatal("Cannot run shape analysis", err)
+			return fmt.Errorf("cannot run shape analysis: %w", err)
 		}
+		return nil
 	},
 }
 

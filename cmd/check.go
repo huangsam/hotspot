@@ -1,8 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/huangsam/hotspot/core"
-	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -37,10 +38,11 @@ Examples:
   hotspot check --mode complexity --lookback "7 days" --thresholds-override "complexity:70"`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
-	Run: func(cmd *cobra.Command, _ []string) {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		// Validation is done in ExecuteHotspotCheck
 		if err := core.ExecuteHotspotCheck(cmd.Context(), cfg, gitClient, cacheManager); err != nil {
-			logger.Fatal("Policy check failed", err)
+			return fmt.Errorf("policy check failed: %w", err)
 		}
+		return nil
 	},
 }

@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/huangsam/hotspot/core"
-	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -29,13 +29,14 @@ Each comparison shows before/after scores, deltas, and ranking changes.`,
 }
 
 // checkCompareAndExecute validates compare mode and executes the given function.
-func checkCompareAndExecute(cmd *cobra.Command, executeFunc core.ExecutorFunc) {
+func checkCompareAndExecute(cmd *cobra.Command, executeFunc core.ExecutorFunc) error {
 	if !cfg.Compare.Enabled {
-		logger.Fatal("Cannot run compare analysis", errors.New("base and target refs must be provided"))
+		return fmt.Errorf("cannot run compare analysis: %w", errors.New("base and target refs must be provided"))
 	}
 	if err := executeFunc(cmd.Context(), cfg, gitClient, cacheManager, resultWriter); err != nil {
-		logger.Fatal("Cannot run compare analysis", err)
+		return fmt.Errorf("cannot run compare analysis: %w", err)
 	}
+	return nil
 }
 
 // compareFilesCmd looks at file deltas.
@@ -66,8 +67,8 @@ Examples:
   hotspot compare files --base-ref v1.0.0 --target-ref HEAD --output csv --output-file comparison.csv`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
-	Run: func(cmd *cobra.Command, _ []string) {
-		checkCompareAndExecute(cmd, core.ExecuteHotspotCompare)
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		return checkCompareAndExecute(cmd, core.ExecuteHotspotCompare)
 	},
 }
 
@@ -94,7 +95,7 @@ Examples:
   hotspot compare folders --lookback "6 months"`,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
-	Run: func(cmd *cobra.Command, _ []string) {
-		checkCompareAndExecute(cmd, core.ExecuteHotspotCompareFolders)
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		return checkCompareAndExecute(cmd, core.ExecuteHotspotCompareFolders)
 	},
 }

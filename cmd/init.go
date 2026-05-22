@@ -52,7 +52,7 @@ Examples:
   hotspot init --global`,
 	Args:    cobra.NoArgs,
 	PreRunE: sharedSetupWrapper,
-	Run: func(cmd *cobra.Command, _ []string) {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		var presetName schema.PresetName
 		if initPreset != "" {
 			presetName = schema.PresetName(initPreset)
@@ -60,7 +60,7 @@ Examples:
 			logger.Info("No preset provided, analyzing repository shape...")
 			shape, _, err := core.GetHotspotShapeResults(cmd.Context(), cfg, gitClient, cacheManager)
 			if err != nil {
-				logger.Fatal("Failed to analyze repository shape", err)
+				return fmt.Errorf("failed to analyze repository shape: %w", err)
 			}
 			presetName = shape.RecommendedPreset
 			logger.Info(fmt.Sprintf("Recommended preset: %s", presetName))
@@ -70,7 +70,7 @@ Examples:
 		if initGlobal {
 			home, err := os.UserHomeDir()
 			if err != nil {
-				logger.Fatal("Failed to get home directory", err)
+				return fmt.Errorf("failed to get home directory: %w", err)
 			}
 			savePath = filepath.Join(home, ".hotspot.yml")
 		} else {
@@ -78,7 +78,7 @@ Examples:
 		}
 
 		if _, err := os.Stat(savePath); err == nil && !initForce {
-			logger.Fatal(fmt.Sprintf("Configuration file already exists at %s. Use --force to overwrite.", savePath), nil)
+			return fmt.Errorf("configuration file already exists at %s; use --force to overwrite", savePath)
 		}
 
 		var data []byte
@@ -87,17 +87,18 @@ Examples:
 			var err error
 			data, err = yaml.Marshal(p)
 			if err != nil {
-				logger.Fatal("Failed to marshal preset to YAML", err)
+				return fmt.Errorf("failed to marshal preset to YAML: %w", err)
 			}
 		} else {
 			data = fmt.Appendf(nil, "preset: %s\n", presetName)
 		}
 
 		if err := os.WriteFile(savePath, data, 0o644); err != nil {
-			logger.Fatal(fmt.Sprintf("Failed to write configuration to %s", savePath), err)
+			return fmt.Errorf("failed to write configuration to %s: %w", savePath, err)
 		}
 
 		logger.Info(fmt.Sprintf("Successfully initialized %s configuration at %s", presetName, savePath))
+		return nil
 	},
 }
 

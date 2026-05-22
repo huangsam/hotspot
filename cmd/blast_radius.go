@@ -1,8 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/huangsam/hotspot/core"
-	"github.com/huangsam/hotspot/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -32,10 +33,11 @@ Examples:
 `,
 	Args:    cobra.MaximumNArgs(1),
 	PreRunE: sharedSetupWrapper,
-	Run: func(cmd *cobra.Command, _ []string) {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		if err := core.ExecuteHotspotBlastRadius(cmd.Context(), cfg, gitClient, resultWriter); err != nil {
-			logger.Fatal("Cannot run blast radius analysis", err)
+			return fmt.Errorf("cannot run blast radius analysis: %w", err)
 		}
+		return nil
 	},
 }
 

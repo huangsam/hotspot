@@ -43,7 +43,7 @@ Examples:
   # Find and analyze all repos in the current directory
   hotspot batch --auto .`,
 	PreRunE: sharedSetupWrapper,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		autoDiscovery := viper.GetBool("auto")
 		var rawRepos []string
 
@@ -63,7 +63,7 @@ Examples:
 			}
 		} else {
 			if len(args) == 0 {
-				logger.Fatal("No repository paths provided. Use --auto for recursive discovery.", nil)
+				return fmt.Errorf("no repository paths provided; use --auto for recursive discovery")
 			}
 			for _, arg := range args {
 				absPath, err := filepath.Abs(arg)
@@ -87,7 +87,7 @@ Examples:
 
 		if len(repos) == 0 {
 			logger.Warn("No repositories found for analysis.", nil)
-			return
+			return nil
 		}
 
 		if autoDiscovery {
@@ -137,8 +137,9 @@ Examples:
 		if err := outwriter.WriteWithOutputFile(cfg.Output, func(w io.Writer) error {
 			return resultWriter.WriteBatch(w, shapes, cfg.Output, cfg.Runtime, duration)
 		}, "Wrote batch summary"); err != nil {
-			logger.Fatal("Failed to write batch summary", err)
+			return fmt.Errorf("failed to write batch summary: %w", err)
 		}
+		return nil
 	},
 }
 
