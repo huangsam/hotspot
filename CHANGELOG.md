@@ -5,16 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org).
 
-## [1.22.0] - 2026-05-04
+## [1.22.0] - 2026-05-22
 
 ### Added
 - Three composite scoring modes: `active_owners`, `refactor_now`, `legacy_debt`.
 - Composite modes blend two base scoring algorithms for targeted risk analysis.
-- active_owners (hot+risk): volatile files with concentrated ownership.
-- refactor_now (complexity+roi): refactoring targets by highest ROI.
-- legacy_debt (complexity+risk): fragile legacy systems needing expert review.
 - Dynamic composite reasoning labels via base mode concatenation.
 - Full CLI and MCP support for composite mode analysis.
+
+### Changed
+- Propagated CLI errors to main.go via RunE subcommand migration.
+
+### Fixed
+- Hardened composite modes with startup validation and robust NaN safety.
+- Resolved revive lints and cleaned up unused logger package imports.
 
 ## [1.21.0] - 2026-04-27
 
@@ -794,6 +798,7 @@ Initial development covered core functionality including:
 - Code quality and maintainability refactoring
 - Proper package structure architecture
 
+[1.22.0]: https://github.com/huangsam/hotspot/compare/v1.21.0...v1.22.0
 [1.21.0]: https://github.com/huangsam/hotspot/compare/v1.20.0...v1.21.0
 [1.20.0]: https://github.com/huangsam/hotspot/compare/v1.19.0...v1.20.0
 [1.19.0]: https://github.com/huangsam/hotspot/compare/v1.18.1...v1.19.0
