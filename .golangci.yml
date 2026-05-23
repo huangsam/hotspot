@@ -17,8 +17,14 @@ linters:
     - gocyclo
     # https://github.com/tetafro/godot
     - godot
+  exclusions:
+    paths:
+      - "^brainstorm/.*"
 formatters:
   enable:
     - gofmt
     - gofumpt
     - goimports
+  exclusions:
+    paths:
+      - "^brainstorm/.*"
