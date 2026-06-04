@@ -8,7 +8,7 @@ require (
 	github.com/fatih/color v1.19.0
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/golang-migrate/migrate/v4 v4.19.1
-	github.com/jackc/pgx/v5 v5.9.2
+	github.com/jackc/pgx/v5 v5.10.0
 	github.com/mark3labs/mcp-go v0.54.1
 	github.com/mattn/go-isatty v0.0.22
 	github.com/olekukonko/tablewriter v1.1.4
