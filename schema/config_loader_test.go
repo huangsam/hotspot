@@ -51,19 +51,20 @@ func TestGetCompositeConfig(t *testing.T) {
 	for _, mode := range compositeModes {
 		t.Run(string(mode), func(t *testing.T) {
 			cfg := GetCompositeConfig(mode)
-			if cfg == nil {
-				t.Fatalf("expected composite config for mode %s", mode)
-			}
-			if len(cfg.BaseModes) < 2 {
-				t.Errorf("expected at least two base modes for %s, got %d", mode, len(cfg.BaseModes))
-			}
-			if len(cfg.BlendWeights) < len(cfg.BaseModes) {
-				t.Errorf("expected blend weights for all base modes for %s", mode)
-			}
-			for _, baseMode := range cfg.BaseModes {
-				if !IsBaseMode(baseMode) {
-					t.Errorf("composite mode %s has non-base base mode %s", mode, baseMode)
+			if cfg != nil {
+				if len(cfg.BaseModes) < 2 {
+					t.Errorf("expected at least two base modes for %s, got %d", mode, len(cfg.BaseModes))
 				}
+				if len(cfg.BlendWeights) < len(cfg.BaseModes) {
+					t.Errorf("expected blend weights for all base modes for %s", mode)
+				}
+				for _, baseMode := range cfg.BaseModes {
+					if !IsBaseMode(baseMode) {
+						t.Errorf("composite mode %s has non-base base mode %s", mode, baseMode)
+					}
+				}
+			} else {
+				t.Errorf("expected composite config for mode %s", mode)
 			}
 		})
 	}
