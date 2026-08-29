@@ -27,8 +27,7 @@ func (c *LocalGitClient) Run(ctx context.Context, repoPath string, args ...strin
 	fullArgs := append([]string{"-C", repoPath}, args...)
 	cmd := exec.CommandContext(ctx, "git", fullArgs...)
 	out, err := cmd.Output()
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) {
+	if exitErr, ok := errors.AsType[*exec.ExitError](err); ok {
 		stderr := strings.TrimSpace(string(exitErr.Stderr))
 		return nil, fmt.Errorf("git command failed in %q: %s. If this is not a Git repository, verify the path or run 'git init'", repoPath, stderr)
 	} else if err != nil {
